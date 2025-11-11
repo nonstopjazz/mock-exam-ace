@@ -1,33 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-// TODO: Replace with API types
-export interface Question {
-  id: string;
-  type: 'multiple-choice' | 'cloze' | 'reading';
-  content: string;
-  options?: string[];
-  correctAnswer?: string;
-  passage?: string;
-}
-
-export interface Answer {
-  questionId: string;
-  answer: string;
-  timeSpent: number;
-}
+import { Question, ExamPaper, StudentAnswer } from '@/types/exam';
 
 interface ExamState {
   currentAttemptId: string | null;
-  questions: Question[];
-  answers: Record<string, string>;
+  examPaper: ExamPaper | null;
+  currentQuestionIndex: number;
+  answers: Record<string, any>; // 彈性儲存各種答案格式
   startTime: number | null;
   timeRemaining: number;
   isSubmitted: boolean;
   
   // Actions
-  startExam: (questions: Question[], duration: number) => void;
-  setAnswer: (questionId: string, answer: string) => void;
+  startExam: (examPaper: ExamPaper) => void;
+  setAnswer: (questionId: string, answer: any) => void;
+  setCurrentQuestionIndex: (index: number) => void;
   submitExam: () => void;
   resetExam: () => void;
   updateTimeRemaining: (time: number) => void;
@@ -37,20 +24,22 @@ export const useExamStore = create<ExamState>()(
   persist(
     (set) => ({
       currentAttemptId: null,
-      questions: [],
+      examPaper: null,
+      currentQuestionIndex: 0,
       answers: {},
       startTime: null,
       timeRemaining: 0,
       isSubmitted: false,
 
-      startExam: (questions, duration) => {
+      startExam: (examPaper) => {
         const attemptId = `attempt_${Date.now()}`;
         set({
           currentAttemptId: attemptId,
-          questions,
+          examPaper,
+          currentQuestionIndex: 0,
           answers: {},
           startTime: Date.now(),
-          timeRemaining: duration * 60, // Convert to seconds
+          timeRemaining: examPaper.duration * 60, // Convert to seconds
           isSubmitted: false,
         });
       },
@@ -60,6 +49,9 @@ export const useExamStore = create<ExamState>()(
           answers: { ...state.answers, [questionId]: answer },
         })),
 
+      setCurrentQuestionIndex: (index) =>
+        set({ currentQuestionIndex: index }),
+
       submitExam: () => {
         // TODO: Submit to API
         set({ isSubmitted: true });
@@ -68,7 +60,8 @@ export const useExamStore = create<ExamState>()(
       resetExam: () =>
         set({
           currentAttemptId: null,
-          questions: [],
+          examPaper: null,
+          currentQuestionIndex: 0,
           answers: {},
           startTime: null,
           timeRemaining: 0,
