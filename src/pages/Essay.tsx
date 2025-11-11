@@ -1,196 +1,533 @@
 import { Layout } from "@/components/layout/Layout";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
-import { Upload, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useState, useMemo } from "react";
+import {
+  FileText,
+  Send,
+  RotateCcw,
+  CheckCircle2,
+  AlertCircle,
+  Lightbulb,
+  Target,
+  Sparkles,
+  BookOpen,
+  TrendingUp,
+  AlertTriangle,
+} from "lucide-react";
+import {
+  MOCK_ESSAY_PROMPTS,
+  MOCK_GRADING_RESPONSE,
+  MOCK_STUDENT_ESSAY,
+  type EssayGradingResponse,
+} from "@/data/mock-essay";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-// TODO: Connect to AI API for essay grading
+// TODO: 未來從 API 拉取與提交
+// GET /api/essay/prompts - 取得題目列表
+// POST /api/essay/grade - 提交作文並取得 AI 批改
+// POST /api/essay/submit - 儲存作文記錄
+
 const Essay = () => {
-  const { toast } = useToast();
-  const [essayText, setEssayText] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [selectedPromptId, setSelectedPromptId] = useState(MOCK_ESSAY_PROMPTS[0].id);
+  const [essayContent, setEssayContent] = useState('');
+  const [isGrading, setIsGrading] = useState(false);
+  const [gradingResult, setGradingResult] = useState<EssayGradingResponse | null>(null);
+  const [showExample, setShowExample] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!essayText.trim()) {
-      toast({
-        title: "請輸入作文內容",
-        variant: "destructive",
-      });
+  const selectedPrompt = MOCK_ESSAY_PROMPTS.find((p) => p.id === selectedPromptId) || MOCK_ESSAY_PROMPTS[0];
+
+  // 字數統計
+  const wordCount = useMemo(() => {
+    return essayContent.trim().split(/\s+/).filter(Boolean).length;
+  }, [essayContent]);
+
+  const isWithinLimit = wordCount >= selectedPrompt.wordLimit.min && wordCount <= selectedPrompt.wordLimit.max;
+
+  // 載入範例作文
+  const loadExample = () => {
+    setEssayContent(MOCK_STUDENT_ESSAY);
+    setShowExample(true);
+  };
+
+  // 送出批改（Mock）
+  const handleGrade = async () => {
+    if (!essayContent.trim()) {
+      alert('請先輸入作文內容');
       return;
     }
 
-    setIsAnalyzing(true);
-    
-    // TODO: Call AI API
+    setIsGrading(true);
+
+    // TODO: 實際 API 呼叫
+    // const response = await fetch('/api/essay/grade', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({
+    //     promptId: selectedPromptId,
+    //     content: essayContent,
+    //   }),
+    // });
+    // const result = await response.json();
+
+    // Mock 延遲
     setTimeout(() => {
-      setResult({
-        score: 18,
-        maxScore: 20,
-        strengths: [
-          "文章結構清晰，分段合理",
-          "用詞豐富，表達流暢",
-          "論點明確，有說服力",
-        ],
-        improvements: [
-          "部分句子可以更加精簡",
-          "建議增加更多具體例子",
-          "注意時態一致性",
-        ],
-      });
-      setIsAnalyzing(false);
-      toast({
-        title: "分析完成！",
-        description: "AI 已完成作文批改",
-      });
+      setGradingResult(MOCK_GRADING_RESPONSE);
+      setIsGrading(false);
     }, 2000);
   };
 
-  const wordCount = essayText.trim().split(/\s+/).filter(Boolean).length;
+  // 重新提交
+  const handleReset = () => {
+    setEssayContent('');
+    setGradingResult(null);
+    setShowExample(false);
+  };
+
+  // 高亮顯示文字
+  const renderHighlightedText = () => {
+    if (!gradingResult || !essayContent) return null;
+
+    const highlights = [...gradingResult.highlights].sort((a, b) => a.start - b.start);
+    const segments: JSX.Element[] = [];
+    let lastIndex = 0;
+
+    highlights.forEach((highlight, idx) => {
+      // 正常文字
+      if (highlight.start > lastIndex) {
+        segments.push(
+          <span key={`text-${idx}`}>{essayContent.slice(lastIndex, highlight.start)}</span>
+        );
+      }
+
+      // 高亮文字
+      const bgColor =
+        highlight.severity === 'error'
+          ? 'bg-destructive/20 border-b-2 border-destructive'
+          : highlight.severity === 'warning'
+          ? 'bg-warning/20 border-b-2 border-warning'
+          : 'bg-primary/10 border-b-2 border-primary';
+
+      segments.push(
+        <span
+          key={`highlight-${idx}`}
+          className={`${bgColor} cursor-pointer relative group`}
+          title={highlight.note}
+        >
+          {essayContent.slice(highlight.start, highlight.end)}
+          <span className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10 w-64 p-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border">
+            <p className="font-semibold mb-1">{highlight.type.toUpperCase()}</p>
+            <p>{highlight.note}</p>
+            {highlight.suggestion && (
+              <p className="mt-1 text-success">建議：{highlight.suggestion}</p>
+            )}
+          </span>
+        </span>
+      );
+
+      lastIndex = highlight.end;
+    });
+
+    // 剩餘文字
+    if (lastIndex < essayContent.length) {
+      segments.push(<span key="text-end">{essayContent.slice(lastIndex)}</span>);
+    }
+
+    return <div className="whitespace-pre-wrap leading-relaxed">{segments}</div>;
+  };
+
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-destructive" />;
+      case 'warning':
+        return <AlertTriangle className="h-4 w-4 text-warning" />;
+      case 'suggestion':
+        return <Lightbulb className="h-4 w-4 text-primary" />;
+      default:
+        return <Lightbulb className="h-4 w-4" />;
+    }
+  };
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-bold">AI 作文批改</h1>
-          <p className="text-muted-foreground">上傳你的英文作文，獲得即時 AI 評分與改進建議</p>
+          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+            <FileText className="h-8 w-8" />
+            作文練習與 AI 批改
+          </h1>
+          <p className="text-muted-foreground">選擇題目、撰寫作文，獲得即時 AI 回饋與改進建議</p>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Input Section */}
-          <div>
+        {/* Prompt Selection */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>選擇作文題目</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <Select value={selectedPromptId} onValueChange={setSelectedPromptId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MOCK_ESSAY_PROMPTS.map((prompt) => (
+                      <SelectItem key={prompt.id} value={prompt.id}>
+                        {prompt.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button variant="outline" onClick={loadExample} disabled={showExample}>
+                載入範例作文
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Main Content */}
+        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+          {/* Left: Writing Area */}
+          <div className="space-y-4">
+            {/* Prompt Card */}
             <Card>
               <CardHeader>
-                <CardTitle>作文內容</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  {selectedPrompt.title}
+                </CardTitle>
                 <CardDescription>
-                  請輸入或貼上你的英文作文（建議 120-180 字）
+                  字數：{selectedPrompt.wordLimit.min}-{selectedPrompt.wordLimit.max} 字
+                  {selectedPrompt.timeLimit && ` | 建議時間：${selectedPrompt.timeLimit} 分鐘`}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea
-                  placeholder="Write your essay here..."
-                  value={essayText}
-                  onChange={(e) => setEssayText(e.target.value)}
-                  rows={15}
-                  className="resize-none"
-                />
-                
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    字數: <span className="font-semibold text-foreground">{wordCount}</span>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-muted/30 p-4 rounded-lg">
+                    <p className="leading-relaxed">{selectedPrompt.prompt}</p>
                   </div>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={isAnalyzing || !essayText.trim()}
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                        分析中...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        開始批改
-                      </>
-                    )}
-                  </Button>
-                </div>
 
-                <div className="rounded-lg border border-border bg-muted/50 p-4">
-                  <div className="flex items-start gap-2">
-                    <Upload className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium mb-1">上傳 PDF/圖片</p>
-                      <p className="text-muted-foreground text-xs">
-                        {/* TODO: Implement file upload */}
-                        支援 PDF、JPG、PNG 格式（即將推出）
+                  {selectedPrompt.hints && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <Lightbulb className="h-4 w-4 text-warning" />
+                        寫作提示：
                       </p>
+                      <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                        {selectedPrompt.hints.map((hint, idx) => (
+                          <li key={idx}>{hint}</li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
+
+            {/* Writing Area */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>作文內容</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={isWithinLimit ? 'default' : 'destructive'}>
+                      {wordCount} 字
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      / {selectedPrompt.wordLimit.min}-{selectedPrompt.wordLimit.max}
+                    </span>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {!gradingResult ? (
+                  <Textarea
+                    placeholder="請開始撰寫你的英文作文..."
+                    value={essayContent}
+                    onChange={(e) => setEssayContent(e.target.value)}
+                    rows={20}
+                    className="resize-none font-mono"
+                  />
+                ) : (
+                  <ScrollArea className="h-[500px] border rounded-lg p-4">
+                    {renderHighlightedText()}
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={handleReset} disabled={isGrading}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                重新開始
+              </Button>
+              <Button
+                onClick={handleGrade}
+                disabled={isGrading || !essayContent.trim()}
+                className="gap-2"
+              >
+                {isGrading ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                    批改中...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    送出批改
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {showExample && (
+              <Alert>
+                <Sparkles className="h-4 w-4" />
+                <AlertDescription>
+                  已載入範例作文，點擊「送出批改」即可查看 AI 批改結果（Mock）
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
-          {/* Results Section */}
-          <div>
-            {result ? (
-              <div className="space-y-6">
-                {/* Score Card */}
-                <Card className="border-2 border-primary">
+          {/* Right: AI Feedback */}
+          <div className="space-y-4">
+            {!gradingResult ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5" />
+                    AI 批改結果
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>完成作文後點擊「送出批改」</p>
+                    <p className="text-sm">即可獲得即時 AI 回饋</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Overall Score */}
+                <Card className="border-primary">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span>AI 評分</span>
-                      <Badge className="text-lg px-4 py-1">
-                        {result.score} / {result.maxScore}
+                      <span className="flex items-center gap-2">
+                        <Target className="h-5 w-5" />
+                        總評
+                      </span>
+                      <Badge variant="default" className="text-lg px-4 py-1">
+                        {gradingResult.level}
                       </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center text-5xl font-bold text-primary">
-                      {Math.round((result.score / result.maxScore) * 100)}
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <div className="text-5xl font-bold text-primary mb-2">
+                          {gradingResult.overall_score}
+                        </div>
+                        <p className="text-sm text-muted-foreground">/ 100 分</p>
+                      </div>
+
+                      <Progress value={gradingResult.overall_score} className="h-3" />
+
+                      <div className="text-sm text-muted-foreground">
+                        <p>{gradingResult.summary}</p>
+                      </div>
                     </div>
-                    <p className="text-center text-sm text-muted-foreground mt-2">
-                      整體表現
-                    </p>
                   </CardContent>
                 </Card>
 
-                {/* Strengths */}
+                {/* Rubric Scores */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-success">
-                      <CheckCircle2 className="h-5 w-5" />
-                      優點
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      評分細項
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-2">
-                      {result.strengths.map((strength: string, index: number) => (
-                        <li key={index} className="flex items-start gap-2 text-sm">
-                          <span className="text-success mt-1">✓</span>
-                          <span>{strength}</span>
-                        </li>
+                    <div className="space-y-4">
+                      {Object.entries(gradingResult.rubric).map(([key, value]) => (
+                        <div key={key} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {key === 'TaskResponse' && '內容完整性'}
+                              {key === 'Coherence' && '結構組織'}
+                              {key === 'LexicalResource' && '用詞精準度'}
+                              {key === 'Grammar' && '文法正確性'}
+                              {key === 'Creativity' && '創意表達'}
+                            </span>
+                            <Badge variant="outline">
+                              {value.score} / {value.maxScore}
+                            </Badge>
+                          </div>
+                          <Progress value={(value.score / value.maxScore) * 100} className="h-2" />
+                          <p className="text-xs text-muted-foreground">{value.comment}</p>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* Improvements */}
+                {/* Strengths & Weaknesses */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-warning">
-                      <AlertCircle className="h-5 w-5" />
-                      改進建議
+                    <CardTitle className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5" />
+                      優缺點分析
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-2">
-                      {result.improvements.map((improvement: string, index: number) => (
-                        <li key={index} className="flex items-start gap-2 text-sm">
-                          <span className="text-warning mt-1">→</span>
-                          <span>{improvement}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <Tabs defaultValue="strengths">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="strengths">優點</TabsTrigger>
+                        <TabsTrigger value="weaknesses">待改進</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="strengths" className="space-y-2 mt-4">
+                        {gradingResult.strengths.map((strength, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-sm">
+                            <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                            <span>{strength}</span>
+                          </div>
+                        ))}
+                      </TabsContent>
+                      <TabsContent value="weaknesses" className="space-y-2 mt-4">
+                        {gradingResult.weaknesses.map((weakness, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-sm">
+                            <AlertCircle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
+                            <span>{weakness}</span>
+                          </div>
+                        ))}
+                      </TabsContent>
+                    </Tabs>
                   </CardContent>
                 </Card>
-              </div>
-            ) : (
-              <Card className="h-full flex items-center justify-center bg-muted/30">
-                <CardContent className="text-center py-12">
-                  <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    輸入作文後點擊「開始批改」
-                    <br />
-                    AI 將為你提供詳細分析
-                  </p>
-                </CardContent>
-              </Card>
+
+                {/* Detailed Feedback Tabs */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Lightbulb className="h-5 w-5" />
+                      詳細回饋
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs defaultValue="highlights">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="highlights">錯誤標註</TabsTrigger>
+                        <TabsTrigger value="fixes">改寫建議</TabsTrigger>
+                        <TabsTrigger value="advice">重點提醒</TabsTrigger>
+                      </TabsList>
+
+                      {/* Highlights */}
+                      <TabsContent value="highlights" className="space-y-3 mt-4">
+                        <ScrollArea className="h-[300px]">
+                          {gradingResult.highlights.map((highlight, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3 border rounded-lg mb-3 space-y-2 bg-muted/30"
+                            >
+                              <div className="flex items-center gap-2">
+                                {getSeverityIcon(highlight.severity)}
+                                <Badge variant="outline" className="text-xs">
+                                  {highlight.type}
+                                </Badge>
+                              </div>
+                              <p className="text-sm font-medium">
+                                "{essayContent.slice(highlight.start, highlight.end)}"
+                              </p>
+                              <p className="text-xs text-muted-foreground">{highlight.note}</p>
+                              {highlight.suggestion && (
+                                <p className="text-xs text-success">
+                                  建議：{highlight.suggestion}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </ScrollArea>
+                      </TabsContent>
+
+                      {/* Sentence Fixes */}
+                      <TabsContent value="fixes" className="space-y-3 mt-4">
+                        <ScrollArea className="h-[300px]">
+                          {gradingResult.suggestions.sentence_fixes.map((fix, idx) => (
+                            <div key={idx} className="p-3 border rounded-lg mb-3 space-y-2">
+                              <Badge variant="secondary" className="text-xs">
+                                {fix.category}
+                              </Badge>
+                              <div className="space-y-1">
+                                <p className="text-sm">
+                                  <span className="text-muted-foreground">原句：</span>
+                                  <span className="text-destructive ml-1">"{fix.original}"</span>
+                                </p>
+                                <p className="text-sm">
+                                  <span className="text-muted-foreground">改寫：</span>
+                                  <span className="text-success ml-1">"{fix.improved}"</span>
+                                </p>
+                              </div>
+                              <p className="text-xs text-muted-foreground">💡 {fix.why}</p>
+                            </div>
+                          ))}
+                        </ScrollArea>
+                      </TabsContent>
+
+                      {/* Top Advice */}
+                      <TabsContent value="advice" className="space-y-3 mt-4">
+                        <ScrollArea className="h-[300px]">
+                          {gradingResult.suggestions.top_advice.map((advice, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-start gap-3 p-3 bg-primary/5 rounded-lg mb-3"
+                            >
+                              <div className="bg-primary text-primary-foreground rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                {idx + 1}
+                              </div>
+                              <p className="text-sm">{advice}</p>
+                            </div>
+                          ))}
+
+                          {gradingResult.suggestions.paragraph_comments.length > 0 && (
+                            <>
+                              <Separator className="my-4" />
+                              <h4 className="font-semibold text-sm mb-3">段落評論</h4>
+                              {gradingResult.suggestions.paragraph_comments.map((para, idx) => (
+                                <div key={idx} className="p-3 border rounded-lg mb-3 space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <Badge>第 {para.paraIndex + 1} 段</Badge>
+                                  </div>
+                                  <p className="text-sm">{para.comment}</p>
+                                  {para.strength && (
+                                    <p className="text-xs text-success">✓ {para.strength}</p>
+                                  )}
+                                  {para.improvement && (
+                                    <p className="text-xs text-warning">! {para.improvement}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </>
+                          )}
+                        </ScrollArea>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              </>
             )}
           </div>
         </div>
