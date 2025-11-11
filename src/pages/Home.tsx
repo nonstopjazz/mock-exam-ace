@@ -45,10 +45,10 @@ const Home = () => {
               <Button
                 size="lg"
                 className="text-lg h-12 px-8"
-                onClick={() => navigate("/exam")}
+                onClick={() => navigate("/exams")}
               >
                 <BookOpen className="mr-2 h-5 w-5" />
-                開始模擬考
+                選擇試題
               </Button>
               <Button
                 size="lg"
@@ -99,7 +99,7 @@ const Home = () => {
             size="lg"
             variant="secondary"
             className="text-lg h-12 px-8"
-            onClick={() => navigate("/exam")}
+            onClick={() => navigate("/exams")}
           >
             <PenTool className="mr-2 h-5 w-5" />
             立即開始

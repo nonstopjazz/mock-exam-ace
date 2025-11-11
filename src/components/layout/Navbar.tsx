@@ -13,11 +13,11 @@ export const Navbar = () => {
 
         <div className="flex items-center gap-6">
           <NavLink
-            to="/exam"
+            to="/exams"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
             activeClassName="text-primary"
           >
-            開始模考
+            選擇試題
           </NavLink>
           <NavLink
             to="/dashboard"
