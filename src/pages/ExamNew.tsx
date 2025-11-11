@@ -46,10 +46,10 @@ const ExamNew = () => {
 
   // Initialize exam on mount
   useEffect(() => {
-    if (!startTime) {
+    if (!examPaper) {
       startExam(MOCK_EXAM_PAPER);
     }
-  }, []);
+  }, [examPaper, startExam]);
 
   // Timer countdown
   useEffect(() => {
