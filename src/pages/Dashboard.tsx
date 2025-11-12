@@ -103,14 +103,14 @@ const Dashboard = () => {
           label: '主題正確率',
           data: mainAccuracies,
           backgroundColor: [
-            'hsl(var(--primary) / 0.8)',
-            'hsl(var(--secondary) / 0.8)',
-            'hsl(var(--accent) / 0.8)',
-            'hsl(var(--success) / 0.8)',
-            'hsl(var(--warning) / 0.8)',
+            'rgba(59, 130, 246, 0.8)',   // 藍色
+            'rgba(168, 85, 247, 0.8)',   // 紫色
+            'rgba(236, 72, 153, 0.8)',   // 粉色
+            'rgba(34, 197, 94, 0.8)',    // 綠色
+            'rgba(251, 146, 60, 0.8)',   // 橙色
           ],
           borderWidth: 2,
-          borderColor: 'hsl(var(--background))',
+          borderColor: '#ffffff',
         },
         {
           label: '子題正確率',
@@ -118,14 +118,14 @@ const Dashboard = () => {
           backgroundColor: [
             ...Array(mainTopics.length).fill('transparent'),
             ...subAccuracies.map((acc) => {
-              if (acc >= 85) return 'hsl(var(--success) / 0.7)';
-              if (acc >= 70) return 'hsl(var(--primary) / 0.7)';
-              if (acc >= 60) return 'hsl(var(--warning) / 0.7)';
-              return 'hsl(var(--destructive) / 0.7)';
+              if (acc >= 85) return 'rgba(34, 197, 94, 0.75)';   // 優秀
+              if (acc >= 70) return 'rgba(59, 130, 246, 0.75)';  // 良好
+              if (acc >= 60) return 'rgba(251, 191, 36, 0.75)';  // 加強
+              return 'rgba(239, 68, 68, 0.75)';                   // 待改善
             }),
           ],
           borderWidth: 2,
-          borderColor: 'hsl(var(--background))',
+          borderColor: '#ffffff',
         },
       ],
       tooltips: [...Array(mainTopics.length).fill(''), ...subTooltips],
@@ -356,10 +356,10 @@ const Dashboard = () => {
                           labels: {
                             generateLabels: (chart) => {
                               return [
-                                { text: '≥85% 優秀', fillStyle: 'hsl(var(--success))' },
-                                { text: '70-84% 良好', fillStyle: 'hsl(var(--primary))' },
-                                { text: '60-69% 需加強', fillStyle: 'hsl(var(--warning))' },
-                                { text: '<60% 待改善', fillStyle: 'hsl(var(--destructive))' },
+                                { text: '≥85% 優秀', fillStyle: 'rgba(34, 197, 94, 0.75)' },
+                                { text: '70-84% 良好', fillStyle: 'rgba(59, 130, 246, 0.75)' },
+                                { text: '60-69% 需加強', fillStyle: 'rgba(251, 191, 36, 0.75)' },
+                                { text: '<60% 待改善', fillStyle: 'rgba(239, 68, 68, 0.75)' },
                               ];
                             },
                           },
