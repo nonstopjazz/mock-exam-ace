@@ -12,6 +12,14 @@ import Essay from "./pages/Essay";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
+// Galaxy Quest (遊戲化練習)
+import PracticeIndex from "./pages/practice/Index";
+import PracticeQuests from "./pages/practice/Quests";
+import PracticeQuest from "./pages/practice/Quest";
+import PracticeAchievements from "./pages/practice/Achievements";
+import PracticeShop from "./pages/practice/Shop";
+import PracticeProfile from "./pages/practice/Profile";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -28,6 +36,15 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/essay" element={<Essay />} />
           <Route path="/admin" element={<Admin />} />
+
+          {/* Galaxy Quest - 遊戲化每日練習 */}
+          <Route path="/practice" element={<PracticeIndex />} />
+          <Route path="/practice/quests" element={<PracticeQuests />} />
+          <Route path="/practice/quest/:lessonId" element={<PracticeQuest />} />
+          <Route path="/practice/achievements" element={<PracticeAchievements />} />
+          <Route path="/practice/shop" element={<PracticeShop />} />
+          <Route path="/practice/profile" element={<PracticeProfile />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

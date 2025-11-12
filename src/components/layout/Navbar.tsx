@@ -1,6 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LayoutDashboard, PenTool, Settings } from "lucide-react";
+import { BookOpen, LayoutDashboard, PenTool, Settings, Gamepad2 } from "lucide-react";
 
 export const Navbar = () => {
   return (
@@ -18,6 +18,14 @@ export const Navbar = () => {
             activeClassName="text-primary"
           >
             選擇試題
+          </NavLink>
+          <NavLink
+            to="/practice"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            activeClassName="text-primary"
+          >
+            <Gamepad2 className="h-4 w-4" />
+            每日練習
           </NavLink>
           <NavLink
             to="/dashboard"
