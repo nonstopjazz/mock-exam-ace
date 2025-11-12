@@ -1,15 +1,16 @@
+import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { StatCard } from "@/components/galaxy/StatCard";
 import { ProgressBar } from "@/components/galaxy/ProgressBar";
 import { useNavigate } from "react-router-dom";
-import { 
-  Compass, 
-  Gem, 
-  Trophy, 
-  MapPin, 
-  Sparkles, 
+import {
+  Compass,
+  Gem,
+  Trophy,
+  MapPin,
+  Sparkles,
   BookOpen,
   Target,
   Award
@@ -28,7 +29,8 @@ const Index = () => {
   const lessonsCompleted = 45;
 
   return (
-    <div className="min-h-screen bg-background">
+    <Layout>
+      <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div 
@@ -195,7 +197,8 @@ const Index = () => {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </Layout>
   );
 };
 

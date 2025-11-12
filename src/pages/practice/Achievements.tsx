@@ -1,3 +1,4 @@
+import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -58,6 +59,7 @@ const Achievements = () => {
   }, [achievements, selectedCategory]);
 
   return (
+    <Layout>
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -147,7 +149,8 @@ const Achievements = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+      </div>
+    </Layout>
   );
 };
 
@@ -167,6 +170,7 @@ const BadgeGrid = ({
     );
   }
   return (
+    <Layout>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {achievements.map((achievement) => {
         const Icon = achievement.icon;
@@ -248,7 +252,8 @@ const BadgeGrid = ({
           </Card>
         );
       })}
-    </div>
+      </div>
+    </Layout>
   );
 };
 
