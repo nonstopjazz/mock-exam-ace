@@ -58,19 +58,19 @@ const Index = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
-                onClick={() => navigate("/quests")}
+                onClick={() => navigate("/practice/quests")}
               >
                 <Compass className="mr-2 h-5 w-5" />
                 開始冒險
               </Button>
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 variant="outline"
                 className="border-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground px-8 py-6 text-lg transition-all duration-300"
-                onClick={() => navigate("/quests")}
+                onClick={() => navigate("/practice/quests")}
               >
                 <MapPin className="mr-2 h-5 w-5" />
                 查看地圖
@@ -146,10 +146,10 @@ const Index = () => {
             <p className="text-muted-foreground max-w-xl mx-auto">
               繼續你的冒險，在 WordQuest 編年史中解鎖新領域
             </p>
-            <Button 
+            <Button
               size="lg"
               className="bg-accent hover:bg-accent/90 text-accent-foreground mt-4"
-              onClick={() => navigate("/quests")}
+              onClick={() => navigate("/practice/quests")}
             >
               繼續學習
             </Button>

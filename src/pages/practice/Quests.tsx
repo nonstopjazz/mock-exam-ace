@@ -196,7 +196,7 @@ const Quests = () => {
                     className="w-full"
                     variant={isComplete ? "outline" : "default"}
                     disabled={territory.isLocked}
-                    onClick={() => !territory.isLocked && navigate(`/quest/${territory.id}`)}
+                    onClick={() => !territory.isLocked && navigate(`/practice/quest/${territory.id}`)}
                   >
                     {territory.isLocked ? (
                       <>
