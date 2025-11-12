@@ -289,12 +289,12 @@ const Quest = () => {
   };
 
   const handleQuestComplete = () => {
-    navigate("/quests");
+    navigate("/practice/quests");
   };
 
   const handleExit = () => {
     if (window.confirm("Are you sure you want to exit? Your progress will be saved.")) {
-      navigate("/quests");
+      navigate("/practice/quests");
     }
   };
 

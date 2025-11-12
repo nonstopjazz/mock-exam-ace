@@ -1,3 +1,4 @@
+import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -105,7 +106,8 @@ const Quests = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <Layout>
+      <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -194,7 +196,7 @@ const Quests = () => {
                     className="w-full"
                     variant={isComplete ? "outline" : "default"}
                     disabled={territory.isLocked}
-                    onClick={() => !territory.isLocked && navigate(`/quest/${territory.id}`)}
+                    onClick={() => !territory.isLocked && navigate(`/practice/quest/${territory.id}`)}
                   >
                     {territory.isLocked ? (
                       <>
@@ -224,7 +226,8 @@ const Quests = () => {
           })}
         </div>
       </div>
-    </div>
+      </div>
+    </Layout>
   );
 };
 
