@@ -1,4 +1,3 @@
-import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -177,7 +176,6 @@ const Shop = () => {
   };
 
   return (
-    <Layout>
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -241,8 +239,7 @@ const Shop = () => {
           </div>
         </Card>
       </div>
-      </div>
-    </Layout>
+    </div>
   );
 };
 
