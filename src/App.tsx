@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/galaxy/AppSidebar";
+import { Navbar } from "./components/layout/Navbar";
 import Home from "./pages/Home";
 import ExamList from "./pages/ExamList";
 import ExamNew from "./pages/ExamNew";
@@ -45,28 +46,31 @@ const App = () => (
 
           {/* Galaxy Quest - All other pages with sidebar */}
           <Route path="/practice/*" element={
-            <SidebarProvider>
-              <div className="flex min-h-screen w-full">
-                <AppSidebar />
-                <div className="flex-1 flex flex-col">
-                  <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 backdrop-blur-sm bg-background/95">
-                    <SidebarTrigger className="-ml-1" />
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-semibold text-foreground">WordQuest 編年史</h2>
-                    </div>
-                  </header>
-                  <main className="flex-1">
-                    <Routes>
-                      <Route path="/" element={<PracticeIndex />} />
-                      <Route path="/quests" element={<PracticeQuests />} />
-                      <Route path="/achievements" element={<PracticeAchievements />} />
-                      <Route path="/shop" element={<PracticeShop />} />
-                      <Route path="/profile" element={<PracticeProfile />} />
-                    </Routes>
-                  </main>
+            <>
+              <Navbar />
+              <SidebarProvider>
+                <div className="flex min-h-screen w-full">
+                  <AppSidebar />
+                  <div className="flex-1 flex flex-col">
+                    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 backdrop-blur-sm bg-background/95">
+                      <SidebarTrigger className="-ml-1" />
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-semibold text-foreground">WordQuest 編年史</h2>
+                      </div>
+                    </header>
+                    <main className="flex-1">
+                      <Routes>
+                        <Route path="/" element={<PracticeIndex />} />
+                        <Route path="/quests" element={<PracticeQuests />} />
+                        <Route path="/achievements" element={<PracticeAchievements />} />
+                        <Route path="/shop" element={<PracticeShop />} />
+                        <Route path="/profile" element={<PracticeProfile />} />
+                      </Routes>
+                    </main>
+                  </div>
                 </div>
-              </div>
-            </SidebarProvider>
+              </SidebarProvider>
+            </>
           } />
 
           <Route path="*" element={<NotFound />} />
