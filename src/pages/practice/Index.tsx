@@ -1,4 +1,3 @@
-import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -29,8 +28,7 @@ const Index = () => {
   const lessonsCompleted = 45;
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div 
@@ -197,8 +195,7 @@ const Index = () => {
           </div>
         </div>
       </section>
-      </div>
-    </Layout>
+    </div>
   );
 };
 

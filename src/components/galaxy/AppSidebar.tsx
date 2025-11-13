@@ -1,5 +1,5 @@
 import { Home, Map, Trophy, ShoppingBag, User, Menu } from "lucide-react";
-import { NavLink } from "@/components/galaxy/NavLink";
+import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -14,11 +14,11 @@ import {
 } from "@/components/ui/sidebar";
 
 const navigationItems = [
-  { title: "首頁", url: "/", icon: Home },
-  { title: "任務地圖", url: "/quests", icon: Map },
-  { title: "成就", url: "/achievements", icon: Trophy },
-  { title: "寶石商店", url: "/shop", icon: ShoppingBag },
-  { title: "個人檔案", url: "/profile", icon: User },
+  { title: "首頁", url: "/practice", icon: Home },
+  { title: "任務地圖", url: "/practice/quests", icon: Map },
+  { title: "成就", url: "/practice/achievements", icon: Trophy },
+  { title: "寶石商店", url: "/practice/shop", icon: ShoppingBag },
+  { title: "個人檔案", url: "/practice/profile", icon: User },
 ];
 
 export function AppSidebar() {
@@ -26,7 +26,7 @@ export function AppSidebar() {
   const location = useLocation();
 
   const isActive = (path: string) => {
-    if (path === "/") return location.pathname === "/";
+    if (path === "/practice") return location.pathname === "/practice";
     return location.pathname.startsWith(path);
   };
 
@@ -62,7 +62,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
-                        end={item.url === "/"}
+                        end={item.url === "/practice"}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           active
                             ? "bg-primary/10 text-primary font-medium"

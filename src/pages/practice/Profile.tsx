@@ -1,4 +1,3 @@
-import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +69,6 @@ const Profile = () => {
   ];
 
   return (
-    <Layout>
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Profile Header */}
@@ -302,8 +300,7 @@ const Profile = () => {
           </TabsContent>
         </Tabs>
       </div>
-      </div>
-    </Layout>
+    </div>
   );
 };
 
