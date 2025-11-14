@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { QuestionRenderer } from "@/components/exam/QuestionRenderer";
 import { AnswerMap } from "@/components/exam/AnswerMap";
 import { useExamStore } from "@/store/examStore";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Clock, AlertCircle, Save } from "lucide-react";
+import { Clock, AlertCircle, Save, Info } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +26,10 @@ import { useToast } from "@/hooks/use-toast";
 const ExamNew = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const hasContent = searchParams.get('hasContent') === 'true';
+  const examId = searchParams.get('id');
+
   const {
     examPaper,
     answers,
@@ -149,6 +153,23 @@ const ExamNew = () => {
   return (
     <Layout showFooter={false}>
       <div className="container mx-auto px-4 py-6">
+        {/* Copyright Notice for Mock Exams */}
+        {!hasContent && (
+          <Card className="mb-6 border-amber-200 bg-amber-50">
+            <CardContent className="pt-6">
+              <div className="flex gap-3">
+                <Info className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-amber-900 mb-1">計時模式</p>
+                  <p className="text-sm text-amber-800">
+                    因版權考量，本系統僅提供計時功能。請準備紙本題目作答，完成後可輸入答案查看詳解。
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Header with Timer */}
         <div className="mb-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-card p-4 rounded-lg border">
           <div className="flex-1">
@@ -203,11 +224,42 @@ const ExamNew = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <QuestionRenderer
-                  question={currentQuestion}
-                  answer={answers[currentQuestion.id]}
-                  onAnswerChange={handleAnswerChange}
-                />
+                {hasContent ? (
+                  <QuestionRenderer
+                    question={currentQuestion}
+                    answer={answers[currentQuestion.id]}
+                    onAnswerChange={handleAnswerChange}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-muted-foreground mb-4">
+                      請參考紙本題目作答，並在此輸入您的答案：
+                    </p>
+                    {currentQuestion.type === 'multiple-choice' && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium mb-3">選擇答案：</p>
+                        <div className="flex flex-wrap gap-2">
+                          {['A', 'B', 'C', 'D'].map((option) => (
+                            <Button
+                              key={option}
+                              variant={answers[currentQuestion.id] === option ? "default" : "outline"}
+                              onClick={() => handleAnswerChange(option)}
+                              className="w-16 h-16 text-xl font-semibold"
+                            >
+                              {option}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {currentQuestion.type !== 'multiple-choice' && (
+                      <div className="p-8 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                        <p>此題型需參考紙本題目作答</p>
+                        <p className="text-sm mt-2">完成後交卷即可查看詳解</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

@@ -11,9 +11,8 @@ const ExamList = () => {
   const navigate = useNavigate();
 
   const handleStartExam = (exam: ExamListItem) => {
-    // TODO: Load specific exam based on exam.id
-    // For now, navigate to the exam page
-    navigate('/exam');
+    // Navigate with exam info as query params
+    navigate(`/exam?id=${exam.id}&hasContent=${exam.hasContent}`);
   };
 
   const renderExamCard = (exam: ExamListItem) => (
