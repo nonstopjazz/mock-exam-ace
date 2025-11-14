@@ -31,20 +31,20 @@ const Home = () => {
       <section className="bg-gradient-to-br from-primary/5 via-secondary/5 to-background">
         <div className="container mx-auto px-4 py-20">
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="mb-6 text-5xl font-bold tracking-tight">
+            <h1 className="mb-6 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
               學測英文
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 {" "}模擬考系統
               </span>
             </h1>
-            <p className="mb-8 text-xl text-muted-foreground">
+            <p className="mb-8 text-base sm:text-lg md:text-xl text-muted-foreground">
               真實模擬、精準分析、有效提升 — 你的學測英文得分夥伴
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="lg"
-                className="text-lg h-12 px-8"
+                className="text-base sm:text-lg h-10 sm:h-12 px-6 sm:px-8"
                 onClick={() => navigate("/exams")}
               >
                 <BookOpen className="mr-2 h-5 w-5" />
@@ -53,7 +53,7 @@ const Home = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="text-lg h-12 px-8"
+                className="text-base sm:text-lg h-10 sm:h-12 px-6 sm:px-8"
                 onClick={() => navigate("/dashboard")}
               >
                 <BarChart3 className="mr-2 h-5 w-5" />
@@ -68,7 +68,7 @@ const Home = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold">核心功能</h2>
+            <h2 className="mb-4 text-2xl sm:text-3xl font-bold">核心功能</h2>
             <p className="text-muted-foreground">專為學測英文設計的完整解決方案</p>
           </div>
 

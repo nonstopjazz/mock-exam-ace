@@ -68,7 +68,7 @@ const ExamList = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">選擇試題</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">選擇試題</h1>
           <p className="text-muted-foreground">
             選擇歷屆試題作答，或使用模擬考題進行計時練習
           </p>
@@ -77,7 +77,7 @@ const ExamList = () => {
         {/* 歷屆試題 Section */}
         <section className="mb-12">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-2">歷屆試題</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">歷屆試題</h2>
             <p className="text-muted-foreground">
               完整的學測歷屆考題，包含所有題目與詳細解析
             </p>
@@ -90,7 +90,7 @@ const ExamList = () => {
         {/* 模擬考題 Section */}
         <section>
           <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-2">模擬考題</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">模擬考題</h2>
             <p className="text-muted-foreground">
               各區模擬考試題，提供計時功能與答題統計（需搭配紙本題目）
             </p>

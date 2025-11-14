@@ -44,21 +44,21 @@ const Index = () => {
               WordQuest 編年史
             </Badge>
             
-            <h1 className="text-5xl md:text-7xl font-bold text-foreground leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
               展開你的
               <span className="block bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                 英語冒險之旅
               </span>
             </h1>
-            
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
+
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
               透過史詩級任務精通英語，收集珍貴寶石，解鎖傳奇成就
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 onClick={() => navigate("/practice/quests")}
               >
                 <Compass className="mr-2 h-5 w-5" />
@@ -67,7 +67,7 @@ const Index = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground px-8 py-6 text-lg transition-all duration-300"
+                className="border-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg transition-all duration-300"
                 onClick={() => navigate("/practice/quests")}
               >
                 <MapPin className="mr-2 h-5 w-5" />
@@ -82,7 +82,7 @@ const Index = () => {
       <section className="container mx-auto px-4 py-16">
         <div className="max-w-6xl mx-auto space-y-8">
           <div className="text-center space-y-2">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
               你的探險者檔案
             </h2>
             <p className="text-muted-foreground">追蹤你在 WordQuest 世界的旅程</p>
@@ -96,7 +96,7 @@ const Index = () => {
                   <Award className="h-8 w-8 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-foreground">等級 {explorerLevel}</h3>
+                  <h3 className="text-xl sm:text-2xl font-bold text-foreground">等級 {explorerLevel}</h3>
                   <p className="text-sm text-muted-foreground">詞彙探索者</p>
                 </div>
               </div>
@@ -140,7 +140,7 @@ const Index = () => {
           {/* Quick Actions */}
           <div className="bg-gradient-to-br from-accent/10 to-primary/10 border border-accent/20 rounded-xl p-8 text-center space-y-4">
             <Target className="h-12 w-12 text-accent mx-auto" />
-            <h3 className="text-2xl font-bold text-foreground">準備好下一個任務了嗎？</h3>
+            <h3 className="text-xl sm:text-2xl font-bold text-foreground">準備好下一個任務了嗎？</h3>
             <p className="text-muted-foreground max-w-xl mx-auto">
               繼續你的冒險，在 WordQuest 編年史中解鎖新領域
             </p>
@@ -159,7 +159,7 @@ const Index = () => {
       <section className="bg-muted/30 py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-12">
               你的冒險在等待
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
