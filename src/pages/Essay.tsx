@@ -161,8 +161,8 @@ const Essay = () => {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-            <FileText className="h-8 w-8" />
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-2">
+            <FileText className="h-6 w-6 sm:h-8 sm:w-8" />
             作文練習與 AI 批改
           </h1>
           <p className="text-muted-foreground">選擇題目、撰寫作文，獲得即時 AI 回饋與改進建議</p>
@@ -338,7 +338,7 @@ const Essay = () => {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="text-center">
-                        <div className="text-5xl font-bold text-primary mb-2">
+                        <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary mb-2">
                           {gradingResult.overall_score}
                         </div>
                         <p className="text-sm text-muted-foreground">/ 100 分</p>

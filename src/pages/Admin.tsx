@@ -38,7 +38,7 @@ const Admin = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="mb-2 text-3xl font-bold">管理後台</h1>
+            <h1 className="mb-2 text-2xl sm:text-3xl font-bold">管理後台</h1>
             <p className="text-muted-foreground">管理試卷、題目與系統設定</p>
           </div>
           <Badge variant="outline" className="text-sm">

@@ -243,7 +243,7 @@ const ExamResult = () => {
             <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success">
               <Trophy className="h-8 w-8" />
             </div>
-            <h1 className="mb-2 text-4xl font-bold">考試完成！</h1>
+            <h1 className="mb-2 text-2xl sm:text-3xl md:text-4xl font-bold">考試完成！</h1>
             <p className="text-muted-foreground">模擬考試 ID: {attemptId}</p>
           </div>
 
@@ -254,7 +254,7 @@ const ExamResult = () => {
                 <CardTitle className="text-sm text-muted-foreground">總分</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`text-4xl font-bold ${getScoreColor(grading.totalScore, grading.maxScore)}`}>
+                <div className={`text-2xl sm:text-3xl md:text-4xl font-bold ${getScoreColor(grading.totalScore, grading.maxScore)}`}>
                   {grading.totalScore}
                 </div>
                 <p className="text-sm text-muted-foreground">/ {grading.maxScore} 分</p>
@@ -269,7 +269,7 @@ const ExamResult = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-success">
+                <div className="text-2xl sm:text-3xl font-bold text-success">
                   {grading.correctCount}
                 </div>
                 <p className="text-sm text-muted-foreground">/ {allQuestions.length} 題</p>
@@ -284,7 +284,7 @@ const ExamResult = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-destructive">
+                <div className="text-2xl sm:text-3xl font-bold text-destructive">
                   {grading.wrongCount}
                 </div>
                 <p className="text-sm text-muted-foreground">題</p>
@@ -299,7 +299,7 @@ const ExamResult = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">
+                <div className="text-2xl sm:text-3xl font-bold">
                   {Math.floor(timingSummary.reduce((sum, t) => sum + t.timeSpent, 0) / 60)}
                 </div>
                 <p className="text-sm text-muted-foreground">分鐘</p>

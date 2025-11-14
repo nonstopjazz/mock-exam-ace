@@ -202,7 +202,7 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">學習儀表板</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">學習儀表板</h1>
           <p className="text-muted-foreground">追蹤你的學習進度與分析弱點</p>
         </div>
 
@@ -277,7 +277,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">83.5</div>
+              <div className="text-2xl sm:text-3xl font-bold text-primary">83.5</div>
               <p className="text-sm text-muted-foreground">/ 100 分</p>
             </CardContent>
           </Card>
@@ -290,7 +290,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-success">90</div>
+              <div className="text-2xl sm:text-3xl font-bold text-success">90</div>
               <p className="text-sm text-muted-foreground">近期最佳</p>
             </CardContent>
           </Card>
@@ -303,7 +303,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">8</div>
+              <div className="text-2xl sm:text-3xl font-bold">8</div>
               <p className="text-sm text-muted-foreground">次模考</p>
             </CardContent>
           </Card>
@@ -316,7 +316,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">12.5</div>
+              <div className="text-2xl sm:text-3xl font-bold">12.5</div>
               <p className="text-sm text-muted-foreground">小時</p>
             </CardContent>
           </Card>
