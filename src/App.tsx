@@ -24,6 +24,8 @@ import PracticeShop from "./pages/practice/Shop";
 import PracticeProfile from "./pages/practice/Profile";
 import VocabularyHub from "./pages/practice/VocabularyHub";
 import SRSReview from "./pages/practice/SRSReview";
+import Flashcards from "./pages/practice/Flashcards";
+import QuickQuiz from "./pages/practice/QuickQuiz";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +71,8 @@ const App = () => (
                         <Route path="/profile" element={<PracticeProfile />} />
                         <Route path="/vocabulary" element={<VocabularyHub />} />
                         <Route path="/vocabulary/srs" element={<SRSReview />} />
+                        <Route path="/vocabulary/flashcards" element={<Flashcards />} />
+                        <Route path="/vocabulary/quiz" element={<QuickQuiz />} />
                       </Routes>
                     </main>
                   </div>
