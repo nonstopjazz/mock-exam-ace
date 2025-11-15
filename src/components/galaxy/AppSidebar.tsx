@@ -1,4 +1,4 @@
-import { Home, Map, Trophy, ShoppingBag, User, Menu } from "lucide-react";
+import { Home, Map, Trophy, ShoppingBag, User, Menu, BookOpen } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -16,6 +16,7 @@ import {
 const navigationItems = [
   { title: "首頁", url: "/practice", icon: Home },
   { title: "任務地圖", url: "/practice/quests", icon: Map },
+  { title: "單字複習", url: "/practice/vocabulary", icon: BookOpen },
   { title: "成就", url: "/practice/achievements", icon: Trophy },
   { title: "寶石商店", url: "/practice/shop", icon: ShoppingBag },
   { title: "個人檔案", url: "/practice/profile", icon: User },
