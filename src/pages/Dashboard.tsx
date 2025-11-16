@@ -41,6 +41,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import GrammarAnalysis from "@/components/dashboard/GrammarAnalysis";
+import GrammarDoughnut from "@/components/dashboard/GrammarDoughnut";
 
 ChartJS.register(
   ArcElement,
@@ -265,8 +266,12 @@ const Dashboard = () => {
             <TabsTrigger value="timing">耗時分析</TabsTrigger>
           </TabsList>
 
-          {/* 1. 文法主題分析 - 新版卡片式 + 摺疊列表 */}
-          <TabsContent value="grammar">
+          {/* 1. 文法主題分析 */}
+          <TabsContent value="grammar" className="space-y-6">
+            {/* 雙層同心圓：大分類 + 中分類 */}
+            <GrammarDoughnut />
+
+            {/* 詳細分析：卡片式 + 摺疊列表（170+ 子主題）*/}
             <GrammarAnalysis />
           </TabsContent>
 
