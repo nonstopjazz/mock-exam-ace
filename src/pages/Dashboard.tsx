@@ -26,6 +26,7 @@ import {
   MOCK_VOCABULARY_LEVELS,
   MOCK_QUESTION_TYPE_TIMING,
 } from '@/data/mock-analytics';
+import { GRAMMAR_TOPICS } from '@/data/grammar-topics';
 import {
   Table,
   TableBody,
@@ -187,9 +188,9 @@ const Dashboard = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">全部主題</SelectItem>
-                    {MOCK_GRAMMAR_TOPICS.map((topic) => (
-                      <SelectItem key={topic.mainTopic} value={topic.mainTopic}>
-                        {topic.mainTopic}
+                    {GRAMMAR_TOPICS.map((topic) => (
+                      <SelectItem key={topic.name} value={topic.name}>
+                        {topic.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
