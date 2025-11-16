@@ -19,19 +19,13 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Doughnut, Bar, Line } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
 import {
-  MOCK_GRAMMAR_TOPICS,
   MOCK_QUESTION_TYPE_SCORES,
   MOCK_EXAM_HISTORY,
   MOCK_VOCABULARY_LEVELS,
   MOCK_QUESTION_TYPE_TIMING,
 } from '@/data/mock-analytics';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import {
   Table,
   TableBody,
@@ -45,6 +39,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import GrammarAnalysis from "@/components/dashboard/GrammarAnalysis";
 
 ChartJS.register(
   ArcElement,
@@ -70,69 +65,6 @@ const Dashboard = () => {
   const [selectedTopic, setSelectedTopic] = useState<string>('all');
   const [timingMode, setTimingMode] = useState<'total' | 'average'>('average');
   const [expandedTiming, setExpandedTiming] = useState<string | null>(null);
-
-  // ===== 1. 文法主題同心圓圖 =====
-  const prepareGrammarDoughnutData = () => {
-    // 內圈：主題
-    const mainTopics = MOCK_GRAMMAR_TOPICS.map((t) => t.mainTopic);
-    const mainAccuracies = MOCK_GRAMMAR_TOPICS.map((t) => {
-      const avg =
-        t.subTopics.reduce((sum, st) => sum + st.accuracy, 0) / t.subTopics.length;
-      return Math.round(avg);
-    });
-
-    // 外圈：子題
-    const subTopics: string[] = [];
-    const subAccuracies: number[] = [];
-    const subTooltips: string[] = [];
-
-    MOCK_GRAMMAR_TOPICS.forEach((topic) => {
-      topic.subTopics.forEach((sub) => {
-        subTopics.push(`${topic.mainTopic}: ${sub.name}`);
-        subAccuracies.push(sub.accuracy);
-        subTooltips.push(
-          `${sub.recentPerformance}\n常錯：${sub.commonMistakes.join('、')}\n${sub.suggestion}`
-        );
-      });
-    });
-
-    return {
-      labels: [...mainTopics, ...subTopics],
-      datasets: [
-        {
-          label: '主題正確率',
-          data: mainAccuracies,
-          backgroundColor: [
-            'rgba(59, 130, 246, 0.8)',   // 藍色
-            'rgba(168, 85, 247, 0.8)',   // 紫色
-            'rgba(236, 72, 153, 0.8)',   // 粉色
-            'rgba(34, 197, 94, 0.8)',    // 綠色
-            'rgba(251, 146, 60, 0.8)',   // 橙色
-          ],
-          borderWidth: 2,
-          borderColor: '#ffffff',
-        },
-        {
-          label: '子題正確率',
-          data: [...Array(mainTopics.length).fill(0), ...subAccuracies],
-          backgroundColor: [
-            ...Array(mainTopics.length).fill('transparent'),
-            ...subAccuracies.map((acc) => {
-              if (acc >= 85) return 'rgba(34, 197, 94, 0.75)';   // 優秀
-              if (acc >= 70) return 'rgba(59, 130, 246, 0.75)';  // 良好
-              if (acc >= 60) return 'rgba(251, 191, 36, 0.75)';  // 加強
-              return 'rgba(239, 68, 68, 0.75)';                   // 待改善
-            }),
-          ],
-          borderWidth: 2,
-          borderColor: '#ffffff',
-        },
-      ],
-      tooltips: [...Array(mainTopics.length).fill(''), ...subTooltips],
-    };
-  };
-
-  const grammarData = prepareGrammarDoughnutData();
 
   // ===== 2. 各題型得分比率 =====
   const questionTypeScoreData = {
@@ -332,115 +264,9 @@ const Dashboard = () => {
             <TabsTrigger value="timing">耗時分析</TabsTrigger>
           </TabsList>
 
-          {/* 1. 文法主題同心圓 */}
+          {/* 1. 文法主題分析 - 新版卡片式 + 摺疊列表 */}
           <TabsContent value="grammar">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  文法主題熟練度分析
-                </CardTitle>
-                <CardDescription>
-                  內圈：主題平均；外圈：子題詳細（hover 查看建議）
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="max-w-xl mx-auto">
-                  <Doughnut
-                    data={grammarData}
-                    options={{
-                      responsive: true,
-                      plugins: {
-                        legend: {
-                          position: 'bottom',
-                          labels: {
-                            generateLabels: (chart) => {
-                              return [
-                                { text: '≥85% 優秀', fillStyle: 'rgba(34, 197, 94, 0.75)' },
-                                { text: '70-84% 良好', fillStyle: 'rgba(59, 130, 246, 0.75)' },
-                                { text: '60-69% 需加強', fillStyle: 'rgba(251, 191, 36, 0.75)' },
-                                { text: '<60% 待改善', fillStyle: 'rgba(239, 68, 68, 0.75)' },
-                              ];
-                            },
-                          },
-                        },
-                        tooltip: {
-                          callbacks: {
-                            afterLabel: (context) => {
-                              const idx = context.dataIndex;
-                              const tip = grammarData.tooltips[idx];
-                              return tip ? tip.split('\n') : [];
-                            },
-                          },
-                        },
-                      },
-                    }}
-                  />
-                </div>
-
-                {/* 詳細子題列表 */}
-                <div className="mt-8 space-y-4">
-                  <h3 className="font-semibold text-lg">詳細建議</h3>
-                  {MOCK_GRAMMAR_TOPICS.map((topic) => (
-                    <div key={topic.mainTopic} className="border rounded-lg p-4 space-y-3">
-                      <h4 className="font-medium flex items-center gap-2">
-                        {topic.mainTopic}
-                        <Badge variant="outline">
-                          {Math.round(
-                            topic.subTopics.reduce((sum, st) => sum + st.accuracy, 0) /
-                              topic.subTopics.length
-                          )}
-                          %
-                        </Badge>
-                      </h4>
-                      <div className="grid gap-2">
-                        {topic.subTopics.map((sub) => (
-                          <HoverCard key={sub.name}>
-                            <HoverCardTrigger asChild>
-                              <div className="flex items-center justify-between p-2 bg-muted/30 rounded cursor-pointer hover:bg-muted/50 transition-colors">
-                                <span className="text-sm">{sub.name}</span>
-                                <Badge
-                                  variant={
-                                    sub.accuracy >= 85
-                                      ? 'default'
-                                      : sub.accuracy >= 70
-                                      ? 'secondary'
-                                      : 'destructive'
-                                  }
-                                >
-                                  {sub.accuracy}%
-                                </Badge>
-                              </div>
-                            </HoverCardTrigger>
-                            <HoverCardContent className="w-80">
-                              <div className="space-y-2">
-                                <h4 className="font-semibold">{sub.name}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {sub.recentPerformance}
-                                </p>
-                                <div>
-                                  <p className="text-sm font-medium">常錯樣態：</p>
-                                  <ul className="text-sm text-muted-foreground list-disc list-inside">
-                                    {sub.commonMistakes.map((m, i) => (
-                                      <li key={i}>{m}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                                <div className="pt-2 border-t">
-                                  <p className="text-sm">
-                                    <span className="font-medium">建議：</span> {sub.suggestion}
-                                  </p>
-                                </div>
-                              </div>
-                            </HoverCardContent>
-                          </HoverCard>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <GrammarAnalysis />
           </TabsContent>
 
           {/* 2. 各題型得分比率 */}
