@@ -34,6 +34,7 @@ const QuestMapManagement = () => {
   const handleDelete = (id: string) => {
     setQuests(quests.filter(q => q.id !== id));
     toast.success("任務已刪除");
+  };
   const handleSave = () => {
     if (selectedQuest) {
       setQuests(quests.map(q => q.id === selectedQuest.id ? { ...q, ...formData } : q));
@@ -53,6 +54,7 @@ const QuestMapManagement = () => {
     setIsDialogOpen(false);
     setSelectedQuest(null);
     setFormData({});
+  };
   return (
     <div className="container mx-auto p-6 space-y-6">
       <Button

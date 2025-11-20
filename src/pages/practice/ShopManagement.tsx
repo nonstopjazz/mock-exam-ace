@@ -32,6 +32,7 @@ const ShopManagement = () => {
   const handleDelete = (id: string) => {
     setItems(items.filter(i => i.id !== id));
     toast.success("道具已刪除");
+  };
   const handleSave = () => {
     if (selectedItem) {
       setItems(items.map(i => i.id === selectedItem.id ? { ...i, ...formData } : i));
@@ -50,6 +51,7 @@ const ShopManagement = () => {
     setIsDialogOpen(false);
     setSelectedItem(null);
     setFormData({});
+  };
   return (
     <div className="container mx-auto p-6 space-y-6">
       <Button

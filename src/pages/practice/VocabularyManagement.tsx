@@ -33,6 +33,7 @@ const VocabularyManagement = () => {
   const handleDelete = (id: string) => {
     setVocabulary(vocabulary.filter(v => v.id !== id));
     toast.success("單字已刪除");
+  };
   const handleSave = () => {
     if (selectedItem) {
       setVocabulary(vocabulary.map(v => v.id === selectedItem.id ? { ...v, ...formData } : v));
@@ -51,6 +52,7 @@ const VocabularyManagement = () => {
     setIsDialogOpen(false);
     setSelectedItem(null);
     setFormData({});
+  };
   return (
     <div className="container mx-auto p-6 space-y-6">
       <Button

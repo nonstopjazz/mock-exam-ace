@@ -43,6 +43,7 @@ const AchievementManagement = () => {
   const handleDelete = (id: string) => {
     setAchievements(achievements.filter(a => a.id !== id));
     toast.success("成就已刪除");
+  };
   const handleSave = () => {
     if (selectedAchievement) {
       setAchievements(achievements.map(a => a.id === selectedAchievement.id ? { ...a, ...formData } : a));
@@ -63,6 +64,7 @@ const AchievementManagement = () => {
     setIsDialogOpen(false);
     setSelectedAchievement(null);
     setFormData({});
+  };
   const getRarityColor = (rarity: string) => {
     const colors = {
       common: "bg-gray-500",
@@ -71,13 +73,16 @@ const AchievementManagement = () => {
       legendary: "bg-orange-500",
     };
     return colors[rarity as keyof typeof colors];
+  };
   const getRarityLabel = (rarity: string) => {
     const labels = {
       common: "普通",
       rare: "稀有",
       epic: "史詩",
       legendary: "傳說",
+    };
     return labels[rarity as keyof typeof labels];
+  };
   return (
     <div className="container mx-auto p-6 space-y-6">
       <Button

@@ -34,6 +34,7 @@ const TagManagement = () => {
   const handleDelete = (id: string) => {
     setTags(tags.filter(t => t.id !== id));
     toast.success("標籤已刪除");
+  };
   const handleSave = () => {
     if (selectedTag) {
       setTags(tags.map(t => t.id === selectedTag.id ? { ...t, ...formData } : t));
@@ -52,6 +53,7 @@ const TagManagement = () => {
     setIsDialogOpen(false);
     setSelectedTag(null);
     setFormData({});
+  };
   return (
     <div className="container mx-auto p-6 space-y-6">
       <Button
