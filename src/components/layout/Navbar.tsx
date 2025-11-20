@@ -1,6 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LayoutDashboard, PenTool, Settings, Gamepad2, Menu } from "lucide-react";
+import { BookOpen, LayoutDashboard, PenTool, Shield, Gamepad2, Menu, Video } from "lucide-react";
 import { useState } from "react";
 import {
   Sheet,
@@ -15,11 +15,21 @@ const navigationItems = [
   { to: "/practice", label: "每日練習", icon: Gamepad2 },
   { to: "/dashboard", label: "儀表板", icon: LayoutDashboard },
   { to: "/essay", label: "作文批改", icon: PenTool },
-  { to: "/admin", label: "管理", icon: Settings },
+  { to: "/practice/courses", label: "影片課程", icon: Video },
+  { to: "/practice/admin", label: "後台管理", icon: Shield, adminOnly: true },
 ];
 
 export const Navbar = () => {
   const [open, setOpen] = useState(false);
+  // TODO: Replace with actual authentication system
+  // For now, check localStorage for admin status
+  const [isAdmin, setIsAdmin] = useState(localStorage.getItem('isAdmin') === 'true');
+
+  const toggleAdmin = () => {
+    const newAdminStatus = !isAdmin;
+    setIsAdmin(newAdminStatus);
+    localStorage.setItem('isAdmin', String(newAdminStatus));
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -34,6 +44,9 @@ export const Navbar = () => {
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-6">
           {navigationItems.map((item) => {
+            // Skip admin-only items if user is not admin
+            if (item.adminOnly && !isAdmin) return null;
+
             const Icon = item.icon;
             return (
               <NavLink
@@ -49,10 +62,20 @@ export const Navbar = () => {
           })}
         </div>
 
-        {/* Desktop Login Button */}
-        <Button variant="outline" size="sm" className="hidden md:inline-flex">
-          登入
-        </Button>
+        {/* Desktop Login Button & Admin Toggle */}
+        <div className="hidden md:flex items-center gap-2">
+          <Button
+            variant={isAdmin ? "default" : "outline"}
+            size="sm"
+            onClick={toggleAdmin}
+            className="text-xs"
+          >
+            {isAdmin ? "管理員模式" : "切換管理員"}
+          </Button>
+          <Button variant="outline" size="sm">
+            登入
+          </Button>
+        </div>
 
         {/* Mobile Menu */}
         <Sheet open={open} onOpenChange={setOpen}>
@@ -70,6 +93,9 @@ export const Navbar = () => {
             </SheetHeader>
             <div className="mt-8 flex flex-col gap-4">
               {navigationItems.map((item) => {
+                // Skip admin-only items if user is not admin
+                if (item.adminOnly && !isAdmin) return null;
+
                 const Icon = item.icon;
                 return (
                   <NavLink
@@ -84,7 +110,14 @@ export const Navbar = () => {
                   </NavLink>
                 );
               })}
-              <div className="mt-4 px-4">
+              <div className="mt-4 px-4 space-y-2">
+                <Button
+                  variant={isAdmin ? "default" : "outline"}
+                  className="w-full"
+                  onClick={toggleAdmin}
+                >
+                  {isAdmin ? "管理員模式" : "切換管理員"}
+                </Button>
                 <Button variant="outline" className="w-full">
                   登入
                 </Button>

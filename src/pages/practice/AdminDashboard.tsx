@@ -1,12 +1,40 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Video, FileText, BookOpen, Map, ShoppingBag, Trophy, Tag } from "lucide-react";
+import { Video, FileText, BookOpen, Map, ShoppingBag, Trophy, Tag, Upload, Users, BarChart3 } from "lucide-react";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
   const modules = [
+    {
+      title: "上傳試卷",
+      description: "上傳學測英文試卷 PDF 與設定題目",
+      icon: Upload,
+      path: "/admin",
+      color: "bg-indigo-500",
+    },
+    {
+      title: "題目管理",
+      description: "管理與編輯所有試題題庫",
+      icon: FileText,
+      path: "/admin",
+      color: "bg-green-500",
+    },
+    {
+      title: "學生管理",
+      description: "查看與管理學生帳號與成績",
+      icon: Users,
+      path: "/admin",
+      color: "bg-cyan-500",
+    },
+    {
+      title: "數據分析",
+      description: "整體使用統計與成績分析",
+      icon: BarChart3,
+      path: "/admin",
+      color: "bg-teal-500",
+    },
     {
       title: "影片課程管理",
       description: "管理標準課程與滴漏式課程內容",
