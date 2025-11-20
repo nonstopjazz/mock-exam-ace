@@ -120,15 +120,22 @@ const AchievementManagement = () => {
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
+              <div className="space-y-2">
                 <Label htmlFor="description">成就描述</Label>
                 <Textarea
                   id="description"
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="requirement">完成條件</Label>
+                <Textarea
                   id="requirement"
                   value={formData.requirement || ""}
                   onChange={(e) => setFormData({ ...formData, requirement: e.target.value })}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="reward">獎勵寶石</Label>
