@@ -3,7 +3,11 @@ import { Doughnut } from "react-chartjs-2";
 import { generateMockDoughnutData } from "@/data/grammar-doughnut-data";
 import { Brain } from "lucide-react";
 
-const GrammarDoughnut = () => {
+interface GrammarDoughnutProps {
+  onTopicClick?: (topicName: string) => void;
+}
+
+const GrammarDoughnut = ({ onTopicClick }: GrammarDoughnutProps) => {
   const grammarData = generateMockDoughnutData();
 
   // 內圈：22個中分類
@@ -53,6 +57,22 @@ const GrammarDoughnut = () => {
   const options = {
     responsive: true,
     maintainAspectRatio: true,
+    onClick: (event: any, elements: any[]) => {
+      if (elements.length > 0 && onTopicClick) {
+        const element = elements[0];
+        const datasetIndex = element.datasetIndex;
+        const index = element.index;
+
+        // datasetIndex 0 = inner ring (middle categories), 1 = outer ring (main categories)
+        if (datasetIndex === 1) {
+          // Outer ring clicked - navigate to main topic
+          const mainTopic = grammarData[index];
+          if (mainTopic) {
+            onTopicClick(mainTopic.name);
+          }
+        }
+      }
+    },
     plugins: {
       legend: {
         position: 'bottom' as const,
@@ -91,52 +111,6 @@ const GrammarDoughnut = () => {
       <CardContent>
         <div className="max-w-2xl mx-auto">
           <Doughnut data={doughnutData} options={options} />
-        </div>
-
-        {/* 分類清單 */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {grammarData.map((mainCat) => (
-            <div key={mainCat.id} className="border rounded-lg p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-sm">
-                  {mainCat.id}. {mainCat.name}
-                </h4>
-                <span
-                  className={`text-xs font-medium ${
-                    (mainCat.accuracy || 0) >= 85
-                      ? 'text-success'
-                      : (mainCat.accuracy || 0) >= 70
-                      ? 'text-primary'
-                      : (mainCat.accuracy || 0) >= 60
-                      ? 'text-warning'
-                      : 'text-destructive'
-                  }`}
-                >
-                  {mainCat.accuracy}%
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                {mainCat.middleCategories.map((midCat) => (
-                  <div key={midCat.id} className="flex items-center justify-between">
-                    <span>({midCat.id}) {midCat.name}</span>
-                    <span
-                      className={`font-medium ${
-                        (midCat.accuracy || 0) >= 85
-                          ? 'text-success'
-                          : (midCat.accuracy || 0) >= 70
-                          ? 'text-primary'
-                          : (midCat.accuracy || 0) >= 60
-                          ? 'text-warning'
-                          : 'text-destructive'
-                      }`}
-                    >
-                      {midCat.accuracy}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
         </div>
       </CardContent>
     </Card>

@@ -68,6 +68,9 @@ const Dashboard = () => {
   const [timingMode, setTimingMode] = useState<'total' | 'average'>('average');
   const [expandedTiming, setExpandedTiming] = useState<string | null>(null);
 
+  // 文法主題導航
+  const [selectedGrammarTopic, setSelectedGrammarTopic] = useState<string | null>(null);
+
   // ===== 2. 各題型得分比率 =====
   const questionTypeScoreData = {
     labels: MOCK_QUESTION_TYPE_SCORES.map((q) => q.typeName),
@@ -269,10 +272,10 @@ const Dashboard = () => {
           {/* 1. 文法主題分析 */}
           <TabsContent value="grammar" className="space-y-6">
             {/* 雙層同心圓：大分類 + 中分類 */}
-            <GrammarDoughnut />
+            <GrammarDoughnut onTopicClick={setSelectedGrammarTopic} />
 
             {/* 詳細分析：卡片式 + 摺疊列表（170+ 子主題）*/}
-            <GrammarAnalysis />
+            <GrammarAnalysis selectedTopic={selectedGrammarTopic} />
           </TabsContent>
 
           {/* 2. 各題型得分比率 */}

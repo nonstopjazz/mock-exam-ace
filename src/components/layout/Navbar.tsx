@@ -1,6 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LayoutDashboard, PenTool, Shield, Gamepad2, Menu, Video } from "lucide-react";
+import { BookOpen, LayoutDashboard, PenTool, Shield, Gamepad2, Menu, Video, ClipboardList } from "lucide-react";
 import { useState } from "react";
 import {
   Sheet,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 
 const navigationItems = [
-  { to: "/exams", label: "選擇試題", icon: null },
+  { to: "/exams", label: "選擇試題", icon: ClipboardList },
   { to: "/practice", label: "每日練習", icon: Gamepad2 },
   { to: "/dashboard", label: "儀表板", icon: LayoutDashboard },
   { to: "/essay", label: "作文批改", icon: PenTool },
