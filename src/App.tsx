@@ -58,7 +58,18 @@ const App = () => (
           <Route path="/exam/result/:attemptId" element={<ExamResult />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/essay" element={<Essay />} />
-          <Route path="/admin" element={<Admin />} />
+
+          {/* Admin routes - with Navbar only, no sidebar */}
+          <Route path="/admin" element={<><Navbar /><AdminDashboard /></>} />
+          <Route path="/admin/upload" element={<><Navbar /><Admin /></>} />
+          <Route path="/admin/course-management" element={<><Navbar /><CourseManagement /></>} />
+          <Route path="/admin/exam-management" element={<><Navbar /><ExamManagement /></>} />
+          <Route path="/admin/vocabulary-management" element={<><Navbar /><VocabularyManagement /></>} />
+          <Route path="/admin/vocabulary-packs" element={<><Navbar /><VocabularyPackList /></>} />
+          <Route path="/admin/quest-map-management" element={<><Navbar /><QuestMapManagement /></>} />
+          <Route path="/admin/shop-management" element={<><Navbar /><ShopManagement /></>} />
+          <Route path="/admin/achievement-management" element={<><Navbar /><AchievementManagement /></>} />
+          <Route path="/admin/tag-management" element={<><Navbar /><TagManagement /></>} />
 
           {/* Video Courses - with Navbar only, no sidebar */}
           <Route path="/courses" element={<><Navbar /><VideoCourses /></>} />
@@ -97,15 +108,6 @@ const App = () => (
                         <Route path="/vocabulary/quiz" element={<QuickQuiz />} />
                         <Route path="/vocabulary/collections" element={<VocabularyCollections />} />
                         <Route path="/vocabulary/pack/:packId" element={<VocabularyPackDetail />} />
-                        <Route path="/admin" element={<AdminDashboard />} />
-                        <Route path="/admin/course-management" element={<CourseManagement />} />
-                        <Route path="/admin/exam-management" element={<ExamManagement />} />
-                        <Route path="/admin/vocabulary-management" element={<VocabularyManagement />} />
-                        <Route path="/admin/vocabulary-packs" element={<VocabularyPackList />} />
-                        <Route path="/admin/quest-map-management" element={<QuestMapManagement />} />
-                        <Route path="/admin/shop-management" element={<ShopManagement />} />
-                        <Route path="/admin/achievement-management" element={<AchievementManagement />} />
-                        <Route path="/admin/tag-management" element={<TagManagement />} />
                       </Routes>
                     </main>
                   </div>

@@ -16,7 +16,7 @@ const navigationItems = [
   { to: "/dashboard", label: "儀表板", icon: LayoutDashboard },
   { to: "/essay", label: "作文批改", icon: PenTool },
   { to: "/courses", label: "影片課程", icon: Video },
-  { to: "/practice/admin", label: "後台管理", icon: Shield, adminOnly: true },
+  { to: "/admin", label: "後台管理", icon: Shield, adminOnly: true },
 ];
 
 export const Navbar = () => {
