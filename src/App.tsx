@@ -40,6 +40,7 @@ import QuestMapManagement from "./pages/practice/QuestMapManagement";
 import ShopManagement from "./pages/practice/ShopManagement";
 import TagManagement from "./pages/practice/TagManagement";
 import VocabularyManagement from "./pages/practice/VocabularyManagement";
+import VocabularyPackList from "./pages/practice/VocabularyPackList";
 
 const queryClient = new QueryClient();
 
@@ -98,6 +99,7 @@ const App = () => (
                         <Route path="/admin/course-management" element={<CourseManagement />} />
                         <Route path="/admin/exam-management" element={<ExamManagement />} />
                         <Route path="/admin/vocabulary-management" element={<VocabularyManagement />} />
+                        <Route path="/admin/vocabulary-packs" element={<VocabularyPackList />} />
                         <Route path="/admin/quest-map-management" element={<QuestMapManagement />} />
                         <Route path="/admin/shop-management" element={<ShopManagement />} />
                         <Route path="/admin/achievement-management" element={<AchievementManagement />} />
