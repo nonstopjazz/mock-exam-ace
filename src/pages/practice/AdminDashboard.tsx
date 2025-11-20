@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Video, FileText, BookOpen, Map, ShoppingBag, Trophy, Tag, Upload, Users, BarChart3 } from "lucide-react";
+import { Video, FileText, BookOpen, Map, ShoppingBag, Trophy, Tag, Upload, Users, BarChart3, Package } from "lucide-react";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -55,6 +55,13 @@ const AdminDashboard = () => {
       icon: BookOpen,
       path: "/practice/admin/vocabulary-management",
       color: "bg-purple-500",
+    },
+    {
+      title: "單字包管理",
+      description: "管理單字包並分享連結給社群成員",
+      icon: Package,
+      path: "/practice/admin/vocabulary-packs",
+      color: "bg-violet-500",
     },
     {
       title: "任務地圖管理",

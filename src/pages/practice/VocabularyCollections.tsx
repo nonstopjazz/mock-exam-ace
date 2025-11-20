@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -421,6 +421,29 @@ const VocabularyCollections = () => {
             </div>
           </Card>
         )}
+
+        {/* How to Get More Packs */}
+        <Card className="mt-6 bg-gradient-to-br from-accent/10 to-primary/10 border-accent/20">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-accent/20">
+                <BookmarkPlus className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground mb-1">如何取得更多單字包？</h4>
+                <p className="text-sm text-muted-foreground mb-2">
+                  單字包不會直接顯示在平台上，需要透過社群互動來取得：
+                </p>
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>參與我們的社群討論（Discord、Facebook 等）</li>
+                  <li>回應其他成員的學習分享</li>
+                  <li>從社群成員或管理員那裡取得單字包連結</li>
+                  <li>點擊連結後即可查看並收藏該單字包</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
