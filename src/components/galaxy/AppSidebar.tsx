@@ -1,4 +1,4 @@
-import { Home, Map, Trophy, ShoppingBag, User, Menu, BookOpen, Video, BookmarkPlus } from "lucide-react";
+import { Home, Map, Trophy, ShoppingBag, User, Menu, BookOpen, Video, BookmarkPlus, Settings, Shield } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -19,9 +19,11 @@ const navigationItems = [
   { title: "單字複習", url: "/practice/vocabulary", icon: BookOpen },
   { title: "詞彙收藏", url: "/practice/vocabulary/collections", icon: BookmarkPlus },
   { title: "影片課程", url: "/practice/courses", icon: Video },
+  { title: "課程管理", url: "/practice/course-management", icon: Settings },
   { title: "成就", url: "/practice/achievements", icon: Trophy },
   { title: "寶石商店", url: "/practice/shop", icon: ShoppingBag },
   { title: "個人檔案", url: "/practice/profile", icon: User },
+  { title: "後台管理", url: "/practice/admin", icon: Shield },
 ];
 
 export function AppSidebar() {

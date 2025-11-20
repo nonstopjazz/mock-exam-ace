@@ -30,6 +30,16 @@ import VocabularyCollections from "./pages/practice/VocabularyCollections";
 import VideoCourses from "./pages/practice/VideoCourses";
 import CourseDetail from "./pages/practice/CourseDetail";
 import DripCourse from "./pages/practice/DripCourse";
+import VocabularyPackDetail from "./pages/practice/VocabularyPackDetail";
+import CourseManagement from "./pages/practice/CourseManagement";
+import CourseEdit from "./pages/practice/CourseEdit";
+import AdminDashboard from "./pages/practice/AdminDashboard";
+import AchievementManagement from "./pages/practice/AchievementManagement";
+import ExamManagement from "./pages/practice/ExamManagement";
+import QuestMapManagement from "./pages/practice/QuestMapManagement";
+import ShopManagement from "./pages/practice/ShopManagement";
+import TagManagement from "./pages/practice/TagManagement";
+import VocabularyManagement from "./pages/practice/VocabularyManagement";
 
 const queryClient = new QueryClient();
 
@@ -78,9 +88,20 @@ const App = () => (
                         <Route path="/vocabulary/flashcards" element={<Flashcards />} />
                         <Route path="/vocabulary/quiz" element={<QuickQuiz />} />
                         <Route path="/vocabulary/collections" element={<VocabularyCollections />} />
+                        <Route path="/vocabulary/pack/:packId" element={<VocabularyPackDetail />} />
                         <Route path="/courses" element={<VideoCourses />} />
                         <Route path="/course/:courseId" element={<CourseDetail />} />
                         <Route path="/drip-course/:courseId" element={<DripCourse />} />
+                        <Route path="/course-management" element={<CourseManagement />} />
+                        <Route path="/course-management/:courseId/edit" element={<CourseEdit />} />
+                        <Route path="/admin" element={<AdminDashboard />} />
+                        <Route path="/admin/course-management" element={<CourseManagement />} />
+                        <Route path="/admin/exam-management" element={<ExamManagement />} />
+                        <Route path="/admin/vocabulary-management" element={<VocabularyManagement />} />
+                        <Route path="/admin/quest-map-management" element={<QuestMapManagement />} />
+                        <Route path="/admin/shop-management" element={<ShopManagement />} />
+                        <Route path="/admin/achievement-management" element={<AchievementManagement />} />
+                        <Route path="/admin/tag-management" element={<TagManagement />} />
                       </Routes>
                     </main>
                   </div>
