@@ -8,13 +8,34 @@ import {
 } from "@/components/ui/collapsible";
 import { Progress } from "@/components/ui/progress";
 import { Brain, ChevronDown, ChevronRight, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { generateMockGrammarData, GrammarMainTopic, GrammarMiddleTopic } from "@/data/grammar-topics";
 
-const GrammarAnalysis = () => {
+interface GrammarAnalysisProps {
+  selectedTopic?: string | null;
+}
+
+const GrammarAnalysis = ({ selectedTopic }: GrammarAnalysisProps) => {
   const grammarData = generateMockGrammarData();
   const [expandedMain, setExpandedMain] = useState<string | null>(null);
   const [expandedMiddle, setExpandedMiddle] = useState<Record<string, boolean>>({});
+  const topicRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Scroll to selected topic when it changes
+  useEffect(() => {
+    if (selectedTopic && topicRefs.current[selectedTopic]) {
+      const element = topicRefs.current[selectedTopic];
+      if (element) {
+        // Expand the topic
+        setExpandedMain(selectedTopic);
+
+        // Scroll to the topic with some offset for better visibility
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  }, [selectedTopic]);
 
   const getAccuracyColor = (accuracy: number) => {
     if (accuracy >= 85) return "text-success";
@@ -96,6 +117,7 @@ const GrammarAnalysis = () => {
         {grammarData.map((mainTopic) => (
           <Card
             key={mainTopic.name}
+            ref={(el) => (topicRefs.current[mainTopic.name] = el)}
             className={`transition-all duration-200 hover:shadow-lg cursor-pointer ${
               expandedMain === mainTopic.name ? "ring-2 ring-primary" : ""
             }`}
