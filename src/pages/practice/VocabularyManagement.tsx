@@ -137,7 +137,9 @@ const VocabularyManagement = () => {
                       </Button>
                       <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>
                         <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

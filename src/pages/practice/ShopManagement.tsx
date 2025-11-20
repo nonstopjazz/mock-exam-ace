@@ -151,6 +151,7 @@ const ShopManagement = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
     </div>
   );
 };
