@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Tag } from "lucide-react";
+import { Plus, Edit, Trash2, Tag, ArrowLeft } from "lucide-react"
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface TagItem {
   id: string;
@@ -16,28 +17,24 @@ interface TagItem {
   category: string;
   usageCount: number;
 }
-
 const TagManagement = () => {
+  const navigate = useNavigate();
   const [tags, setTags] = useState<TagItem[]>([
     { id: "1", name: "文法", color: "#3b82f6", category: "題目類型", usageCount: 120 },
     { id: "2", name: "聽力", color: "#10b981", category: "題目類型", usageCount: 85 },
   ]);
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTag, setSelectedTag] = useState<TagItem | null>(null);
   const [formData, setFormData] = useState<Partial<TagItem>>({});
-
   const handleEdit = (tag: TagItem) => {
     setSelectedTag(tag);
     setFormData(tag);
     setIsDialogOpen(true);
   };
-
   const handleDelete = (id: string) => {
     setTags(tags.filter(t => t.id !== id));
     toast.success("標籤已刪除");
   };
-
   const handleSave = () => {
     if (selectedTag) {
       setTags(tags.map(t => t.id === selectedTag.id ? { ...t, ...formData } : t));
@@ -57,9 +54,17 @@ const TagManagement = () => {
     setSelectedTag(null);
     setFormData({});
   };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate("/admin")}
+        className="mb-4"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        返回管理中心
+      </Button>
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground">標籤管理</h1>
@@ -86,24 +91,16 @@ const TagManagement = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
                 <Label htmlFor="category">分類</Label>
-                <Input
                   id="category"
                   value={formData.category || ""}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   placeholder="例：題目類型、難度等"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="color">標籤顏色</Label>
-                <Input
                   id="color"
                   type="color"
                   value={formData.color || "#3b82f6"}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                />
-              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>取消</Button>
@@ -112,7 +109,6 @@ const TagManagement = () => {
           </DialogContent>
         </Dialog>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>標籤列表</CardTitle>
@@ -144,9 +140,7 @@ const TagManagement = () => {
                       </Button>
                       <Button variant="destructive" size="sm" onClick={() => handleDelete(tag.id)}>
                         <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -156,5 +150,4 @@ const TagManagement = () => {
     </div>
   );
 };
-
 export default TagManagement;

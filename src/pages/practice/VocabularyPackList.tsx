@@ -38,6 +38,7 @@ import {
   Copy,
   ExternalLink,
   Shield,
+  ArrowLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -189,6 +190,16 @@ const VocabularyPackList = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/admin")}
+            className="mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            返回管理中心
+          </Button>
+
           <div className="flex items-center gap-3 mb-4">
             <div className="p-3 rounded-lg bg-primary/10">
               <Shield className="h-8 w-8 text-primary" />

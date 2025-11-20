@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, ArrowLeft } from "lucide-react"
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface VocabularyItem {
   id: string;
@@ -16,27 +17,23 @@ interface VocabularyItem {
   category: string;
   difficulty: "beginner" | "intermediate" | "advanced";
 }
-
 const VocabularyManagement = () => {
+  const navigate = useNavigate();
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([
     { id: "1", word: "abandon", translation: "放棄", category: "動詞", difficulty: "intermediate" },
   ]);
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<VocabularyItem | null>(null);
   const [formData, setFormData] = useState<Partial<VocabularyItem>>({});
-
   const handleEdit = (item: VocabularyItem) => {
     setSelectedItem(item);
     setFormData(item);
     setIsDialogOpen(true);
   };
-
   const handleDelete = (id: string) => {
     setVocabulary(vocabulary.filter(v => v.id !== id));
     toast.success("單字已刪除");
   };
-
   const handleSave = () => {
     if (selectedItem) {
       setVocabulary(vocabulary.map(v => v.id === selectedItem.id ? { ...v, ...formData } : v));
@@ -56,9 +53,17 @@ const VocabularyManagement = () => {
     setSelectedItem(null);
     setFormData({});
   };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate("/admin")}
+        className="mb-4"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        返回管理中心
+      </Button>
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground">單字複習管理</h1>
@@ -85,22 +90,14 @@ const VocabularyManagement = () => {
                   onChange={(e) => setFormData({ ...formData, word: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
                 <Label htmlFor="translation">中文翻譯</Label>
-                <Input
                   id="translation"
                   value={formData.translation || ""}
                   onChange={(e) => setFormData({ ...formData, translation: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="category">分類</Label>
-                <Input
                   id="category"
                   value={formData.category || ""}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                />
-              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>取消</Button>
@@ -109,7 +106,6 @@ const VocabularyManagement = () => {
           </DialogContent>
         </Dialog>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>單字列表</CardTitle>
@@ -141,9 +137,7 @@ const VocabularyManagement = () => {
                       </Button>
                       <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>
                         <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -153,5 +147,4 @@ const VocabularyManagement = () => {
     </div>
   );
 };
-
 export default VocabularyManagement;
