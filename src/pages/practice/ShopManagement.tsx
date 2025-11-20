@@ -89,11 +89,14 @@ const ShopManagement = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
+              <div className="space-y-2">
                 <Label htmlFor="description">道具描述</Label>
                 <Textarea
                   id="description"
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">價格（寶石）</Label>
@@ -104,11 +107,16 @@ const ShopManagement = () => {
                     onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
                   />
                 </div>
+                <div className="space-y-2">
                   <Label htmlFor="icon">圖示</Label>
+                  <Input
                     id="icon"
                     value={formData.icon || ""}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                     placeholder="輸入 emoji"
+                  />
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>取消</Button>
@@ -125,7 +133,9 @@ const ShopManagement = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-3xl">{item.icon}</span>
                   <CardTitle className="text-lg">{item.name}</CardTitle>
+                </div>
                 <span className="text-primary font-bold">{item.price} 💎</span>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">{item.description}</p>
@@ -136,9 +146,12 @@ const ShopManagement = () => {
                 </Button>
                 <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>
                   <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
+      </div>
     </div>
   );
 };

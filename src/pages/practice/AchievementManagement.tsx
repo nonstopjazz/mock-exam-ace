@@ -120,15 +120,22 @@ const AchievementManagement = () => {
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
+              <div className="space-y-2">
                 <Label htmlFor="description">成就描述</Label>
                 <Textarea
                   id="description"
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="requirement">完成條件</Label>
+                <Textarea
                   id="requirement"
                   value={formData.requirement || ""}
                   onChange={(e) => setFormData({ ...formData, requirement: e.target.value })}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="reward">獎勵寶石</Label>
@@ -139,11 +146,16 @@ const AchievementManagement = () => {
                     onChange={(e) => setFormData({ ...formData, reward: parseInt(e.target.value) })}
                   />
                 </div>
+                <div className="space-y-2">
                   <Label htmlFor="icon">圖示</Label>
+                  <Input
                     id="icon"
                     value={formData.icon || ""}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                     placeholder="輸入 emoji"
+                  />
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>取消</Button>
@@ -160,17 +172,24 @@ const AchievementManagement = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-3xl">{achievement.icon}</span>
                   <CardTitle className="text-lg">{achievement.title}</CardTitle>
+                </div>
                 <Badge className={getRarityColor(achievement.rarity)}>
                   {getRarityLabel(achievement.rarity)}
                 </Badge>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">{achievement.description}</p>
               <div className="text-sm">
-                <span className="font-medium">條件：</span>
-                <span className="text-muted-foreground">{achievement.requirement}</span>
-                <span className="font-medium">獎勵：</span>
-                <span className="text-primary">{achievement.reward} 💎</span>
+                <div>
+                  <span className="font-medium">條件：</span>
+                  <span className="text-muted-foreground">{achievement.requirement}</span>
+                </div>
+                <div>
+                  <span className="font-medium">獎勵：</span>
+                  <span className="text-primary">{achievement.reward} 💎</span>
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(achievement)}>
                   <Edit className="h-4 w-4 mr-2" />
@@ -178,9 +197,12 @@ const AchievementManagement = () => {
                 </Button>
                 <Button variant="destructive" size="sm" onClick={() => handleDelete(achievement.id)}>
                   <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
+      </div>
     </div>
   );
 };

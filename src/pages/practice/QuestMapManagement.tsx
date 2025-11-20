@@ -92,11 +92,14 @@ const QuestMapManagement = () => {
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
+              <div className="space-y-2">
                 <Label htmlFor="description">任務描述</Label>
                 <Textarea
                   id="description"
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="requiredScore">完成條件</Label>
@@ -107,10 +110,16 @@ const QuestMapManagement = () => {
                     onChange={(e) => setFormData({ ...formData, requiredScore: parseInt(e.target.value) })}
                   />
                 </div>
+                <div className="space-y-2">
                   <Label htmlFor="reward">獎勵寶石</Label>
+                  <Input
                     id="reward"
+                    type="number"
                     value={formData.reward || ""}
                     onChange={(e) => setFormData({ ...formData, reward: parseInt(e.target.value) })}
+                  />
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>取消</Button>
@@ -127,15 +136,18 @@ const QuestMapManagement = () => {
                 <div className="flex items-center gap-2">
                   <Map className="h-5 w-5 text-primary" />
                   <CardTitle className="text-lg">{quest.title}</CardTitle>
+                </div>
                 <Badge variant={quest.unlocked ? "default" : "secondary"}>
                   {quest.unlocked ? "已開放" : "未開放"}
                 </Badge>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">{quest.description}</p>
               <div className="flex justify-between text-sm">
                 <span>完成條件: {quest.requiredScore}</span>
                 <span className="text-primary">獎勵: {quest.reward} 💎</span>
+              </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(quest)}>
                   <Edit className="h-4 w-4 mr-2" />
@@ -143,9 +155,12 @@ const QuestMapManagement = () => {
                 </Button>
                 <Button variant="destructive" size="sm" onClick={() => handleDelete(quest.id)}>
                   <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
+      </div>
     </div>
   );
 };
