@@ -235,7 +235,7 @@ const DripCourse = () => {
       <div className="container py-8">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-foreground">課程不存在</h2>
-          <Button onClick={() => navigate("/courses")} className="mt-4">
+          <Button onClick={() => navigate("/practice/courses")} className="mt-4">
             返回課程列表
           </Button>
         </div>
@@ -279,7 +279,7 @@ const DripCourse = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/courses")}
+            onClick={() => navigate("/practice/courses")}
             className="mb-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />

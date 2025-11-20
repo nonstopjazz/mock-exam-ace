@@ -170,7 +170,7 @@ const VocabularyCollections = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/vocabulary")}
+            onClick={() => navigate("/practice/vocabulary")}
             className="mb-4"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
@@ -319,7 +319,7 @@ const VocabularyCollections = () => {
                       </div>
                       <h3
                         className="text-xl font-bold text-foreground mb-1 cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => navigate(`/vocabulary/pack/${pack.id}`)}
+                        onClick={() => navigate(`/practice/vocabulary/pack/${pack.id}`)}
                       >
                         {pack.title}
                       </h3>
@@ -365,14 +365,14 @@ const VocabularyCollections = () => {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => navigate(`/vocabulary/pack/${pack.id}`)}
+                      onClick={() => navigate(`/practice/vocabulary/pack/${pack.id}`)}
                     >
                       查看詳情
                     </Button>
                     <Button
                       size="sm"
                       className="flex-1"
-                      onClick={() => navigate("/vocabulary/srs")}
+                      onClick={() => navigate("/practice/vocabulary/srs")}
                     >
                       開始複習
                     </Button>
@@ -393,7 +393,7 @@ const VocabularyCollections = () => {
                 ? "嘗試調整搜尋條件或篩選器"
                 : "開始收藏你喜歡的單字集吧"}
             </p>
-            <Button onClick={() => navigate("/vocabulary")}>前往單字複習中心</Button>
+            <Button onClick={() => navigate("/practice/vocabulary")}>前往單字複習中心</Button>
           </Card>
         )}
 
@@ -410,10 +410,10 @@ const VocabularyCollections = () => {
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => navigate("/vocabulary")}>
+                <Button variant="outline" onClick={() => navigate("/practice/vocabulary")}>
                   發現更多單字集
                 </Button>
-                <Button onClick={() => navigate("/vocabulary/srs")}>
+                <Button onClick={() => navigate("/practice/vocabulary/srs")}>
                   開始複習
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
