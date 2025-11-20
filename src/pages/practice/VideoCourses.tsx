@@ -267,7 +267,7 @@ export default function VideoCourses() {
                 <Card
                   key={course.id}
                   className="group hover:shadow-lg transition-all border-border overflow-hidden cursor-pointer"
-                  onClick={() => navigate(course.type === "drip" ? `/practice/drip-course/${course.id}` : `/practice/course/${course.id}`)}
+                  onClick={() => navigate(course.type === "drip" ? `/drip-course/${course.id}` : `/course/${course.id}`)}
                 >
                   <div className="relative">
                     <AspectRatio ratio={16/9} className="bg-muted">

@@ -84,7 +84,7 @@ const CourseEdit = () => {
   const handleSaveCourse = () => {
     // 這裡應該保存到資料庫
     toast.success("課程已保存");
-    navigate("/practice/course-management");
+    navigate("/course-management");
   };
 
   const handleAddWeek = () => {
@@ -176,7 +176,7 @@ const CourseEdit = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/practice/course-management")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/course-management")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>

@@ -60,6 +60,13 @@ const App = () => (
           <Route path="/essay" element={<Essay />} />
           <Route path="/admin" element={<Admin />} />
 
+          {/* Video Courses - with Navbar only, no sidebar */}
+          <Route path="/courses" element={<><Navbar /><VideoCourses /></>} />
+          <Route path="/course/:courseId" element={<><Navbar /><CourseDetail /></>} />
+          <Route path="/drip-course/:courseId" element={<><Navbar /><DripCourse /></>} />
+          <Route path="/course-management" element={<><Navbar /><CourseManagement /></>} />
+          <Route path="/course-management/:courseId/edit" element={<><Navbar /><CourseEdit /></>} />
+
           {/* Quest page without sidebar (full-screen immersive experience) */}
           <Route path="/practice/quest/:lessonId" element={<PracticeQuest />} />
 
@@ -90,11 +97,6 @@ const App = () => (
                         <Route path="/vocabulary/quiz" element={<QuickQuiz />} />
                         <Route path="/vocabulary/collections" element={<VocabularyCollections />} />
                         <Route path="/vocabulary/pack/:packId" element={<VocabularyPackDetail />} />
-                        <Route path="/courses" element={<VideoCourses />} />
-                        <Route path="/course/:courseId" element={<CourseDetail />} />
-                        <Route path="/drip-course/:courseId" element={<DripCourse />} />
-                        <Route path="/course-management" element={<CourseManagement />} />
-                        <Route path="/course-management/:courseId/edit" element={<CourseEdit />} />
                         <Route path="/admin" element={<AdminDashboard />} />
                         <Route path="/admin/course-management" element={<CourseManagement />} />
                         <Route path="/admin/exam-management" element={<ExamManagement />} />

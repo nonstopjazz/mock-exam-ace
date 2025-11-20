@@ -15,7 +15,7 @@ const navigationItems = [
   { to: "/practice", label: "每日練習", icon: Gamepad2 },
   { to: "/dashboard", label: "儀表板", icon: LayoutDashboard },
   { to: "/essay", label: "作文批改", icon: PenTool },
-  { to: "/practice/courses", label: "影片課程", icon: Video },
+  { to: "/courses", label: "影片課程", icon: Video },
   { to: "/practice/admin", label: "後台管理", icon: Shield, adminOnly: true },
 ];
 
