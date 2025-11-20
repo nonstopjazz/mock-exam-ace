@@ -26,6 +26,10 @@ import VocabularyHub from "./pages/practice/VocabularyHub";
 import SRSReview from "./pages/practice/SRSReview";
 import Flashcards from "./pages/practice/Flashcards";
 import QuickQuiz from "./pages/practice/QuickQuiz";
+import VocabularyCollections from "./pages/practice/VocabularyCollections";
+import VideoCourses from "./pages/practice/VideoCourses";
+import CourseDetail from "./pages/practice/CourseDetail";
+import DripCourse from "./pages/practice/DripCourse";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +77,10 @@ const App = () => (
                         <Route path="/vocabulary/srs" element={<SRSReview />} />
                         <Route path="/vocabulary/flashcards" element={<Flashcards />} />
                         <Route path="/vocabulary/quiz" element={<QuickQuiz />} />
+                        <Route path="/vocabulary/collections" element={<VocabularyCollections />} />
+                        <Route path="/courses" element={<VideoCourses />} />
+                        <Route path="/course/:courseId" element={<CourseDetail />} />
+                        <Route path="/drip-course/:courseId" element={<DripCourse />} />
                       </Routes>
                     </main>
                   </div>
