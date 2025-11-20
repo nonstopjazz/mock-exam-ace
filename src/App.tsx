@@ -30,6 +30,9 @@ import VocabularyCollections from "./pages/practice/VocabularyCollections";
 import VideoCourses from "./pages/practice/VideoCourses";
 import CourseDetail from "./pages/practice/CourseDetail";
 import DripCourse from "./pages/practice/DripCourse";
+import VocabularyPackDetail from "./pages/practice/VocabularyPackDetail";
+import CourseManagement from "./pages/practice/CourseManagement";
+import CourseEdit from "./pages/practice/CourseEdit";
 
 const queryClient = new QueryClient();
 
@@ -78,9 +81,12 @@ const App = () => (
                         <Route path="/vocabulary/flashcards" element={<Flashcards />} />
                         <Route path="/vocabulary/quiz" element={<QuickQuiz />} />
                         <Route path="/vocabulary/collections" element={<VocabularyCollections />} />
+                        <Route path="/vocabulary/pack/:packId" element={<VocabularyPackDetail />} />
                         <Route path="/courses" element={<VideoCourses />} />
                         <Route path="/course/:courseId" element={<CourseDetail />} />
                         <Route path="/drip-course/:courseId" element={<DripCourse />} />
+                        <Route path="/course-management" element={<CourseManagement />} />
+                        <Route path="/course-management/:courseId/edit" element={<CourseEdit />} />
                       </Routes>
                     </main>
                   </div>
