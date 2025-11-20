@@ -279,7 +279,7 @@ const CourseManagement = () => {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => navigate(`/practice/course-management/${course.id}/edit`)}
+                    onClick={() => navigate(`/course-management/${course.id}/edit`)}
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     編輯
@@ -323,7 +323,7 @@ const CourseManagement = () => {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => navigate(`/practice/course-management/${course.id}/edit`)}
+                    onClick={() => navigate(`/course-management/${course.id}/edit`)}
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     編輯
@@ -367,7 +367,7 @@ const CourseManagement = () => {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => navigate(`/practice/course-management/${course.id}/edit`)}
+                    onClick={() => navigate(`/course-management/${course.id}/edit`)}
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     編輯
