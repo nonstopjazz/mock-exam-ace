@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, FileText } from "lucide-react";
+import { Plus, Edit, Trash2, FileText, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface Exam {
@@ -21,6 +22,7 @@ interface Exam {
 }
 
 const ExamManagement = () => {
+  const navigate = useNavigate();
   const [exams, setExams] = useState<Exam[]>([
     {
       id: "1",
@@ -77,6 +79,16 @@ const ExamManagement = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate("/admin")}
+        className="mb-4"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        返回管理中心
+      </Button>
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground">模擬考試管理</h1>

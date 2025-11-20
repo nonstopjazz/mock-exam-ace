@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, ShoppingBag } from "lucide-react";
+import { Plus, Edit, Trash2, ShoppingBag, ArrowLeft } from "lucide-react"
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface ShopItem {
   id: string;
@@ -15,27 +16,22 @@ interface ShopItem {
   price: number;
   icon: string;
 }
-
 const ShopManagement = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<ShopItem[]>([
     { id: "1", name: "時間延長卡", description: "延長測驗時間10分鐘", price: 100, icon: "⏰" },
   ]);
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
   const [formData, setFormData] = useState<Partial<ShopItem>>({});
-
   const handleEdit = (item: ShopItem) => {
     setSelectedItem(item);
     setFormData(item);
     setIsDialogOpen(true);
   };
-
   const handleDelete = (id: string) => {
     setItems(items.filter(i => i.id !== id));
     toast.success("道具已刪除");
-  };
-
   const handleSave = () => {
     if (selectedItem) {
       setItems(items.map(i => i.id === selectedItem.id ? { ...i, ...formData } : i));
@@ -54,10 +50,17 @@ const ShopManagement = () => {
     setIsDialogOpen(false);
     setSelectedItem(null);
     setFormData({});
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate("/admin")}
+        className="mb-4"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        返回管理中心
+      </Button>
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground">寶石商店管理</h1>
@@ -84,14 +87,11 @@ const ShopManagement = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
                 <Label htmlFor="description">道具描述</Label>
                 <Textarea
                   id="description"
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">價格（寶石）</Label>
@@ -102,16 +102,11 @@ const ShopManagement = () => {
                     onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
                   />
                 </div>
-                <div className="space-y-2">
                   <Label htmlFor="icon">圖示</Label>
-                  <Input
                     id="icon"
                     value={formData.icon || ""}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                     placeholder="輸入 emoji"
-                  />
-                </div>
-              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>取消</Button>
@@ -120,7 +115,6 @@ const ShopManagement = () => {
           </DialogContent>
         </Dialog>
       </div>
-
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
           <Card key={item.id}>
@@ -129,9 +123,7 @@ const ShopManagement = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-3xl">{item.icon}</span>
                   <CardTitle className="text-lg">{item.name}</CardTitle>
-                </div>
                 <span className="text-primary font-bold">{item.price} 💎</span>
-              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">{item.description}</p>
@@ -142,14 +134,10 @@ const ShopManagement = () => {
                 </Button>
                 <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>
                   <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
             </CardContent>
           </Card>
         ))}
-      </div>
     </div>
   );
 };
-
 export default ShopManagement;
