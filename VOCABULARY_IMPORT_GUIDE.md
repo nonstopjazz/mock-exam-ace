@@ -168,31 +168,31 @@ const quizQuestions = generateQuizQuestions(vocabularyWords, 20);
 
 ```json
 {
-  "vocabularyPack": {
-    "id": "PACK_GSAT_5545",
-    "title": "學測核心 5545 單字",
-    "theme": "學測必備單字",
-    "description": "完整收錄學測必考單字",
-    "difficulty": "mixed",
-    "totalWords": 5545,
-    "author": "DeepSeek AI",
-    "datePublished": "2025-11-23"
+  ＂vocabularyPack＂: {
+    ＂id＂: ＂PACK_GSAT_5545＂,
+    ＂title＂: ＂學測核心 5545 單字＂,
+    ＂theme＂: ＂學測必備單字＂,
+    ＂description＂: ＂完整收錄學測必考單字＂,
+    ＂difficulty＂: ＂mixed＂,
+    ＂totalWords＂: 5545,
+    ＂author＂: ＂DeepSeek AI＂,
+    ＂datePublished＂: ＂2025-11-23＂
   },
-  "words": [
+  ＂words＂: [
     {
-      "id": "1",
-      "word": "abandon",
-      "ipa": "/əˈbændən/",
-      "translation": "放棄、遺棄",
-      "partOfSpeech": "v.",
-      "example": "They had to abandon their home due to the flood.",
-      "exampleTranslation": "由於洪水，他們不得不放棄家園。",
-      "synonyms": ["desert", "forsake", "give up"],
-      "antonyms": ["keep", "maintain", "continue"],
-      "difficulty": "intermediate",
-      "category": "動詞",
-      "level": 1,
-      "tags": ["學測", "Level 4", "生活"]
+      ＂id＂: ＂1＂,
+      ＂word＂: ＂abandon＂,
+      ＂ipa＂: ＂/əˈbændən/＂,
+      ＂translation＂: ＂放棄、遺棄＂,
+      ＂partOfSpeech＂: ＂v.＂,
+      ＂example＂: ＂They had to abandon their home due to the flood.＂,
+      ＂exampleTranslation＂: ＂由於洪水，他們不得不放棄家園。＂,
+      ＂synonyms＂: [＂desert＂, ＂forsake＂, ＂give up＂],
+      ＂antonyms＂: [＂keep＂, ＂maintain＂, ＂continue＂],
+      ＂difficulty＂: ＂intermediate＂,
+      ＂category＂: ＂動詞＂,
+      ＂level＂: 1,
+      ＂tags＂: [＂學測＂, ＂Level 4＂, ＂生活＂]
     }
   ]
 }
@@ -293,8 +293,8 @@ id,word,ipa,translation,partOfSpeech,example,exampleTranslation,synonyms,antonym
 ```typescript
 // 方法一：手動合併 JSON
 {
-  "vocabularyPack": { /* ... */ },
-  "words": [
+  ＂vocabularyPack＂: { /* ... */ },
+  ＂words＂: [
     /* 批次 1 的單字 */,
     /* 批次 2 的單字 */
   ]
@@ -329,7 +329,7 @@ import { vocabularyWords } from '@/data/vocabulary-imported';
 // 轉換欄位名稱
 const convertedWords = vocabularyWords.map(word => ({
   ...word,
-  // 如果 DeepSeek 使用 "meaning" 而不是 "translation"
+  // 如果 DeepSeek 使用 ＂meaning＂ 而不是 ＂translation＂
   translation: word.meaning || word.translation
 }));
 ```

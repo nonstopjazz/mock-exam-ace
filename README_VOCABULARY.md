@@ -86,7 +86,7 @@ interface VocabularyWord {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   partOfSpeech?: string;         // 詞性（n./v./adj.）
   category?: string;             // 分類
-  tags?: string[];               // 標籤（["學測", "Level X"]）
+  tags?: string[];               // 標籤（[＂學測＂, ＂Level X＂]）
 }
 ```
 
@@ -295,8 +295,8 @@ const quizQuestions = generateQuizQuestions(vocabularyWords, 20);
 可以！合併 JSON 後一起匯入：
 ```json
 {
-  "vocabularyPack": { /* ... */ },
-  "words": [
+  ＂vocabularyPack＂: { /* ... */ },
+  ＂words＂: [
     /* 批次 1 */,
     /* 批次 2 */
   ]

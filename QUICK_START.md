@@ -51,25 +51,25 @@ DeepSeek 應該生成這樣的 JSON：
 
 ```json
 {
-  "vocabularyPack": {
-    "id": "PACK_GSAT_5545",
-    "title": "學測核心 5545 單字",
-    "totalWords": 5545
+  ＂vocabularyPack＂: {
+    ＂id＂: ＂PACK_GSAT_5545＂,
+    ＂title＂: ＂學測核心 5545 單字＂,
+    ＂totalWords＂: 5545
   },
-  "words": [
+  ＂words＂: [
     {
-      "id": "1",
-      "word": "abandon",
-      "ipa": "/əˈbændən/",
-      "translation": "放棄、遺棄",
-      "partOfSpeech": "v.",
-      "example": "They had to abandon their home.",
-      "exampleTranslation": "他們不得不放棄家園。",
-      "synonyms": ["desert", "forsake"],
-      "antonyms": ["keep", "maintain"],
-      "difficulty": "intermediate",
-      "level": 1,
-      "tags": ["學測", "Level 4"]
+      ＂id＂: ＂1＂,
+      ＂word＂: ＂abandon＂,
+      ＂ipa＂: ＂/əˈbændən/＂,
+      ＂translation＂: ＂放棄、遺棄＂,
+      ＂partOfSpeech＂: ＂v.＂,
+      ＂example＂: ＂They had to abandon their home.＂,
+      ＂exampleTranslation＂: ＂他們不得不放棄家園。＂,
+      ＂synonyms＂: [＂desert＂, ＂forsake＂],
+      ＂antonyms＂: [＂keep＂, ＂maintain＂],
+      ＂difficulty＂: ＂intermediate＂,
+      ＂level＂: 1,
+      ＂tags＂: [＂學測＂, ＂Level 4＂]
     }
   ]
 }
@@ -81,7 +81,7 @@ DeepSeek 應該生成這樣的 JSON：
 
 確保每個單字包含：
 
-- [x] **id** - 流水號（"1", "2", ...）
+- [x] **id** - 流水號（＂1＂, ＂2＂, ...）
 - [x] **word** - 英文單字
 - [x] **ipa** - 音標（格式：`/.../)
 - [x] **translation** - 中文翻譯
@@ -92,7 +92,7 @@ DeepSeek 應該生成這樣的 JSON：
 - [x] **difficulty** - beginner/intermediate/advanced
 - [x] **level** - 熟練度（初始值 1）
 - [x] **partOfSpeech** - 詞性（v./n./adj./adv.）
-- [x] **tags** - 標籤陣列（["學測", "Level X"]）
+- [x] **tags** - 標籤陣列（[＂學測＂, ＂Level X＂]）
 
 ---
 
