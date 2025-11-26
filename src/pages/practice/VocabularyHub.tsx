@@ -249,7 +249,7 @@ const VocabularyHub = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <span className="text-sm text-foreground">本週錯誤率</span>
-                <span className="text-lg font-bold text-destructive">{errorRate}%</span>
+                <span className="text-lg font-bold text-destructive">23%</span>
               </div>
 
               <div className="space-y-2">
