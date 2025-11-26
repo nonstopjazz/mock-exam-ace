@@ -93,6 +93,34 @@ const VocabularyHub = () => {
     }
   ];
 
+  // Recommended theme packs (original 3 packs)
+  const recommendedPacks = [
+    {
+      id: "1",
+      title: "TOEIC 商務核心 500",
+      level: "中級",
+      words: 500,
+      price: 200,
+      theme: "商務英語"
+    },
+    {
+      id: "2",
+      title: "高中必考字根家族",
+      level: "初級",
+      words: 300,
+      price: 150,
+      theme: "字根字首"
+    },
+    {
+      id: "3",
+      title: "學測高頻動詞片語",
+      level: "中高級",
+      words: 250,
+      price: 180,
+      theme: "片語搭配"
+    }
+  ];
+
   // Level colors for visual distinction
   const levelColors = [
     "from-emerald-500/20 to-emerald-600/20 border-emerald-500/30",
@@ -377,6 +405,52 @@ const VocabularyHub = () => {
                 </Card>
               );
             })}
+          </div>
+        </div>
+
+        {/* Recommended Packs */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Sparkles className="h-6 w-6 text-treasure" />
+              推薦單字包
+            </h2>
+            <Button variant="ghost" className="gap-2" onClick={() => navigate("/practice/shop")}>
+              前往商店 <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {recommendedPacks.map((pack) => (
+              <Card
+                key={pack.id}
+                className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <Badge variant="outline" className="text-xs">{pack.theme}</Badge>
+                    <Badge variant="secondary">{pack.level}</Badge>
+                  </div>
+
+                  <h3 className="text-lg font-bold text-foreground mb-2">{pack.title}</h3>
+
+                  <div className="flex items-center gap-2 mb-4">
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{pack.words} 個單字</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="flex items-center gap-1">
+                      <Sparkles className="h-5 w-5 text-treasure" />
+                      <span className="text-xl font-bold text-foreground">{pack.price}</span>
+                    </div>
+                    <Button size="sm" variant="default">
+                      立即購買
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       </div>
