@@ -12,17 +12,44 @@ import {
   Clock,
   Award,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Layers,
+  GraduationCap,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useVocabularyStore } from "@/store/vocabularyStore";
+import { VOCABULARY_LEVELS, TOTAL_WORDS } from "@/data/vocabulary";
 
 const VocabularyHub = () => {
   const navigate = useNavigate();
-  const [todayReviewCount] = useState(47);
-  const [masteryLevel] = useState(68);
-  const [weeklyProgress] = useState(85);
-  const [errorRate] = useState(23);
+  const {
+    getOverallProgress,
+    getLevelProgress,
+    totalWordsLearned,
+    totalReviewCount,
+    streakDays,
+    setSelectedLevels,
+  } = useVocabularyStore();
+
+  const [stats, setStats] = useState({
+    reviewDue: 0,
+    learned: 0,
+    mastered: 0,
+    total: TOTAL_WORDS,
+  });
+
+  useEffect(() => {
+    const progress = getOverallProgress();
+    setStats({
+      reviewDue: progress.reviewDue || 24,
+      learned: progress.learned,
+      mastered: progress.mastered,
+      total: progress.total || TOTAL_WORDS,
+    });
+  }, [getOverallProgress]);
+
+  const masteryPercentage = stats.total > 0 ? Math.round((stats.learned / stats.total) * 100) : 0;
 
   const modes = [
     {
@@ -34,7 +61,7 @@ const VocabularyHub = () => {
       iconColor: "text-primary",
       badge: "推薦",
       badgeVariant: "default" as const,
-      count: 24,
+      count: stats.reviewDue || 24,
       countLabel: "今日待複習",
       path: "/practice/vocabulary/srs"
     },
@@ -47,8 +74,8 @@ const VocabularyHub = () => {
       iconColor: "text-secondary",
       badge: "熱門",
       badgeVariant: "secondary" as const,
-      count: 156,
-      countLabel: "複習池總數",
+      count: TOTAL_WORDS,
+      countLabel: "單字總數",
       path: "/practice/vocabulary/flashcards"
     },
     {
@@ -66,32 +93,19 @@ const VocabularyHub = () => {
     }
   ];
 
-  const recommendedPacks = [
-    {
-      id: "1",
-      title: "TOEIC 商務核心 500",
-      level: "中級",
-      words: 500,
-      price: 200,
-      theme: "商務英語"
-    },
-    {
-      id: "2",
-      title: "高中必考字根家族",
-      level: "初級",
-      words: 300,
-      price: 150,
-      theme: "字根字首"
-    },
-    {
-      id: "3",
-      title: "學測高頻動詞片語",
-      level: "中高級",
-      words: 250,
-      price: 180,
-      theme: "片語搭配"
-    }
+  // Level colors for visual distinction
+  const levelColors = [
+    "from-emerald-500/20 to-emerald-600/20 border-emerald-500/30",
+    "from-blue-500/20 to-blue-600/20 border-blue-500/30",
+    "from-violet-500/20 to-violet-600/20 border-violet-500/30",
+    "from-amber-500/20 to-amber-600/20 border-amber-500/30",
+    "from-rose-500/20 to-rose-600/20 border-rose-500/30",
   ];
+
+  const handleStartLevel = (level: number) => {
+    setSelectedLevels([level]);
+    navigate("/practice/vocabulary/srs");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,17 +129,17 @@ const VocabularyHub = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold text-foreground">今日目標</h3>
+                <h3 className="font-semibold text-foreground">待複習單字</h3>
               </div>
               <Badge variant="default">進行中</Badge>
             </div>
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-foreground">{todayReviewCount}</span>
+                <span className="text-4xl font-bold text-foreground">{stats.reviewDue || 24}</span>
                 <span className="text-muted-foreground">個單字待複習</span>
               </div>
-              <ProgressBar current={todayReviewCount - 18} max={todayReviewCount} showValues={false} />
-              <p className="text-sm text-muted-foreground">已完成 {todayReviewCount - 18} / {todayReviewCount}</p>
+              <ProgressBar current={stats.learned} max={stats.total} showValues={false} />
+              <p className="text-sm text-muted-foreground">已學習 {stats.learned} / {stats.total.toLocaleString()}</p>
             </div>
           </Card>
 
@@ -138,11 +152,11 @@ const VocabularyHub = () => {
             </div>
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-foreground">{masteryLevel}%</span>
+                <span className="text-4xl font-bold text-foreground">{masteryPercentage}%</span>
                 <span className="text-sm text-muted-foreground">熟練</span>
               </div>
-              <ProgressBar current={masteryLevel} max={100} showValues={false} />
-              <p className="text-sm text-muted-foreground">累計掌握 856 個單字</p>
+              <ProgressBar current={masteryPercentage} max={100} showValues={false} />
+              <p className="text-sm text-muted-foreground">累計掌握 {stats.learned.toLocaleString()} 個單字</p>
             </div>
           </Card>
 
@@ -150,16 +164,19 @@ const VocabularyHub = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-accent" />
-                <h3 className="font-semibold text-foreground">本週進度</h3>
+                <h3 className="font-semibold text-foreground">學習統計</h3>
               </div>
             </div>
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-foreground">{weeklyProgress}%</span>
-                <span className="text-sm text-success">+12%</span>
+                <span className="text-4xl font-bold text-foreground">{totalReviewCount}</span>
+                <span className="text-sm text-muted-foreground">次複習</span>
               </div>
-              <ProgressBar current={weeklyProgress} max={100} showValues={false} />
-              <p className="text-sm text-muted-foreground">本週複習 432 次</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-sm text-muted-foreground">連續學習</span>
+                <span className="text-success font-medium">{streakDays} 天</span>
+              </div>
+              <p className="text-sm text-muted-foreground">精通單字 {stats.mastered} 個</p>
             </div>
           </Card>
         </div>
@@ -286,49 +303,80 @@ const VocabularyHub = () => {
           </Card>
         </div>
 
-        {/* Recommended Packs */}
+        {/* Level Vocabulary Packs */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-treasure" />
-              推薦單字包
+              <Layers className="h-6 w-6 text-primary" />
+              Level 單字包
             </h2>
-            <Button variant="ghost" className="gap-2" onClick={() => navigate("/practice/shop")}>
-              前往商店 <ChevronRight className="h-4 w-4" />
-            </Button>
+            <Badge variant="secondary" className="text-sm">
+              共 {TOTAL_WORDS.toLocaleString()} 個單字
+            </Badge>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recommendedPacks.map((pack) => (
-              <Card
-                key={pack.id}
-                className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <Badge variant="outline" className="text-xs">{pack.theme}</Badge>
-                    <Badge variant="secondary">{pack.level}</Badge>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {VOCABULARY_LEVELS.filter(level => level.wordCount > 0).map((level, index) => {
+              const progress = getLevelProgress(level.level);
+              const progressPercent = progress.total > 0
+                ? Math.round((progress.learned / progress.total) * 100)
+                : 0;
 
-                  <h3 className="text-lg font-bold text-foreground mb-2">{pack.title}</h3>
-
-                  <div className="flex items-center gap-2 mb-4">
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{pack.words} 個單字</span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <div className="flex items-center gap-1">
-                      <Sparkles className="h-5 w-5 text-treasure" />
-                      <span className="text-xl font-bold text-foreground">{pack.price}</span>
+              return (
+                <Card
+                  key={level.level}
+                  className={`overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer bg-gradient-to-br ${levelColors[index % levelColors.length]}`}
+                  onClick={() => handleStartLevel(level.level)}
+                >
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="h-5 w-5 text-primary" />
+                        <span className="font-bold text-lg text-foreground">Level {level.level}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">{level.difficulty}</Badge>
                     </div>
-                    <Button size="sm" variant="default">
-                      立即購買
+
+                    <p className="text-sm text-muted-foreground mb-3">{level.description}</p>
+
+                    <div className="flex items-center gap-2 mb-3">
+                      <BookOpen className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">{level.wordCount.toLocaleString()} 個單字</span>
+                    </div>
+
+                    {/* Progress */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">學習進度</span>
+                        <span className="font-medium text-foreground">{progressPercent}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-background/50 overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all duration-300"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>已學 {progress.learned}</span>
+                        <span>精通 {progress.mastered}</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="w-full mt-4"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartLevel(level.level);
+                      }}
+                    >
+                      開始學習
                     </Button>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         </div>
       </div>
