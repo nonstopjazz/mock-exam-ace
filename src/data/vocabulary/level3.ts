@@ -3,7 +3,7 @@ import type { VocabularyWord } from './types';
 
 export const level3Words: VocabularyWord[] = [
   {
-    "id": "word_1",
+    "id": "1",
     "word": "aboard",
     "ipa": "/əˈbɔrd/",
     "translation": "在船上、在飛機上、在車上",
@@ -31,7 +31,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示上船、上飛機、上車"
   },
   {
-    "id": "word_2",
+    "id": "2",
     "word": "acceptable",
     "ipa": "/əkˈsɛptəbəl/",
     "translation": "可接受的、令人滿意的、合意的",
@@ -59,7 +59,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示可接受的事物"
   },
   {
-    "id": "word_3",
+    "id": "3",
     "word": "accident",
     "ipa": "/ˈæksɪdənt/",
     "translation": "事故、意外事件、偶然",
@@ -87,7 +87,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示意外傷害事件"
   },
   {
-    "id": "word_4",
+    "id": "4",
     "word": "account",
     "ipa": "/əˈkaʊnt/",
     "translation": "帳戶、說明、解釋",
@@ -115,7 +115,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示解釋、說明"
   },
   {
-    "id": "word_5",
+    "id": "5",
     "word": "accurate",
     "ipa": "/ˈækjərət/",
     "translation": "準確的、精確的",
@@ -143,7 +143,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞 accurately，表示準確地"
   },
   {
-    "id": "word_6",
+    "id": "6",
     "word": "ache",
     "ipa": "/eɪk/",
     "translation": "疼痛、隱隱作痛",
@@ -171,7 +171,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示持續的疼痛"
   },
   {
-    "id": "word_7",
+    "id": "7",
     "word": "achieve",
     "ipa": "/əˈtʃiv/",
     "translation": "達成、實現、獲得",
@@ -199,7 +199,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示透過努力獲得成功"
   },
   {
-    "id": "word_8",
+    "id": "8",
     "word": "achievement",
     "ipa": "/əˈtʃivmənt/",
     "translation": "成就、功績、達成",
@@ -227,7 +227,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示達成或實現的過程"
   },
   {
-    "id": "word_9",
+    "id": "9",
     "word": "activity",
     "ipa": "/ækˈtɪvəti/",
     "translation": "活動、行動、活躍",
@@ -255,7 +255,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示活躍狀態或活動量"
   },
   {
-    "id": "word_10",
+    "id": "10",
     "word": "actual",
     "ipa": "/ˈæk.tʃu.əl/",
     "translation": "實際的、真實的、當前的",
@@ -283,7 +283,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示實際存在的事物（較少見）"
   },
   {
-    "id": "word_11",
+    "id": "11",
     "word": "additional",
     "ipa": "/ə'dɪʃənl/",
     "translation": "額外的、附加的、另外的",
@@ -311,7 +311,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示額外的人或事物"
   },
   {
-    "id": "word_12",
+    "id": "12",
     "word": "admire",
     "ipa": "/ədˈmaɪr/",
     "translation": "欽佩、欣賞、讚美",
@@ -339,7 +339,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞 admiration，表示欽佩之情"
   },
   {
-    "id": "word_13",
+    "id": "13",
     "word": "admit",
     "ipa": "/ədˈmɪt/",
     "translation": "承認、允許進入、接納",
@@ -367,7 +367,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示入場許可或承認"
   },
   {
-    "id": "word_14",
+    "id": "14",
     "word": "adopt",
     "ipa": "/əˈdɑpt/",
     "translation": "採用、收養、接受",
@@ -395,7 +395,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示被收養的"
   },
   {
-    "id": "word_15",
+    "id": "15",
     "word": "advanced",
     "ipa": "/ədˈvænst/",
     "translation": "先進的、高級的、晚期的",
@@ -423,7 +423,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示前進、提出（advance的過去分詞）"
   },
   {
-    "id": "word_16",
+    "id": "16",
     "word": "advantage",
     "ipa": "/ədˈvæn.tɪdʒ/",
     "translation": "優勢、優點、好處",
@@ -451,7 +451,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使處於有利地位"
   },
   {
-    "id": "word_17",
+    "id": "17",
     "word": "adventure",
     "ipa": "/ədˈvɛnʧər/",
     "translation": "冒險、奇遇、探險",
@@ -479,7 +479,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示冒險嘗試"
   },
   {
-    "id": "word_18",
+    "id": "18",
     "word": "advertise",
     "ipa": "/ˈædvərˌtaɪz/",
     "translation": "廣告、宣傳、推廣",
@@ -507,7 +507,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示廣告活動或廣告業"
   },
   {
-    "id": "word_19",
+    "id": "19",
     "word": "advertisement",
     "ipa": "/ˌædvərˈtaɪzmənt/",
     "translation": "廣告、宣傳、啟事",
@@ -535,7 +535,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示廣告業或廣告活動"
   },
   {
-    "id": "word_20",
+    "id": "20",
     "word": "ad",
     "ipa": "/æd/",
     "translation": "廣告、宣傳",
@@ -563,7 +563,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示張貼廣告"
   },
   {
-    "id": "word_21",
+    "id": "21",
     "word": "advice",
     "ipa": "/ədˈvaɪs/",
     "translation": "建議、勸告、忠告",
@@ -591,7 +591,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示專業意見或正式指導"
   },
   {
-    "id": "word_22",
+    "id": "22",
     "word": "advise",
     "ipa": "/ədˈvaɪz/",
     "translation": "建議、勸告、通知",
@@ -619,7 +619,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示建議或通知"
   },
   {
-    "id": "word_23",
+    "id": "23",
     "word": "adviser",
     "ipa": "/ədˈvaɪzər/",
     "translation": "顧問、勸告者、指導老師",
@@ -647,7 +647,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示提供建議的人"
   },
   {
-    "id": "word_24",
+    "id": "24",
     "word": "advisor",
     "ipa": "/ədˈvaɪzər/",
     "translation": "顧問、指導者",
@@ -675,7 +675,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞 advise，表示建議、勸告"
   },
   {
-    "id": "word_25",
+    "id": "25",
     "word": "affect",
     "ipa": "/əˈfɛkt/",
     "translation": "影響、感動、感染",
@@ -703,7 +703,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示情感或情緒（心理學用語）"
   },
   {
-    "id": "word_26",
+    "id": "26",
     "word": "afford",
     "ipa": "/əˈfɔrd/",
     "translation": "負擔得起、提供、給予",
@@ -731,7 +731,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞表示提供機會或條件"
   },
   {
-    "id": "word_27",
+    "id": "27",
     "word": "afterward",
     "ipa": "/ˈæftərwərd/",
     "translation": "後來、然後、之後",
@@ -759,7 +759,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可拼寫為afterwards，意思相同"
   },
   {
-    "id": "word_28",
+    "id": "28",
     "word": "afterwards",
     "ipa": "/ˈæftərwərdz/",
     "translation": "之後、然後、後來",
@@ -787,7 +787,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_29",
+    "id": "29",
     "word": "agriculture",
     "ipa": "/ˈæɡrɪˌkʌltʃər/",
     "translation": "農業、農藝、農學",
@@ -815,7 +815,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指農藝學或農業生產體系"
   },
   {
-    "id": "word_30",
+    "id": "30",
     "word": "air-conditioner",
     "ipa": "/ˈɛrkənˌdɪʃənər/",
     "translation": "空調、冷氣機",
@@ -843,7 +843,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示為...安裝空調或調節空氣"
   },
   {
-    "id": "word_31",
+    "id": "31",
     "word": "alley",
     "ipa": "/ˈæli/",
     "translation": "小巷、胡同",
@@ -871,7 +871,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指保齡球球道"
   },
   {
-    "id": "word_32",
+    "id": "32",
     "word": "amaze",
     "ipa": "/əˈmeɪz/",
     "translation": "使驚奇、使驚訝",
@@ -899,7 +899,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示驚奇（較少使用）"
   },
   {
-    "id": "word_33",
+    "id": "33",
     "word": "amazement",
     "ipa": "/əˈmeɪzmənt/",
     "translation": "驚訝、驚奇、驚愕",
@@ -927,7 +927,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示驚奇的狀態"
   },
   {
-    "id": "word_34",
+    "id": "34",
     "word": "ambassador",
     "ipa": "/æmˈbæsədər/",
     "translation": "大使、使節、代表",
@@ -955,7 +955,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指品牌或組織的代言人或形象大使"
   },
   {
-    "id": "word_35",
+    "id": "35",
     "word": "ambition",
     "ipa": "/æmˈbɪʃən/",
     "translation": "抱負、野心、志向",
@@ -983,7 +983,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示追求或渴望，但較少使用"
   },
   {
-    "id": "word_36",
+    "id": "36",
     "word": "angel",
     "ipa": "/ˈeɪndʒəl/",
     "translation": "天使、守護神、善人",
@@ -1011,7 +1011,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，在俚語中表示贊助人或投資者"
   },
   {
-    "id": "word_37",
+    "id": "37",
     "word": "angle",
     "ipa": "/ˈæŋɡəl/",
     "translation": "角度、觀點",
@@ -1039,7 +1039,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示釣魚或謀求"
   },
   {
-    "id": "word_38",
+    "id": "38",
     "word": "announce",
     "ipa": "/əˈnaʊns/",
     "translation": "宣布、通告、宣告",
@@ -1067,7 +1067,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示公告"
   },
   {
-    "id": "word_39",
+    "id": "39",
     "word": "announcement",
     "ipa": "/əˈnaʊnsmənt/",
     "translation": "公告、宣告、通告",
@@ -1095,7 +1095,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作可數名詞，表示具體的公告內容"
   },
   {
-    "id": "word_40",
+    "id": "40",
     "word": "apart",
     "ipa": "/əˈpɑrt/",
     "translation": "分開、分離、相隔",
@@ -1123,7 +1123,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示分開的、與眾不同的"
   },
   {
-    "id": "word_41",
+    "id": "41",
     "word": "apparent",
     "ipa": "/əˈpærənt/",
     "translation": "明顯的、顯而易見的、表面的",
@@ -1151,7 +1151,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示表面上的（如apparent authority）"
   },
   {
-    "id": "word_42",
+    "id": "42",
     "word": "appeal",
     "ipa": "/əˈpiːl/",
     "translation": "呼籲、上訴、吸引力",
@@ -1179,7 +1179,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示吸引力或上訴"
   },
   {
-    "id": "word_43",
+    "id": "43",
     "word": "appreciate",
     "ipa": "/əˈpriːʃieɪt/",
     "translation": "欣賞、感激、理解",
@@ -1207,7 +1207,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示增值"
   },
   {
-    "id": "word_44",
+    "id": "44",
     "word": "approach",
     "ipa": "/əˈproʊtʃ/",
     "translation": "接近、靠近、方法",
@@ -1235,7 +1235,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示方法、途徑"
   },
   {
-    "id": "word_45",
+    "id": "45",
     "word": "approve",
     "ipa": "/əˈpruːv/",
     "translation": "批准、贊成、同意",
@@ -1263,7 +1263,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，與of連用表示贊成"
   },
   {
-    "id": "word_46",
+    "id": "46",
     "word": "aquarium",
     "ipa": "/əˈkweriəm/",
     "translation": "水族館、養魚缸",
@@ -1291,7 +1291,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_47",
+    "id": "47",
     "word": "arithmetic",
     "ipa": "/əˈrɪθmətɪk/",
     "translation": "算術、算術運算",
@@ -1319,7 +1319,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示算術的"
   },
   {
-    "id": "word_48",
+    "id": "48",
     "word": "arrival",
     "ipa": "/əˈraɪvəl/",
     "translation": "到達、抵達",
@@ -1347,7 +1347,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示到達的動作或狀態"
   },
   {
-    "id": "word_49",
+    "id": "49",
     "word": "ash",
     "ipa": "/æʃ/",
     "translation": "灰燼、骨灰",
@@ -1375,7 +1375,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示撒灰於或化為灰燼"
   },
   {
-    "id": "word_50",
+    "id": "50",
     "word": "aside",
     "ipa": "/əˈsaɪd/",
     "translation": "旁邊、一旁、撇開",
@@ -1403,7 +1403,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示戲劇中的旁白或離題話"
   },
   {
-    "id": "word_51",
+    "id": "51",
     "word": "assist",
     "ipa": "/əˈsɪst/",
     "translation": "幫助、協助、援助",
@@ -1431,7 +1431,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示助攻或協助"
   },
   {
-    "id": "word_52",
+    "id": "52",
     "word": "athlete",
     "ipa": "/ˈæθlit/",
     "translation": "運動員、體育家",
@@ -1459,7 +1459,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞 athletic 表示運動的、健壯的"
   },
   {
-    "id": "word_53",
+    "id": "53",
     "word": "attempt",
     "ipa": "/əˈtɛmpt/",
     "translation": "嘗試、企圖、努力",
@@ -1487,7 +1487,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示嘗試的行為"
   },
   {
-    "id": "word_54",
+    "id": "54",
     "word": "attitude",
     "ipa": "/ˈætɪtuːd/",
     "translation": "態度、看法、姿態",
@@ -1515,7 +1515,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指身體姿勢，尤指舞蹈或表演中的姿態"
   },
   {
-    "id": "word_55",
+    "id": "55",
     "word": "attract",
     "ipa": "/əˈtrækt/",
     "translation": "吸引、引起、誘惑",
@@ -1543,7 +1543,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示具有吸引力"
   },
   {
-    "id": "word_56",
+    "id": "56",
     "word": "attractive",
     "ipa": "/əˈtræktɪv/",
     "translation": "有吸引力的、迷人的、誘人的",
@@ -1571,7 +1571,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示在財務上有利可圖的"
   },
   {
-    "id": "word_57",
+    "id": "57",
     "word": "audience",
     "ipa": "/ˈɔdiəns/",
     "translation": "觀眾、聽眾、讀者",
@@ -1599,7 +1599,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指正式會見或覲見，如：請求覲見國王"
   },
   {
-    "id": "word_58",
+    "id": "58",
     "word": "author",
     "ipa": "/ˈɔθɚ/",
     "translation": "作者、作家",
@@ -1627,7 +1627,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示撰寫或創作"
   },
   {
-    "id": "word_59",
+    "id": "59",
     "word": "automatic",
     "ipa": "/ˌɔːtəˈmætɪk/",
     "translation": "自動的、無意識的、必然的",
@@ -1655,7 +1655,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示自動裝置或自動變速車輛"
   },
   {
-    "id": "word_60",
+    "id": "60",
     "word": "automobile",
     "ipa": "/ˈɔːtəməˌbiːl/",
     "translation": "汽車、機動車",
@@ -1683,7 +1683,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示汽車的或自動的"
   },
   {
-    "id": "word_61",
+    "id": "61",
     "word": "auto",
     "ipa": "/ˈɔː.toʊ/",
     "translation": "汽車，自動裝置，汽車的",
@@ -1708,7 +1708,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "有時可作形容詞，表示自動的"
   },
   {
-    "id": "word_62",
+    "id": "62",
     "word": "available",
     "ipa": "/əˈveɪləbəl/",
     "translation": "可用的、可獲得的、有空的",
@@ -1736,7 +1736,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示可利用地"
   },
   {
-    "id": "word_63",
+    "id": "63",
     "word": "avenue",
     "ipa": "/ˈæv.ə.nuː/",
     "translation": "林蔭大道、途徑、方法",
@@ -1764,7 +1764,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可表示達成某事的途徑或方法"
   },
   {
-    "id": "word_64",
+    "id": "64",
     "word": "average",
     "ipa": "/ˈævərɪdʒ/",
     "translation": "平均、普通的、一般水準",
@@ -1792,7 +1792,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示平均的、普通的；也可作動詞，表示平均為"
   },
   {
-    "id": "word_65",
+    "id": "65",
     "word": "awake",
     "ipa": "/əˈweɪk/",
     "translation": "醒著、喚醒、意識到",
@@ -1820,7 +1820,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示醒著的"
   },
   {
-    "id": "word_66",
+    "id": "66",
     "word": "awaken",
     "ipa": "/əˈweɪkən/",
     "translation": "喚醒、覺醒、激起",
@@ -1848,7 +1848,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示喚醒某人；作不及物動詞，表示覺醒"
   },
   {
-    "id": "word_67",
+    "id": "67",
     "word": "award",
     "ipa": "/əˈwɔrd/",
     "translation": "獎項、獎勵、授予",
@@ -1876,7 +1876,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示授予、頒發"
   },
   {
-    "id": "word_68",
+    "id": "68",
     "word": "aware",
     "ipa": "/əˈwɛr/",
     "translation": "意識到的、察覺的、知道的",
@@ -1904,7 +1904,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示警覺狀態（較少見）"
   },
   {
-    "id": "word_69",
+    "id": "69",
     "word": "awful",
     "ipa": "/ˈɔːfl/",
     "translation": "糟糕的、可怕的、極度的",
@@ -1932,7 +1932,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示非常、極度，但較為口語"
   },
   {
-    "id": "word_70",
+    "id": "70",
     "word": "ax",
     "ipa": "/æks/",
     "translation": "斧頭、削減、解雇",
@@ -1959,7 +1959,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用斧砍或削減"
   },
   {
-    "id": "word_71",
+    "id": "71",
     "word": "axe",
     "ipa": "/æks/",
     "translation": "斧頭、削減、解雇",
@@ -1987,7 +1987,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示削減預算或解雇人員"
   },
   {
-    "id": "word_72",
+    "id": "72",
     "word": "background",
     "ipa": "/ˈbækˌɡraʊnd/",
     "translation": "背景、經歷、後台",
@@ -2015,7 +2015,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示提供背景資訊"
   },
   {
-    "id": "word_73",
+    "id": "73",
     "word": "bacon",
     "ipa": "/ˈbeɪkən/",
     "translation": "培根、煙肉",
@@ -2043,7 +2043,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指燻豬肉或醃製豬肉"
   },
   {
-    "id": "word_74",
+    "id": "74",
     "word": "bacteria",
     "ipa": "/bækˈtɪriə/",
     "translation": "細菌",
@@ -2070,7 +2070,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞使用，表示細菌的統稱"
   },
   {
-    "id": "word_75",
+    "id": "75",
     "word": "badly",
     "ipa": "/ˈbædli/",
     "translation": "嚴重地、非常、拙劣地",
@@ -2098,7 +2098,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示難過的（非正式用法）"
   },
   {
-    "id": "word_76",
+    "id": "76",
     "word": "badminton",
     "ipa": "/ˈbædmɪntən/",
     "translation": "羽毛球、羽毛球運動",
@@ -2122,7 +2122,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示與羽毛球相關的，如 badminton court（羽毛球場）"
   },
   {
-    "id": "word_77",
+    "id": "77",
     "word": "baggage",
     "ipa": "/ˈbæɡɪdʒ/",
     "translation": "行李、包袱、情感負擔",
@@ -2150,7 +2150,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指情感或心理上的負擔"
   },
   {
-    "id": "word_78",
+    "id": "78",
     "word": "bait",
     "ipa": "/beɪt/",
     "translation": "誘餌、引誘物、誘惑",
@@ -2178,7 +2178,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示放置誘餌、故意激怒"
   },
   {
-    "id": "word_79",
+    "id": "79",
     "word": "balance",
     "ipa": "/ˈbæləns/",
     "translation": "平衡、餘額、結算",
@@ -2206,7 +2206,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使平衡、結算帳目"
   },
   {
-    "id": "word_80",
+    "id": "80",
     "word": "bandage",
     "ipa": "/ˈbændɪdʒ/",
     "translation": "繃帶、包紮帶",
@@ -2234,7 +2234,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用繃帶包紮"
   },
   {
-    "id": "word_81",
+    "id": "81",
     "word": "bang",
     "ipa": "/bæŋ/",
     "translation": "猛擊、巨響、砰的一聲",
@@ -2262,7 +2262,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示巨響或突然的撞擊"
   },
   {
-    "id": "word_82",
+    "id": "82",
     "word": "bare",
     "ipa": "/bɛr/",
     "translation": "裸露的、無遮蔽的、基本的",
@@ -2290,7 +2290,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示揭露、使裸露"
   },
   {
-    "id": "word_83",
+    "id": "83",
     "word": "barely",
     "ipa": "/ˈbɛrli/",
     "translation": "幾乎不、僅僅、勉強",
@@ -2318,7 +2318,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示赤裸的、無遮蔽的"
   },
   {
-    "id": "word_84",
+    "id": "84",
     "word": "barn",
     "ipa": "/bɑːrn/",
     "translation": "穀倉、畜棚、倉庫",
@@ -2346,7 +2346,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示將農產品儲存在穀倉中"
   },
   {
-    "id": "word_85",
+    "id": "85",
     "word": "barrel",
     "ipa": "/ˈbærəl/",
     "translation": "桶、槍管、大量",
@@ -2374,7 +2374,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示高速移動"
   },
   {
-    "id": "word_86",
+    "id": "86",
     "word": "bay",
     "ipa": "/beɪ/",
     "translation": "海灣、月桂樹、低沉的吠叫",
@@ -2402,7 +2402,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示低沉吠叫；作形容詞表示赤褐色的"
   },
   {
-    "id": "word_87",
+    "id": "87",
     "word": "beam",
     "ipa": "/bim/",
     "translation": "光束、橫梁、笑容",
@@ -2430,7 +2430,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示微笑、發射光線"
   },
   {
-    "id": "word_88",
+    "id": "88",
     "word": "beast",
     "ipa": "/bist/",
     "translation": "野獸、動物、殘暴的人",
@@ -2458,7 +2458,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示極好的、很棒的（口語用法）"
   },
   {
-    "id": "word_89",
+    "id": "89",
     "word": "beggar",
     "ipa": "/ˈbɛɡər/",
     "translation": "乞丐、叫化子",
@@ -2486,7 +2486,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使貧窮、使難以描述"
   },
   {
-    "id": "word_90",
+    "id": "90",
     "word": "behave",
     "ipa": "/bɪˈheɪv/",
     "translation": "表現、舉止得體、守規矩",
@@ -2514,7 +2514,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作反身動詞，表示守規矩或表現良好"
   },
   {
-    "id": "word_91",
+    "id": "91",
     "word": "being",
     "ipa": "/ˈbiːɪŋ/",
     "translation": "存在、生物、生命",
@@ -2542,7 +2542,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞be的現在分詞，表示正在"
   },
   {
-    "id": "word_92",
+    "id": "92",
     "word": "belly",
     "ipa": "/ˈbɛli/",
     "translation": "腹部、肚子、胃",
@@ -2570,7 +2570,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示鼓起、膨脹"
   },
   {
-    "id": "word_93",
+    "id": "93",
     "word": "stomach",
     "ipa": "/ˈstʌmək/",
     "translation": "胃、腹部、忍受",
@@ -2598,7 +2598,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示忍受或容忍"
   },
   {
-    "id": "word_94",
+    "id": "94",
     "word": "tummy",
     "ipa": "/ˈtʌmi/",
     "translation": "肚子、腹部",
@@ -2626,7 +2626,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指胃部，特別是在非正式用語中"
   },
   {
-    "id": "word_95",
+    "id": "95",
     "word": "abdomen",
     "ipa": "/ˈæbdəmən/",
     "translation": "腹部、下腹",
@@ -2654,7 +2654,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "在昆蟲學中也指昆蟲的腹部節段"
   },
   {
-    "id": "word_96",
+    "id": "96",
     "word": "beneath",
     "ipa": "/bɪˈniːθ/",
     "translation": "在…下方、在…底下、低於",
@@ -2682,7 +2682,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示在下方"
   },
   {
-    "id": "word_97",
+    "id": "97",
     "word": "benefit",
     "ipa": "/ˈbɛnəfɪt/",
     "translation": "益處、利益、好處",
@@ -2710,7 +2710,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示受益、獲益"
   },
   {
-    "id": "word_98",
+    "id": "98",
     "word": "berry",
     "ipa": "/ˈberi/",
     "translation": "漿果、莓果",
@@ -2738,7 +2738,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示採集漿果"
   },
   {
-    "id": "word_99",
+    "id": "99",
     "word": "bible",
     "ipa": "/ˈbaɪb(ə)l/",
     "translation": "聖經、經典、權威著作",
@@ -2766,7 +2766,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指某領域的權威書籍，例如：The book is considered the bible of computer programming."
   },
   {
-    "id": "word_100",
+    "id": "100",
     "word": "bible",
     "ipa": "/ˈbaɪb(ə)l/",
     "translation": "聖經、經典著作",
@@ -2794,7 +2794,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指某領域的權威書籍，如『The Python bible for programmers』"
   },
   {
-    "id": "word_101",
+    "id": "101",
     "word": "billion",
     "ipa": "/ˈbɪljən/",
     "translation": "十億、大量",
@@ -2822,7 +2822,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示十億的"
   },
   {
-    "id": "word_102",
+    "id": "102",
     "word": "bingo",
     "ipa": "/ˈbɪŋɡoʊ/",
     "translation": "賓果遊戲、太好了",
@@ -2847,7 +2847,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作感嘆詞，表示驚喜或成功"
   },
   {
-    "id": "word_103",
+    "id": "103",
     "word": "biscuit",
     "ipa": "/ˈbɪskɪt/",
     "translation": "餅乾、小麵包",
@@ -2875,7 +2875,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示淡黃褐色的"
   },
   {
-    "id": "word_104",
+    "id": "104",
     "word": "blame",
     "ipa": "/bleɪm/",
     "translation": "責備、指責、歸咎於",
@@ -2903,7 +2903,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示過錯、責任"
   },
   {
-    "id": "word_105",
+    "id": "105",
     "word": "blanket",
     "ipa": "/ˈblæŋkɪt/",
     "translation": "毯子、覆蓋物、總括的",
@@ -2931,7 +2931,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞表示覆蓋，或作形容詞表示總括的"
   },
   {
-    "id": "word_106",
+    "id": "106",
     "word": "bleed",
     "ipa": "/blid/",
     "translation": "流血、滲出、榨取",
@@ -2959,7 +2959,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示印刷品的出血邊"
   },
   {
-    "id": "word_107",
+    "id": "107",
     "word": "bless",
     "ipa": "/blɛs/",
     "translation": "祝福、保佑、讚美",
@@ -2987,7 +2987,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作感嘆詞，表示驚訝或感激，如：Bless you!（保佑你！/謝謝！）"
   },
   {
-    "id": "word_108",
+    "id": "108",
     "word": "blouse",
     "ipa": "/blaʊs/",
     "translation": "女用上衣、襯衫",
@@ -3015,7 +3015,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指軍服上衣或工作服上衣"
   },
   {
-    "id": "word_109",
+    "id": "109",
     "word": "bold",
     "ipa": "/boʊld/",
     "translation": "大膽的、勇敢的、醒目的",
@@ -3043,7 +3043,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示粗體字"
   },
   {
-    "id": "word_110",
+    "id": "110",
     "word": "boot",
     "ipa": "/but/",
     "translation": "靴子、啟動、踢",
@@ -3071,7 +3071,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示啟動電腦或踢東西"
   },
   {
-    "id": "word_111",
+    "id": "111",
     "word": "border",
     "ipa": "/ˈbɔrdər/",
     "translation": "邊界、邊境、邊緣",
@@ -3099,7 +3099,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示毗鄰、接壤"
   },
   {
-    "id": "word_112",
+    "id": "112",
     "word": "bore",
     "ipa": "/bɔr/",
     "translation": "使厭煩、鑽孔",
@@ -3127,7 +3127,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示令人厭煩的人事物或鑽孔"
   },
   {
-    "id": "word_113",
+    "id": "113",
     "word": "brake",
     "ipa": "/breɪk/",
     "translation": "煞車、制動器",
@@ -3155,7 +3155,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示煞車、制動"
   },
   {
-    "id": "word_114",
+    "id": "114",
     "word": "brass",
     "ipa": "/bræs/",
     "translation": "黃銅、銅管樂器、厚臉皮",
@@ -3183,7 +3183,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞表示黃銅製的，或指厚顏無恥的"
   },
   {
-    "id": "word_115",
+    "id": "115",
     "word": "bravery",
     "ipa": "/ˈbreɪvəri/",
     "translation": "勇敢、勇氣、英勇",
@@ -3211,7 +3211,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指具體的勇敢行為"
   },
   {
-    "id": "word_116",
+    "id": "116",
     "word": "breast",
     "ipa": "/brɛst/",
     "translation": "胸部、乳房、胸脯",
@@ -3239,7 +3239,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示面對、對抗"
   },
   {
-    "id": "word_117",
+    "id": "117",
     "word": "breath",
     "ipa": "/brɛθ/",
     "translation": "呼吸、氣息",
@@ -3267,7 +3267,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示呼吸（breathe），但此處為名詞形式"
   },
   {
-    "id": "word_118",
+    "id": "118",
     "word": "breathe",
     "ipa": "/brið/",
     "translation": "呼吸、呼氣、喘氣",
@@ -3295,7 +3295,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示說出、低語"
   },
   {
-    "id": "word_119",
+    "id": "119",
     "word": "breeze",
     "ipa": "/briːz/",
     "translation": "微風、輕而易舉的事",
@@ -3323,7 +3323,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示輕鬆地完成某事"
   },
   {
-    "id": "word_120",
+    "id": "120",
     "word": "bride",
     "ipa": "/braɪd/",
     "translation": "新娘、即將結婚的女子",
@@ -3351,7 +3351,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指剛結婚不久的女子"
   },
   {
-    "id": "word_121",
+    "id": "121",
     "word": "brilliant",
     "ipa": "/ˈbrɪljənt/",
     "translation": "明亮的、聰明的、出色的",
@@ -3379,7 +3379,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示鑽石（尤用於珠寶）"
   },
   {
-    "id": "word_122",
+    "id": "122",
     "word": "brook",
     "ipa": "/brʊk/",
     "translation": "小溪、容忍",
@@ -3406,7 +3406,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示容忍（多用於否定句）"
   },
   {
-    "id": "word_123",
+    "id": "123",
     "word": "broom",
     "ipa": "/brum/",
     "translation": "掃帚、金雀花",
@@ -3434,7 +3434,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用掃帚清掃"
   },
   {
-    "id": "word_124",
+    "id": "124",
     "word": "brow",
     "ipa": "/braʊ/",
     "translation": "眉毛、額頭、山脊",
@@ -3459,7 +3459,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指山坡或事物的邊緣部分"
   },
   {
-    "id": "word_125",
+    "id": "125",
     "word": "bubble",
     "ipa": "/ˈbʌb.əl/",
     "translation": "氣泡、泡沫、泡影",
@@ -3487,7 +3487,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示冒泡、沸騰"
   },
   {
-    "id": "word_126",
+    "id": "126",
     "word": "bucket",
     "ipa": "/ˈbʌkɪt/",
     "translation": "桶、水桶、一桶的量",
@@ -3515,7 +3515,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示快速移動或傾倒"
   },
   {
-    "id": "word_127",
+    "id": "127",
     "word": "pail",
     "ipa": "/peɪl/",
     "translation": "桶、提桶",
@@ -3543,7 +3543,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "偶爾可作動詞，表示用桶裝運"
   },
   {
-    "id": "word_128",
+    "id": "128",
     "word": "bud",
     "ipa": "/bʌd/",
     "translation": "芽、花蕾、萌芽",
@@ -3571,7 +3571,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示發芽、萌芽"
   },
   {
-    "id": "word_129",
+    "id": "129",
     "word": "budget",
     "ipa": "/ˈbʌdʒɪt/",
     "translation": "預算、經費",
@@ -3599,7 +3599,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示編列預算"
   },
   {
-    "id": "word_130",
+    "id": "130",
     "word": "buffalo",
     "ipa": "/ˈbʌfəloʊ/",
     "translation": "水牛、野牛",
@@ -3623,7 +3623,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示迷惑或威嚇"
   },
   {
-    "id": "word_131",
+    "id": "131",
     "word": "buffet",
     "ipa": "/bəˈfeɪ/",
     "translation": "自助餐、餐檯、打擊",
@@ -3651,7 +3651,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示連續打擊、衝擊"
   },
   {
-    "id": "word_132",
+    "id": "132",
     "word": "bulb",
     "ipa": "/bʌlb/",
     "translation": "燈泡、球莖",
@@ -3679,7 +3679,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指植物的球莖，如洋蔥、鬱金香的球莖"
   },
   {
-    "id": "word_133",
+    "id": "133",
     "word": "bull",
     "ipa": "/bʊl/",
     "translation": "公牛、雄獸、胡說",
@@ -3707,7 +3707,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示強行推動；或作形容詞，表示上漲的"
   },
   {
-    "id": "word_134",
+    "id": "134",
     "word": "bullet",
     "ipa": "/ˈbʊlɪt/",
     "translation": "子彈、項目符號",
@@ -3735,7 +3735,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示快速移動"
   },
   {
-    "id": "word_135",
+    "id": "135",
     "word": "bump",
     "ipa": "/bʌmp/",
     "translation": "碰撞、隆起、顛簸",
@@ -3763,7 +3763,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示隆起物或碰撞聲"
   },
   {
-    "id": "word_136",
+    "id": "136",
     "word": "bunch",
     "ipa": "/bʌntʃ/",
     "translation": "一束、一群、大量",
@@ -3791,7 +3791,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示聚集或成束"
   },
   {
-    "id": "word_137",
+    "id": "137",
     "word": "burden",
     "ipa": "/ˈbɜːrdn/",
     "translation": "負擔、責任、重擔",
@@ -3819,7 +3819,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使負擔、使煩惱"
   },
   {
-    "id": "word_138",
+    "id": "138",
     "word": "burglar",
     "ipa": "/ˈbɝːɡlɚ/",
     "translation": "竊賊、夜賊、盜賊",
@@ -3847,7 +3847,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示入室盜竊，但較少使用"
   },
   {
-    "id": "word_139",
+    "id": "139",
     "word": "bury",
     "ipa": "/ˈbɛri/",
     "translation": "埋葬、掩埋、隱藏",
@@ -3875,7 +3875,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示埋葬地點"
   },
   {
-    "id": "word_140",
+    "id": "140",
     "word": "bush",
     "ipa": "/bʊʃ/",
     "translation": "灌木、矮樹叢",
@@ -3903,7 +3903,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使成灌木狀；或作形容詞，表示粗糙的"
   },
   {
-    "id": "word_141",
+    "id": "141",
     "word": "buzz",
     "ipa": "/bʌz/",
     "translation": "嗡嗡聲、發出嗡嗡聲、流言",
@@ -3931,7 +3931,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示嗡嗡聲或興奮的氣氛"
   },
   {
-    "id": "word_142",
+    "id": "142",
     "word": "cabin",
     "ipa": "/ˈkæbɪn/",
     "translation": "小屋、船艙、機艙",
@@ -3959,7 +3959,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示住在小屋或狹小空間"
   },
   {
-    "id": "word_143",
+    "id": "143",
     "word": "campus",
     "ipa": "/ˈkæmpəs/",
     "translation": "校園、大學校區",
@@ -3987,7 +3987,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示校園內的，例如 campus life（校園生活）"
   },
   {
-    "id": "word_144",
+    "id": "144",
     "word": "cane",
     "ipa": "/keɪn/",
     "translation": "手杖、藤條、甘蔗",
@@ -4015,7 +4015,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用藤條鞭打"
   },
   {
-    "id": "word_145",
+    "id": "145",
     "word": "canoe",
     "ipa": "/kəˈnuː/",
     "translation": "獨木舟、小划子",
@@ -4043,7 +4043,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示划獨木舟"
   },
   {
-    "id": "word_146",
+    "id": "146",
     "word": "canyon",
     "ipa": "/ˈkænjən/",
     "translation": "峽谷、深谷",
@@ -4071,7 +4071,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指城市中的高樓峽谷（高樓林立的街道）"
   },
   {
-    "id": "word_147",
+    "id": "147",
     "word": "capable",
     "ipa": "/ˈkeɪpəb(ə)l/",
     "translation": "有能力的、能幹的、能夠",
@@ -4099,7 +4099,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞 capable of 表示有能力做某事"
   },
   {
-    "id": "word_148",
+    "id": "148",
     "word": "capital",
     "ipa": "/ˈkæpɪtl/",
     "translation": "資本、資金、首都",
@@ -4127,7 +4127,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示大寫的、極好的"
   },
   {
-    "id": "word_149",
+    "id": "149",
     "word": "capture",
     "ipa": "/ˈkæptʃər/",
     "translation": "捕捉、俘獲、奪取",
@@ -4155,7 +4155,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示捕獲物或戰利品"
   },
   {
-    "id": "word_150",
+    "id": "150",
     "word": "carpenter",
     "ipa": "/ˈkɑːrpəntər/",
     "translation": "木匠、木工",
@@ -4183,7 +4183,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示以木工手藝製作或修補"
   },
   {
-    "id": "word_151",
+    "id": "151",
     "word": "carriage",
     "ipa": "/ˈkærɪdʒ/",
     "translation": "馬車、客車廂、運輸",
@@ -4211,7 +4211,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指嬰兒車或打字機的滑架"
   },
   {
-    "id": "word_152",
+    "id": "152",
     "word": "cast",
     "ipa": "/kæst/",
     "translation": "投擲、鑄造、演員陣容",
@@ -4239,7 +4239,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示演員陣容或鑄件"
   },
   {
-    "id": "word_153",
+    "id": "153",
     "word": "casual",
     "ipa": "/ˈkæʒuəl/",
     "translation": "隨意的、非正式的、偶然的",
@@ -4267,7 +4267,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示臨時工或偶然來訪的人"
   },
   {
-    "id": "word_154",
+    "id": "154",
     "word": "caterpillar",
     "ipa": "/ˈkætərˌpɪlər/",
     "translation": "毛毛蟲、履帶拖拉機",
@@ -4295,7 +4295,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指履帶式車輛的履帶"
   },
   {
-    "id": "word_155",
+    "id": "155",
     "word": "cattle",
     "ipa": "/ˈkæt(ə)l/",
     "translation": "牛、牲口、家畜",
@@ -4323,7 +4323,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作集合名詞，表示牛類動物的總稱"
   },
   {
-    "id": "word_156",
+    "id": "156",
     "word": "celebrate",
     "ipa": "/ˈsɛləˌbreɪt/",
     "translation": "慶祝、頌揚、讚美",
@@ -4351,7 +4351,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示慶祝或舉行慶典"
   },
   {
-    "id": "word_157",
+    "id": "157",
     "word": "centimeter",
     "ipa": "/ˈsɛntɪmiːtər/",
     "translation": "公分、厘米",
@@ -4379,7 +4379,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "在英式英語中常拼為centimetre"
   },
   {
-    "id": "word_158",
+    "id": "158",
     "word": "ceramic",
     "ipa": "/səˈræmɪk/",
     "translation": "陶瓷的、陶瓷製品",
@@ -4407,7 +4407,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示陶瓷製品"
   },
   {
-    "id": "word_159",
+    "id": "159",
     "word": "chain",
     "ipa": "/tʃeɪn/",
     "translation": "鏈條、連鎖、束縛",
@@ -4435,7 +4435,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用鏈子鎖住"
   },
   {
-    "id": "word_160",
+    "id": "160",
     "word": "challenge",
     "ipa": "/ˈtʃælɪndʒ/",
     "translation": "挑戰、質疑、考驗",
@@ -4463,7 +4463,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示挑戰、質疑"
   },
   {
-    "id": "word_161",
+    "id": "161",
     "word": "champion",
     "ipa": "/ˈtʃæmpiən/",
     "translation": "冠軍、擁護者、優勝者",
@@ -4491,7 +4491,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示支持或擁護"
   },
   {
-    "id": "word_162",
+    "id": "162",
     "word": "changeable",
     "ipa": "/ˈtʃeɪndʒəbəl/",
     "translation": "易變的、可改變的、變化無常的",
@@ -4519,7 +4519,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示可變的事物"
   },
   {
-    "id": "word_163",
+    "id": "163",
     "word": "channel",
     "ipa": "/ˈʧænəl/",
     "translation": "頻道、管道、途徑",
@@ -4547,7 +4547,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示引導或輸送"
   },
   {
-    "id": "word_164",
+    "id": "164",
     "word": "chapter",
     "ipa": "/ˈtʃæptər/",
     "translation": "章節、分會、時期",
@@ -4575,7 +4575,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示分章節或分成部分"
   },
   {
-    "id": "word_165",
+    "id": "165",
     "word": "charm",
     "ipa": "/tʃɑrm/",
     "translation": "魅力、吸引力、魔力",
@@ -4603,7 +4603,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示迷住、吸引"
   },
   {
-    "id": "word_166",
+    "id": "166",
     "word": "chat",
     "ipa": "/tʃæt/",
     "translation": "聊天、閒談",
@@ -4631,7 +4631,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示聊天或閒談"
   },
   {
-    "id": "word_167",
+    "id": "167",
     "word": "cheek",
     "ipa": "/tʃik/",
     "translation": "臉頰、厚臉皮、無禮",
@@ -4659,7 +4659,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示無禮地說話"
   },
   {
-    "id": "word_168",
+    "id": "168",
     "word": "cheer",
     "ipa": "/tʃɪr/",
     "translation": "歡呼、鼓舞、加油",
@@ -4687,7 +4687,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示歡呼聲或愉快的心情"
   },
   {
-    "id": "word_169",
+    "id": "169",
     "word": "cheerful",
     "ipa": "/ˈtʃɪrfəl/",
     "translation": "開朗的、愉快的、樂觀的",
@@ -4715,7 +4715,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞 cheerfully，表示開朗地、愉快地"
   },
   {
-    "id": "word_170",
+    "id": "170",
     "word": "cheese",
     "ipa": "/tʃiz/",
     "translation": "起司、乳酪",
@@ -4742,7 +4742,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示停止或拍照時說的『笑一個』"
   },
   {
-    "id": "word_171",
+    "id": "171",
     "word": "cherry",
     "ipa": "/ˈtʃɛri/",
     "translation": "櫻桃、櫻桃樹、櫻桃色",
@@ -4770,7 +4770,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示櫻桃色的"
   },
   {
-    "id": "word_172",
+    "id": "172",
     "word": "chest",
     "ipa": "/tʃɛst/",
     "translation": "胸部、箱子、櫃子",
@@ -4798,7 +4798,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示胸腔或儲物箱"
   },
   {
-    "id": "word_173",
+    "id": "173",
     "word": "chew",
     "ipa": "/tʃuː/",
     "translation": "咀嚼、嚼碎、咬",
@@ -4826,7 +4826,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示咀嚼的動作或口香糖等咀嚼物"
   },
   {
-    "id": "word_174",
+    "id": "174",
     "word": "childhood",
     "ipa": "/ˈtʃaɪldhʊd/",
     "translation": "童年、幼年時期",
@@ -4854,7 +4854,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指童年時期（抽象概念）"
   },
   {
-    "id": "word_175",
+    "id": "175",
     "word": "chill",
     "ipa": "/tʃɪl/",
     "translation": "寒冷、寒意、使冷卻",
@@ -4882,7 +4882,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示寒冷或寒意；或作形容詞，表示冷淡的"
   },
   {
-    "id": "word_176",
+    "id": "176",
     "word": "chilly",
     "ipa": "/ˈtʃɪli/",
     "translation": "寒冷的、冷淡的",
@@ -4910,7 +4910,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示辣椒（通常用chili）"
   },
   {
-    "id": "word_177",
+    "id": "177",
     "word": "chimney",
     "ipa": "/ˈtʃɪmni/",
     "translation": "煙囪、煙道",
@@ -4938,7 +4938,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指岩壁上的垂直裂縫（登山術語）"
   },
   {
-    "id": "word_178",
+    "id": "178",
     "word": "chip",
     "ipa": "/tʃɪp/",
     "translation": "碎片、晶片、籌碼",
@@ -4966,7 +4966,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示削成碎片或刻"
   },
   {
-    "id": "word_179",
+    "id": "179",
     "word": "choke",
     "ipa": "/tʃoʊk/",
     "translation": "窒息、哽住、阻塞",
@@ -4994,7 +4994,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示窒息裝置或阻塞物"
   },
   {
-    "id": "word_180",
+    "id": "180",
     "word": "chop",
     "ipa": "/tʃɑp/",
     "translation": "砍、劈、切",
@@ -5022,7 +5022,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示排骨肉或砍劈動作"
   },
   {
-    "id": "word_181",
+    "id": "181",
     "word": "cigarette",
     "ipa": "/ˌsɪɡəˈrɛt/",
     "translation": "香菸、紙菸",
@@ -5049,7 +5049,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作比喻用法，表示細長如香菸形狀的物品"
   },
   {
-    "id": "word_182",
+    "id": "182",
     "word": "circus",
     "ipa": "/ˈsɝːkəs/",
     "translation": "馬戲團、馬戲表演、圓形廣場",
@@ -5077,7 +5077,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指環形交叉路口或熱鬧的場面"
   },
   {
-    "id": "word_183",
+    "id": "183",
     "word": "civil",
     "ipa": "/ˈsɪvəl/",
     "translation": "公民的、民用的、有禮貌的",
@@ -5105,7 +5105,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示民事的"
   },
   {
-    "id": "word_184",
+    "id": "184",
     "word": "classical",
     "ipa": "/ˈklæsɪkəl/",
     "translation": "古典的、經典的、傳統的",
@@ -5133,7 +5133,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示古典音樂或古典作品"
   },
   {
-    "id": "word_185",
+    "id": "185",
     "word": "click",
     "ipa": "/klɪk/",
     "translation": "點擊、發出喀嚓聲",
@@ -5161,7 +5161,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示喀嚓聲或點擊動作"
   },
   {
-    "id": "word_186",
+    "id": "186",
     "word": "client",
     "ipa": "/ˈklaɪ.ənt/",
     "translation": "客戶，委託人，顧客",
@@ -5189,7 +5189,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可用於電腦領域，表示用戶端（client，客戶端程式或裝置）"
   },
   {
-    "id": "word_187",
+    "id": "187",
     "word": "clinic",
     "ipa": "/ˈklɪnɪk/",
     "translation": "診所、醫務室、臨床教學",
@@ -5217,7 +5217,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示臨床的"
   },
   {
-    "id": "word_188",
+    "id": "188",
     "word": "clip",
     "ipa": "/klɪp/",
     "translation": "夾子、剪輯、修剪",
@@ -5245,7 +5245,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示剪下或夾住"
   },
   {
-    "id": "word_189",
+    "id": "189",
     "word": "clue",
     "ipa": "/kluː/",
     "translation": "線索、提示、跡象",
@@ -5273,7 +5273,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示提供線索"
   },
   {
-    "id": "word_190",
+    "id": "190",
     "word": "cocktail",
     "ipa": "/ˈkɑkˌteɪl/",
     "translation": "雞尾酒、混合飲料",
@@ -5301,7 +5301,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示混合的或多樣的"
   },
   {
-    "id": "word_191",
+    "id": "191",
     "word": "coconut",
     "ipa": "/ˈkoʊkəˌnʌt/",
     "translation": "椰子、椰子肉",
@@ -5325,7 +5325,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示與椰子相關的"
   },
   {
-    "id": "word_192",
+    "id": "192",
     "word": "collar",
     "ipa": "/ˈkɑlər/",
     "translation": "衣領、項圈、抓住",
@@ -5353,7 +5353,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示抓住或逮捕"
   },
   {
-    "id": "word_193",
+    "id": "193",
     "word": "collection",
     "ipa": "/kəˈlɛkʃən/",
     "translation": "收藏、收集、蒐集",
@@ -5369,7 +5369,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示收集或募集"
   },
   {
-    "id": "word_194",
+    "id": "194",
     "word": "college",
     "ipa": "/ˈkɑlɪdʒ/",
     "translation": "學院、大學、高等學校",
@@ -5397,7 +5397,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指專業學院或大學中的學院，如醫學院、法學院等"
   },
   {
-    "id": "word_195",
+    "id": "195",
     "word": "colony",
     "ipa": "/ˈkɑːləni/",
     "translation": "殖民地、群居地、聚居地",
@@ -5425,7 +5425,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指動物或昆蟲的群居地，如蟻群"
   },
   {
-    "id": "word_196",
+    "id": "196",
     "word": "column",
     "ipa": "/ˈkɑːləm/",
     "translation": "專欄、柱、列",
@@ -5453,7 +5453,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作數學用語，表示矩陣中的縱列"
   },
   {
-    "id": "word_197",
+    "id": "197",
     "word": "combine",
     "ipa": "/kəmˈbaɪn/",
     "translation": "結合、合併、聯合",
@@ -5481,7 +5481,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示聯合企業或聯合收割機"
   },
   {
-    "id": "word_198",
+    "id": "198",
     "word": "comfort",
     "ipa": "/ˈkʌmfɚt/",
     "translation": "舒適、安慰",
@@ -5509,7 +5509,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示安慰、使舒適"
   },
   {
-    "id": "word_199",
+    "id": "199",
     "word": "comma",
     "ipa": "/ˈkɑːmə/",
     "translation": "逗號",
@@ -5537,7 +5537,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作音樂術語，表示短暫停頓"
   },
   {
-    "id": "word_200",
+    "id": "200",
     "word": "command",
     "ipa": "/kəˈmænd/",
     "translation": "命令、指揮、控制",
@@ -5565,7 +5565,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示指揮、命令"
   },
   {
-    "id": "word_201",
+    "id": "201",
     "word": "commercial",
     "ipa": "/kəˈmɝːʃəl/",
     "translation": "商業的、營利的、商業廣告",
@@ -5593,7 +5593,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示商業廣告"
   },
   {
-    "id": "word_202",
+    "id": "202",
     "word": "committee",
     "ipa": "/kəˈmɪti/",
     "translation": "委員會",
@@ -5621,7 +5621,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_203",
+    "id": "203",
     "word": "communicate",
     "ipa": "/kəˈmjunɪˌkeɪt/",
     "translation": "溝通、交流、傳達",
@@ -5649,7 +5649,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示傳達訊息或疾病"
   },
   {
-    "id": "word_204",
+    "id": "204",
     "word": "comparison",
     "ipa": "/kəmˈpærɪsən/",
     "translation": "比較、對比、比喻",
@@ -5677,7 +5677,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞 compare 的名詞形式"
   },
   {
-    "id": "word_205",
+    "id": "205",
     "word": "compete",
     "ipa": "/kəmˈpit/",
     "translation": "競爭、比賽、對抗",
@@ -5705,7 +5705,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，常與with或against連用"
   },
   {
-    "id": "word_206",
+    "id": "206",
     "word": "complaint",
     "ipa": "/kəmˈpleɪnt/",
     "translation": "抱怨、投訴、不滿",
@@ -5733,7 +5733,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示控告或起訴"
   },
   {
-    "id": "word_207",
+    "id": "207",
     "word": "complex",
     "ipa": "/kəmˈplɛks/",
     "translation": "複雜的、複合物、情結",
@@ -5761,7 +5761,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示複合物或情結"
   },
   {
-    "id": "word_208",
+    "id": "208",
     "word": "concern",
     "ipa": "/kənˈsɝːn/",
     "translation": "關心、擔憂、涉及",
@@ -5789,7 +5789,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示關心、涉及"
   },
   {
-    "id": "word_209",
+    "id": "209",
     "word": "concert",
     "ipa": "/ˈkɑːnsərt/",
     "translation": "音樂會、演奏會",
@@ -5817,7 +5817,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示協調、共同安排"
   },
   {
-    "id": "word_210",
+    "id": "210",
     "word": "conclude",
     "ipa": "/kənˈkluːd/",
     "translation": "推斷、結束、締結",
@@ -5845,7 +5845,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示結束會議或演講"
   },
   {
-    "id": "word_211",
+    "id": "211",
     "word": "conclusion",
     "ipa": "/kənˈkluːʒən/",
     "translation": "結論、結尾、終結",
@@ -5873,7 +5873,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示締結或協議"
   },
   {
-    "id": "word_212",
+    "id": "212",
     "word": "condition",
     "ipa": "/kənˈdɪʃən/",
     "translation": "條件、狀況、環境",
@@ -5901,7 +5901,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示調節、使適應"
   },
   {
-    "id": "word_213",
+    "id": "213",
     "word": "cone",
     "ipa": "/koʊn/",
     "translation": "圓錐體、錐形物、松果",
@@ -5929,7 +5929,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使成錐形"
   },
   {
-    "id": "word_214",
+    "id": "214",
     "word": "confident",
     "ipa": "/ˈkɑːnfɪdənt/",
     "translation": "自信的、有信心的",
@@ -5957,7 +5957,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示知己或密友"
   },
   {
-    "id": "word_215",
+    "id": "215",
     "word": "confuse",
     "ipa": "/kənˈfjuz/",
     "translation": "使困惑、混淆、搞亂",
@@ -5985,7 +5985,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞 confused，表示感到困惑的"
   },
   {
-    "id": "word_216",
+    "id": "216",
     "word": "connect",
     "ipa": "/kəˈnɛkt/",
     "translation": "連接、連結、聯繫",
@@ -6013,7 +6013,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示建立聯繫"
   },
   {
-    "id": "word_217",
+    "id": "217",
     "word": "connection",
     "ipa": "/kəˈnɛkʃən/",
     "translation": "連接、關係、聯繫",
@@ -6041,7 +6041,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞表示連接，但較少用"
   },
   {
-    "id": "word_218",
+    "id": "218",
     "word": "conscious",
     "ipa": "/ˈkɑːnʃəs/",
     "translation": "有意識的、神志清醒的、自覺的",
@@ -6069,7 +6069,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，在意識流文學中指有意識的心理活動"
   },
   {
-    "id": "word_219",
+    "id": "219",
     "word": "considerable",
     "ipa": "/kənˈsɪdərəbl/",
     "translation": "相當大的、相當多的、重要的",
@@ -6097,7 +6097,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示大量或重要人物（較少見）"
   },
   {
-    "id": "word_220",
+    "id": "220",
     "word": "consideration",
     "ipa": "/kənˌsɪdəˈreɪʃən/",
     "translation": "考慮、體諒、報酬",
@@ -6125,7 +6125,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示對價或約因"
   },
   {
-    "id": "word_221",
+    "id": "221",
     "word": "constant",
     "ipa": "/ˈkɑnstənt/",
     "translation": "持續的、不變的、恆定的",
@@ -6153,7 +6153,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示常數、恆量"
   },
   {
-    "id": "word_222",
+    "id": "222",
     "word": "continent",
     "ipa": "/ˈkɑːntɪnənt/",
     "translation": "大陸、洲、自制的",
@@ -6181,7 +6181,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示節制慾望的、自制的"
   },
   {
-    "id": "word_223",
+    "id": "223",
     "word": "contract",
     "ipa": "/ˈkɑːntrækt/",
     "translation": "合約、契約、合同",
@@ -6209,7 +6209,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示縮小、訂立合約"
   },
   {
-    "id": "word_224",
+    "id": "224",
     "word": "couch",
     "ipa": "/kaʊtʃ/",
     "translation": "沙發、長椅",
@@ -6237,7 +6237,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示表達、措辭"
   },
   {
-    "id": "word_225",
+    "id": "225",
     "word": "countable",
     "ipa": "/ˈkaʊntəbəl/",
     "translation": "可數的、可計算的",
@@ -6265,7 +6265,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示可數名詞"
   },
   {
-    "id": "word_226",
+    "id": "226",
     "word": "coward",
     "ipa": "/ˈkaʊɚd/",
     "translation": "懦夫、膽小鬼",
@@ -6293,7 +6293,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示膽小的、懦弱的"
   },
   {
-    "id": "word_227",
+    "id": "227",
     "word": "cradle",
     "ipa": "/ˈkreɪdl/",
     "translation": "搖籃、發源地、支架",
@@ -6321,7 +6321,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示輕輕地抱著或放置"
   },
   {
-    "id": "word_228",
+    "id": "228",
     "word": "crash",
     "ipa": "/kræʃ/",
     "translation": "碰撞、墜毀、崩潰",
@@ -6349,7 +6349,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示撞擊聲或事故"
   },
   {
-    "id": "word_229",
+    "id": "229",
     "word": "crawl",
     "ipa": "/krɔːl/",
     "translation": "爬行、匍匐前進、緩慢移動",
@@ -6377,7 +6377,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示爬泳（游泳姿勢）或緩慢的速度"
   },
   {
-    "id": "word_230",
+    "id": "230",
     "word": "creative",
     "ipa": "/kriˈeɪtɪv/",
     "translation": "創造性的、有創意的",
@@ -6405,7 +6405,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示從事創意工作的人"
   },
   {
-    "id": "word_231",
+    "id": "231",
     "word": "creator",
     "ipa": "/ˈkriːeɪtər/",
     "translation": "創造者、創作者、創立者",
@@ -6433,7 +6433,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，指上帝或造物主"
   },
   {
-    "id": "word_232",
+    "id": "232",
     "word": "creature",
     "ipa": "/ˈkriːtʃər/",
     "translation": "生物、動物、人",
@@ -6461,7 +6461,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指虛構生物或受他人支配的人"
   },
   {
-    "id": "word_233",
+    "id": "233",
     "word": "credit",
     "ipa": "/ˈkrɛdɪt/",
     "translation": "信用、信譽、讚揚",
@@ -6489,7 +6489,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示記入貸方、歸功於"
   },
   {
-    "id": "word_234",
+    "id": "234",
     "word": "creep",
     "ipa": "/krip/",
     "translation": "爬行、匍匐前進、緩慢移動",
@@ -6517,7 +6517,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示令人討厭的人或緩慢移動"
   },
   {
-    "id": "word_235",
+    "id": "235",
     "word": "crew",
     "ipa": "/kruː/",
     "translation": "全體船員、全體機組人員、一組工作人員",
@@ -6545,7 +6545,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示擔任船員或機組人員"
   },
   {
-    "id": "word_236",
+    "id": "236",
     "word": "cricket",
     "ipa": "/ˈkrɪkɪt/",
     "translation": "板球、蟋蟀",
@@ -6573,7 +6573,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示打板球"
   },
   {
-    "id": "word_237",
+    "id": "237",
     "word": "criminal",
     "ipa": "/ˈkrɪmənl/",
     "translation": "罪犯、犯罪的、刑事的",
@@ -6601,7 +6601,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示罪犯"
   },
   {
-    "id": "word_238",
+    "id": "238",
     "word": "crisp",
     "ipa": "/krɪsp/",
     "translation": "脆的、清新的、乾冷的",
@@ -6629,7 +6629,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使變脆；也可作名詞，指油炸薯片"
   },
   {
-    "id": "word_239",
+    "id": "239",
     "word": "crispy",
     "ipa": "/ˈkrɪspi/",
     "translation": "酥脆的、鬆脆的、清脆的",
@@ -6657,7 +6657,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，指酥脆的食物（較少見）"
   },
   {
-    "id": "word_240",
+    "id": "240",
     "word": "crown",
     "ipa": "/kraʊn/",
     "translation": "王冠、皇冠、頂部",
@@ -6685,7 +6685,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示為...加冕、使圓滿完成"
   },
   {
-    "id": "word_241",
+    "id": "241",
     "word": "crunchy",
     "ipa": "/ˈkrʌntʃi/",
     "translation": "酥脆的、鬆脆的",
@@ -6713,7 +6713,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作俚語，表示自然或有機的，如 crunchy lifestyle"
   },
   {
-    "id": "word_242",
+    "id": "242",
     "word": "crutch",
     "ipa": "/krʌtʃ/",
     "translation": "拐杖、支持、依靠",
@@ -6741,7 +6741,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用拐杖支撐"
   },
   {
-    "id": "word_243",
+    "id": "243",
     "word": "cultural",
     "ipa": "/ˈkʌltʃərəl/",
     "translation": "文化的、文化上的",
@@ -6769,7 +6769,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示文化活動或文化現象"
   },
   {
-    "id": "word_244",
+    "id": "244",
     "word": "cupboard",
     "ipa": "/ˈkʌbərd/",
     "translation": "櫥櫃、碗櫃",
@@ -6797,7 +6797,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示將物品放入櫥櫃"
   },
   {
-    "id": "word_245",
+    "id": "245",
     "word": "current",
     "ipa": "/ˈkɝːənt/",
     "translation": "目前的、當前的、現行的",
@@ -6826,7 +6826,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示放縱、狂熱"
   },
   {
-    "id": "word_246",
+    "id": "246",
     "word": "cycle",
     "ipa": "/ˈsaɪkəl/",
     "translation": "循環、週期、自行車",
@@ -6854,7 +6854,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示循環或騎自行車"
   },
   {
-    "id": "word_247",
+    "id": "247",
     "word": "dairy",
     "ipa": "/ˈderi/",
     "translation": "乳製品、乳品業、牛奶場",
@@ -6878,7 +6878,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示乳製品的"
   },
   {
-    "id": "word_248",
+    "id": "248",
     "word": "dam",
     "ipa": "/dæm/",
     "translation": "水壩、屏障",
@@ -6906,7 +6906,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示築壩攔住"
   },
   {
-    "id": "word_249",
+    "id": "249",
     "word": "dare",
     "ipa": "/dɛr/",
     "translation": "敢、膽敢、挑戰",
@@ -6934,7 +6934,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示挑戰或激將"
   },
   {
-    "id": "word_250",
+    "id": "250",
     "word": "darling",
     "ipa": "/ˈdɑːrlɪŋ/",
     "translation": "親愛的、心愛的人、寵兒",
@@ -6962,7 +6962,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示心愛的、受喜愛的"
   },
   {
-    "id": "word_251",
+    "id": "251",
     "word": "dash",
     "ipa": "/dæʃ/",
     "translation": "猛衝、破折號、少量",
@@ -6990,7 +6990,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示破折號或少量"
   },
   {
-    "id": "word_252",
+    "id": "252",
     "word": "deafen",
     "ipa": "/ˈdɛfən/",
     "translation": "使耳聾、震耳欲聾",
@@ -7018,7 +7018,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞 deafening，表示震耳欲聾的"
   },
   {
-    "id": "word_253",
+    "id": "253",
     "word": "dealer",
     "ipa": "/ˈdiːlər/",
     "translation": "商人、交易商、經銷商",
@@ -7046,7 +7046,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，指毒品販子"
   },
   {
-    "id": "word_254",
+    "id": "254",
     "word": "decade",
     "ipa": "/ˈdɛkeɪd/",
     "translation": "十年、十年期",
@@ -7067,7 +7067,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指任何為期十年的期間"
   },
   {
-    "id": "word_255",
+    "id": "255",
     "word": "deck",
     "ipa": "/dɛk/",
     "translation": "甲板、牌組、裝飾",
@@ -7095,7 +7095,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示裝飾或打扮"
   },
   {
-    "id": "word_256",
+    "id": "256",
     "word": "deed",
     "ipa": "/did/",
     "translation": "行為、事蹟、契約",
@@ -7123,7 +7123,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示立契轉讓財產"
   },
   {
-    "id": "word_257",
+    "id": "257",
     "word": "deepen",
     "ipa": "/ˈdiːpən/",
     "translation": "加深、深化",
@@ -7151,7 +7151,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示使某物加深"
   },
   {
-    "id": "word_258",
+    "id": "258",
     "word": "define",
     "ipa": "/dɪˈfaɪn/",
     "translation": "定義、闡明、劃定",
@@ -7179,7 +7179,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，在數學中表示定義"
   },
   {
-    "id": "word_259",
+    "id": "259",
     "word": "definition",
     "ipa": "/ˌdɛfəˈnɪʃən/",
     "translation": "定義、釋義、清晰度",
@@ -7207,7 +7207,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指影像或聲音的清晰度"
   },
   {
-    "id": "word_260",
+    "id": "260",
     "word": "delivery",
     "ipa": "/dɪˈlɪvəri/",
     "translation": "遞送、交貨、分娩",
@@ -7235,7 +7235,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示遞送的，如 delivery service"
   },
   {
-    "id": "word_261",
+    "id": "261",
     "word": "democracy",
     "ipa": "/dɪˈmɑːkrəsi/",
     "translation": "民主、民主政治、民主制度",
@@ -7263,7 +7263,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示民主原則或理念"
   },
   {
-    "id": "word_262",
+    "id": "262",
     "word": "democratic",
     "ipa": "/ˌdɛməˈkrætɪk/",
     "translation": "民主的、民主政體的、民主主義的",
@@ -7291,7 +7291,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作Democratic，指美國民主黨的"
   },
   {
-    "id": "word_263",
+    "id": "263",
     "word": "deposit",
     "ipa": "/dɪˈpɑzɪt/",
     "translation": "存款、訂金、沉積物",
@@ -7319,7 +7319,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示存放、沉積"
   },
   {
-    "id": "word_264",
+    "id": "264",
     "word": "description",
     "ipa": "/dɪˈskrɪpʃən/",
     "translation": "描述、說明、形容",
@@ -7347,7 +7347,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示描述或說明"
   },
   {
-    "id": "word_265",
+    "id": "265",
     "word": "designer",
     "ipa": "/dɪˈzaɪnər/",
     "translation": "設計師、設計者",
@@ -7375,7 +7375,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示由設計師設計的"
   },
   {
-    "id": "word_266",
+    "id": "266",
     "word": "desirable",
     "ipa": "/dɪˈzaɪrəbəl/",
     "translation": "令人嚮往的、值得擁有的、可取的",
@@ -7403,7 +7403,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示令人嚮往的人或事物"
   },
   {
-    "id": "word_267",
+    "id": "267",
     "word": "destroy",
     "ipa": "/dɪˈstrɔɪ/",
     "translation": "摧毀、破壞、毀滅",
@@ -7431,7 +7431,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞 destruction，表示破壞的狀態或結果"
   },
   {
-    "id": "word_268",
+    "id": "268",
     "word": "detail",
     "ipa": "//ˈdiː.teɪl//",
     "translation": "細節、詳情、詳細說明",
@@ -7459,7 +7459,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示詳細敘述或列舉"
   },
   {
-    "id": "word_269",
+    "id": "269",
     "word": "determine",
     "ipa": "/dɪˈtɝmɪn/",
     "translation": "決定、決心、確定",
@@ -7487,7 +7487,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示裁定或判定"
   },
   {
-    "id": "word_270",
+    "id": "270",
     "word": "devil",
     "ipa": "/ˈdɛvəl/",
     "translation": "魔鬼、惡魔、撒旦",
@@ -7515,7 +7515,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示折磨或惹惱"
   },
   {
-    "id": "word_271",
+    "id": "271",
     "word": "dialogue",
     "ipa": "/ˈdaɪəˌlɔːɡ/",
     "translation": "對話、對白",
@@ -7543,7 +7543,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示進行對話"
   },
   {
-    "id": "word_272",
+    "id": "272",
     "word": "diet",
     "ipa": "/ˈdaɪət/",
     "translation": "飲食、節食",
@@ -7571,7 +7571,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示節食或按規定飲食"
   },
   {
-    "id": "word_273",
+    "id": "273",
     "word": "diligent",
     "ipa": "/ˈdɪlədʒənt/",
     "translation": "勤奮的、勤勉的、用功的",
@@ -7599,7 +7599,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞 diligently，表示勤奮地"
   },
   {
-    "id": "word_274",
+    "id": "274",
     "word": "dim",
     "ipa": "/dɪm/",
     "translation": "昏暗的、模糊的、遲鈍的",
@@ -7627,7 +7627,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使變暗、使模糊"
   },
   {
-    "id": "word_275",
+    "id": "275",
     "word": "dime",
     "ipa": "/daɪm/",
     "translation": "一角硬幣、小額金錢",
@@ -7655,7 +7655,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作俚語表示十元美鈔或小額物品"
   },
   {
-    "id": "word_276",
+    "id": "276",
     "word": "dine",
     "ipa": "/daɪn/",
     "translation": "用餐、進餐",
@@ -7683,7 +7683,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示宴請"
   },
   {
-    "id": "word_277",
+    "id": "277",
     "word": "dip",
     "ipa": "/dɪp/",
     "translation": "浸、蘸、下降",
@@ -7711,7 +7711,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示下降或蘸醬"
   },
   {
-    "id": "word_278",
+    "id": "278",
     "word": "dirt",
     "ipa": "/dɜrt/",
     "translation": "污垢、泥土、灰塵",
@@ -7739,7 +7739,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示弄髒（較少見）"
   },
   {
-    "id": "word_279",
+    "id": "279",
     "word": "disappoint",
     "ipa": "/ˌdɪsəˈpɔɪnt/",
     "translation": "使失望、使沮喪、使掃興",
@@ -7767,7 +7767,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞 disappointed（感到失望的）或 disappointing（令人失望的）"
   },
   {
-    "id": "word_280",
+    "id": "280",
     "word": "disappointment",
     "ipa": "/ˌdɪsəˈpɔɪntmənt/",
     "translation": "失望、沮喪、掃興",
@@ -7795,7 +7795,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作可數名詞，表示令人失望的人或事物"
   },
   {
-    "id": "word_281",
+    "id": "281",
     "word": "disco",
     "ipa": "/ˈdɪskoʊ/",
     "translation": "迪斯可、迪斯可舞廳、迪斯可音樂",
@@ -7823,7 +7823,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示跳迪斯可舞"
   },
   {
-    "id": "word_282",
+    "id": "282",
     "word": "discotheque",
     "ipa": "/ˈdɪskəˌtɛk/",
     "translation": "迪斯可舞廳、迪斯可音樂",
@@ -7851,7 +7851,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指播放迪斯可音樂的場所或迪斯可音樂本身"
   },
   {
-    "id": "word_283",
+    "id": "283",
     "word": "discount",
     "ipa": "/ˈdɪskaʊnt/",
     "translation": "折扣、打折、優惠",
@@ -7879,7 +7879,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示打折、不重視"
   },
   {
-    "id": "word_284",
+    "id": "284",
     "word": "discovery",
     "ipa": "/dɪˈskʌvəri/",
     "translation": "發現、發覺、發明",
@@ -7907,7 +7907,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示證據開示程序"
   },
   {
-    "id": "word_285",
+    "id": "285",
     "word": "disease",
     "ipa": "/dɪˈziz/",
     "translation": "疾病、病痛",
@@ -7935,7 +7935,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使生病，但較少使用"
   },
   {
-    "id": "word_286",
+    "id": "286",
     "word": "disk",
     "ipa": "/dɪsk/",
     "translation": "圓盤、唱片、磁盤",
@@ -7963,7 +7963,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示把資料寫入磁碟"
   },
   {
-    "id": "word_287",
+    "id": "287",
     "word": "dislike",
     "ipa": "/dɪsˈlaɪk/",
     "translation": "不喜歡、厭惡",
@@ -7991,7 +7991,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示不喜歡的感覺"
   },
   {
-    "id": "word_288",
+    "id": "288",
     "word": "ditch",
     "ipa": "/dɪtʃ/",
     "translation": "溝渠、壕溝、拋棄",
@@ -8019,7 +8019,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示溝渠或壕溝"
   },
   {
-    "id": "word_289",
+    "id": "289",
     "word": "dive",
     "ipa": "/daɪv/",
     "translation": "潛水、俯衝、跳水",
@@ -8047,7 +8047,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示潛水或俯衝的動作"
   },
   {
-    "id": "word_290",
+    "id": "290",
     "word": "dock",
     "ipa": "/dɑk/",
     "translation": "碼頭、船塢、被告席",
@@ -8075,7 +8075,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示（船）入塢或扣（工資）"
   },
   {
-    "id": "word_291",
+    "id": "291",
     "word": "dodge",
     "ipa": "/dɑːdʒ/",
     "translation": "閃避、躲避、逃避",
@@ -8103,7 +8103,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示躲避的動作或技巧"
   },
   {
-    "id": "word_292",
+    "id": "292",
     "word": "domestic",
     "ipa": "/dəˈmɛstɪk/",
     "translation": "國內的、家庭的、馴養的",
@@ -8131,7 +8131,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示家僕或家用紡織品"
   },
   {
-    "id": "word_293",
+    "id": "293",
     "word": "dose",
     "ipa": "/doʊs/",
     "translation": "劑量、一劑",
@@ -8159,7 +8159,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示給藥"
   },
   {
-    "id": "word_294",
+    "id": "294",
     "word": "doubtful",
     "ipa": "/ˈdaʊtfəl/",
     "translation": "懷疑的、可疑的、不確定的",
@@ -8187,7 +8187,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示懷疑地"
   },
   {
-    "id": "word_295",
+    "id": "295",
     "word": "drain",
     "ipa": "/dreɪn/",
     "translation": "排水、消耗、耗盡",
@@ -8215,7 +8215,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示排水管、消耗"
   },
   {
-    "id": "word_296",
+    "id": "296",
     "word": "dramatic",
     "ipa": "/drəˈmætɪk/",
     "translation": "戲劇性的、引人注目的、激動人心的",
@@ -8243,7 +8243,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示戲劇作品"
   },
   {
-    "id": "word_297",
+    "id": "297",
     "word": "drip",
     "ipa": "/drɪp/",
     "translation": "滴下、滴落、水滴",
@@ -8271,7 +8271,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示水滴或點滴"
   },
   {
-    "id": "word_298",
+    "id": "298",
     "word": "drown",
     "ipa": "/draʊn/",
     "translation": "淹死、淹沒、壓倒",
@@ -8299,7 +8299,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作比喻用法，表示被聲音淹沒或壓倒情緒"
   },
   {
-    "id": "word_299",
+    "id": "299",
     "word": "drowsy",
     "ipa": "/ˈdraʊzi/",
     "translation": "睏倦的、昏昏欲睡的",
@@ -8327,7 +8327,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示昏昏欲睡地"
   },
   {
-    "id": "word_300",
+    "id": "300",
     "word": "drunk",
     "ipa": "/drʌŋk/",
     "translation": "喝醉的、醉酒的",
@@ -8354,7 +8354,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示醉漢"
   },
   {
-    "id": "word_301",
+    "id": "301",
     "word": "due",
     "ipa": "/duː/",
     "translation": "到期的、應支付的、預期的",
@@ -8382,7 +8382,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示應得的事物"
   },
   {
-    "id": "word_302",
+    "id": "302",
     "word": "dump",
     "ipa": "/dʌmp/",
     "translation": "傾倒、丟棄、垃圾場",
@@ -8410,7 +8410,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示垃圾場或傾倒場"
   },
   {
-    "id": "word_303",
+    "id": "303",
     "word": "dust",
     "ipa": "/dʌst/",
     "translation": "灰塵、粉末、塵土",
@@ -8438,7 +8438,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示拂去灰塵"
   },
   {
-    "id": "word_304",
+    "id": "304",
     "word": "eager",
     "ipa": "/ˈiːɡər/",
     "translation": "渴望的、熱切的、急切的",
@@ -8466,7 +8466,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞eagerly，表示熱切地"
   },
   {
-    "id": "word_305",
+    "id": "305",
     "word": "earnings",
     "ipa": "/ˈɝnɪŋz/",
     "translation": "收益、盈利、收入",
@@ -8494,7 +8494,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作複數名詞，指個人薪資所得"
   },
   {
-    "id": "word_306",
+    "id": "306",
     "word": "echo",
     "ipa": "/ˈɛkoʊ/",
     "translation": "回聲、重複、共鳴",
@@ -8522,7 +8522,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示重複或模仿他人的話"
   },
   {
-    "id": "word_307",
+    "id": "307",
     "word": "edit",
     "ipa": "/ˈɛdɪt/",
     "translation": "編輯、校訂、剪輯",
@@ -8550,7 +8550,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示編輯行為或編輯人員"
   },
   {
-    "id": "word_308",
+    "id": "308",
     "word": "edition",
     "ipa": "/ɪˈdɪʃən/",
     "translation": "版本、版次",
@@ -8578,7 +8578,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指報紙或雜誌的某期刊物"
   },
   {
-    "id": "word_309",
+    "id": "309",
     "word": "editor",
     "ipa": "/ˈɛdɪtər/",
     "translation": "編輯、主編、編者",
@@ -8606,7 +8606,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示編輯或剪輯"
   },
   {
-    "id": "word_310",
+    "id": "310",
     "word": "educate",
     "ipa": "/ˈɛdʒəˌkeɪt/",
     "translation": "教育、教導、培養",
@@ -8634,7 +8634,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示從事教育活動"
   },
   {
-    "id": "word_311",
+    "id": "311",
     "word": "educational",
     "ipa": "/ˌɛdʒəˈkeɪʃənl/",
     "translation": "教育的、教育性的、有教育意義的",
@@ -8662,7 +8662,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示教育節目或教育材料"
   },
   {
-    "id": "word_312",
+    "id": "312",
     "word": "efficient",
     "ipa": "/ɪˈfɪʃənt/",
     "translation": "有效率的、效率高的",
@@ -8690,7 +8690,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示效率因子"
   },
   {
-    "id": "word_313",
+    "id": "313",
     "word": "elbow",
     "ipa": "/ˈɛlboʊ/",
     "translation": "肘、肘部、彎管",
@@ -8718,7 +8718,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用肘推擠"
   },
   {
-    "id": "word_314",
+    "id": "314",
     "word": "elderly",
     "ipa": "/ˈɛldərli/",
     "translation": "年長的、老年的、上了年紀的",
@@ -8746,7 +8746,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示老年人（通常用the elderly）"
   },
   {
-    "id": "word_315",
+    "id": "315",
     "word": "election",
     "ipa": "/ɪˈlɛkʃən/",
     "translation": "選舉、當選、選擇",
@@ -8774,7 +8774,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示選擇權的行使"
   },
   {
-    "id": "word_316",
+    "id": "316",
     "word": "electric",
     "ipa": "/ɪˈlɛktrɪk/",
     "translation": "電的、用電的、電動的",
@@ -8802,7 +8802,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示電動車輛或電器設備"
   },
   {
-    "id": "word_317",
+    "id": "317",
     "word": "electrical",
     "ipa": "/ɪˈlɛktrɪkəl/",
     "translation": "電的、電氣的、用電的",
@@ -8830,7 +8830,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示電氣設備或電氣系統"
   },
   {
-    "id": "word_318",
+    "id": "318",
     "word": "electricity",
     "ipa": "/ɪˌlɛkˈtrɪsɪti/",
     "translation": "電力、電、電學",
@@ -8858,7 +8858,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指電學這一學科領域"
   },
   {
-    "id": "word_319",
+    "id": "319",
     "word": "electronic",
     "ipa": "/ɪˌlɛkˈtrɑnɪk/",
     "translation": "電子的、電子設備的",
@@ -8886,7 +8886,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示電子設備或電子音樂"
   },
   {
-    "id": "word_320",
+    "id": "320",
     "word": "emergency",
     "ipa": "/ɪˈmɜːrdʒənsi/",
     "translation": "緊急情況、突發事件",
@@ -8914,7 +8914,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示緊急的，如 emergency exit（緊急出口）"
   },
   {
-    "id": "word_321",
+    "id": "321",
     "word": "emperor",
     "ipa": "/ˈɛmpərər/",
     "translation": "皇帝、君主",
@@ -8942,7 +8942,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指某些昆蟲種類中的帝王，如帝王斑蝶"
   },
   {
-    "id": "word_322",
+    "id": "322",
     "word": "emphasize",
     "ipa": "/ˈɛmfəˌsaɪz/",
     "translation": "強調、著重",
@@ -8970,7 +8970,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞 emphasis，表示強調或重點"
   },
   {
-    "id": "word_323",
+    "id": "323",
     "word": "employment",
     "ipa": "/ɪmˈplɔɪmənt/",
     "translation": "就業、僱用、工作",
@@ -8998,7 +8998,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示就業狀態或僱用關係"
   },
   {
-    "id": "word_324",
+    "id": "324",
     "word": "employ",
     "ipa": "/ɪmˈplɔɪ/",
     "translation": "雇用、使用、利用",
@@ -9026,7 +9026,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示雇用狀態"
   },
   {
-    "id": "word_325",
+    "id": "325",
     "word": "employee",
     "ipa": "/ɪmˈplɔɪiː/",
     "translation": "員工、雇員",
@@ -9054,7 +9054,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示受雇的"
   },
   {
-    "id": "word_326",
+    "id": "326",
     "word": "employer",
     "ipa": "/ɪmˈplɔɪər/",
     "translation": "雇主、老闆",
@@ -9082,7 +9082,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，指僱用關係中的一方"
   },
   {
-    "id": "word_327",
+    "id": "327",
     "word": "empty",
     "ipa": "/ˈɛmpti/",
     "translation": "空的、空虛的、空無一物的",
@@ -9110,7 +9110,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示倒空、清空"
   },
   {
-    "id": "word_328",
+    "id": "328",
     "word": "enable",
     "ipa": "/ɪˈneɪbəl/",
     "translation": "使能夠、使可能、啟動",
@@ -9138,7 +9138,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示授權"
   },
   {
-    "id": "word_329",
+    "id": "329",
     "word": "energetic",
     "ipa": "/ˌɛnərˈdʒɛtɪk/",
     "translation": "精力充沛的、充滿活力的、有活力的",
@@ -9166,7 +9166,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞 energetically，表示精力充沛地"
   },
   {
-    "id": "word_330",
+    "id": "330",
     "word": "engage",
     "ipa": "/ɪnˈɡeɪdʒ/",
     "translation": "從事、參與、吸引",
@@ -9194,7 +9194,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示參與或從事"
   },
   {
-    "id": "word_331",
+    "id": "331",
     "word": "engagement",
     "ipa": "/ɪnˈɡeɪdʒmənt/",
     "translation": "約定、訂婚、參與",
@@ -9222,7 +9222,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示契約義務"
   },
   {
-    "id": "word_332",
+    "id": "332",
     "word": "engine",
     "ipa": "/ˈɛndʒɪn/",
     "translation": "引擎、發動機",
@@ -9249,7 +9249,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示設計或建造引擎"
   },
   {
-    "id": "word_333",
+    "id": "333",
     "word": "engineer",
     "ipa": "/ˌɛndʒɪˈnɪr/",
     "translation": "工程師、設計、策劃",
@@ -9277,7 +9277,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示設計、策劃"
   },
   {
-    "id": "word_334",
+    "id": "334",
     "word": "enjoyable",
     "ipa": "/ɪnˈdʒɔɪəbl/",
     "translation": "令人愉快的、有樂趣的、享受的",
@@ -9305,7 +9305,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示令人愉快地，但較少使用"
   },
   {
-    "id": "word_335",
+    "id": "335",
     "word": "entry",
     "ipa": "//ˈɛntri//",
     "translation": "入口，進入，參賽作品",
@@ -9333,7 +9333,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示登入（電腦系統）"
   },
   {
-    "id": "word_336",
+    "id": "336",
     "word": "environmental",
     "ipa": "/ɪnˌvaɪrənˈmɛntl/",
     "translation": "環境的、有關環境的",
@@ -9361,7 +9361,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞 environmentalist，表示環保主義者"
   },
   {
-    "id": "word_337",
+    "id": "337",
     "word": "envy",
     "ipa": "/ˈɛnvi/",
     "translation": "嫉妒、羨慕",
@@ -9389,7 +9389,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示嫉妒、羨慕"
   },
   {
-    "id": "word_338",
+    "id": "338",
     "word": "erase",
     "ipa": "/ɪˈreɪs/",
     "translation": "擦掉、抹去、清除",
@@ -9417,7 +9417,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示擦除器"
   },
   {
-    "id": "word_339",
+    "id": "339",
     "word": "escape",
     "ipa": "/ɪˈskeɪp/",
     "translation": "逃脫、逃離、逃避",
@@ -9445,7 +9445,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示逃脫或逃避的行為"
   },
   {
-    "id": "word_340",
+    "id": "340",
     "word": "evil",
     "ipa": "/ˈiːvəl/",
     "translation": "邪惡的、有害的、惡毒的",
@@ -9473,7 +9473,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示邪惡的事物或概念"
   },
   {
-    "id": "word_341",
+    "id": "341",
     "word": "excellence",
     "ipa": "/ˈɛksələns/",
     "translation": "卓越、優秀、優點",
@@ -9501,7 +9501,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作專有名詞，表示卓越公司或產品名稱"
   },
   {
-    "id": "word_342",
+    "id": "342",
     "word": "exchange",
     "ipa": "/ɪksˈtʃeɪndʒ/",
     "translation": "交換、兌換、交流",
@@ -9529,7 +9529,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示交易所、交換"
   },
   {
-    "id": "word_343",
+    "id": "343",
     "word": "exhibition",
     "ipa": "/ˌɛksəˈbɪʃən/",
     "translation": "展覽、展覽會、展示",
@@ -9557,7 +9557,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示證據的正式提交"
   },
   {
-    "id": "word_344",
+    "id": "344",
     "word": "existence",
     "ipa": "/ɪɡˈzɪstəns/",
     "translation": "存在、生存",
@@ -9585,7 +9585,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示存在的"
   },
   {
-    "id": "word_345",
+    "id": "345",
     "word": "exit",
     "ipa": "/ˈɛɡzɪt/",
     "translation": "出口、離開、退出",
@@ -9613,7 +9613,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示離開或退出"
   },
   {
-    "id": "word_346",
+    "id": "346",
     "word": "expectation",
     "ipa": "/ˌɛkspɛkˈteɪʃən/",
     "translation": "期望、預期、期待",
@@ -9641,7 +9641,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作複數形式 expectations 表示期望的事物"
   },
   {
-    "id": "word_347",
+    "id": "347",
     "word": "expense",
     "ipa": "/ɪkˈspɛns/",
     "translation": "花費、開銷、費用",
@@ -9669,7 +9669,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示將開支記入帳戶"
   },
   {
-    "id": "word_348",
+    "id": "348",
     "word": "experiment",
     "ipa": "/ɪkˈspɛrəmənt/",
     "translation": "實驗、試驗",
@@ -9697,7 +9697,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示進行實驗"
   },
   {
-    "id": "word_349",
+    "id": "349",
     "word": "explode",
     "ipa": "/ɪkˈsploʊd/",
     "translation": "爆炸、爆發、激增",
@@ -9725,7 +9725,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示駁斥理論或推翻觀念"
   },
   {
-    "id": "word_350",
+    "id": "350",
     "word": "export",
     "ipa": "/ɪkˈspɔrt/",
     "translation": "出口、輸出",
@@ -9753,7 +9753,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示出口商品"
   },
   {
-    "id": "word_351",
+    "id": "351",
     "word": "expression",
     "ipa": "/ɪkˈsprɛʃən/",
     "translation": "表達、表情、表現",
@@ -9781,7 +9781,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作數學用語，表示算式或表達式"
   },
   {
-    "id": "word_352",
+    "id": "352",
     "word": "expressive",
     "ipa": "/ɪkˈsprɛsɪv/",
     "translation": "富有表現力的、表情豐富的",
@@ -9809,7 +9809,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示表現手段或表現形式"
   },
   {
-    "id": "word_353",
+    "id": "353",
     "word": "extreme",
     "ipa": "/ɪkˈstrim/",
     "translation": "極端的、極度的、極限的",
@@ -9837,7 +9837,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示極端的事物或狀態"
   },
   {
-    "id": "word_354",
+    "id": "354",
     "word": "fable",
     "ipa": "/ˈfeɪbəl/",
     "translation": "寓言、傳說、虛構故事",
@@ -9865,7 +9865,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示虛構、編造故事"
   },
   {
-    "id": "word_355",
+    "id": "355",
     "word": "factor",
     "ipa": "/ˈfæktər/",
     "translation": "因素、因子、係數",
@@ -9893,7 +9893,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示分解因數或代理經營"
   },
   {
-    "id": "word_356",
+    "id": "356",
     "word": "fade",
     "ipa": "/feɪd/",
     "translation": "褪色、凋謝、逐漸消失",
@@ -9921,7 +9921,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示淡入淡出效果"
   },
   {
-    "id": "word_357",
+    "id": "357",
     "word": "faint",
     "ipa": "/feɪnt/",
     "translation": "昏厥、微弱的、模糊的",
@@ -9949,7 +9949,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示昏倒；或作名詞，表示昏厥"
   },
   {
-    "id": "word_358",
+    "id": "358",
     "word": "fairly",
     "ipa": "/ˈfɛrli/",
     "translation": "相當地、公平地、適度地",
@@ -9977,7 +9977,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞fair的副詞形式，表示公平地；在法律用語中表示合法正當地"
   },
   {
-    "id": "word_359",
+    "id": "359",
     "word": "fairy",
     "ipa": "/ˈferi/",
     "translation": "仙女、精靈、仙子",
@@ -10005,7 +10005,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示仙女般的、幻想的"
   },
   {
-    "id": "word_360",
+    "id": "360",
     "word": "faith",
     "ipa": "/feɪθ/",
     "translation": "信念、信任、忠誠",
@@ -10033,7 +10033,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作專有名詞，表示宗教信仰"
   },
   {
-    "id": "word_361",
+    "id": "361",
     "word": "fake",
     "ipa": "/feɪk/",
     "translation": "假的、偽造的、冒充的",
@@ -10061,7 +10061,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示偽造；也可作名詞，表示假貨"
   },
   {
-    "id": "word_362",
+    "id": "362",
     "word": "familiar",
     "ipa": "/fəˈmɪliər/",
     "translation": "熟悉的、常見的、親近的",
@@ -10089,7 +10089,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示熟友、常客"
   },
   {
-    "id": "word_363",
+    "id": "363",
     "word": "fan",
     "ipa": "/fæn/",
     "translation": "風扇、愛好者",
@@ -10117,7 +10117,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示煽動、吹拂"
   },
   {
-    "id": "word_364",
+    "id": "364",
     "word": "fanatic",
     "ipa": "/fəˈnætɪk/",
     "translation": "狂熱者、盲信者",
@@ -10145,7 +10145,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示狂熱的、盲信的"
   },
   {
-    "id": "word_365",
+    "id": "365",
     "word": "fancy",
     "ipa": "/ˈfænsi/",
     "translation": "想像、喜歡、花俏的",
@@ -10173,7 +10173,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示喜歡或想像"
   },
   {
-    "id": "word_366",
+    "id": "366",
     "word": "fare",
     "ipa": "/fɛr/",
     "translation": "票價、費用、伙食",
@@ -10201,7 +10201,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示進展、過得"
   },
   {
-    "id": "word_367",
+    "id": "367",
     "word": "farther",
     "ipa": "/ˈfɑrðər/",
     "translation": "更遠的、進一步的",
@@ -10228,7 +10228,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示更遠地"
   },
   {
-    "id": "word_368",
+    "id": "368",
     "word": "fashion",
     "ipa": "/ˈfæʃən/",
     "translation": "時尚、方式、風格",
@@ -10256,7 +10256,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示製作、塑造"
   },
   {
-    "id": "word_369",
+    "id": "369",
     "word": "fashionable",
     "ipa": "/ˈfæʃənəbl/",
     "translation": "時髦的、流行的、時尚的",
@@ -10284,7 +10284,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示時髦人物"
   },
   {
-    "id": "word_370",
+    "id": "370",
     "word": "fasten",
     "ipa": "/ˈfæsən/",
     "translation": "繫緊、固定、扣住",
@@ -10312,7 +10312,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示被固定住"
   },
   {
-    "id": "word_371",
+    "id": "371",
     "word": "fate",
     "ipa": "/feɪt/",
     "translation": "命運、天命、宿命",
@@ -10340,7 +10340,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示注定（通常用被動語態）"
   },
   {
-    "id": "word_372",
+    "id": "372",
     "word": "faucet",
     "ipa": "/ˈfɔːsɪt/",
     "translation": "水龍頭、龍頭",
@@ -10368,7 +10368,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指任何控制液體流出的裝置"
   },
   {
-    "id": "word_373",
+    "id": "373",
     "word": "tap",
     "ipa": "/tæp/",
     "translation": "輕敲、輕拍、輕觸",
@@ -10396,7 +10396,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示水龍頭或輕敲的動作"
   },
   {
-    "id": "word_374",
+    "id": "374",
     "word": "fax",
     "ipa": "/fæks/",
     "translation": "傳真、傳真機",
@@ -10423,7 +10423,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示傳真文件"
   },
   {
-    "id": "word_375",
+    "id": "375",
     "word": "feather",
     "ipa": "/ˈfɛðər/",
     "translation": "羽毛、羽飾",
@@ -10451,7 +10451,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用羽毛裝飾或輕柔地移動"
   },
   {
-    "id": "word_376",
+    "id": "376",
     "word": "feature",
     "ipa": "/ˈfiːtʃər/",
     "translation": "特色、特徵、功能",
@@ -10479,7 +10479,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示以...為特色"
   },
   {
-    "id": "word_377",
+    "id": "377",
     "word": "file",
     "ipa": "/faɪl/",
     "translation": "檔案、文件、提交",
@@ -10507,7 +10507,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示提交文件或歸檔"
   },
   {
-    "id": "word_378",
+    "id": "378",
     "word": "firework",
     "ipa": "/ˈfaɪrˌwɜrk/",
     "translation": "煙火、煙花",
@@ -10535,7 +10535,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作複數型fireworks，表示煙火表演或激烈爭論"
   },
   {
-    "id": "word_379",
+    "id": "379",
     "word": "fist",
     "ipa": "/fɪst/",
     "translation": "拳頭、拳打、掌握",
@@ -10563,7 +10563,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用拳頭打擊"
   },
   {
-    "id": "word_380",
+    "id": "380",
     "word": "flame",
     "ipa": "/fleɪm/",
     "translation": "火焰、熱情、怒火",
@@ -10591,7 +10591,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示燃燒或發怒"
   },
   {
-    "id": "word_381",
+    "id": "381",
     "word": "flavor",
     "ipa": "/ˈfleɪvər/",
     "translation": "味道、風味、滋味",
@@ -10619,7 +10619,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示調味或增添風味"
   },
   {
-    "id": "word_382",
+    "id": "382",
     "word": "flea",
     "ipa": "/fliː/",
     "translation": "跳蚤、蚤",
@@ -10644,7 +10644,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示清除跳蚤，但較少見"
   },
   {
-    "id": "word_383",
+    "id": "383",
     "word": "flesh",
     "ipa": "/flɛʃ/",
     "translation": "肉、果肉、肉體",
@@ -10672,7 +10672,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示充實或賦予實質內容"
   },
   {
-    "id": "word_384",
+    "id": "384",
     "word": "float",
     "ipa": "/floʊt/",
     "translation": "漂浮、浮動、飄浮",
@@ -10700,7 +10700,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示浮標、漂浮物"
   },
   {
-    "id": "word_385",
+    "id": "385",
     "word": "flock",
     "ipa": "/flɑk/",
     "translation": "群、聚集",
@@ -10728,7 +10728,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示聚集"
   },
   {
-    "id": "word_386",
+    "id": "386",
     "word": "fold",
     "ipa": "/foʊld/",
     "translation": "折疊、對折、屈服",
@@ -10756,7 +10756,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示摺痕或羊欄"
   },
   {
-    "id": "word_387",
+    "id": "387",
     "word": "folk",
     "ipa": "/foʊk/",
     "translation": "人們、民間的、民俗的",
@@ -10784,7 +10784,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示民間的、民俗的"
   },
   {
-    "id": "word_388",
+    "id": "388",
     "word": "follower",
     "ipa": "/ˈfɑloʊər/",
     "translation": "追隨者、信徒、部下",
@@ -10812,7 +10812,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示跟隨的、後續的"
   },
   {
-    "id": "word_389",
+    "id": "389",
     "word": "fond",
     "ipa": "/fɑnd/",
     "translation": "喜歡的、愛好的、寵愛的",
@@ -10840,7 +10840,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示溺愛或寵愛"
   },
   {
-    "id": "word_390",
+    "id": "390",
     "word": "forehead",
     "ipa": "/ˈfɔːrhed/",
     "translation": "額頭、前額",
@@ -10867,7 +10867,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指物體的前部或正面"
   },
   {
-    "id": "word_391",
+    "id": "391",
     "word": "brow",
     "ipa": "/braʊ/",
     "translation": "眉毛、額頭、山脊",
@@ -10892,7 +10892,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指山坡或事物的邊緣"
   },
   {
-    "id": "word_392",
+    "id": "392",
     "word": "forever",
     "ipa": "/fərˈɛvər/",
     "translation": "永遠、永久、一直",
@@ -10920,7 +10920,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示極長的時間"
   },
   {
-    "id": "word_393",
+    "id": "393",
     "word": "forth",
     "ipa": "/fɔrθ/",
     "translation": "向前、向外",
@@ -10948,7 +10948,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示河流的淺灘或通稱"
   },
   {
-    "id": "word_394",
+    "id": "394",
     "word": "fortune",
     "ipa": "/ˈfɔːrtʃən/",
     "translation": "財富、運氣、命運",
@@ -10976,7 +10976,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示偶然發生"
   },
   {
-    "id": "word_395",
+    "id": "395",
     "word": "found",
     "ipa": "/faʊnd/",
     "translation": "建立、創立、奠基",
@@ -11004,7 +11004,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞find的過去式，表示找到"
   },
   {
-    "id": "word_396",
+    "id": "396",
     "word": "fountain",
     "ipa": "/ˈfaʊntən/",
     "translation": "噴泉、源泉、噴水池",
@@ -11032,7 +11032,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示像噴泉般湧出"
   },
   {
-    "id": "word_397",
+    "id": "397",
     "word": "freeze",
     "ipa": "/friːz/",
     "translation": "凍結、結冰、使凝固",
@@ -11060,7 +11060,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示凍結狀態或冰凍期"
   },
   {
-    "id": "word_398",
+    "id": "398",
     "word": "frequent",
     "ipa": "/ˈfriːkwənt/",
     "translation": "頻繁的、經常的",
@@ -11088,7 +11088,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示常去某地"
   },
   {
-    "id": "word_399",
+    "id": "399",
     "word": "friendship",
     "ipa": "/ˈfrɛndʃɪp/",
     "translation": "友誼、友情、友好",
@@ -11116,7 +11116,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_400",
+    "id": "400",
     "word": "frustrate",
     "ipa": "/ˈfrʌstreɪt/",
     "translation": "挫敗、使沮喪、阻撓",
@@ -11144,7 +11144,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞 frustrated 表示感到沮喪的"
   },
   {
-    "id": "word_401",
+    "id": "401",
     "word": "fry",
     "ipa": "/fraɪ/",
     "translation": "油炸、油煎",
@@ -11172,7 +11172,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示魚苗或油炸食品"
   },
   {
-    "id": "word_402",
+    "id": "402",
     "word": "fund",
     "ipa": "/fʌnd/",
     "translation": "基金、資金、提供資金",
@@ -11200,7 +11200,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示資助"
   },
   {
-    "id": "word_403",
+    "id": "403",
     "word": "fur",
     "ipa": "/fɝ/",
     "translation": "毛皮、軟毛",
@@ -11228,7 +11228,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用毛皮覆蓋"
   },
   {
-    "id": "word_404",
+    "id": "404",
     "word": "furniture",
     "ipa": "/ˈfɜːrnɪtʃər/",
     "translation": "家具、傢俱",
@@ -11256,7 +11256,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作集合名詞，表示可移動的家具總稱"
   },
   {
-    "id": "word_405",
+    "id": "405",
     "word": "gallon",
     "ipa": "/ˈɡælən/",
     "translation": "加侖",
@@ -11284,7 +11284,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作液量單位，主要用於美國和英國，美制加侖約等於3.785公升"
   },
   {
-    "id": "word_406",
+    "id": "406",
     "word": "gamble",
     "ipa": "/ˈɡæmbəl/",
     "translation": "賭博、冒險",
@@ -11312,7 +11312,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示賭博行為或冒險之舉"
   },
   {
-    "id": "word_407",
+    "id": "407",
     "word": "gang",
     "ipa": "/ɡæŋ/",
     "translation": "幫派、一群人、一組",
@@ -11340,7 +11340,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示成群結隊"
   },
   {
-    "id": "word_408",
+    "id": "408",
     "word": "gap",
     "ipa": "/ɡæp/",
     "translation": "間隙、差距、缺口",
@@ -11368,7 +11368,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示產生間隙"
   },
   {
-    "id": "word_409",
+    "id": "409",
     "word": "garlic",
     "ipa": "/ˈɡɑːrlɪk/",
     "translation": "大蒜、蒜頭",
@@ -11392,7 +11392,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用大蒜調味"
   },
   {
-    "id": "word_410",
+    "id": "410",
     "word": "gasoline",
     "ipa": "/ˈɡæsəliːn/",
     "translation": "汽油、燃油",
@@ -11419,7 +11419,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示與汽油相關的"
   },
   {
-    "id": "word_411",
+    "id": "411",
     "word": "gasolene",
     "ipa": "/ˈgæsəˌlin/",
     "translation": "汽油",
@@ -11447,7 +11447,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可拼寫為 gasoline，是美式英語的常見拼法"
   },
   {
-    "id": "word_412",
+    "id": "412",
     "word": "gas",
     "ipa": "/gæs/",
     "translation": "氣體、汽油、瓦斯",
@@ -11475,7 +11475,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用毒氣殺害"
   },
   {
-    "id": "word_413",
+    "id": "413",
     "word": "gesture",
     "ipa": "/ˈdʒɛstʃər/",
     "translation": "手勢、姿態、表示",
@@ -11503,7 +11503,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示做手勢或用手勢表示"
   },
   {
-    "id": "word_414",
+    "id": "414",
     "word": "glance",
     "ipa": "/ɡlæns/",
     "translation": "一瞥、掃視、匆匆一看",
@@ -11531,7 +11531,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示一瞥"
   },
   {
-    "id": "word_415",
+    "id": "415",
     "word": "global",
     "ipa": "/ˈɡloʊbəl/",
     "translation": "全球的、全世界的、整體的",
@@ -11559,7 +11559,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示全球性事物"
   },
   {
-    "id": "word_416",
+    "id": "416",
     "word": "glory",
     "ipa": "/ˈɡlɔːri/",
     "translation": "榮耀、光榮、輝煌",
@@ -11587,7 +11587,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示自豪、得意"
   },
   {
-    "id": "word_417",
+    "id": "417",
     "word": "glow",
     "ipa": "/gloʊ/",
     "translation": "發光、發熱、容光煥發",
@@ -11615,7 +11615,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示光亮或紅暈"
   },
   {
-    "id": "word_418",
+    "id": "418",
     "word": "gossip",
     "ipa": "/ˈɡɑːsɪp/",
     "translation": "閒話、流言蜚語、八卦",
@@ -11643,7 +11643,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示說閒話、傳播流言"
   },
   {
-    "id": "word_419",
+    "id": "419",
     "word": "governor",
     "ipa": "/ˈɡʌvərnər/",
     "translation": "州長、總督、管理者",
@@ -11671,7 +11671,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指組織或機構的管理者，如銀行總裁"
   },
   {
-    "id": "word_420",
+    "id": "420",
     "word": "gown",
     "ipa": "/ɡaʊn/",
     "translation": "禮服、長袍",
@@ -11699,7 +11699,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示穿上禮服"
   },
   {
-    "id": "word_421",
+    "id": "421",
     "word": "grab",
     "ipa": "/ɡræb/",
     "translation": "抓住、攫取、搶奪",
@@ -11727,7 +11727,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示抓取的行為或抓取裝置"
   },
   {
-    "id": "word_422",
+    "id": "422",
     "word": "gradual",
     "ipa": "/ˈɡrædʒuəl/",
     "translation": "逐漸的、漸進的",
@@ -11755,7 +11755,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示彌撒升階聖歌"
   },
   {
-    "id": "word_423",
+    "id": "423",
     "word": "graduate",
     "ipa": "/ˈɡrædʒuˌeɪt/",
     "translation": "畢業、獲得學位",
@@ -11783,7 +11783,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示畢業生"
   },
   {
-    "id": "word_424",
+    "id": "424",
     "word": "grain",
     "ipa": "/ɡreɪn/",
     "translation": "穀物、顆粒、質地",
@@ -11811,7 +11811,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示形成顆粒狀紋理"
   },
   {
-    "id": "word_425",
+    "id": "425",
     "word": "gram",
     "ipa": "/ɡræm/",
     "translation": "克、文法",
@@ -11838,7 +11838,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指文法（grammar的縮寫）"
   },
   {
-    "id": "word_426",
+    "id": "426",
     "word": "grasp",
     "ipa": "/græsp/",
     "translation": "抓住、理解、掌握",
@@ -11866,7 +11866,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示理解力或掌控"
   },
   {
-    "id": "word_427",
+    "id": "427",
     "word": "grasshopper",
     "ipa": "/ˈɡræsˌhɑpər/",
     "translation": "蚱蜢、蝗蟲",
@@ -11893,7 +11893,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指一種雞尾酒，或比喻不為未來做準備的人（如伊索寓言中的蚱蜢）"
   },
   {
-    "id": "word_428",
+    "id": "428",
     "word": "greenhouse",
     "ipa": "/ˈɡrinˌhaʊs/",
     "translation": "溫室、玻璃暖房",
@@ -11921,7 +11921,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示溫室效應的（如 greenhouse gases）"
   },
   {
-    "id": "word_429",
+    "id": "429",
     "word": "grin",
     "ipa": "/ɡrɪn/",
     "translation": "露齒笑、咧嘴笑",
@@ -11949,7 +11949,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示露齒笑的表情"
   },
   {
-    "id": "word_430",
+    "id": "430",
     "word": "grocery",
     "ipa": "/ˈɡroʊsəri/",
     "translation": "食品雜貨、雜貨店",
@@ -11977,7 +11977,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示食品雜貨的"
   },
   {
-    "id": "word_431",
+    "id": "431",
     "word": "guardian",
     "ipa": "/ˈɡɑrdiən/",
     "translation": "監護人、守護者、保護者",
@@ -12005,7 +12005,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示守護的，如 guardian angel（守護天使）"
   },
   {
-    "id": "word_432",
+    "id": "432",
     "word": "guidance",
     "ipa": "/ˈɡaɪdəns/",
     "translation": "指導、引導、諮詢",
@@ -12033,7 +12033,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示導航系統的引導功能"
   },
   {
-    "id": "word_433",
+    "id": "433",
     "word": "gum",
     "ipa": "/gʌm/",
     "translation": "口香糖、樹膠、牙齦",
@@ -12058,7 +12058,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用膠黏合"
   },
   {
-    "id": "word_434",
+    "id": "434",
     "word": "chewing gum",
     "ipa": "/ˈtʃuɪŋ ˌɡʌm/",
     "translation": "口香糖、咀嚼用膠",
@@ -12082,7 +12082,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示嚼口香糖的動作"
   },
   {
-    "id": "word_435",
+    "id": "435",
     "word": "gymnasium",
     "ipa": "/dʒɪmˈneɪziəm/",
     "translation": "體育館、健身房",
@@ -12110,7 +12110,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指德國等國家的高中類型（文理中學）"
   },
   {
-    "id": "word_436",
+    "id": "436",
     "word": "gym",
     "ipa": "/dʒɪm/",
     "translation": "健身房、體育館、體操",
@@ -12138,7 +12138,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作縮寫，表示體育課或體操訓練"
   },
   {
-    "id": "word_437",
+    "id": "437",
     "word": "hairdresser",
     "ipa": "/ˈhɛrˌdrɛsər/",
     "translation": "美髮師、理髮師",
@@ -12166,7 +12166,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指美髮沙龍經營者"
   },
   {
-    "id": "word_438",
+    "id": "438",
     "word": "hallway",
     "ipa": "/ˈhɔːlweɪ/",
     "translation": "走廊、門廳",
@@ -12194,7 +12194,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指建築物中的通道或入口大廳"
   },
   {
-    "id": "word_439",
+    "id": "439",
     "word": "handful",
     "ipa": "/ˈhændfʊl/",
     "translation": "少量、一把、難控制的人",
@@ -12222,7 +12222,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示少量的，但較少見"
   },
   {
-    "id": "word_440",
+    "id": "440",
     "word": "handy",
     "ipa": "/ˈhændi/",
     "translation": "方便的、手巧的、手邊的",
@@ -12250,7 +12250,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示手機（非正式用法）"
   },
   {
-    "id": "word_441",
+    "id": "441",
     "word": "harbor",
     "ipa": "/ˈhɑːrbər/",
     "translation": "港口、庇護、懷有",
@@ -12278,7 +12278,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示庇護或懷有（情感）"
   },
   {
-    "id": "word_442",
+    "id": "442",
     "word": "harm",
     "ipa": "/hɑrm/",
     "translation": "傷害、損害、危害",
@@ -12306,7 +12306,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示傷害或損害"
   },
   {
-    "id": "word_443",
+    "id": "443",
     "word": "harmful",
     "ipa": "/ˈhɑːrmfəl/",
     "translation": "有害的、有損害的",
@@ -12334,7 +12334,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示有害地，但較少使用"
   },
   {
-    "id": "word_444",
+    "id": "444",
     "word": "harvest",
     "ipa": "/ˈhɑːrvɪst/",
     "translation": "收穫、收割、收成",
@@ -12362,7 +12362,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示收割農作物"
   },
   {
-    "id": "word_445",
+    "id": "445",
     "word": "hasty",
     "ipa": "/ˈheɪsti/",
     "translation": "匆忙的、倉促的、草率的",
@@ -12390,7 +12390,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞 hastily，表示匆忙地"
   },
   {
-    "id": "word_446",
+    "id": "446",
     "word": "hatch",
     "ipa": "/hætʃ/",
     "translation": "孵化、策劃",
@@ -12418,7 +12418,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示艙口或開口"
   },
   {
-    "id": "word_447",
+    "id": "447",
     "word": "hawk",
     "ipa": "/hɔːk/",
     "translation": "鷹、主戰派、叫賣",
@@ -12446,7 +12446,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示叫賣或清喉嚨"
   },
   {
-    "id": "word_448",
+    "id": "448",
     "word": "hay",
     "ipa": "/heɪ/",
     "translation": "乾草、飼料",
@@ -12474,7 +12474,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示製成乾草"
   },
   {
-    "id": "word_449",
+    "id": "449",
     "word": "headline",
     "ipa": "/ˈhed.laɪn/",
     "translation": "標題、頭條、新聞標題",
@@ -12499,7 +12499,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示以……為標題，或作為主角演出"
   },
   {
-    "id": "word_450",
+    "id": "450",
     "word": "headquarters",
     "ipa": "/ˈhɛdˌkwɔrtərz/",
     "translation": "總部、司令部、指揮部",
@@ -12527,7 +12527,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示設立總部，但較少使用"
   },
   {
-    "id": "word_451",
+    "id": "451",
     "word": "heal",
     "ipa": "/hil/",
     "translation": "治癒、痊癒、復原",
@@ -12555,7 +12555,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示傷口癒合"
   },
   {
-    "id": "word_452",
+    "id": "452",
     "word": "heap",
     "ipa": "/hip/",
     "translation": "堆、大量、許多",
@@ -12583,7 +12583,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示堆積、大量給予"
   },
   {
-    "id": "word_453",
+    "id": "453",
     "word": "heaven",
     "ipa": "/ˈhɛvən/",
     "translation": "天堂、天國、天空",
@@ -12611,7 +12611,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作感嘆詞，表示驚訝或喜悅，如 'Heavens!'"
   },
   {
-    "id": "word_454",
+    "id": "454",
     "word": "heel",
     "ipa": "/hil/",
     "translation": "腳後跟、鞋跟",
@@ -12639,7 +12639,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示傾斜或跟隨"
   },
   {
-    "id": "word_455",
+    "id": "455",
     "word": "hell",
     "ipa": "/hɛl/",
     "translation": "地獄、苦境、該死",
@@ -12667,7 +12667,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作感嘆詞，表示憤怒或驚訝，例如：Oh hell!"
   },
   {
-    "id": "word_456",
+    "id": "456",
     "word": "helmet",
     "ipa": "/ˈhɛlmɪt/",
     "translation": "頭盔、安全帽",
@@ -12692,7 +12692,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示給...戴上頭盔"
   },
   {
-    "id": "word_457",
+    "id": "457",
     "word": "hesitate",
     "ipa": "/ˈhɛzɪˌteɪt/",
     "translation": "猶豫、躊躇、遲疑",
@@ -12720,7 +12720,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示猶豫的狀態"
   },
   {
-    "id": "word_458",
+    "id": "458",
     "word": "hike",
     "ipa": "/haɪk/",
     "translation": "健行、徒步旅行、提高",
@@ -12748,7 +12748,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示徒步旅行或價格上漲"
   },
   {
-    "id": "word_459",
+    "id": "459",
     "word": "hint",
     "ipa": "/hɪnt/",
     "translation": "暗示、線索、提示",
@@ -12776,7 +12776,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示暗示或提示"
   },
   {
-    "id": "word_460",
+    "id": "460",
     "word": "historian",
     "ipa": "/hɪˈstɔːriən/",
     "translation": "歷史學家、史學家",
@@ -12804,7 +12804,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_461",
+    "id": "461",
     "word": "historic",
     "ipa": "/hɪˈstɔrɪk/",
     "translation": "歷史性的、有歷史意義的",
@@ -12832,7 +12832,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示歷史建築或遺址"
   },
   {
-    "id": "word_462",
+    "id": "462",
     "word": "historical",
     "ipa": "/hɪˈstɔrɪkəl/",
     "translation": "歷史的、史學的、基於史實的",
@@ -12860,7 +12860,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示歷史題材作品"
   },
   {
-    "id": "word_463",
+    "id": "463",
     "word": "hive",
     "ipa": "/haɪv/",
     "translation": "蜂巢、蜂箱、忙碌的地方",
@@ -12888,7 +12888,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示群居或聚集"
   },
   {
-    "id": "word_464",
+    "id": "464",
     "word": "hollow",
     "ipa": "/ˈhɑloʊ/",
     "translation": "空的、中空的、空洞的",
@@ -12916,7 +12916,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示挖空；或作名詞，表示凹陷處"
   },
   {
-    "id": "word_465",
+    "id": "465",
     "word": "holy",
     "ipa": "/ˈhoʊli/",
     "translation": "神聖的、虔誠的",
@@ -12944,7 +12944,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示神聖的事物或聖人"
   },
   {
-    "id": "word_466",
+    "id": "466",
     "word": "hometown",
     "ipa": "/ˈhoʊmˌtaʊn/",
     "translation": "家鄉、故鄉、出生地",
@@ -12972,7 +12972,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示家鄉的，如 hometown team（家鄉隊伍）"
   },
   {
-    "id": "word_467",
+    "id": "467",
     "word": "honesty",
     "ipa": "/ˈɑnəsti/",
     "translation": "誠實、正直",
@@ -13000,7 +13000,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指植物的『一年生緞花』"
   },
   {
-    "id": "word_468",
+    "id": "468",
     "word": "honor",
     "ipa": "/ˈɑnər/",
     "translation": "榮譽、尊敬、名譽",
@@ -13028,7 +13028,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示尊敬或兌現承諾"
   },
   {
-    "id": "word_469",
+    "id": "469",
     "word": "horn",
     "ipa": "/hɔrn/",
     "translation": "角、喇叭、號角",
@@ -13056,7 +13056,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示按喇叭"
   },
   {
-    "id": "word_470",
+    "id": "470",
     "word": "horrible",
     "ipa": "/ˈhɔrəbəl/",
     "translation": "可怕的、糟糕的、令人不快的",
@@ -13084,7 +13084,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示非常、極度，但較少使用"
   },
   {
-    "id": "word_471",
+    "id": "471",
     "word": "horror",
     "ipa": "/ˈhɔrər/",
     "translation": "恐怖、驚駭、恐懼",
@@ -13112,7 +13112,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示恐怖的，如 horror story"
   },
   {
-    "id": "word_472",
+    "id": "472",
     "word": "hourly",
     "ipa": "/ˈaʊɚli/",
     "translation": "每小時的、按小時計的",
@@ -13140,7 +13140,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示每小時地"
   },
   {
-    "id": "word_473",
+    "id": "473",
     "word": "housekeeper",
     "ipa": "/ˈhaʊsˌkiːpər/",
     "translation": "管家、女管家、房屋管理人",
@@ -13168,7 +13168,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指管理旅館客房清潔的人員"
   },
   {
-    "id": "word_474",
+    "id": "474",
     "word": "hug",
     "ipa": "/hʌɡ/",
     "translation": "擁抱、緊抱",
@@ -13196,7 +13196,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示擁抱的動作"
   },
   {
-    "id": "word_475",
+    "id": "475",
     "word": "humorous",
     "ipa": "/ˈhjumərəs/",
     "translation": "幽默的、風趣的、詼諧的",
@@ -13224,7 +13224,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示幽默作品或幽默家"
   },
   {
-    "id": "word_476",
+    "id": "476",
     "word": "hush",
     "ipa": "/hʌʃ/",
     "translation": "安靜、寂靜",
@@ -13252,7 +13252,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示安靜或寂靜的狀態"
   },
   {
-    "id": "word_477",
+    "id": "477",
     "word": "hut",
     "ipa": "/hʌt/",
     "translation": "小屋、棚屋",
@@ -13280,7 +13280,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示提供小屋或暫住"
   },
   {
-    "id": "word_478",
+    "id": "478",
     "word": "icy",
     "ipa": "/ˈaɪsi/",
     "translation": "冰冷的、覆蓋冰的、冷淡的",
@@ -13308,7 +13308,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示冰冷地"
   },
   {
-    "id": "word_479",
+    "id": "479",
     "word": "ideal",
     "ipa": "/aɪˈdiːəl/",
     "translation": "理想的、完美的、理想",
@@ -13336,7 +13336,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示理想、典範"
   },
   {
-    "id": "word_480",
+    "id": "480",
     "word": "identity",
     "ipa": "/aɪˈdɛntəti/",
     "translation": "身份、特性、同一性",
@@ -13364,7 +13364,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指數學中的恆等式"
   },
   {
-    "id": "word_481",
+    "id": "481",
     "word": "ignorance",
     "ipa": "/ˈɪɡnərəns/",
     "translation": "無知、愚昧、不了解",
@@ -13392,7 +13392,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指特定領域的知識缺乏"
   },
   {
-    "id": "word_482",
+    "id": "482",
     "word": "image",
     "ipa": "/ˈɪmɪdʒ/",
     "translation": "圖像、影像、形象",
@@ -13420,7 +13420,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示想像、反映"
   },
   {
-    "id": "word_483",
+    "id": "483",
     "word": "imagination",
     "ipa": "/ɪˌmædʒɪˈneɪʃən/",
     "translation": "想像力、幻想、創造力",
@@ -13448,7 +13448,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指虛構的事物或想像出來的東西"
   },
   {
-    "id": "word_484",
+    "id": "484",
     "word": "immediate",
     "ipa": "/ɪˈmidiɪt/",
     "translation": "立即的、直接的、緊迫的",
@@ -13476,7 +13476,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示立即的事物（較少見）"
   },
   {
-    "id": "word_485",
+    "id": "485",
     "word": "import",
     "ipa": "/ɪmˈpɔːrt/",
     "translation": "進口、輸入、引進",
@@ -13504,7 +13504,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示進口商品或重要性"
   },
   {
-    "id": "word_486",
+    "id": "486",
     "word": "impress",
     "ipa": "/ɪmˈprɛs/",
     "translation": "給…留下深刻印象、使欽佩",
@@ -13532,7 +13532,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示壓印痕跡或特徵"
   },
   {
-    "id": "word_487",
+    "id": "487",
     "word": "impressive",
     "ipa": "/ɪmˈprɛsɪv/",
     "translation": "令人印象深刻的、令人欽佩的、壯觀的",
@@ -13560,7 +13560,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞 impressively，表示令人印象深刻地"
   },
   {
-    "id": "word_488",
+    "id": "488",
     "word": "indeed",
     "ipa": "/ɪnˈdid/",
     "translation": "的確、確實、甚至",
@@ -13588,7 +13588,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作感嘆詞，表示驚訝或加強語氣"
   },
   {
-    "id": "word_489",
+    "id": "489",
     "word": "individual",
     "ipa": "/ˌɪndɪˈvɪdʒuəl/",
     "translation": "個人的、個別的、獨特的",
@@ -13616,7 +13616,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示個人、個體"
   },
   {
-    "id": "word_490",
+    "id": "490",
     "word": "indoor",
     "ipa": "/ˈɪnˌdɔr/",
     "translation": "室內的、戶內的",
@@ -13643,7 +13643,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示在室內（例：Let's stay indoor）"
   },
   {
-    "id": "word_491",
+    "id": "491",
     "word": "indoors",
     "ipa": "/ˌɪnˈdɔrz/",
     "translation": "在室內、在屋內",
@@ -13670,7 +13670,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示室內的，如indoor activities（室內活動）"
   },
   {
-    "id": "word_492",
+    "id": "492",
     "word": "industrial",
     "ipa": "/ɪnˈdʌstriəl/",
     "translation": "工業的、產業的",
@@ -13698,7 +13698,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示工業公司股票"
   },
   {
-    "id": "word_493",
+    "id": "493",
     "word": "inferior",
     "ipa": "/ɪnˈfɪriər/",
     "translation": "較差的、次等的、下級的",
@@ -13726,7 +13726,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示下級或地位較低的人"
   },
   {
-    "id": "word_494",
+    "id": "494",
     "word": "inform",
     "ipa": "/ɪnˈfɔrm/",
     "translation": "通知、告知",
@@ -13754,7 +13754,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示告發、檢舉"
   },
   {
-    "id": "word_495",
+    "id": "495",
     "word": "injure",
     "ipa": "/ˈɪndʒər/",
     "translation": "傷害、使受傷、損害",
@@ -13782,7 +13782,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，在法律用語中表示侵害權利"
   },
   {
-    "id": "word_496",
+    "id": "496",
     "word": "injury",
     "ipa": "/ˈɪndʒəri/",
     "translation": "傷害、損傷、受傷",
@@ -13810,7 +13810,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示侵害權利或損害賠償"
   },
   {
-    "id": "word_497",
+    "id": "497",
     "word": "inn",
     "ipa": "/ɪn/",
     "translation": "小旅館、客棧、酒館",
@@ -13838,7 +13838,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示住宿於旅館"
   },
   {
-    "id": "word_498",
+    "id": "498",
     "word": "inner",
     "ipa": "/ˈɪnər/",
     "translation": "內部的、內在的、內心的",
@@ -13866,7 +13866,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示內部或內在部分"
   },
   {
-    "id": "word_499",
+    "id": "499",
     "word": "innocent",
     "ipa": "/ˈɪnəsənt/",
     "translation": "無罪的、天真的、無害的",
@@ -13894,7 +13894,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示天真無邪的人"
   },
   {
-    "id": "word_500",
+    "id": "500",
     "word": "inspect",
     "ipa": "/ɪnˈspɛkt/",
     "translation": "檢查、檢驗、審查",
@@ -13922,7 +13922,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示檢查的行為或過程"
   },
   {
-    "id": "word_501",
+    "id": "501",
     "word": "inspector",
     "ipa": "/ɪnˈspɛktər/",
     "translation": "檢查員、督察、巡官",
@@ -13950,7 +13950,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示檢查或視察"
   },
   {
-    "id": "word_502",
+    "id": "502",
     "word": "instead",
     "ipa": "/ɪnˈstɛd/",
     "translation": "代替、反而、卻",
@@ -13978,7 +13978,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作連接詞使用，表示替代關係"
   },
   {
-    "id": "word_503",
+    "id": "503",
     "word": "instruction",
     "ipa": "//ɪnˈstrʌk.ʃən//",
     "translation": "指示、教學、命令",
@@ -14006,7 +14006,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作複數 instructions，表示操作說明、指南"
   },
   {
-    "id": "word_504",
+    "id": "504",
     "word": "internal",
     "ipa": "/ɪnˈtɜrnl/",
     "translation": "內部的、國內的、體內的",
@@ -14034,7 +14034,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示內在事物或內部器官"
   },
   {
-    "id": "word_505",
+    "id": "505",
     "word": "interrupt",
     "ipa": "/ˌɪntəˈrʌpt/",
     "translation": "打斷、中斷、干擾",
@@ -14062,7 +14062,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示中斷信號"
   },
   {
-    "id": "word_506",
+    "id": "506",
     "word": "introduction",
     "ipa": "/ˌɪntrəˈdʌkʃən/",
     "translation": "介紹、引進、導論",
@@ -14090,7 +14090,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示引進新事物"
   },
   {
-    "id": "word_507",
+    "id": "507",
     "word": "inventor",
     "ipa": "/ɪnˈvɛntər/",
     "translation": "發明家、創造者",
@@ -14118,7 +14118,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞 invent，表示發明、創造"
   },
   {
-    "id": "word_508",
+    "id": "508",
     "word": "investigate",
     "ipa": "/ɪnˈvɛstɪɡeɪt/",
     "translation": "調查、研究、偵查",
@@ -14146,7 +14146,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞 investigation，表示調查行為"
   },
   {
-    "id": "word_509",
+    "id": "509",
     "word": "ivory",
     "ipa": "/ˈaɪvəri/",
     "translation": "象牙、象牙色",
@@ -14174,7 +14174,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示象牙製的或象牙色的"
   },
   {
-    "id": "word_510",
+    "id": "510",
     "word": "jail",
     "ipa": "/dʒeɪl/",
     "translation": "監獄、拘留所",
@@ -14201,7 +14201,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示監禁"
   },
   {
-    "id": "word_511",
+    "id": "511",
     "word": "jar",
     "ipa": "/dʒɑr/",
     "translation": "罐子、廣口瓶",
@@ -14229,7 +14229,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示震動、衝突"
   },
   {
-    "id": "word_512",
+    "id": "512",
     "word": "jaw",
     "ipa": "/dʒɔː/",
     "translation": "下巴、頜、下顎",
@@ -14257,7 +14257,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示嘮叨或嚴厲責罵"
   },
   {
-    "id": "word_513",
+    "id": "513",
     "word": "jealous",
     "ipa": "/ˈdʒɛləs/",
     "translation": "嫉妒的、吃醋的",
@@ -14284,7 +14284,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可形容對權利或所有物過度保護，如：He is very jealous of his privacy.（他非常保護自己的隱私）。"
   },
   {
-    "id": "word_514",
+    "id": "514",
     "word": "jelly",
     "ipa": "/ˈdʒɛli/",
     "translation": "果凍、凝膠狀物",
@@ -14312,7 +14312,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使成凝膠狀"
   },
   {
-    "id": "word_515",
+    "id": "515",
     "word": "jet",
     "ipa": "/ʤɛt/",
     "translation": "噴射、噴射機、噴射流",
@@ -14340,7 +14340,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示噴射、噴出"
   },
   {
-    "id": "word_516",
+    "id": "516",
     "word": "jewel",
     "ipa": "/ˈdʒuːəl/",
     "translation": "寶石、珠寶、珍貴之物",
@@ -14368,7 +14368,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示鑲嵌寶石"
   },
   {
-    "id": "word_517",
+    "id": "517",
     "word": "jewelry",
     "ipa": "/ˈdʒuːəlri/",
     "translation": "珠寶、首飾",
@@ -14396,7 +14396,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指珠寶飾品的總稱"
   },
   {
-    "id": "word_518",
+    "id": "518",
     "word": "journal",
     "ipa": "/ˈdʒɝːnəl/",
     "translation": "日記、日報、期刊",
@@ -14421,7 +14421,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示記入日誌或日記中"
   },
   {
-    "id": "word_519",
+    "id": "519",
     "word": "journey",
     "ipa": "/ˈdʒɝni/",
     "translation": "旅程、旅行、行程",
@@ -14449,7 +14449,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示旅行"
   },
   {
-    "id": "word_520",
+    "id": "520",
     "word": "joyful",
     "ipa": "/ˈdʒɔɪfəl/",
     "translation": "快樂的、高興的、喜悅的",
@@ -14477,7 +14477,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_521",
+    "id": "521",
     "word": "jungle",
     "ipa": "/ˈdʒʌŋɡl/",
     "translation": "叢林、密林",
@@ -14505,7 +14505,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示叢林的、混亂的"
   },
   {
-    "id": "word_522",
+    "id": "522",
     "word": "junk",
     "ipa": "/dʒʌŋk/",
     "translation": "垃圾、廢棄物、無用之物",
@@ -14533,7 +14533,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示丟棄廢棄物"
   },
   {
-    "id": "word_523",
+    "id": "523",
     "word": "justice",
     "ipa": "/ˈdʒʌstɪs/",
     "translation": "正義、公平、司法",
@@ -14561,7 +14561,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指司法系統或法官職位"
   },
   {
-    "id": "word_524",
+    "id": "524",
     "word": "kangaroo",
     "ipa": "/ˌkæŋɡəˈruː/",
     "translation": "袋鼠",
@@ -14585,7 +14585,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_525",
+    "id": "525",
     "word": "kettle",
     "ipa": "/ˈkɛt(ə)l/",
     "translation": "水壺、茶壺",
@@ -14610,7 +14610,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用壺煮水"
   },
   {
-    "id": "word_526",
+    "id": "526",
     "word": "keyboard",
     "ipa": "/ˈkiˌbɔrd/",
     "translation": "鍵盤、鍵盤樂器",
@@ -14638,7 +14638,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用鍵盤輸入資料"
   },
   {
-    "id": "word_527",
+    "id": "527",
     "word": "kidney",
     "ipa": "/ˈkɪdni/",
     "translation": "腎臟、腎",
@@ -14662,7 +14662,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指腎形豆或性格（如：a person of the same kidney 同類型的人）"
   },
   {
-    "id": "word_528",
+    "id": "528",
     "word": "kilogram",
     "ipa": "/ˈkɪləˌɡræm/",
     "translation": "公斤、千克",
@@ -14686,7 +14686,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_529",
+    "id": "529",
     "word": "kg",
     "ipa": "//ˌkɪləʊˈɡræm//",
     "translation": "公斤、千克",
@@ -14713,7 +14713,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作縮寫，表示公斤的計量單位"
   },
   {
-    "id": "word_530",
+    "id": "530",
     "word": "kilometer",
     "ipa": "/kɪˈlɑmɪtər/",
     "translation": "公里、千米",
@@ -14740,7 +14740,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作kilometre（英式拼法）"
   },
   {
-    "id": "word_531",
+    "id": "531",
     "word": "km",
     "ipa": "/kɪˈlɑːmɪtər/",
     "translation": "公里、千米",
@@ -14764,7 +14764,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作 kilometer 的縮寫，表示長度單位"
   },
   {
-    "id": "word_532",
+    "id": "532",
     "word": "kit",
     "ipa": "/kɪt/",
     "translation": "工具包、成套工具、配套元件",
@@ -14792,7 +14792,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示裝備、配備"
   },
   {
-    "id": "word_533",
+    "id": "533",
     "word": "kneel",
     "ipa": "/nil/",
     "translation": "跪下、跪拜",
@@ -14820,7 +14820,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示跪姿"
   },
   {
-    "id": "word_534",
+    "id": "534",
     "word": "knight",
     "ipa": "/naɪt/",
     "translation": "騎士、爵士",
@@ -14848,7 +14848,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示封為爵士"
   },
   {
-    "id": "word_535",
+    "id": "535",
     "word": "knit",
     "ipa": "/nɪt/",
     "translation": "編織、編結、使緊密結合",
@@ -14876,7 +14876,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示針織品"
   },
   {
-    "id": "word_536",
+    "id": "536",
     "word": "knob",
     "ipa": "/nɑːb/",
     "translation": "球形把手、旋鈕、節",
@@ -14904,7 +14904,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示裝有球形把手或形成節狀"
   },
   {
-    "id": "word_537",
+    "id": "537",
     "word": "knot",
     "ipa": "/nɑt/",
     "translation": "結、打結、難題",
@@ -14932,7 +14932,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示打結"
   },
   {
-    "id": "word_538",
+    "id": "538",
     "word": "label",
     "ipa": "/ˈleɪbəl/",
     "translation": "標籤、標記、稱呼",
@@ -14960,7 +14960,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示給某物貼標籤或把某人某事稱為某種角色，亦可指唱片公司。"
   },
   {
-    "id": "word_539",
+    "id": "539",
     "word": "lace",
     "ipa": "/leɪs/",
     "translation": "蕾絲、花邊、繫帶",
@@ -14988,7 +14988,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示繫緊、摻入"
   },
   {
-    "id": "word_540",
+    "id": "540",
     "word": "ladder",
     "ipa": "/ˈlædər/",
     "translation": "梯子、階梯、途徑",
@@ -15016,7 +15016,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示在褲襪上出現抽絲"
   },
   {
-    "id": "word_541",
+    "id": "541",
     "word": "latter",
     "ipa": "/ˈlætər/",
     "translation": "後者、後面的、後半的",
@@ -15044,7 +15044,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示後者（與former前者相對）"
   },
   {
-    "id": "word_542",
+    "id": "542",
     "word": "laughter",
     "ipa": "/ˈlæftər/",
     "translation": "笑聲、歡笑",
@@ -15072,7 +15072,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示笑的動作或聲音"
   },
   {
-    "id": "word_543",
+    "id": "543",
     "word": "laundry",
     "ipa": "/ˈlɔːndri/",
     "translation": "洗衣、洗衣店、待洗的衣物",
@@ -15100,7 +15100,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示洗衣的，例如 laundry room（洗衣間）"
   },
   {
-    "id": "word_544",
+    "id": "544",
     "word": "lawn",
     "ipa": "/lɔːn/",
     "translation": "草坪、草地、草場",
@@ -15128,7 +15128,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指草地網球場"
   },
   {
-    "id": "word_545",
+    "id": "545",
     "word": "leak",
     "ipa": "/lik/",
     "translation": "洩漏、洩露",
@@ -15156,7 +15156,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示漏洞或洩漏處"
   },
   {
-    "id": "word_546",
+    "id": "546",
     "word": "leap",
     "ipa": "/lip/",
     "translation": "跳躍、飛躍、躍進",
@@ -15184,7 +15184,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示跳躍或飛躍"
   },
   {
-    "id": "word_547",
+    "id": "547",
     "word": "leather",
     "ipa": "/ˈlɛðər/",
     "translation": "皮革、皮革製品",
@@ -15212,7 +15212,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示皮革製的"
   },
   {
-    "id": "word_548",
+    "id": "548",
     "word": "leisure",
     "ipa": "/ˈliːʒər/",
     "translation": "閒暇、休閒、空閒",
@@ -15240,7 +15240,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示空閒的，如 leisure activities（休閒活動）"
   },
   {
-    "id": "word_549",
+    "id": "549",
     "word": "lengthen",
     "ipa": "/ˈlɛŋθən/",
     "translation": "延長、變長、加長",
@@ -15268,7 +15268,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示時間或物體本身變長"
   },
   {
-    "id": "word_550",
+    "id": "550",
     "word": "lens",
     "ipa": "/lɛnz/",
     "translation": "透鏡、鏡片",
@@ -15293,7 +15293,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示給...拍攝"
   },
   {
-    "id": "word_551",
+    "id": "551",
     "word": "liar",
     "ipa": "/ˈlaɪɚ/",
     "translation": "說謊者、騙子",
@@ -15321,7 +15321,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示說謊的，但較少使用"
   },
   {
-    "id": "word_552",
+    "id": "552",
     "word": "liberal",
     "ipa": "/ˈlɪbərəl/",
     "translation": "自由的、開明的、慷慨的",
@@ -15349,7 +15349,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示自由主義者"
   },
   {
-    "id": "word_553",
+    "id": "553",
     "word": "liberty",
     "ipa": "/ˈlɪbərti/",
     "translation": "自由、自主權、解放",
@@ -15377,7 +15377,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作專有名詞，指自由女神像"
   },
   {
-    "id": "word_554",
+    "id": "554",
     "word": "librarian",
     "ipa": "/laɪˈbrɛriən/",
     "translation": "圖書館員、圖書管理員",
@@ -15405,7 +15405,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指圖書館管理系統或圖書館學專業人員"
   },
   {
-    "id": "word_555",
+    "id": "555",
     "word": "lifeboat",
     "ipa": "/ˈlaɪfboʊt/",
     "translation": "救生艇、救生船",
@@ -15433,7 +15433,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作比喻用法，表示困境中的救援手段"
   },
   {
-    "id": "word_556",
+    "id": "556",
     "word": "lifeguard",
     "ipa": "/ˈlaɪfˌgɑrd/",
     "translation": "救生員、水上救生員",
@@ -15461,7 +15461,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示擔任救生員"
   },
   {
-    "id": "word_557",
+    "id": "557",
     "word": "lifetime",
     "ipa": "/ˈlaɪftaɪm/",
     "translation": "一生、終生、壽命",
@@ -15489,7 +15489,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示終身的"
   },
   {
-    "id": "word_558",
+    "id": "558",
     "word": "lighthouse",
     "ipa": "/ˈlaɪtˌhaʊs/",
     "translation": "燈塔、指引",
@@ -15517,7 +15517,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作比喻用法，表示指引或希望的象徵"
   },
   {
-    "id": "word_559",
+    "id": "559",
     "word": "limb",
     "ipa": "/lɪm/",
     "translation": "肢、臂、腿",
@@ -15545,7 +15545,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示給...裝設肢體或樹枝"
   },
   {
-    "id": "word_560",
+    "id": "560",
     "word": "linen",
     "ipa": "/ˈlɪnən/",
     "translation": "亞麻布、亞麻製品",
@@ -15573,7 +15573,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示亞麻製的"
   },
   {
-    "id": "word_561",
+    "id": "561",
     "word": "lipstick",
     "ipa": "/ˈlɪpˌstɪk/",
     "translation": "口紅、唇膏",
@@ -15597,7 +15597,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示塗口紅"
   },
   {
-    "id": "word_562",
+    "id": "562",
     "word": "litter",
     "ipa": "/ˈlɪtər/",
     "translation": "垃圾、雜亂的東西、一窩幼崽",
@@ -15625,7 +15625,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示亂丟垃圾"
   },
   {
-    "id": "word_563",
+    "id": "563",
     "word": "lively",
     "ipa": "/ˈlaɪvli/",
     "translation": "活潑的、生動的、充滿活力的",
@@ -15653,7 +15653,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示活潑地、輕快地"
   },
   {
-    "id": "word_564",
+    "id": "564",
     "word": "liver",
     "ipa": "/ˈlɪvər/",
     "translation": "肝臟、肝",
@@ -15677,7 +15677,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞表示肝臟顏色，或作形容詞表示肝臟的"
   },
   {
-    "id": "word_565",
+    "id": "565",
     "word": "load",
     "ipa": "/loʊd/",
     "translation": "負載、裝載、工作量",
@@ -15705,7 +15705,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示負載量或工作量"
   },
   {
-    "id": "word_566",
+    "id": "566",
     "word": "lobby",
     "ipa": "/ˈlɑːbi/",
     "translation": "大廳、遊說",
@@ -15733,7 +15733,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示遊說、進行政治活動"
   },
   {
-    "id": "word_567",
+    "id": "567",
     "word": "lobster",
     "ipa": "/ˈlɑːbstər/",
     "translation": "龍蝦、螯蝦",
@@ -15760,7 +15760,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示捕捉龍蝦"
   },
   {
-    "id": "word_568",
+    "id": "568",
     "word": "lollipop",
     "ipa": "/ˈlɑːliˌpɑːp/",
     "translation": "棒棒糖、冰棍",
@@ -15788,7 +15788,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指冰棍或棒狀糖果"
   },
   {
-    "id": "word_569",
+    "id": "569",
     "word": "loose",
     "ipa": "/lus/",
     "translation": "鬆的、鬆散的、寬鬆的",
@@ -15816,7 +15816,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示釋放或鬆開"
   },
   {
-    "id": "word_570",
+    "id": "570",
     "word": "loosen",
     "ipa": "/ˈluːsn̩/",
     "translation": "放鬆、鬆開、放寬",
@@ -15844,7 +15844,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示變鬆或放鬆"
   },
   {
-    "id": "word_571",
+    "id": "571",
     "word": "lord",
     "ipa": "/lɔrd/",
     "translation": "君主、領主、貴族",
@@ -15872,7 +15872,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示稱王稱霸"
   },
   {
-    "id": "word_572",
+    "id": "572",
     "word": "loudspeaker",
     "ipa": "/ˈlaʊdˌspikər/",
     "translation": "揚聲器、擴音器",
@@ -15900,7 +15900,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指任何擴音裝置或系統"
   },
   {
-    "id": "word_573",
+    "id": "573",
     "word": "luggage",
     "ipa": "/ˈlʌɡɪdʒ/",
     "translation": "行李、行李箱",
@@ -15928,7 +15928,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指隨身攜帶的行李，通常用於旅行場合"
   },
   {
-    "id": "word_574",
+    "id": "574",
     "word": "lullaby",
     "ipa": "/ˈlʌləˌbaɪ/",
     "translation": "搖籃曲、催眠曲",
@@ -15955,7 +15955,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示唱搖籃曲催眠"
   },
   {
-    "id": "word_575",
+    "id": "575",
     "word": "lung",
     "ipa": "/lʌŋ/",
     "translation": "肺、肺部",
@@ -15979,7 +15979,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "亦可作形容詞用於lung cancer（肺癌）等醫學術語"
   },
   {
-    "id": "word_576",
+    "id": "576",
     "word": "magical",
     "ipa": "/ˈmædʒɪkəl/",
     "translation": "神奇的、魔法的、迷人的",
@@ -16007,7 +16007,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示以魔法方式"
   },
   {
-    "id": "word_577",
+    "id": "577",
     "word": "magnet",
     "ipa": "/ˈmæɡnət/",
     "translation": "磁鐵、磁石、磁體",
@@ -16034,7 +16034,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作比喻用法，表示有吸引力的人或事物"
   },
   {
-    "id": "word_578",
+    "id": "578",
     "word": "maid",
     "ipa": "/meɪd/",
     "translation": "女僕、侍女",
@@ -16062,7 +16062,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指未婚年輕女子，現較少用"
   },
   {
-    "id": "word_579",
+    "id": "579",
     "word": "major",
     "ipa": "/ˈmeɪdʒər/",
     "translation": "主修、主要的、重大的",
@@ -16090,7 +16090,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞表示主修，或作形容詞表示主要的"
   },
   {
-    "id": "word_580",
+    "id": "580",
     "word": "majority",
     "ipa": "/məˈdʒɔrəti/",
     "translation": "多數、大多數、過半數",
@@ -16118,7 +16118,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示多數的"
   },
   {
-    "id": "word_581",
+    "id": "581",
     "word": "mall",
     "ipa": "/mɔl/",
     "translation": "購物中心、大型商場",
@@ -16146,7 +16146,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指步行街或林蔭道"
   },
   {
-    "id": "word_582",
+    "id": "582",
     "word": "manage",
     "ipa": "/ˈmænɪdʒ/",
     "translation": "管理、處理、設法做到",
@@ -16174,7 +16174,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示勉強維持或應付"
   },
   {
-    "id": "word_583",
+    "id": "583",
     "word": "management",
     "ipa": "/ˈmænɪdʒmənt/",
     "translation": "管理、經營、管理階層",
@@ -16202,7 +16202,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作集合名詞，指管理部門或管理人員"
   },
   {
-    "id": "word_584",
+    "id": "584",
     "word": "manageable",
     "ipa": "/ˈmænɪdʒəbl/",
     "translation": "可管理的、可處理的、可控制的",
@@ -16230,7 +16230,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示可管理地，但較少使用"
   },
   {
-    "id": "word_585",
+    "id": "585",
     "word": "manager",
     "ipa": "/ˈmænɪdʒər/",
     "translation": "經理、管理者、經紀人",
@@ -16258,7 +16258,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示管理或經營"
   },
   {
-    "id": "word_586",
+    "id": "586",
     "word": "mankind",
     "ipa": "/mænˈkaɪnd/",
     "translation": "人類、人性",
@@ -16286,7 +16286,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作集合名詞，指全體人類"
   },
   {
-    "id": "word_587",
+    "id": "587",
     "word": "humankind",
     "ipa": "/ˈhjumənˌkaɪnd/",
     "translation": "人類、人性",
@@ -16314,7 +16314,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "通常僅作名詞使用，表示全體人類的概念"
   },
   {
-    "id": "word_588",
+    "id": "588",
     "word": "manners",
     "ipa": "/ˈmænərz/",
     "translation": "禮貌、規矩、風俗",
@@ -16342,7 +16342,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指特定地區或群體的風俗習慣"
   },
   {
-    "id": "word_589",
+    "id": "589",
     "word": "marble",
     "ipa": "/ˈmɑːrbəl/",
     "translation": "大理石、彈珠",
@@ -16370,7 +16370,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使有大理石花紋"
   },
   {
-    "id": "word_590",
+    "id": "590",
     "word": "march",
     "ipa": "/mɑːrtʃ/",
     "translation": "行軍、前進、三月",
@@ -16398,7 +16398,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示行軍、前進"
   },
   {
-    "id": "word_591",
+    "id": "591",
     "word": "marvelous",
     "ipa": "/ˈmɑːrvələs/",
     "translation": "非凡的、不可思議的、絕妙的",
@@ -16426,7 +16426,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_592",
+    "id": "592",
     "word": "mathematical",
     "ipa": "/ˌmæθəˈmætɪkəl/",
     "translation": "數學的、精確的、極有可能的",
@@ -16454,7 +16454,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞 mathematicals，表示數學問題或數學特性"
   },
   {
-    "id": "word_593",
+    "id": "593",
     "word": "mathematics",
     "ipa": "/ˌmæθəˈmætɪks/",
     "translation": "數學、數學運算",
@@ -16482,7 +16482,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指數學運算或數學學科"
   },
   {
-    "id": "word_594",
+    "id": "594",
     "word": "math",
     "ipa": "/mæθ/",
     "translation": "數學、算術",
@@ -16510,7 +16510,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作 mathematics 的縮寫形式"
   },
   {
-    "id": "word_595",
+    "id": "595",
     "word": "mature",
     "ipa": "/məˈtʃʊr/",
     "translation": "成熟的、到期的、考慮周到的",
@@ -16538,7 +16538,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示成熟、到期"
   },
   {
-    "id": "word_596",
+    "id": "596",
     "word": "mayor",
     "ipa": "/ˈmeɪər/",
     "translation": "市長",
@@ -16565,7 +16565,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示主要的、較大的"
   },
   {
-    "id": "word_597",
+    "id": "597",
     "word": "meadow",
     "ipa": "/ˈmɛdoʊ/",
     "translation": "草地、牧草地、草甸",
@@ -16593,7 +16593,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_598",
+    "id": "598",
     "word": "meaningful",
     "ipa": "/ˈminɪŋfəl/",
     "translation": "有意義的、意味深長的、重要的",
@@ -16621,7 +16621,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示有意義地，但較少使用"
   },
   {
-    "id": "word_599",
+    "id": "599",
     "word": "meanwhile",
     "ipa": "/ˈminˌhwaɪl/",
     "translation": "同時、在此期間",
@@ -16649,7 +16649,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示中間的時間"
   },
   {
-    "id": "word_600",
+    "id": "600",
     "word": "medal",
     "ipa": "/ˈmɛdəl/",
     "translation": "獎牌、獎章、勳章",
@@ -16677,7 +16677,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示獲得獎牌"
   },
   {
-    "id": "word_601",
+    "id": "601",
     "word": "medical",
     "ipa": "/ˈmɛdɪkəl/",
     "translation": "醫學的、醫療的、醫藥的",
@@ -16705,7 +16705,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示體格檢查"
   },
   {
-    "id": "word_602",
+    "id": "602",
     "word": "medium",
     "ipa": "/ˈmidiəm/",
     "translation": "媒介、媒體、中等",
@@ -16733,7 +16733,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示中等的、適中的"
   },
   {
-    "id": "word_603",
+    "id": "603",
     "word": "melt",
     "ipa": "/mɛlt/",
     "translation": "融化、溶解、軟化",
@@ -16761,7 +16761,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示融化的物質"
   },
   {
-    "id": "word_604",
+    "id": "604",
     "word": "membership",
     "ipa": "/ˈmɛmbərˌʃɪp/",
     "translation": "會員資格、會員身份、會員人數",
@@ -16789,7 +16789,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示與會員相關的"
   },
   {
-    "id": "word_605",
+    "id": "605",
     "word": "memorize",
     "ipa": "/ˈmɛməˌraɪz/",
     "translation": "記住、背誦、記憶",
@@ -16817,7 +16817,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞 memorization，表示記憶過程"
   },
   {
-    "id": "word_606",
+    "id": "606",
     "word": "mend",
     "ipa": "/mɛnd/",
     "translation": "修理、修補、改善",
@@ -16845,7 +16845,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示修補處或改善狀態"
   },
   {
-    "id": "word_607",
+    "id": "607",
     "word": "mental",
     "ipa": "/ˈmɛntl/",
     "translation": "精神的、心理的、智力的",
@@ -16873,7 +16873,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，在英式口語中表示精神病患"
   },
   {
-    "id": "word_608",
+    "id": "608",
     "word": "mention",
     "ipa": "/ˈmɛnʃən/",
     "translation": "提到、提及、說起",
@@ -16901,7 +16901,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示提及、說起"
   },
   {
-    "id": "word_609",
+    "id": "609",
     "word": "merchant",
     "ipa": "/ˈmɝːtʃənt/",
     "translation": "商人、零售商、經銷商",
@@ -16929,7 +16929,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示商船的或商業的"
   },
   {
-    "id": "word_610",
+    "id": "610",
     "word": "merry",
     "ipa": "/ˈmɛri/",
     "translation": "愉快的、歡樂的、興高采烈的",
@@ -16957,7 +16957,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作專有名詞的一部分，如聖誕快樂Merry Christmas"
   },
   {
-    "id": "word_611",
+    "id": "611",
     "word": "mess",
     "ipa": "/mɛs/",
     "translation": "混亂，髒亂，麻煩",
@@ -16984,7 +16984,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示弄亂、搞糟"
   },
   {
-    "id": "word_612",
+    "id": "612",
     "word": "microphone",
     "ipa": "/ˈmaɪkrəˌfoʊn/",
     "translation": "麥克風、話筒",
@@ -17012,7 +17012,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示透過麥克風傳送聲音"
   },
   {
-    "id": "word_613",
+    "id": "613",
     "word": "mike",
     "ipa": "/maɪk/",
     "translation": "麥克風",
@@ -17036,7 +17036,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作人名（Mike），是Michael的暱稱"
   },
   {
-    "id": "word_614",
+    "id": "614",
     "word": "microwave",
     "ipa": "/ˈmaɪkrəweɪv/",
     "translation": "微波爐、微波",
@@ -17064,7 +17064,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用微波爐加熱"
   },
   {
-    "id": "word_615",
+    "id": "615",
     "word": "might",
     "ipa": "/maɪt/",
     "translation": "可能、力量、威力",
@@ -17092,7 +17092,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作助動詞，表示可能性或許可"
   },
   {
-    "id": "word_616",
+    "id": "616",
     "word": "mighty",
     "ipa": "/ˈmaɪti/",
     "translation": "強大的、巨大的、有力的",
@@ -17120,7 +17120,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示非常、極度"
   },
   {
-    "id": "word_617",
+    "id": "617",
     "word": "mill",
     "ipa": "/mɪl/",
     "translation": "磨坊、工廠、磨粉機",
@@ -17148,7 +17148,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示研磨或在原地繞圈"
   },
   {
-    "id": "word_618",
+    "id": "618",
     "word": "millionaire",
     "ipa": "/ˌmɪljəˈnɛr/",
     "translation": "百萬富翁、富豪",
@@ -17176,7 +17176,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示百萬富翁的"
   },
   {
-    "id": "word_619",
+    "id": "619",
     "word": "miner",
     "ipa": "/ˈmaɪnər/",
     "translation": "礦工、採礦者",
@@ -17204,7 +17204,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示開採礦物"
   },
   {
-    "id": "word_620",
+    "id": "620",
     "word": "minor",
     "ipa": "/ˈmaɪnər/",
     "translation": "次要的、較小的、未成年的",
@@ -17232,7 +17232,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示未成年人"
   },
   {
-    "id": "word_621",
+    "id": "621",
     "word": "minority",
     "ipa": "/maɪˈnɔrəti/",
     "translation": "少數、少數民族、少數群體",
@@ -17260,7 +17260,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示少數的"
   },
   {
-    "id": "word_622",
+    "id": "622",
     "word": "miracle",
     "ipa": "/ˈmɪrəkəl/",
     "translation": "奇蹟、神蹟、不可思議的事",
@@ -17288,7 +17288,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示奇蹟般的，如 miracle cure（奇蹟般的療效）"
   },
   {
-    "id": "word_623",
+    "id": "623",
     "word": "misery",
     "ipa": "/ˈmɪzəri/",
     "translation": "痛苦、苦難、悲慘",
@@ -17316,7 +17316,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指令人痛苦的人或事物"
   },
   {
-    "id": "word_624",
+    "id": "624",
     "word": "missile",
     "ipa": "/ˈmɪs.əl/",
     "translation": "飛彈、導彈",
@@ -17344,7 +17344,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示可投射的或導彈的"
   },
   {
-    "id": "word_625",
+    "id": "625",
     "word": "missing",
     "ipa": "/ˈmɪsɪŋ/",
     "translation": "失蹤的、缺少的、遺失的",
@@ -17372,7 +17372,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示失蹤的人或物"
   },
   {
-    "id": "word_626",
+    "id": "626",
     "word": "mission",
     "ipa": "/ˈmɪʃən/",
     "translation": "任務、使命、代表團",
@@ -17400,7 +17400,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示派遣任務"
   },
   {
-    "id": "word_627",
+    "id": "627",
     "word": "mist",
     "ipa": "/mɪst/",
     "translation": "薄霧、霧氣、朦朧",
@@ -17428,7 +17428,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示起霧、使朦朧"
   },
   {
-    "id": "word_628",
+    "id": "628",
     "word": "mixture",
     "ipa": "/ˈmɪkstʃər/",
     "translation": "混合物、混合體、混合",
@@ -17456,7 +17456,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示混合，但較少見"
   },
   {
-    "id": "word_629",
+    "id": "629",
     "word": "mob",
     "ipa": "/mɑb/",
     "translation": "暴民、群眾、犯罪集團",
@@ -17484,7 +17484,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示成群圍住或攻擊"
   },
   {
-    "id": "word_630",
+    "id": "630",
     "word": "mobile",
     "ipa": "/ˈmoʊbəl/",
     "translation": "可移動的、流動的、手機",
@@ -17512,7 +17512,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示手機或移動裝置"
   },
   {
-    "id": "word_631",
+    "id": "631",
     "word": "moist",
     "ipa": "/mɔɪst/",
     "translation": "潮濕的、濕潤的、微濕的",
@@ -17540,7 +17540,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示潮濕狀態（較少見）"
   },
   {
-    "id": "word_632",
+    "id": "632",
     "word": "moisture",
     "ipa": "/ˈmɔɪstʃər/",
     "translation": "濕氣、水分、濕度",
@@ -17568,7 +17568,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞moisten，表示使濕潤"
   },
   {
-    "id": "word_633",
+    "id": "633",
     "word": "monk",
     "ipa": "/mʌŋk/",
     "translation": "僧侶、修道士、和尚",
@@ -17596,7 +17596,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指特定宗教的修行者，如佛教和尚或基督教修道士"
   },
   {
-    "id": "word_634",
+    "id": "634",
     "word": "mood",
     "ipa": "/muːd/",
     "translation": "心情、情緒、氣氛",
@@ -17624,7 +17624,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指文法中的語氣，如祈使語氣"
   },
   {
-    "id": "word_635",
+    "id": "635",
     "word": "mop",
     "ipa": "/mɑːp/",
     "translation": "拖把、擦、清潔",
@@ -17652,7 +17652,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用拖把拖地"
   },
   {
-    "id": "word_636",
+    "id": "636",
     "word": "moral",
     "ipa": "/ˈmɔrəl/",
     "translation": "道德的、道德上的、品行端正的",
@@ -17680,7 +17680,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示道德教訓、寓意"
   },
   {
-    "id": "word_637",
+    "id": "637",
     "word": "motel",
     "ipa": "/moʊˈtɛl/",
     "translation": "汽車旅館",
@@ -17708,7 +17708,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_638",
+    "id": "638",
     "word": "motor",
     "ipa": "/ˈmoʊtər/",
     "translation": "馬達、發動機、汽車",
@@ -17736,7 +17736,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示駕駛汽車或乘車旅行"
   },
   {
-    "id": "word_639",
+    "id": "639",
     "word": "murder",
     "ipa": "/ˈmɝdɚ/",
     "translation": "謀殺、兇殺、殺人",
@@ -17764,7 +17764,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示謀殺行為或謀殺罪"
   },
   {
-    "id": "word_640",
+    "id": "640",
     "word": "muscle",
     "ipa": "/ˈmʌsəl/",
     "translation": "肌肉、力量、影響力",
@@ -17792,7 +17792,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用力擠過"
   },
   {
-    "id": "word_641",
+    "id": "641",
     "word": "mushroom",
     "ipa": "/ˈmʌʃrʊm/",
     "translation": "蘑菇、蕈菇",
@@ -17820,7 +17820,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示快速增長或擴散"
   },
   {
-    "id": "word_642",
+    "id": "642",
     "word": "musical",
     "ipa": "/ˈmjuzɪkəl/",
     "translation": "音樂的、音樂劇的、悅耳的",
@@ -17848,7 +17848,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示音樂劇"
   },
   {
-    "id": "word_643",
+    "id": "643",
     "word": "mystery",
     "ipa": "/ˈmɪstəri/",
     "translation": "神秘、謎團、奧秘",
@@ -17876,7 +17876,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示神秘的"
   },
   {
-    "id": "word_644",
+    "id": "644",
     "word": "nanny",
     "ipa": "/ˈnæni/",
     "translation": "保姆、保母",
@@ -17904,7 +17904,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示像保姆一樣照顧"
   },
   {
-    "id": "word_645",
+    "id": "645",
     "word": "nap",
     "ipa": "/næp/",
     "translation": "小睡、打盹",
@@ -17932,7 +17932,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示小睡或織物表面的絨毛"
   },
   {
-    "id": "word_646",
+    "id": "646",
     "word": "native",
     "ipa": "/ˈneɪtɪv/",
     "translation": "本地的、土生土長的、原產的",
@@ -17960,7 +17960,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示本地人、原住民"
   },
   {
-    "id": "word_647",
+    "id": "647",
     "word": "navy",
     "ipa": "/ˈneɪvi/",
     "translation": "海軍、深藍色",
@@ -17988,7 +17988,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示深藍色的"
   },
   {
-    "id": "word_648",
+    "id": "648",
     "word": "necessity",
     "ipa": "/nəˈsɛsəti/",
     "translation": "必要性、必需品、必然性",
@@ -18016,7 +18016,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示必要性的概念"
   },
   {
-    "id": "word_649",
+    "id": "649",
     "word": "necktie",
     "ipa": "/ˈnɛkˌtaɪ/",
     "translation": "領帶",
@@ -18041,7 +18041,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用領帶裝飾或繫住"
   },
   {
-    "id": "word_650",
+    "id": "650",
     "word": "neighborhood",
     "ipa": "/ˈneɪbərˌhʊd/",
     "translation": "鄰近地區、街坊、社區",
@@ -18069,7 +18069,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指鄰里關係或鄰近範圍"
   },
   {
-    "id": "word_651",
+    "id": "651",
     "word": "nerve",
     "ipa": "/nɜrv/",
     "translation": "神經、勇氣、膽量",
@@ -18097,7 +18097,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示鼓起勇氣"
   },
   {
-    "id": "word_652",
+    "id": "652",
     "word": "nervous",
     "ipa": "/ˈnɜːrvəs/",
     "translation": "緊張的、不安的、神經質的",
@@ -18125,7 +18125,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指神經系統的，如 nervous system（神經系統）"
   },
   {
-    "id": "word_653",
+    "id": "653",
     "word": "network",
     "ipa": "/ˈnɛtˌwɝk/",
     "translation": "網絡、網狀系統、關係網",
@@ -18153,7 +18153,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示建立人脈或連線"
   },
   {
-    "id": "word_654",
+    "id": "654",
     "word": "nickname",
     "ipa": "/ˈnɪkneɪm/",
     "translation": "綽號、暱稱、外號",
@@ -18181,7 +18181,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示給...起綽號"
   },
   {
-    "id": "word_655",
+    "id": "655",
     "word": "noble",
     "ipa": "/ˈnoʊbəl/",
     "translation": "貴族的、高尚的、崇高的",
@@ -18209,7 +18209,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示貴族成員"
   },
   {
-    "id": "word_656",
+    "id": "656",
     "word": "normal",
     "ipa": "/ˈnɔːrml/",
     "translation": "正常的、常態的、標準的",
@@ -18237,7 +18237,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示正常狀態或標準"
   },
   {
-    "id": "word_657",
+    "id": "657",
     "word": "novelist",
     "ipa": "/ˈnɑvəlɪst/",
     "translation": "小說家、小說作者",
@@ -18265,7 +18265,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指長篇小說作家，與短篇小說作家有所區別"
   },
   {
-    "id": "word_658",
+    "id": "658",
     "word": "nun",
     "ipa": "/nʌn/",
     "translation": "修女、尼姑",
@@ -18293,7 +18293,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指某些宗教中的女性修行者"
   },
   {
-    "id": "word_659",
+    "id": "659",
     "word": "oak",
     "ipa": "/oʊk/",
     "translation": "橡樹、橡木",
@@ -18321,7 +18321,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示橡木製的"
   },
   {
-    "id": "word_660",
+    "id": "660",
     "word": "observe",
     "ipa": "/əbˈzɝv/",
     "translation": "觀察、注意到、遵守",
@@ -18349,7 +18349,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞表示遵守規則或慶祝節日"
   },
   {
-    "id": "word_661",
+    "id": "661",
     "word": "obvious",
     "ipa": "/ˈɑːbviəs/",
     "translation": "明顯的、顯而易見的",
@@ -18377,7 +18377,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示明顯地"
   },
   {
-    "id": "word_662",
+    "id": "662",
     "word": "occasion",
     "ipa": "/əˈkeɪʒən/",
     "translation": "場合、時機、機會",
@@ -18405,7 +18405,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示引起、導致"
   },
   {
-    "id": "word_663",
+    "id": "663",
     "word": "odd",
     "ipa": "/ɑd/",
     "translation": "奇怪的、奇數的、零散的",
@@ -18433,7 +18433,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示高爾夫比賽中讓杆"
   },
   {
-    "id": "word_664",
+    "id": "664",
     "word": "onto",
     "ipa": "/ˈɑnˌtu/",
     "translation": "到…之上、察覺",
@@ -18460,7 +18460,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示對情況有充分了解的"
   },
   {
-    "id": "word_665",
+    "id": "665",
     "word": "operator",
     "ipa": "/ˈɑːpəreɪtər/",
     "translation": "操作員、接線生、經營者",
@@ -18488,7 +18488,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作數學術語，表示運算符"
   },
   {
-    "id": "word_666",
+    "id": "666",
     "word": "opportunity",
     "ipa": "/ˌɑpərˈtunəti/",
     "translation": "機會、時機、機遇",
@@ -18516,7 +18516,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作商業用語表示商機"
   },
   {
-    "id": "word_667",
+    "id": "667",
     "word": "opposite",
     "ipa": "/ˈɑːpəzɪt/",
     "translation": "相反的、對面的、對立的",
@@ -18544,7 +18544,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示相反的事物；也可作副詞，表示在對面"
   },
   {
-    "id": "word_668",
+    "id": "668",
     "word": "optimistic",
     "ipa": "/ˌɑːptɪˈmɪstɪk/",
     "translation": "樂觀的、抱有希望的",
@@ -18572,7 +18572,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞 optimistically，表示樂觀地"
   },
   {
-    "id": "word_669",
+    "id": "669",
     "word": "origin",
     "ipa": "/ˈɔrɪdʒɪn/",
     "translation": "起源、來源、出身",
@@ -18600,7 +18600,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作數學名詞，表示座標原點"
   },
   {
-    "id": "word_670",
+    "id": "670",
     "word": "original",
     "ipa": "//əˈrɪdʒ.ən.əl//",
     "translation": "原始的，原來的，獨創的",
@@ -18627,7 +18627,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_671",
+    "id": "671",
     "word": "orphan",
     "ipa": "/ˈɔrfən/",
     "translation": "孤兒、失去父母的",
@@ -18655,7 +18655,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使成為孤兒"
   },
   {
-    "id": "word_672",
+    "id": "672",
     "word": "ought to",
     "ipa": "/ˈɔt tu/",
     "translation": "應該、應當",
@@ -18683,7 +18683,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可表示推測或可能性，例如：他應該到了"
   },
   {
-    "id": "word_673",
+    "id": "673",
     "word": "outdoor",
     "ipa": "/ˌaʊtˈdɔr/",
     "translation": "戶外的、戶外活動的",
@@ -18711,7 +18711,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示戶外活動或戶外環境"
   },
   {
-    "id": "word_674",
+    "id": "674",
     "word": "outdoors",
     "ipa": "/ˌaʊtˈdɔrz/",
     "translation": "戶外、在戶外、露天",
@@ -18739,7 +18739,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示戶外環境"
   },
   {
-    "id": "word_675",
+    "id": "675",
     "word": "outer",
     "ipa": "/ˈaʊtər/",
     "translation": "外部的、外面的",
@@ -18767,7 +18767,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示射擊比賽中外圈命中的一槍"
   },
   {
-    "id": "word_676",
+    "id": "676",
     "word": "outline",
     "ipa": "/ˈaʊtˌlaɪn/",
     "translation": "大綱、輪廓、概要",
@@ -18795,7 +18795,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示概述、描繪輪廓"
   },
   {
-    "id": "word_677",
+    "id": "677",
     "word": "overcoat",
     "ipa": "/ˈoʊvərkoʊt/",
     "translation": "大衣、外套",
@@ -18823,7 +18823,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示在...上塗層"
   },
   {
-    "id": "word_678",
+    "id": "678",
     "word": "owe",
     "ipa": "/oʊ/",
     "translation": "欠、歸功於、感激",
@@ -18851,7 +18851,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可表示負有義務或應給予感謝"
   },
   {
-    "id": "word_679",
+    "id": "679",
     "word": "ownership",
     "ipa": "/ˈoʊnərʃɪp/",
     "translation": "所有權、擁有權、所有",
@@ -18879,7 +18879,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示擁有的事實或狀態"
   },
   {
-    "id": "word_680",
+    "id": "680",
     "word": "pad",
     "ipa": "/pæd/",
     "translation": "墊、襯墊、便條紙",
@@ -18907,7 +18907,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示填塞、拉長文章"
   },
   {
-    "id": "word_681",
+    "id": "681",
     "word": "pail",
     "ipa": "/peɪl/",
     "translation": "桶、提桶",
@@ -18935,7 +18935,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用桶裝運"
   },
   {
-    "id": "word_682",
+    "id": "682",
     "word": "pal",
     "ipa": "/pæl/",
     "translation": "朋友、夥伴",
@@ -18963,7 +18963,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示與某人結交朋友"
   },
   {
-    "id": "word_683",
+    "id": "683",
     "word": "palace",
     "ipa": "/ˈpælɪs/",
     "translation": "宮殿、王宮、豪華住宅",
@@ -18991,7 +18991,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指大型娛樂場所，如電影宮"
   },
   {
-    "id": "word_684",
+    "id": "684",
     "word": "pale",
     "ipa": "/peɪl/",
     "translation": "蒼白的、暗淡的、淺色的",
@@ -19019,7 +19019,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示變得蒼白或失色"
   },
   {
-    "id": "word_685",
+    "id": "685",
     "word": "pancake",
     "ipa": "/ˈpæn.keɪk/",
     "translation": "薄煎餅、烤餅、鬆餅",
@@ -19047,7 +19047,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使飛機平墜著陸"
   },
   {
-    "id": "word_686",
+    "id": "686",
     "word": "panic",
     "ipa": "/ˈpænɪk/",
     "translation": "恐慌、驚慌",
@@ -19075,7 +19075,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示恐慌狀態"
   },
   {
-    "id": "word_687",
+    "id": "687",
     "word": "parade",
     "ipa": "/pəˈreɪd/",
     "translation": "遊行、閱兵、炫耀",
@@ -19103,7 +19103,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示遊行、炫耀"
   },
   {
-    "id": "word_688",
+    "id": "688",
     "word": "paradise",
     "ipa": "/ˈpærədaɪs/",
     "translation": "天堂、樂園",
@@ -19131,7 +19131,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指理想中的完美地方或狀態"
   },
   {
-    "id": "word_689",
+    "id": "689",
     "word": "parcel",
     "ipa": "/ˈpɑːrsl/",
     "translation": "包裹、小包",
@@ -19158,7 +19158,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示分配或分成小部分"
   },
   {
-    "id": "word_690",
+    "id": "690",
     "word": "participate",
     "ipa": "/pɑːrˈtɪsɪpeɪt/",
     "translation": "參與、參加",
@@ -19186,7 +19186,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_691",
+    "id": "691",
     "word": "passage",
     "ipa": "/ˈpæsɪdʒ/",
     "translation": "段落、通道、通過",
@@ -19214,7 +19214,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示通過或傳遞"
   },
   {
-    "id": "word_692",
+    "id": "692",
     "word": "passion",
     "ipa": "/ˈpæʃən/",
     "translation": "熱情、激情、酷愛",
@@ -19242,7 +19242,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指強烈的愛情或宗教熱情"
   },
   {
-    "id": "word_693",
+    "id": "693",
     "word": "passport",
     "ipa": "/ˈpæspɔːrt/",
     "translation": "護照、通行證",
@@ -19270,7 +19270,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作比喻用法，表示獲得某事物的手段或資格"
   },
   {
-    "id": "word_694",
+    "id": "694",
     "word": "password",
     "ipa": "/ˈpæsˌwɝd/",
     "translation": "密碼、口令",
@@ -19298,7 +19298,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用密碼保護"
   },
   {
-    "id": "word_695",
+    "id": "695",
     "word": "patience",
     "ipa": "/ˈpeɪʃəns/",
     "translation": "耐心、忍耐、耐性",
@@ -19326,7 +19326,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指紙牌遊戲中的一種單人玩法"
   },
   {
-    "id": "word_696",
+    "id": "696",
     "word": "pause",
     "ipa": "/pɔːz/",
     "translation": "暫停、中止、停頓",
@@ -19354,7 +19354,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示暫停或間歇"
   },
   {
-    "id": "word_697",
+    "id": "697",
     "word": "pave",
     "ipa": "/peɪv/",
     "translation": "鋪設、鋪路",
@@ -19382,7 +19382,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示鋪路材料"
   },
   {
-    "id": "word_698",
+    "id": "698",
     "word": "pavement",
     "ipa": "/ˈpeɪvmənt/",
     "translation": "人行道、路面",
@@ -19410,7 +19410,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指鋪設的道路表面材料"
   },
   {
-    "id": "word_699",
+    "id": "699",
     "word": "paw",
     "ipa": "/pɔː/",
     "translation": "爪子、掌",
@@ -19438,7 +19438,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用爪子抓或笨拙地摸"
   },
   {
-    "id": "word_700",
+    "id": "700",
     "word": "pay",
     "ipa": "/peɪ/",
     "translation": "支付、付款、償還",
@@ -19466,7 +19466,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示工資、薪水"
   },
   {
-    "id": "word_701",
+    "id": "701",
     "word": "salary",
     "ipa": "/ˈsæləri/",
     "translation": "薪水、薪資、工資",
@@ -19494,7 +19494,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示支付薪水"
   },
   {
-    "id": "word_702",
+    "id": "702",
     "word": "wage",
     "ipa": "/weɪdʒ/",
     "translation": "工資、薪水、報酬",
@@ -19522,7 +19522,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示進行（戰爭、運動等）"
   },
   {
-    "id": "word_703",
+    "id": "703",
     "word": "pea",
     "ipa": "/piː/",
     "translation": "豌豆",
@@ -19546,7 +19546,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指豌豆大小的物體"
   },
   {
-    "id": "word_704",
+    "id": "704",
     "word": "peak",
     "ipa": "/piːk/",
     "translation": "頂峰、巔峰、高峰",
@@ -19574,7 +19574,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示達到最高點；也可作形容詞，表示高峰的"
   },
   {
-    "id": "word_705",
+    "id": "705",
     "word": "pearl",
     "ipa": "/pɝːl/",
     "translation": "珍珠、珍寶",
@@ -19602,7 +19602,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用珍珠裝飾或形成珍珠狀"
   },
   {
-    "id": "word_706",
+    "id": "706",
     "word": "peel",
     "ipa": "/pil/",
     "translation": "剝皮、削皮、脫皮",
@@ -19630,7 +19630,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示果皮"
   },
   {
-    "id": "word_707",
+    "id": "707",
     "word": "peep",
     "ipa": "/pip/",
     "translation": "窺視、偷看",
@@ -19658,7 +19658,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示短暫的觀看或輕微的聲音"
   },
   {
-    "id": "word_708",
+    "id": "708",
     "word": "penny",
     "ipa": "/ˈpɛni/",
     "translation": "便士、一分錢",
@@ -19685,7 +19685,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示小額金錢或象徵性的金額"
   },
   {
-    "id": "word_709",
+    "id": "709",
     "word": "perform",
     "ipa": "/pərˈfɔrm/",
     "translation": "執行、表演、表現",
@@ -19713,7 +19713,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示機器或系統的運作表現"
   },
   {
-    "id": "word_710",
+    "id": "710",
     "word": "performance",
     "ipa": "/pərˈfɔːrməns/",
     "translation": "表現、表演、效能",
@@ -19741,7 +19741,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示性能相關的，如 performance review（績效評估）"
   },
   {
-    "id": "word_711",
+    "id": "711",
     "word": "permission",
     "ipa": "/pərˈmɪʃən/",
     "translation": "許可、允許、授權",
@@ -19769,7 +19769,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示准許或授權"
   },
   {
-    "id": "word_712",
+    "id": "712",
     "word": "permit",
     "ipa": "/pərˈmɪt/",
     "translation": "允許、許可、准許",
@@ -19797,7 +19797,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示許可證"
   },
   {
-    "id": "word_713",
+    "id": "713",
     "word": "personality",
     "ipa": "/ˌpɜːrsəˈnæləti/",
     "translation": "個性、人格、性格",
@@ -19825,7 +19825,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指名人、公眾人物"
   },
   {
-    "id": "word_714",
+    "id": "714",
     "word": "persuade",
     "ipa": "/pərˈsweɪd/",
     "translation": "說服、勸說、說服",
@@ -19853,7 +19853,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示說服成功"
   },
   {
-    "id": "word_715",
+    "id": "715",
     "word": "pest",
     "ipa": "/pɛst/",
     "translation": "害蟲、令人討厭的人或事物",
@@ -19881,7 +19881,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示騷擾或糾纏"
   },
   {
-    "id": "word_716",
+    "id": "716",
     "word": "pickle",
     "ipa": "/ˈpɪkəl/",
     "translation": "泡菜、醃黃瓜",
@@ -19908,7 +19908,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示醃製"
   },
   {
-    "id": "word_717",
+    "id": "717",
     "word": "pill",
     "ipa": "/pɪl/",
     "translation": "藥丸、藥片",
@@ -19936,7 +19936,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示製成藥丸或口語中表示令人厭煩"
   },
   {
-    "id": "word_718",
+    "id": "718",
     "word": "pilot",
     "ipa": "/ˈpaɪlət/",
     "translation": "飛行員、領航員、試點",
@@ -19963,7 +19963,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示駕駛（飛機）、試行；或作形容詞，表示試驗性的"
   },
   {
-    "id": "word_719",
+    "id": "719",
     "word": "pine",
     "ipa": "/paɪn/",
     "translation": "松樹、渴望",
@@ -19991,7 +19991,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示渴望、思念"
   },
   {
-    "id": "word_720",
+    "id": "720",
     "word": "pint",
     "ipa": "/paɪnt/",
     "translation": "品脫、一品脫的容器",
@@ -20019,7 +20019,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作量詞單位，表示容量"
   },
   {
-    "id": "word_721",
+    "id": "721",
     "word": "pit",
     "ipa": "/pɪt/",
     "translation": "坑、凹陷處、礦坑",
@@ -20047,7 +20047,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使對抗、使相鬥"
   },
   {
-    "id": "word_722",
+    "id": "722",
     "word": "pity",
     "ipa": "/ˈpɪti/",
     "translation": "憐憫、同情、遺憾",
@@ -20075,7 +20075,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示感到憐憫或同情"
   },
   {
-    "id": "word_723",
+    "id": "723",
     "word": "plastic",
     "ipa": "/ˈplæstɪk/",
     "translation": "塑膠、可塑的、塑膠製品",
@@ -20103,7 +20103,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示可塑的、塑膠製的"
   },
   {
-    "id": "word_724",
+    "id": "724",
     "word": "plenty",
     "ipa": "/ˈplɛnti/",
     "translation": "大量、豐富、充足",
@@ -20131,7 +20131,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示非常、充分地"
   },
   {
-    "id": "word_725",
+    "id": "725",
     "word": "plug",
     "ipa": "/plʌɡ/",
     "translation": "插頭、塞子、插座",
@@ -20159,7 +20159,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示插入、堵塞"
   },
   {
-    "id": "word_726",
+    "id": "726",
     "word": "plum",
     "ipa": "/plʌm/",
     "translation": "李子、梅子",
@@ -20183,7 +20183,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示深紫色的"
   },
   {
-    "id": "word_727",
+    "id": "727",
     "word": "plumber",
     "ipa": "/ˈplʌmər/",
     "translation": "水管工、水電工",
@@ -20207,7 +20207,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_728",
+    "id": "728",
     "word": "pole",
     "ipa": "/poʊl/",
     "translation": "桿子、極點",
@@ -20235,7 +20235,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用竿子推動"
   },
   {
-    "id": "word_729",
+    "id": "729",
     "word": "political",
     "ipa": "/pəˈlɪtɪkəl/",
     "translation": "政治的、政治上的",
@@ -20263,7 +20263,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞 political 的複數形式，但較少使用"
   },
   {
-    "id": "word_730",
+    "id": "730",
     "word": "politician",
     "ipa": "/ˌpɑləˈtɪʃən/",
     "translation": "政治家、政客",
@@ -20291,7 +20291,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作貶義詞，指政客（帶有負面含義）"
   },
   {
-    "id": "word_731",
+    "id": "731",
     "word": "politics",
     "ipa": "/ˈpɑːləˌtɪks/",
     "translation": "政治、政治學、政治活動",
@@ -20319,7 +20319,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作單數名詞，表示政治觀點或政治策略"
   },
   {
-    "id": "word_732",
+    "id": "732",
     "word": "poll",
     "ipa": "/poʊl/",
     "translation": "投票、民意調查",
@@ -20347,7 +20347,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示進行投票或獲得選票"
   },
   {
-    "id": "word_733",
+    "id": "733",
     "word": "pollute",
     "ipa": "/pəˈluːt/",
     "translation": "污染、弄髒、玷污",
@@ -20375,7 +20375,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞 pollution 表示污染狀態或污染物"
   },
   {
-    "id": "word_734",
+    "id": "734",
     "word": "pony",
     "ipa": "/ˈpoʊni/",
     "translation": "小馬、矮種馬",
@@ -20403,7 +20403,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示快速完成某事"
   },
   {
-    "id": "word_735",
+    "id": "735",
     "word": "pop",
     "ipa": "/pɑp/",
     "translation": "流行音樂、突然出現、發出砰的一聲",
@@ -20431,7 +20431,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示流行音樂或汽水飲料"
   },
   {
-    "id": "word_736",
+    "id": "736",
     "word": "popular",
     "ipa": "/ˈpɑːpjələr/",
     "translation": "受歡迎的、流行的、普遍的",
@@ -20459,7 +20459,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示大眾化的事物或通俗文化"
   },
   {
-    "id": "word_737",
+    "id": "737",
     "word": "porcelain",
     "ipa": "/ˈpɔːrsəlɪn/",
     "translation": "瓷器、瓷製品",
@@ -20487,7 +20487,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示瓷製的"
   },
   {
-    "id": "word_738",
+    "id": "738",
     "word": "china",
     "ipa": "/ˈtʃaɪnə/",
     "translation": "中國、瓷器",
@@ -20512,7 +20512,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作專有名詞，表示國家名稱"
   },
   {
-    "id": "word_739",
+    "id": "739",
     "word": "portion",
     "ipa": "/ˈpɔːrʃən/",
     "translation": "部分、一份、份額",
@@ -20540,7 +20540,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示分配"
   },
   {
-    "id": "word_740",
+    "id": "740",
     "word": "portrait",
     "ipa": "/ˈpɔːrtrət/",
     "translation": "肖像、畫像、描繪",
@@ -20568,7 +20568,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示縱向的或肖像畫的"
   },
   {
-    "id": "word_741",
+    "id": "741",
     "word": "postage",
     "ipa": "/ˈpoʊstɪdʒ/",
     "translation": "郵資、郵費",
@@ -20594,7 +20594,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示與郵政有關的，例如 postage stamp（郵票）"
   },
   {
-    "id": "word_742",
+    "id": "742",
     "word": "poster",
     "ipa": "/ˈpoʊstər/",
     "translation": "海報、宣傳畫、招貼",
@@ -20622,7 +20622,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示張貼海報或佈告"
   },
   {
-    "id": "word_743",
+    "id": "743",
     "word": "postpone",
     "ipa": "/poʊstˈpoʊn/",
     "translation": "延後、延期、推遲",
@@ -20650,7 +20650,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示延遲的行為"
   },
   {
-    "id": "word_744",
+    "id": "744",
     "word": "postponement",
     "ipa": "/poʊˈspoʊnmənt/",
     "translation": "延期、延遲",
@@ -20678,7 +20678,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_745",
+    "id": "745",
     "word": "pottery",
     "ipa": "/ˈpɑːtəri/",
     "translation": "陶器、陶藝、製陶",
@@ -20706,7 +20706,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指製陶術或陶器工坊"
   },
   {
-    "id": "word_746",
+    "id": "746",
     "word": "ceramic",
     "ipa": "/səˈræmɪk/",
     "translation": "陶瓷的、陶瓷製品",
@@ -20734,7 +20734,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示陶瓷製品"
   },
   {
-    "id": "word_747",
+    "id": "747",
     "word": "pour",
     "ipa": "/pɔːr/",
     "translation": "倒、傾瀉、傾盆大雨",
@@ -20762,7 +20762,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示傾盆大雨"
   },
   {
-    "id": "word_748",
+    "id": "748",
     "word": "poverty",
     "ipa": "/ˈpɑːvɚti/",
     "translation": "貧窮、貧困、缺乏",
@@ -20790,7 +20790,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指知識或資源的匱乏"
   },
   {
-    "id": "word_749",
+    "id": "749",
     "word": "powder",
     "ipa": "/ˈpaʊdɚ/",
     "translation": "粉末、火藥、香粉",
@@ -20818,7 +20818,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示撒粉或變成粉末"
   },
   {
-    "id": "word_750",
+    "id": "750",
     "word": "practical",
     "ipa": "/ˈpræktɪkəl/",
     "translation": "實用的、實際的、可行的",
@@ -20846,7 +20846,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示實習課或實驗課"
   },
   {
-    "id": "word_751",
+    "id": "751",
     "word": "prayer",
     "ipa": "/prɛr/",
     "translation": "祈禱、禱告、祈求",
@@ -20874,7 +20874,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作可數名詞，表示祈禱文或祈禱者"
   },
   {
-    "id": "word_752",
+    "id": "752",
     "word": "precious",
     "ipa": "/ˈprɛʃəs/",
     "translation": "珍貴的、寶貴的、貴重的",
@@ -20902,7 +20902,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示非常、極其，如 precious little（極少）"
   },
   {
-    "id": "word_753",
+    "id": "753",
     "word": "preparation",
     "ipa": "/ˌprɛpəˈreɪʃən/",
     "translation": "準備、預備、籌備",
@@ -20930,7 +20930,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示準備的過程或狀態"
   },
   {
-    "id": "word_754",
+    "id": "754",
     "word": "pressure",
     "ipa": "/ˈprɛʃər/",
     "translation": "壓力、壓迫、催促",
@@ -20958,7 +20958,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示施加壓力"
   },
   {
-    "id": "word_755",
+    "id": "755",
     "word": "pretend",
     "ipa": "/prɪˈtɛnd/",
     "translation": "假裝、偽稱、自稱",
@@ -20986,7 +20986,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示假裝的、虛假的"
   },
   {
-    "id": "word_756",
+    "id": "756",
     "word": "prevent",
     "ipa": "/prɪˈvɛnt/",
     "translation": "防止、阻止、預防",
@@ -21014,7 +21014,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞 prevention，表示預防措施"
   },
   {
-    "id": "word_757",
+    "id": "757",
     "word": "previous",
     "ipa": "/ˈpriviəs/",
     "translation": "以前的、先前的、過去的",
@@ -21042,7 +21042,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示在之前"
   },
   {
-    "id": "word_758",
+    "id": "758",
     "word": "priest",
     "ipa": "/prist/",
     "translation": "牧師、神父、祭司",
@@ -21070,7 +21070,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使成為牧師或司祭"
   },
   {
-    "id": "word_759",
+    "id": "759",
     "word": "primary",
     "ipa": "/ˈpraɪˌmɛri/",
     "translation": "主要的、初級的、基本的",
@@ -21098,7 +21098,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示初選或小學"
   },
   {
-    "id": "word_760",
+    "id": "760",
     "word": "probable",
     "ipa": "/ˈprɑbəbəl/",
     "translation": "可能的、大概的、很有希望的",
@@ -21126,7 +21126,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示很可能入選的候選人或很有希望獲勝的馬"
   },
   {
-    "id": "word_761",
+    "id": "761",
     "word": "process",
     "ipa": "/ˈprɑːsɛs/",
     "translation": "過程、程序、處理",
@@ -21154,7 +21154,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示處理、加工"
   },
   {
-    "id": "word_762",
+    "id": "762",
     "word": "product",
     "ipa": "/ˈprɑdəkt/",
     "translation": "產品、產物、結果",
@@ -21182,7 +21182,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作數學用語，表示乘積"
   },
   {
-    "id": "word_763",
+    "id": "763",
     "word": "profit",
     "ipa": "/ˈprɑfɪt/",
     "translation": "利潤、收益、益處",
@@ -21210,7 +21210,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示獲益、得益"
   },
   {
-    "id": "word_764",
+    "id": "764",
     "word": "program",
     "ipa": "/ˈproʊɡræm/",
     "translation": "程式、節目、計劃",
@@ -21238,7 +21238,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示編寫程式或規劃"
   },
   {
-    "id": "word_765",
+    "id": "765",
     "word": "promote",
     "ipa": "/prəˈmoʊt/",
     "translation": "促進、提升、推廣",
@@ -21266,7 +21266,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞表示晉升職位"
   },
   {
-    "id": "word_766",
+    "id": "766",
     "word": "proof",
     "ipa": "/pruːf/",
     "translation": "證明、證據、驗證",
@@ -21294,7 +21294,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示校對或驗證；也可作形容詞，表示防...的"
   },
   {
-    "id": "word_767",
+    "id": "767",
     "word": "proper",
     "ipa": "/ˈprɑːpər/",
     "translation": "適當的、正確的、特有的",
@@ -21322,7 +21322,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示完全地、徹底地"
   },
   {
-    "id": "word_768",
+    "id": "768",
     "word": "property",
     "ipa": "/ˈprɑːpərti/",
     "translation": "財產、所有物、特性",
@@ -21350,7 +21350,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示財產的"
   },
   {
-    "id": "word_769",
+    "id": "769",
     "word": "proposal",
     "ipa": "/prəˈpoʊzəl/",
     "translation": "提議、建議、提案",
@@ -21378,7 +21378,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示求婚"
   },
   {
-    "id": "word_770",
+    "id": "770",
     "word": "protection",
     "ipa": "/prəˈtɛkʃən/",
     "translation": "保護、防護、防衛",
@@ -21406,7 +21406,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示保護令或貿易保護措施"
   },
   {
-    "id": "word_771",
+    "id": "771",
     "word": "protective",
     "ipa": "/prəˈtɛktɪv/",
     "translation": "保護的、防護的",
@@ -21434,7 +21434,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示保護物或防護裝置"
   },
   {
-    "id": "word_772",
+    "id": "772",
     "word": "pub",
     "ipa": "/pʌb/",
     "translation": "酒吧、酒館",
@@ -21462,7 +21462,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示去酒吧喝酒"
   },
   {
-    "id": "word_773",
+    "id": "773",
     "word": "punch",
     "ipa": "/pʌntʃ/",
     "translation": "重擊、用拳猛擊、穿孔",
@@ -21490,7 +21490,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示打孔器、一拳"
   },
   {
-    "id": "word_774",
+    "id": "774",
     "word": "pure",
     "ipa": "/pjʊr/",
     "translation": "純的、純淨的、純粹的",
@@ -21518,7 +21518,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示純潔的或完全的"
   },
   {
-    "id": "word_775",
+    "id": "775",
     "word": "pursue",
     "ipa": "/pərˈsu/",
     "translation": "追求、追趕、從事",
@@ -21546,7 +21546,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示繼續進行訴訟"
   },
   {
-    "id": "word_776",
+    "id": "776",
     "word": "quarrel",
     "ipa": "/ˈkwɔrəl/",
     "translation": "爭吵、口角、爭論",
@@ -21574,7 +21574,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示爭吵或爭論"
   },
   {
-    "id": "word_777",
+    "id": "777",
     "word": "queer",
     "ipa": "/kwɪr/",
     "translation": "奇怪的、古怪的、同性戀的",
@@ -21602,7 +21602,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示破壞或使失敗；也可作名詞，指同性戀者（現多為冒犯用語）"
   },
   {
-    "id": "word_778",
+    "id": "778",
     "word": "quote",
     "ipa": "/kwoʊt/",
     "translation": "引用、報價",
@@ -21630,7 +21630,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示引文或報價"
   },
   {
-    "id": "word_779",
+    "id": "779",
     "word": "racial",
     "ipa": "/ˈreɪʃəl/",
     "translation": "種族的、人種的",
@@ -21656,7 +21656,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示種族特徵"
   },
   {
-    "id": "word_780",
+    "id": "780",
     "word": "radar",
     "ipa": "/ˈreɪdɑr/",
     "translation": "雷達、雷達系統",
@@ -21684,7 +21684,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用雷達偵測"
   },
   {
-    "id": "word_781",
+    "id": "781",
     "word": "rag",
     "ipa": "/ræɡ/",
     "translation": "破布、碎布、抹布",
@@ -21712,7 +21712,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示戲弄或責罵"
   },
   {
-    "id": "word_782",
+    "id": "782",
     "word": "raisin",
     "ipa": "/ˈreɪzn/",
     "translation": "葡萄乾",
@@ -21740,7 +21740,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_783",
+    "id": "783",
     "word": "rank",
     "ipa": "/ræŋk/",
     "translation": "等級、地位、排列",
@@ -21768,7 +21768,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示排列、分等級"
   },
   {
-    "id": "word_784",
+    "id": "784",
     "word": "rate",
     "ipa": "/reɪt/",
     "translation": "比率、速率、評價",
@@ -21796,7 +21796,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示評價或評級"
   },
   {
-    "id": "word_785",
+    "id": "785",
     "word": "raw",
     "ipa": "/rɔː/",
     "translation": "生的、未加工的、原始的",
@@ -21824,7 +21824,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示未加工的狀態或材料"
   },
   {
-    "id": "word_786",
+    "id": "786",
     "word": "ray",
     "ipa": "/reɪ/",
     "translation": "光線、射線",
@@ -21852,7 +21852,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示放射光線"
   },
   {
-    "id": "word_787",
+    "id": "787",
     "word": "razor",
     "ipa": "/ˈreɪzər/",
     "translation": "剃刀、刮鬍刀",
@@ -21880,7 +21880,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用剃刀刮除"
   },
   {
-    "id": "word_788",
+    "id": "788",
     "word": "react",
     "ipa": "/riˈækt/",
     "translation": "反應、回應、起化學反應",
@@ -21908,7 +21908,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作化學用語，表示發生化學反應"
   },
   {
-    "id": "word_789",
+    "id": "789",
     "word": "reaction",
     "ipa": "/riˈækʃən/",
     "translation": "反應、反作用、回應",
@@ -21936,7 +21936,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指化學反應"
   },
   {
-    "id": "word_790",
+    "id": "790",
     "word": "reasonable",
     "ipa": "/ˈrizənəbəl/",
     "translation": "合理的、通情達理的、公道的",
@@ -21964,7 +21964,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示合理的（如合理懷疑）"
   },
   {
-    "id": "word_791",
+    "id": "791",
     "word": "receipt",
     "ipa": "/rɪˈsit/",
     "translation": "收據、收到",
@@ -21992,7 +21992,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示開收據或簽收"
   },
   {
-    "id": "word_792",
+    "id": "792",
     "word": "receiver",
     "ipa": "/rɪˈsiːvər/",
     "translation": "接收者、收件人、接收器",
@@ -22020,7 +22020,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指電子設備中的接收器，如電話聽筒"
   },
   {
-    "id": "word_793",
+    "id": "793",
     "word": "recognize",
     "ipa": "/ˈrɛkəɡˌnaɪz/",
     "translation": "認出、承認、認可",
@@ -22048,7 +22048,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示正式承認某事物"
   },
   {
-    "id": "word_794",
+    "id": "794",
     "word": "recorder",
     "ipa": "/rɪˈkɔrdər/",
     "translation": "錄音機、記錄器",
@@ -22076,7 +22076,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指八孔直笛（樂器）"
   },
   {
-    "id": "word_795",
+    "id": "795",
     "word": "recover",
     "ipa": "/rɪˈkʌvər/",
     "translation": "恢復、復原、康復",
@@ -22104,7 +22104,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示重新獲得、找回"
   },
   {
-    "id": "word_796",
+    "id": "796",
     "word": "reduce",
     "ipa": "/rɪˈduːs/",
     "translation": "減少、縮小、降低",
@@ -22132,7 +22132,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示減肥"
   },
   {
-    "id": "word_797",
+    "id": "797",
     "word": "regional",
     "ipa": "/ˈriːdʒənl/",
     "translation": "區域的、地區性的",
@@ -22160,7 +22160,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示地區性事物或地方電視台"
   },
   {
-    "id": "word_798",
+    "id": "798",
     "word": "regret",
     "ipa": "/rɪˈɡrɛt/",
     "translation": "後悔、遺憾、惋惜",
@@ -22188,7 +22188,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示遺憾或懊悔"
   },
   {
-    "id": "word_799",
+    "id": "799",
     "word": "relate",
     "ipa": "/rɪˈleɪt/",
     "translation": "敘述、使有聯繫、有關聯",
@@ -22216,7 +22216,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示建立良好關係"
   },
   {
-    "id": "word_800",
+    "id": "800",
     "word": "relax",
     "ipa": "/rɪˈlæks/",
     "translation": "放鬆、休息、鬆懈",
@@ -22244,7 +22244,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示變得輕鬆"
   },
   {
-    "id": "word_801",
+    "id": "801",
     "word": "release",
     "ipa": "/rɪˈlis/",
     "translation": "釋放、發布、發行",
@@ -22272,7 +22272,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示釋放、發行物"
   },
   {
-    "id": "word_802",
+    "id": "802",
     "word": "reliable",
     "ipa": "/rɪˈlaɪəbəl/",
     "translation": "可靠的、可信賴的、可靠的",
@@ -22300,7 +22300,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示可靠的人或事物"
   },
   {
-    "id": "word_803",
+    "id": "803",
     "word": "relief",
     "ipa": "/rɪˈlif/",
     "translation": "緩解、救濟、寬慰",
@@ -22328,7 +22328,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示救濟；或指地形上的起伏"
   },
   {
-    "id": "word_804",
+    "id": "804",
     "word": "religion",
     "ipa": "/rɪˈlɪdʒən/",
     "translation": "宗教、宗教信仰、宗教制度",
@@ -22356,7 +22356,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指特定的宗教體系，如基督教、佛教等"
   },
   {
-    "id": "word_805",
+    "id": "805",
     "word": "religious",
     "ipa": "/rɪˈlɪdʒəs/",
     "translation": "宗教的、虔誠的、嚴謹的",
@@ -22384,7 +22384,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示修道士或修女"
   },
   {
-    "id": "word_806",
+    "id": "806",
     "word": "rely",
     "ipa": "/rɪˈlaɪ/",
     "translation": "依賴、依靠、信賴",
@@ -22412,7 +22412,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，常與 on 或 upon 連用"
   },
   {
-    "id": "word_807",
+    "id": "807",
     "word": "remain",
     "ipa": "/rɪˈmeɪn/",
     "translation": "保持、留下、仍然是",
@@ -22440,7 +22440,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示遺跡或剩餘物"
   },
   {
-    "id": "word_808",
+    "id": "808",
     "word": "remind",
     "ipa": "/rɪˈmaɪnd/",
     "translation": "提醒、使想起",
@@ -22468,7 +22468,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作反身動詞，表示提醒自己"
   },
   {
-    "id": "word_809",
+    "id": "809",
     "word": "remote",
     "ipa": "/rɪˈmoʊt/",
     "translation": "遙遠的、偏僻的、遠端的",
@@ -22496,7 +22496,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示遙控器"
   },
   {
-    "id": "word_810",
+    "id": "810",
     "word": "remove",
     "ipa": "/rɪˈmuːv/",
     "translation": "移除、除去、消除",
@@ -22524,7 +22524,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示距離或程度上的移動"
   },
   {
-    "id": "word_811",
+    "id": "811",
     "word": "renew",
     "ipa": "/rɪˈnuː/",
     "translation": "更新、續借、恢復",
@@ -22552,7 +22552,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示使恢復或重新開始"
   },
   {
-    "id": "word_812",
+    "id": "812",
     "word": "rent",
     "ipa": "/rɛnt/",
     "translation": "租金、租用",
@@ -22580,7 +22580,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示租金"
   },
   {
-    "id": "word_813",
+    "id": "813",
     "word": "repair",
     "ipa": "/rɪˈpɛr/",
     "translation": "修理、修復、修補",
@@ -22608,7 +22608,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示修理或修復的狀態"
   },
   {
-    "id": "word_814",
+    "id": "814",
     "word": "replace",
     "ipa": "//rɪˈpleɪs//",
     "translation": "取代、更換、替換",
@@ -22636,7 +22636,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示替代物，但較少見"
   },
   {
-    "id": "word_815",
+    "id": "815",
     "word": "replacement",
     "ipa": "//rɪˈpleɪsmənt//",
     "translation": "替代品,代替,接替者",
@@ -22664,7 +22664,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_816",
+    "id": "816",
     "word": "represent",
     "ipa": "/ˌrɛprɪˈzɛnt/",
     "translation": "代表、象徵、表示",
@@ -22692,7 +22692,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞表示代理或描繪"
   },
   {
-    "id": "word_817",
+    "id": "817",
     "word": "representative",
     "ipa": "/ˌrɛprɪˈzɛntətɪv/",
     "translation": "代表、典型的、代議制的",
@@ -22720,7 +22720,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示代表性的或典型的"
   },
   {
-    "id": "word_818",
+    "id": "818",
     "word": "republic",
     "ipa": "/rɪˈpʌblɪk/",
     "translation": "共和國、共和政體",
@@ -22748,7 +22748,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指沒有世襲君主，由人民選舉代表治理的國家"
   },
   {
-    "id": "word_819",
+    "id": "819",
     "word": "request",
     "ipa": "/rɪˈkwest/",
     "translation": "請求,要求,申請",
@@ -22776,7 +22776,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示請求或要求"
   },
   {
-    "id": "word_820",
+    "id": "820",
     "word": "reserve",
     "ipa": "/rɪˈzɝv/",
     "translation": "保留、預訂、儲備",
@@ -22804,7 +22804,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示儲備物或自然保護區"
   },
   {
-    "id": "word_821",
+    "id": "821",
     "word": "resist",
     "ipa": "/rɪˈzɪst/",
     "translation": "抵抗、抗拒、抵制",
@@ -22832,7 +22832,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示防護塗層"
   },
   {
-    "id": "word_822",
+    "id": "822",
     "word": "resource",
     "ipa": "/ˈriːsɔːrs/",
     "translation": "資源、辦法、智謀",
@@ -22860,7 +22860,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示提供資源"
   },
   {
-    "id": "word_823",
+    "id": "823",
     "word": "respond",
     "ipa": "/rɪˈspɑnd/",
     "translation": "回應、答覆、反應",
@@ -22888,7 +22888,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示教堂中的應答詩"
   },
   {
-    "id": "word_824",
+    "id": "824",
     "word": "response",
     "ipa": "//rɪˈspɑns//",
     "translation": "回應、反應、回答",
@@ -22916,7 +22916,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示作出回應"
   },
   {
-    "id": "word_825",
+    "id": "825",
     "word": "responsibility",
     "ipa": "/rɪˌspɑːnsəˈbɪləti/",
     "translation": "責任、職責、義務",
@@ -22944,7 +22944,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示責任感"
   },
   {
-    "id": "word_826",
+    "id": "826",
     "word": "restrict",
     "ipa": "/rɪˈstrɪkt/",
     "translation": "限制、約束、限定",
@@ -22972,7 +22972,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞 restricted，表示受限制的"
   },
   {
-    "id": "word_827",
+    "id": "827",
     "word": "reveal",
     "ipa": "/rɪˈvil/",
     "translation": "揭示、透露、展現",
@@ -23000,7 +23000,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示（戲劇、電影中的）真相揭露"
   },
   {
-    "id": "word_828",
+    "id": "828",
     "word": "ribbon",
     "ipa": "/ˈrɪbən/",
     "translation": "緞帶、絲帶、飾帶",
@@ -23028,7 +23028,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用緞帶裝飾"
   },
   {
-    "id": "word_829",
+    "id": "829",
     "word": "rid",
     "ipa": "/rɪd/",
     "translation": "擺脫、除去、清除",
@@ -23056,7 +23056,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示擺脫了的"
   },
   {
-    "id": "word_830",
+    "id": "830",
     "word": "riddle",
     "ipa": "/ˈrɪdəl/",
     "translation": "謎語、難題、篩子",
@@ -23084,7 +23084,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示篩選或充滿"
   },
   {
-    "id": "word_831",
+    "id": "831",
     "word": "ripe",
     "ipa": "/raɪp/",
     "translation": "成熟的、時機成熟的",
@@ -23112,7 +23112,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使成熟"
   },
   {
-    "id": "word_832",
+    "id": "832",
     "word": "risk",
     "ipa": "/rɪsk/",
     "translation": "風險、危險、冒險",
@@ -23140,7 +23140,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示冒險、冒...的危險"
   },
   {
-    "id": "word_833",
+    "id": "833",
     "word": "roar",
     "ipa": "/rɔr/",
     "translation": "咆哮、吼叫、轟鳴",
@@ -23168,7 +23168,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示咆哮聲、轟鳴聲"
   },
   {
-    "id": "word_834",
+    "id": "834",
     "word": "roast",
     "ipa": "/roʊst/",
     "translation": "烤、烘、嚴厲批評",
@@ -23196,7 +23196,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示烤肉或烘焙食品"
   },
   {
-    "id": "word_835",
+    "id": "835",
     "word": "rob",
     "ipa": "/rɑːb/",
     "translation": "搶劫、盜取、剝奪",
@@ -23224,7 +23224,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示搶劫行為"
   },
   {
-    "id": "word_836",
+    "id": "836",
     "word": "robber",
     "ipa": "/ˈrɑbər/",
     "translation": "強盜、搶劫犯",
@@ -23252,7 +23252,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示搶劫（rob）"
   },
   {
-    "id": "word_837",
+    "id": "837",
     "word": "robbery",
     "ipa": "/ˈrɑbəri/",
     "translation": "搶劫、盜竊、強盜行為",
@@ -23280,7 +23280,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指盜竊罪這個法律概念"
   },
   {
-    "id": "word_838",
+    "id": "838",
     "word": "robe",
     "ipa": "/roʊb/",
     "translation": "長袍、禮服",
@@ -23308,7 +23308,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示穿上禮服或長袍"
   },
   {
-    "id": "word_839",
+    "id": "839",
     "word": "rocket",
     "ipa": "/ˈrɑːkɪt/",
     "translation": "火箭、迅速上升",
@@ -23336,7 +23336,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示迅速上升或猛漲"
   },
   {
-    "id": "word_840",
+    "id": "840",
     "word": "romantic",
     "ipa": "/roʊˈmæntɪk/",
     "translation": "浪漫的、愛情的、不切實際的",
@@ -23364,7 +23364,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示浪漫的人或浪漫主義藝術家"
   },
   {
-    "id": "word_841",
+    "id": "841",
     "word": "rot",
     "ipa": "/rɑt/",
     "translation": "腐爛、腐壞、腐朽",
@@ -23392,7 +23392,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示腐爛狀態或荒唐的話"
   },
   {
-    "id": "word_842",
+    "id": "842",
     "word": "rotten",
     "ipa": "/ˈrɑːt(ə)n/",
     "translation": "腐爛的、糟糕的、腐敗的",
@@ -23420,7 +23420,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示非常地（非正式用法）"
   },
   {
-    "id": "word_843",
+    "id": "843",
     "word": "rough",
     "ipa": "/rʌf/",
     "translation": "粗糙的、不平的、粗略的",
@@ -23448,7 +23448,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示粗暴對待；也可作名詞，表示草稿或粗糙的東西"
   },
   {
-    "id": "word_844",
+    "id": "844",
     "word": "routine",
     "ipa": "/ruːˈtiːn/",
     "translation": "例行公事、常規、慣例",
@@ -23476,7 +23476,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示例行的、常規的"
   },
   {
-    "id": "word_845",
+    "id": "845",
     "word": "rug",
     "ipa": "/rʌɡ/",
     "translation": "地毯、小地毯",
@@ -23504,7 +23504,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用毯子包裹"
   },
   {
-    "id": "word_846",
+    "id": "846",
     "word": "rumor",
     "ipa": "/ˈrumər/",
     "translation": "謠言、傳聞、傳說",
@@ -23532,7 +23532,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示傳播謠言"
   },
   {
-    "id": "word_847",
+    "id": "847",
     "word": "rust",
     "ipa": "/rʌst/",
     "translation": "鏽、鐵鏽、生鏽",
@@ -23560,7 +23560,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示生鏽"
   },
   {
-    "id": "word_848",
+    "id": "848",
     "word": "rusty",
     "ipa": "/ˈrʌsti/",
     "translation": "生鏽的、生疏的",
@@ -23588,7 +23588,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指技能生疏，如：My English is rusty."
   },
   {
-    "id": "word_849",
+    "id": "849",
     "word": "sack",
     "ipa": "/sæk/",
     "translation": "麻袋、解雇、洗劫",
@@ -23616,7 +23616,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示解雇或洗劫"
   },
   {
-    "id": "word_850",
+    "id": "850",
     "word": "sake",
     "ipa": "/seɪk/",
     "translation": "緣故、理由",
@@ -23644,7 +23644,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指日本清酒"
   },
   {
-    "id": "word_851",
+    "id": "851",
     "word": "satisfactory",
     "ipa": "/ˌsætɪsˈfæktəri/",
     "translation": "令人滿意的、符合要求的、足夠的",
@@ -23672,7 +23672,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示滿意的事物"
   },
   {
-    "id": "word_852",
+    "id": "852",
     "word": "saucer",
     "ipa": "/ˈsɔːsər/",
     "translation": "碟子、茶碟、淺碟",
@@ -23700,7 +23700,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指飛碟（unidentified flying object 的俗稱）"
   },
   {
-    "id": "word_853",
+    "id": "853",
     "word": "sausage",
     "ipa": "/ˈsɔsɪdʒ/",
     "translation": "香腸、臘腸",
@@ -23728,7 +23728,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指香腸狀的物品"
   },
   {
-    "id": "word_854",
+    "id": "854",
     "word": "saving",
     "ipa": "/ˈseɪvɪŋ/",
     "translation": "節省、儲蓄、挽救",
@@ -23756,7 +23756,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示節約的；也可作介系詞，表示除…之外"
   },
   {
-    "id": "word_855",
+    "id": "855",
     "word": "scale",
     "ipa": "/skeɪl/",
     "translation": "規模、比例、刻度",
@@ -23784,7 +23784,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示攀登或按比例調整"
   },
   {
-    "id": "word_856",
+    "id": "856",
     "word": "scarce",
     "ipa": "/skɛrs/",
     "translation": "稀少的、缺乏的、不足的",
@@ -23812,7 +23812,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示幾乎不、勉強（現已少用）"
   },
   {
-    "id": "word_857",
+    "id": "857",
     "word": "scarecrow",
     "ipa": "/ˈskɛrˌkroʊ/",
     "translation": "稻草人、嚇唬人的東西",
@@ -23840,7 +23840,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作比喻用法，指外表嚇人但無實際威脅的人或物"
   },
   {
-    "id": "word_858",
+    "id": "858",
     "word": "scarf",
     "ipa": "/skɑːrf/",
     "translation": "圍巾、披巾、領巾",
@@ -23865,7 +23865,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示狼吞虎嚥地吃"
   },
   {
-    "id": "word_859",
+    "id": "859",
     "word": "scary",
     "ipa": "/ˈskɛri/",
     "translation": "可怕的、嚇人的",
@@ -23893,7 +23893,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作非正式用法，表示極好的、很棒的（俚語）"
   },
   {
-    "id": "word_860",
+    "id": "860",
     "word": "scatter",
     "ipa": "/ˈskætər/",
     "translation": "散佈、撒播、驅散",
@@ -23921,7 +23921,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示散佈的東西或散開的狀態"
   },
   {
-    "id": "word_861",
+    "id": "861",
     "word": "schedule",
     "ipa": "/ˈskɛdʒuːl/",
     "translation": "時間表、日程安排、計劃",
@@ -23949,7 +23949,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示安排、排定"
   },
   {
-    "id": "word_862",
+    "id": "862",
     "word": "scholar",
     "ipa": "/ˈskɑːlər/",
     "translation": "學者、獎學金得主",
@@ -23977,7 +23977,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指聰穎的學生或獎學金獲得者"
   },
   {
-    "id": "word_863",
+    "id": "863",
     "word": "scholarship",
     "ipa": "/ˈskɑː.lɚ.ʃɪp/",
     "translation": "獎學金、學術研究、學問",
@@ -24005,7 +24005,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指學術研究或學問，如學者的研究成果"
   },
   {
-    "id": "word_864",
+    "id": "864",
     "word": "scientific",
     "ipa": "/ˌsaɪənˈtɪfɪk/",
     "translation": "科學的、科學上的",
@@ -24033,7 +24033,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞 scientifically，表示以科學方法地"
   },
   {
-    "id": "word_865",
+    "id": "865",
     "word": "scoop",
     "ipa": "/skup/",
     "translation": "舀、挖、搶先報導",
@@ -24061,7 +24061,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示勺子或獨家新聞"
   },
   {
-    "id": "word_866",
+    "id": "866",
     "word": "scout",
     "ipa": "/skaʊt/",
     "translation": "偵察、童子軍、尋找",
@@ -24089,7 +24089,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示偵察、尋找"
   },
   {
-    "id": "word_867",
+    "id": "867",
     "word": "scream",
     "ipa": "/skriːm/",
     "translation": "尖叫、大喊",
@@ -24117,7 +24117,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示尖叫聲"
   },
   {
-    "id": "word_868",
+    "id": "868",
     "word": "screw",
     "ipa": "/skruː/",
     "translation": "螺絲、擰緊、搞砸",
@@ -24145,7 +24145,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用螺絲固定或擰緊；在俚語中表示搞砸某事"
   },
   {
-    "id": "word_869",
+    "id": "869",
     "word": "scrub",
     "ipa": "/skrʌb/",
     "translation": "擦洗、取消、灌木叢",
@@ -24173,7 +24173,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示灌木叢或擦洗動作"
   },
   {
-    "id": "word_870",
+    "id": "870",
     "word": "seal",
     "ipa": "/sil/",
     "translation": "密封、蓋章、海豹",
@@ -24201,7 +24201,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示密封或蓋章"
   },
   {
-    "id": "word_871",
+    "id": "871",
     "word": "secondary",
     "ipa": "/ˈsɛkənˌdɛri/",
     "translation": "次要的、中等的、第二的",
@@ -24229,7 +24229,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示中學或次要事物"
   },
   {
-    "id": "word_872",
+    "id": "872",
     "word": "security",
     "ipa": "/səˈkjʊrəti/",
     "translation": "安全、保安、保障",
@@ -24257,7 +24257,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作金融術語，表示證券"
   },
   {
-    "id": "word_873",
+    "id": "873",
     "word": "seek",
     "ipa": "/sik/",
     "translation": "尋找、尋求、探索",
@@ -24285,7 +24285,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，在電腦領域表示資料搜尋"
   },
   {
-    "id": "word_874",
+    "id": "874",
     "word": "seize",
     "ipa": "/siːz/",
     "translation": "抓住、奪取、沒收",
@@ -24313,7 +24313,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞表示把握機會，例如 seize an opportunity"
   },
   {
-    "id": "word_875",
+    "id": "875",
     "word": "seldom",
     "ipa": "/ˈsɛldəm/",
     "translation": "很少、不常、罕見",
@@ -24341,7 +24341,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示稀有的，但此用法較少見"
   },
   {
-    "id": "word_876",
+    "id": "876",
     "word": "sensible",
     "ipa": "/ˈsɛnsəbəl/",
     "translation": "明智的、合理的、可察覺的",
@@ -24369,7 +24369,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示可感知的事物"
   },
   {
-    "id": "word_877",
+    "id": "877",
     "word": "sensitive",
     "ipa": "/ˈsɛnsətɪv/",
     "translation": "敏感的、易受傷害的、靈敏的",
@@ -24397,7 +24397,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示具有超自然感知能力的人"
   },
   {
-    "id": "word_878",
+    "id": "878",
     "word": "separation",
     "ipa": "/ˌsɛpəˈreɪʃən/",
     "translation": "分離、隔離、分開",
@@ -24425,7 +24425,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語，表示夫妻分居"
   },
   {
-    "id": "word_879",
+    "id": "879",
     "word": "sew",
     "ipa": "/soʊ/",
     "translation": "縫、縫紉、縫合",
@@ -24453,7 +24453,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示縫紉工作"
   },
   {
-    "id": "word_880",
+    "id": "880",
     "word": "sex",
     "ipa": "/sɛks/",
     "translation": "性別、性、性行為",
@@ -24481,7 +24481,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示判斷性別"
   },
   {
-    "id": "word_881",
+    "id": "881",
     "word": "sexual",
     "ipa": "/ˈsɛkʃuəl/",
     "translation": "性的、性別的、生殖的",
@@ -24509,7 +24509,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作生物學用語，表示有性生殖的"
   },
   {
-    "id": "word_882",
+    "id": "882",
     "word": "sexy",
     "ipa": "/ˈsɛksi/",
     "translation": "性感的、迷人的、誘人的",
@@ -24537,7 +24537,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作俚語，表示令人興奮或有趣的"
   },
   {
-    "id": "word_883",
+    "id": "883",
     "word": "shade",
     "ipa": "/ʃeɪd/",
     "translation": "陰涼處、遮陽物、色調",
@@ -24565,7 +24565,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示遮擋光線或使變暗"
   },
   {
-    "id": "word_884",
+    "id": "884",
     "word": "shadow",
     "ipa": "/ˈʃædoʊ/",
     "translation": "陰影、影子、暗處",
@@ -24593,7 +24593,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示尾隨或遮蔽"
   },
   {
-    "id": "word_885",
+    "id": "885",
     "word": "shady",
     "ipa": "/ˈʃeɪdi/",
     "translation": "陰暗的、可疑的、不誠實的",
@@ -24621,7 +24621,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示遮蔭處"
   },
   {
-    "id": "word_886",
+    "id": "886",
     "word": "shallow",
     "ipa": "/ˈʃæloʊ/",
     "translation": "淺的、膚淺的、淺薄的",
@@ -24649,7 +24649,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示變淺；也可作名詞，表示淺灘"
   },
   {
-    "id": "word_887",
+    "id": "887",
     "word": "shame",
     "ipa": "/ʃeɪm/",
     "translation": "羞恥、羞愧、恥辱",
@@ -24677,7 +24677,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使蒙羞、使羞愧"
   },
   {
-    "id": "word_888",
+    "id": "888",
     "word": "shampoo",
     "ipa": "/ʃæmˈpu/",
     "translation": "洗髮精、洗髮水、洗髮劑",
@@ -24705,7 +24705,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用洗髮精清洗頭髮"
   },
   {
-    "id": "word_889",
+    "id": "889",
     "word": "shave",
     "ipa": "/ʃeɪv/",
     "translation": "刮、剃、修剪",
@@ -24733,7 +24733,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示刮鬍子或修面"
   },
   {
-    "id": "word_890",
+    "id": "890",
     "word": "shepherd",
     "ipa": "/ˈʃɛpərd/",
     "translation": "牧羊人、牧者、指導者",
@@ -24761,7 +24761,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示引導或照看"
   },
   {
-    "id": "word_891",
+    "id": "891",
     "word": "shiny",
     "ipa": "/ˈʃaɪni/",
     "translation": "閃亮的、有光澤的",
@@ -24789,7 +24789,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示亮光皮鞋"
   },
   {
-    "id": "word_892",
+    "id": "892",
     "word": "shorten",
     "ipa": "/ˈʃɔrtn/",
     "translation": "縮短、減少、變短",
@@ -24817,7 +24817,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示使某物變短"
   },
   {
-    "id": "word_893",
+    "id": "893",
     "word": "shortly",
     "ipa": "/ˈʃɔrtli/",
     "translation": "不久、很快、簡短地",
@@ -24845,7 +24845,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞表示簡短地，如回答問題時"
   },
   {
-    "id": "word_894",
+    "id": "894",
     "word": "shovel",
     "ipa": "/ˈʃʌvəl/",
     "translation": "鏟子、鏟",
@@ -24873,7 +24873,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用鏟子鏟或挖"
   },
   {
-    "id": "word_895",
+    "id": "895",
     "word": "shrink",
     "ipa": "/ʃrɪŋk/",
     "translation": "收縮、縮小、退縮",
@@ -24901,7 +24901,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示心理醫生（俚語）"
   },
   {
-    "id": "word_896",
+    "id": "896",
     "word": "sigh",
     "ipa": "/saɪ/",
     "translation": "嘆氣、嘆息",
@@ -24929,7 +24929,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示嘆息聲"
   },
   {
-    "id": "word_897",
+    "id": "897",
     "word": "signal",
     "ipa": "/ˈsɪɡnəl/",
     "translation": "信號、標誌、示意",
@@ -24957,7 +24957,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示發信號、示意"
   },
   {
-    "id": "word_898",
+    "id": "898",
     "word": "significant",
     "ipa": "/sɪɡˈnɪfɪkənt/",
     "translation": "重要的、有意義的、顯著的",
@@ -24985,7 +24985,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示重要事物"
   },
   {
-    "id": "word_899",
+    "id": "899",
     "word": "similarity",
     "ipa": "/ˌsɪməˈlærəti/",
     "translation": "相似性、類似、相似點",
@@ -25013,7 +25013,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作數學用語，表示相似性"
   },
   {
-    "id": "word_900",
+    "id": "900",
     "word": "sin",
     "ipa": "/sɪn/",
     "translation": "罪、罪惡、過錯",
@@ -25041,7 +25041,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示犯罪或違反教規"
   },
   {
-    "id": "word_901",
+    "id": "901",
     "word": "sincere",
     "ipa": "/sɪnˈsɪr/",
     "translation": "真誠的、誠摯的、誠實的",
@@ -25069,7 +25069,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞 sincerely，表示真誠地"
   },
   {
-    "id": "word_902",
+    "id": "902",
     "word": "sip",
     "ipa": "/sɪp/",
     "translation": "啜飲、小口喝",
@@ -25097,7 +25097,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示一小口"
   },
   {
-    "id": "word_903",
+    "id": "903",
     "word": "situation",
     "ipa": "/ˌsɪtʃuˈeɪʃən/",
     "translation": "情況、形勢、處境",
@@ -25125,7 +25125,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作可數名詞，表示特定地點或建築物的位置"
   },
   {
-    "id": "word_904",
+    "id": "904",
     "word": "skate",
     "ipa": "/skeɪt/",
     "translation": "溜冰、滑冰",
@@ -25152,7 +25152,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示溜冰鞋"
   },
   {
-    "id": "word_905",
+    "id": "905",
     "word": "ski",
     "ipa": "/skiː/",
     "translation": "滑雪、滑雪板",
@@ -25180,7 +25180,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示滑雪板或滑雪運動"
   },
   {
-    "id": "word_906",
+    "id": "906",
     "word": "skip",
     "ipa": "/skɪp/",
     "translation": "略過、省略、跳過",
@@ -25208,7 +25208,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示輕快地跳著走；亦可作名詞，表示跳躍。"
   },
   {
-    "id": "word_907",
+    "id": "907",
     "word": "skyscraper",
     "ipa": "/ˈskaɪˌskreɪpər/",
     "translation": "摩天大樓",
@@ -25236,7 +25236,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_908",
+    "id": "908",
     "word": "slave",
     "ipa": "/sleɪv/",
     "translation": "奴隸、苦工",
@@ -25264,7 +25264,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示辛苦工作"
   },
   {
-    "id": "word_909",
+    "id": "909",
     "word": "sleeve",
     "ipa": "/sliv/",
     "translation": "袖子、套筒",
@@ -25292,7 +25292,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示給...裝袖子"
   },
   {
-    "id": "word_910",
+    "id": "910",
     "word": "slice",
     "ipa": "/slaɪs/",
     "translation": "薄片、切片、削球",
@@ -25320,7 +25320,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示切成薄片"
   },
   {
-    "id": "word_911",
+    "id": "911",
     "word": "slippery",
     "ipa": "/ˈslɪpəri/",
     "translation": "滑的、狡猾的、不可靠的",
@@ -25348,7 +25348,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指人狡猾不可靠"
   },
   {
-    "id": "word_912",
+    "id": "912",
     "word": "slope",
     "ipa": "/sloʊp/",
     "translation": "斜坡、傾斜、坡度",
@@ -25376,7 +25376,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示傾斜"
   },
   {
-    "id": "word_913",
+    "id": "913",
     "word": "smooth",
     "ipa": "/smuð/",
     "translation": "平滑的、順利的、流暢的",
@@ -25404,7 +25404,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使平滑或使順利"
   },
   {
-    "id": "word_914",
+    "id": "914",
     "word": "snap",
     "ipa": "/snæp/",
     "translation": "突然折斷、啪地關上、厲聲說",
@@ -25432,7 +25432,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示快照、突然折斷的聲音"
   },
   {
-    "id": "word_915",
+    "id": "915",
     "word": "solid",
     "ipa": "/ˈsɑː.lɪd/",
     "translation": "固體、堅固的、可靠的",
@@ -25460,7 +25460,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示固體"
   },
   {
-    "id": "word_916",
+    "id": "916",
     "word": "someday",
     "ipa": "/ˈsʌmˌdeɪ/",
     "translation": "有一天、將來某個時候",
@@ -25488,7 +25488,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示未來的某一天"
   },
   {
-    "id": "word_917",
+    "id": "917",
     "word": "somehow",
     "ipa": "/ˈsʌmˌhaʊ/",
     "translation": "不知何故、以某種方式、設法",
@@ -25516,7 +25516,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞片語，表示以某種不明的方式"
   },
   {
-    "id": "word_918",
+    "id": "918",
     "word": "sometime",
     "ipa": "/ˈsʌmˌtaɪm/",
     "translation": "某個時候、曾經、改天",
@@ -25544,7 +25544,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示從前的"
   },
   {
-    "id": "word_919",
+    "id": "919",
     "word": "somewhat",
     "ipa": "/ˈsʌmˌhwɑt/",
     "translation": "有點、稍微、某種程度上",
@@ -25572,7 +25572,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作代名詞，表示某種程度或數量"
   },
   {
-    "id": "word_920",
+    "id": "920",
     "word": "sore",
     "ipa": "/sɔr/",
     "translation": "疼痛的、痠痛的、惱怒的",
@@ -25600,7 +25600,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示痛處、瘡瘍"
   },
   {
-    "id": "word_921",
+    "id": "921",
     "word": "sorrow",
     "ipa": "/ˈsɑroʊ/",
     "translation": "悲傷、悲痛、悲哀",
@@ -25628,7 +25628,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示感到悲傷"
   },
   {
-    "id": "word_922",
+    "id": "922",
     "word": "spade",
     "ipa": "/speɪd/",
     "translation": "鏟子、黑桃",
@@ -25655,7 +25655,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用鏟子挖掘"
   },
   {
-    "id": "word_923",
+    "id": "923",
     "word": "spaghetti",
     "ipa": "/spəˈɡɛti/",
     "translation": "義大利麵、義式細麵",
@@ -25683,7 +25683,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指電腦程式碼中混亂複雜的程式結構，稱為spaghetti code"
   },
   {
-    "id": "word_924",
+    "id": "924",
     "word": "specific",
     "ipa": "/spəˈsɪfɪk/",
     "translation": "特定的、明確的、具體的",
@@ -25711,7 +25711,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示具體細節或特效藥"
   },
   {
-    "id": "word_925",
+    "id": "925",
     "word": "spice",
     "ipa": "/spaɪs/",
     "translation": "香料、調味品、趣味",
@@ -25739,7 +25739,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示加香料於、使增添趣味"
   },
   {
-    "id": "word_926",
+    "id": "926",
     "word": "spill",
     "ipa": "/spɪl/",
     "translation": "溢出、灑出、洩漏",
@@ -25767,7 +25767,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示溢出物、灑出的液體"
   },
   {
-    "id": "word_927",
+    "id": "927",
     "word": "spin",
     "ipa": "/spɪn/",
     "translation": "旋轉、紡紗、眩暈",
@@ -25795,7 +25795,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示旋轉或快速移動"
   },
   {
-    "id": "word_928",
+    "id": "928",
     "word": "spit",
     "ipa": "/spɪt/",
     "translation": "吐口水、吐痰、吐出",
@@ -25823,7 +25823,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示烤肉叉或沙嘴"
   },
   {
-    "id": "word_929",
+    "id": "929",
     "word": "spite",
     "ipa": "/spaɪt/",
     "translation": "惡意、怨恨",
@@ -25851,7 +25851,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示故意惹惱或傷害"
   },
   {
-    "id": "word_930",
+    "id": "930",
     "word": "splash",
     "ipa": "/splæʃ/",
     "translation": "濺、潑灑、引人注目",
@@ -25879,7 +25879,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示濺起的水花、引人注目的事件"
   },
   {
-    "id": "word_931",
+    "id": "931",
     "word": "spoil",
     "ipa": "/spɔɪl/",
     "translation": "損壞、糟蹋、溺愛",
@@ -25907,7 +25907,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示戰利品或利益"
   },
   {
-    "id": "word_932",
+    "id": "932",
     "word": "sprain",
     "ipa": "/spreɪn/",
     "translation": "扭傷、拉傷",
@@ -25935,7 +25935,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示扭傷的狀況"
   },
   {
-    "id": "word_933",
+    "id": "933",
     "word": "spray",
     "ipa": "/spreɪ/",
     "translation": "噴灑、噴霧、浪花",
@@ -25963,7 +25963,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示噴霧、浪花"
   },
   {
-    "id": "word_934",
+    "id": "934",
     "word": "sprinkle",
     "ipa": "/ˈsprɪŋkəl/",
     "translation": "灑、撒、點綴",
@@ -25991,7 +25991,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示少量灑落的東西或小雨"
   },
   {
-    "id": "word_935",
+    "id": "935",
     "word": "spy",
     "ipa": "/spaɪ/",
     "translation": "間諜、偵察、監視",
@@ -26019,7 +26019,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示從事間諜活動或偵察"
   },
   {
-    "id": "word_936",
+    "id": "936",
     "word": "squeeze",
     "ipa": "/skwiz/",
     "translation": "擠壓、壓榨、緊握",
@@ -26047,7 +26047,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示擁擠或壓榨狀態"
   },
   {
-    "id": "word_937",
+    "id": "937",
     "word": "stab",
     "ipa": "/stæb/",
     "translation": "刺、戳、捅",
@@ -26075,7 +26075,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示刺傷或突然的劇痛"
   },
   {
-    "id": "word_938",
+    "id": "938",
     "word": "stable",
     "ipa": "/ˈsteɪbəl/",
     "translation": "穩定的、穩固的、馬廄",
@@ -26103,7 +26103,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示馬廄"
   },
   {
-    "id": "word_939",
+    "id": "939",
     "word": "stadium",
     "ipa": "/ˈsteɪdiəm/",
     "translation": "體育場、運動場",
@@ -26128,7 +26128,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指大型露天音樂會場地"
   },
   {
-    "id": "word_940",
+    "id": "940",
     "word": "staff",
     "ipa": "/stæf/",
     "translation": "員工、職員、全體工作人員",
@@ -26156,7 +26156,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示配備員工"
   },
   {
-    "id": "word_941",
+    "id": "941",
     "word": "stale",
     "ipa": "/steɪl/",
     "translation": "不新鮮的、陳腐的、過時的",
@@ -26184,7 +26184,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示變得不新鮮"
   },
   {
-    "id": "word_942",
+    "id": "942",
     "word": "stare",
     "ipa": "/stɛr/",
     "translation": "凝視、盯著看",
@@ -26212,7 +26212,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示凝視"
   },
   {
-    "id": "word_943",
+    "id": "943",
     "word": "starve",
     "ipa": "/stɑrv/",
     "translation": "挨餓、餓死、渴望",
@@ -26240,7 +26240,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示渴望某物，如 starve for attention"
   },
   {
-    "id": "word_944",
+    "id": "944",
     "word": "statue",
     "ipa": "/ˈstætʃuː/",
     "translation": "雕像、塑像",
@@ -26268,7 +26268,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示以雕像裝飾"
   },
   {
-    "id": "word_945",
+    "id": "945",
     "word": "steady",
     "ipa": "/ˈstɛdi/",
     "translation": "穩定的、平穩的、持續的",
@@ -26296,7 +26296,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示使穩定、使平穩"
   },
   {
-    "id": "word_946",
+    "id": "946",
     "word": "steep",
     "ipa": "/stip/",
     "translation": "陡峭的、急遽的、過高的",
@@ -26324,7 +26324,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示浸泡；也可作名詞，表示陡坡"
   },
   {
-    "id": "word_947",
+    "id": "947",
     "word": "stepchild",
     "ipa": "/ˈstɛpˌtʃaɪld/",
     "translation": "繼子女、前配偶所生子女",
@@ -26351,7 +26351,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指不受重視的事物或項目"
   },
   {
-    "id": "word_948",
+    "id": "948",
     "word": "stepfather",
     "ipa": "/ˈstɛpˌfɑðər/",
     "translation": "繼父、後父",
@@ -26378,7 +26378,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_949",
+    "id": "949",
     "word": "stepmother",
     "ipa": "/ˈstɛpˌmʌðər/",
     "translation": "繼母、後母",
@@ -26405,7 +26405,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_950",
+    "id": "950",
     "word": "stereo",
     "ipa": "/ˈstɛrioʊ/",
     "translation": "立體音響、立體聲的",
@@ -26433,7 +26433,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示立體聲的"
   },
   {
-    "id": "word_951",
+    "id": "951",
     "word": "sticky",
     "ipa": "/ˈstɪki/",
     "translation": "黏的、黏性的",
@@ -26461,7 +26461,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示黏性物質或網頁上的黏性元素"
   },
   {
-    "id": "word_952",
+    "id": "952",
     "word": "stiff",
     "ipa": "/stɪf/",
     "translation": "僵硬的、生硬的、嚴厲的",
@@ -26489,7 +26489,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示屍體；也可作副詞，表示非常、極度"
   },
   {
-    "id": "word_953",
+    "id": "953",
     "word": "sting",
     "ipa": "/stɪŋ/",
     "translation": "刺痛、刺傷、叮咬",
@@ -26517,7 +26517,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示刺痛感或刺傷處"
   },
   {
-    "id": "word_954",
+    "id": "954",
     "word": "stir",
     "ipa": "/stɝ/",
     "translation": "攪拌、激發、引起",
@@ -26545,7 +26545,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示騷動或轟動"
   },
   {
-    "id": "word_955",
+    "id": "955",
     "word": "stitch",
     "ipa": "/stɪtʃ/",
     "translation": "縫、縫合、針法",
@@ -26573,7 +26573,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示一針、縫線"
   },
   {
-    "id": "word_956",
+    "id": "956",
     "word": "stocking",
     "ipa": "/ˈstɑkɪŋ/",
     "translation": "長襪、絲襪",
@@ -26599,7 +26599,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示進貨或儲存"
   },
   {
-    "id": "word_957",
+    "id": "957",
     "word": "stool",
     "ipa": "/stul/",
     "translation": "凳子、腳凳、糞便",
@@ -26627,7 +26627,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指糞便，常用於醫療情境"
   },
   {
-    "id": "word_958",
+    "id": "958",
     "word": "stormy",
     "ipa": "/ˈstɔrmi/",
     "translation": "暴風雨的、激烈的、暴躁的",
@@ -26655,7 +26655,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作比喻用法，表示激烈的爭論或暴躁的情緒"
   },
   {
-    "id": "word_959",
+    "id": "959",
     "word": "strategy",
     "ipa": "/ˈstrætədʒi/",
     "translation": "策略、戰略、計謀",
@@ -26683,7 +26683,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作軍事用語，表示戰略"
   },
   {
-    "id": "word_960",
+    "id": "960",
     "word": "strength",
     "ipa": "/strɛŋkθ/",
     "translation": "力量、強度、優點",
@@ -26711,7 +26711,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示強度或濃度"
   },
   {
-    "id": "word_961",
+    "id": "961",
     "word": "strip",
     "ipa": "/strɪp/",
     "translation": "剝去、除去、脫衣",
@@ -26739,7 +26739,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示長條、脫衣舞"
   },
   {
-    "id": "word_962",
+    "id": "962",
     "word": "structure",
     "ipa": "/ˈstrʌk.tʃɚ/",
     "translation": "結構、構造、建築物",
@@ -26767,7 +26767,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示組織、安排"
   },
   {
-    "id": "word_963",
+    "id": "963",
     "word": "stubborn",
     "ipa": "/ˈstʌbərn/",
     "translation": "固執的、頑固的、倔強的",
@@ -26795,7 +26795,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示一種頑固的植物（如stubborn weed）"
   },
   {
-    "id": "word_964",
+    "id": "964",
     "word": "studio",
     "ipa": "/ˈstudiˌoʊ/",
     "translation": "工作室、錄音室、畫室",
@@ -26823,7 +26823,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指電影製片廠或廣播電台"
   },
   {
-    "id": "word_965",
+    "id": "965",
     "word": "stuff",
     "ipa": "/stʌf/",
     "translation": "東西，物品，材質",
@@ -26850,7 +26850,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示填滿、塞進"
   },
   {
-    "id": "word_966",
+    "id": "966",
     "word": "style",
     "ipa": "/staɪl/",
     "translation": "風格、方式、樣式",
@@ -26878,7 +26878,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示設計或稱呼"
   },
   {
-    "id": "word_967",
+    "id": "967",
     "word": "substance",
     "ipa": "/ˈsʌbstəns/",
     "translation": "物質、實質、本質",
@@ -26906,7 +26906,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指『實質內容』或『重要性』"
   },
   {
-    "id": "word_968",
+    "id": "968",
     "word": "suburb",
     "ipa": "/ˈsʌbɜːrb/",
     "translation": "郊區、市郊",
@@ -26934,7 +26934,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示郊區的"
   },
   {
-    "id": "word_969",
+    "id": "969",
     "word": "suck",
     "ipa": "/sʌk/",
     "translation": "吸、吮、令人討厭",
@@ -26962,7 +26962,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示吸吮的動作；俚語中表示令人失望的事物"
   },
   {
-    "id": "word_970",
+    "id": "970",
     "word": "suffer",
     "ipa": "/ˈsʌfər/",
     "translation": "受苦、遭受、忍受",
@@ -26990,7 +26990,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示受苦；作及物動詞時可表示遭受損失"
   },
   {
-    "id": "word_971",
+    "id": "971",
     "word": "sufficient",
     "ipa": "/səˈfɪʃənt/",
     "translation": "足夠的、充足的",
@@ -27018,7 +27018,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示足夠的量"
   },
   {
-    "id": "word_972",
+    "id": "972",
     "word": "suggest",
     "ipa": "/səɡˈdʒɛst/",
     "translation": "建議、提議、暗示",
@@ -27046,7 +27046,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞表示暗示或使人聯想到"
   },
   {
-    "id": "word_973",
+    "id": "973",
     "word": "suicide",
     "ipa": "/ˈsuːɪsaɪd/",
     "translation": "自殺、自毀行為、自取滅亡",
@@ -27074,7 +27074,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示自殺；或作形容詞，表示自殺性的"
   },
   {
-    "id": "word_974",
+    "id": "974",
     "word": "suitable",
     "ipa": "/ˈsuːtəbl/",
     "translation": "合適的、適宜的、適當的",
@@ -27102,7 +27102,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞修飾語，表示適合特定目的或情況"
   },
   {
-    "id": "word_975",
+    "id": "975",
     "word": "sum",
     "ipa": "/sʌm/",
     "translation": "總和、金額、總計",
@@ -27130,7 +27130,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示總結、概括"
   },
   {
-    "id": "word_976",
+    "id": "976",
     "word": "summary",
     "ipa": "/ˈsʌməri/",
     "translation": "摘要、概要、總結",
@@ -27158,7 +27158,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示簡要的、即決的"
   },
   {
-    "id": "word_977",
+    "id": "977",
     "word": "summit",
     "ipa": "/ˈsʌmɪt/",
     "translation": "頂峰、高階會議、最高點",
@@ -27186,7 +27186,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示參加高峰會議"
   },
   {
-    "id": "word_978",
+    "id": "978",
     "word": "superior",
     "ipa": "/səˈpɪriər/",
     "translation": "優越的、上級的、更好的",
@@ -27214,7 +27214,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示上級或長官"
   },
   {
-    "id": "word_979",
+    "id": "979",
     "word": "suppose",
     "ipa": "/səˈpoʊz/",
     "translation": "假設、認為、猜想",
@@ -27242,7 +27242,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作連接詞，表示假如"
   },
   {
-    "id": "word_980",
+    "id": "980",
     "word": "surround",
     "ipa": "/səˈraʊnd/",
     "translation": "包圍、環繞、圍繞",
@@ -27270,7 +27270,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示周圍的環境或邊框"
   },
   {
-    "id": "word_981",
+    "id": "981",
     "word": "survey",
     "ipa": "/sərˈveɪ/",
     "translation": "調查、測量、概觀",
@@ -27298,7 +27298,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示調查、勘測"
   },
   {
-    "id": "word_982",
+    "id": "982",
     "word": "survival",
     "ipa": "/sərˈvaɪvəl/",
     "translation": "生存、存活、倖存",
@@ -27326,7 +27326,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示救生用的，如 survival kit（救生包）"
   },
   {
-    "id": "word_983",
+    "id": "983",
     "word": "survivor",
     "ipa": "/sərˈvaɪvər/",
     "translation": "倖存者、生還者",
@@ -27353,7 +27353,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作法律用語表示遺產繼承人"
   },
   {
-    "id": "word_984",
+    "id": "984",
     "word": "suspect",
     "ipa": "/səˈspɛkt/",
     "translation": "懷疑、嫌疑犯",
@@ -27381,7 +27381,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示嫌疑犯；也可作形容詞，表示可疑的"
   },
   {
-    "id": "word_985",
+    "id": "985",
     "word": "suspicion",
     "ipa": "/səˈspɪʃən/",
     "translation": "懷疑、疑心、猜疑",
@@ -27409,7 +27409,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示懷疑，但較少使用"
   },
   {
-    "id": "word_986",
+    "id": "986",
     "word": "swear",
     "ipa": "/swɛr/",
     "translation": "發誓、咒罵、詛咒",
@@ -27437,7 +27437,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示咒罵的話語"
   },
   {
-    "id": "word_987",
+    "id": "987",
     "word": "sweat",
     "ipa": "/swɛt/",
     "translation": "汗水、流汗、辛苦工作",
@@ -27465,7 +27465,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示流汗或辛苦工作"
   },
   {
-    "id": "word_988",
+    "id": "988",
     "word": "swell",
     "ipa": "/swɛl/",
     "translation": "腫脹、增大、上漲",
@@ -27493,7 +27493,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示波浪的湧動或時尚人物"
   },
   {
-    "id": "word_989",
+    "id": "989",
     "word": "swift",
     "ipa": "/swɪft/",
     "translation": "迅速的、敏捷的、立刻的",
@@ -27521,7 +27521,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示雨燕（鳥類）"
   },
   {
-    "id": "word_990",
+    "id": "990",
     "word": "switch",
     "ipa": "/swɪtʃ/",
     "translation": "開關、轉變、轉換",
@@ -27549,7 +27549,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示開關或轉變"
   },
   {
-    "id": "word_991",
+    "id": "991",
     "word": "sword",
     "ipa": "/sɔrd/",
     "translation": "劍、刀、武力",
@@ -27576,7 +27576,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作象徵武力、戰爭的比喻"
   },
   {
-    "id": "word_992",
+    "id": "992",
     "word": "system",
     "ipa": "/ˈsɪstəm/",
     "translation": "系統、制度、體系",
@@ -27604,7 +27604,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作術語，表示人體或生物的器官系統"
   },
   {
-    "id": "word_993",
+    "id": "993",
     "word": "tablet",
     "ipa": "/ˈtæblət/",
     "translation": "平板電腦、藥片、碑",
@@ -27632,7 +27632,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示刻有文字的石板或匾額"
   },
   {
-    "id": "word_994",
+    "id": "994",
     "word": "tack",
     "ipa": "/tæk/",
     "translation": "大頭釘、航向、方法",
@@ -27660,7 +27660,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用大頭釘固定或改變航向"
   },
   {
-    "id": "word_995",
+    "id": "995",
     "word": "tag",
     "ipa": "/tæɡ/",
     "translation": "標籤、標記",
@@ -27688,7 +27688,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示加標籤或標記"
   },
   {
-    "id": "word_996",
+    "id": "996",
     "word": "tailor",
     "ipa": "/ˈteɪlər/",
     "translation": "裁縫、訂製、修改",
@@ -27716,7 +27716,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示裁縫師"
   },
   {
-    "id": "word_997",
+    "id": "997",
     "word": "tame",
     "ipa": "/teɪm/",
     "translation": "馴養、馴服、溫順的",
@@ -27744,7 +27744,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示馴服、制服"
   },
   {
-    "id": "word_998",
+    "id": "998",
     "word": "tap",
     "ipa": "/tæp/",
     "translation": "輕敲、輕拍、輕觸",
@@ -27772,7 +27772,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示水龍頭或輕敲聲"
   },
   {
-    "id": "word_999",
+    "id": "999",
     "word": "tax",
     "ipa": "/tæks/",
     "translation": "稅、稅金、稅款",
@@ -27800,7 +27800,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示對...徵稅或使負擔過重"
   },
   {
-    "id": "word_1000",
+    "id": "1000",
     "word": "tease",
     "ipa": "/tiz/",
     "translation": "取笑、戲弄、逗弄",
@@ -27828,7 +27828,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示愛戲弄他人的人"
   },
   {
-    "id": "word_1001",
+    "id": "1001",
     "word": "technical",
     "ipa": "/ˈtɛknɪkəl/",
     "translation": "技術的、工藝的、專門的",
@@ -27856,7 +27856,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示技術細節或技術犯規"
   },
   {
-    "id": "word_1002",
+    "id": "1002",
     "word": "technique",
     "ipa": "/tɛkˈnik/",
     "translation": "技巧、技術、方法",
@@ -27884,7 +27884,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指特定領域的專業技能或表演技巧"
   },
   {
-    "id": "word_1003",
+    "id": "1003",
     "word": "technology",
     "ipa": "/tɛkˈnɑlədʒi/",
     "translation": "技術、科技、工藝",
@@ -27912,7 +27912,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作集合名詞，表示特定領域的技術總稱"
   },
   {
-    "id": "word_1004",
+    "id": "1004",
     "word": "temper",
     "ipa": "/ˈtɛmpər/",
     "translation": "脾氣、心情、氣質",
@@ -27940,7 +27940,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示調和、使緩和"
   },
   {
-    "id": "word_1005",
+    "id": "1005",
     "word": "temperature",
     "ipa": "/ˈtɛmp(ə)rətʃər/",
     "translation": "溫度、體溫、氣溫",
@@ -27968,7 +27968,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作比喻用法，表示緊張程度或氣氛"
   },
   {
-    "id": "word_1006",
+    "id": "1006",
     "word": "temporary",
     "ipa": "/ˈtɛmpəˌrɛri/",
     "translation": "暫時的、臨時的",
@@ -27996,7 +27996,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示臨時工或臨時事物"
   },
   {
-    "id": "word_1007",
+    "id": "1007",
     "word": "tend",
     "ipa": "/tɛnd/",
     "translation": "傾向於、往往、照料",
@@ -28024,7 +28024,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示照料或管理"
   },
   {
-    "id": "word_1008",
+    "id": "1008",
     "word": "tender",
     "ipa": "/ˈtɛndər/",
     "translation": "溫柔的、柔軟的、嫩的",
@@ -28052,7 +28052,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示正式提出；或作名詞，表示投標或照料者"
   },
   {
-    "id": "word_1009",
+    "id": "1009",
     "word": "territory",
     "ipa": "/ˈtɛrəˌtɔri/",
     "translation": "領土、領地、領域",
@@ -28080,7 +28080,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作商業用語，表示銷售區域"
   },
   {
-    "id": "word_1010",
+    "id": "1010",
     "word": "text",
     "ipa": "/tɛkst/",
     "translation": "文字、本文、課文",
@@ -28108,7 +28108,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示傳簡訊或發文字訊息給某人。"
   },
   {
-    "id": "word_1011",
+    "id": "1011",
     "word": "thankful",
     "ipa": "/ˈθæŋkfəl/",
     "translation": "感謝的、感激的、欣慰的",
@@ -28136,7 +28136,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_1012",
+    "id": "1012",
     "word": "theory",
     "ipa": "/ˈθɪri/",
     "translation": "理論、學說、看法",
@@ -28164,7 +28164,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作可數名詞，表示特定領域的理論體系"
   },
   {
-    "id": "word_1013",
+    "id": "1013",
     "word": "thirst",
     "ipa": "/θɜrst/",
     "translation": "口渴、渴望",
@@ -28192,7 +28192,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示渴望"
   },
   {
-    "id": "word_1014",
+    "id": "1014",
     "word": "thread",
     "ipa": "/θrɛd/",
     "translation": "線、線索、思路",
@@ -28220,7 +28220,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示穿線、穿過"
   },
   {
-    "id": "word_1015",
+    "id": "1015",
     "word": "threat",
     "ipa": "/θrɛt/",
     "translation": "威脅、恐嚇、危險",
@@ -28248,7 +28248,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示威脅、恐嚇"
   },
   {
-    "id": "word_1016",
+    "id": "1016",
     "word": "threaten",
     "ipa": "/ˈθrɛt(ə)n/",
     "translation": "威脅、恐嚇、危及",
@@ -28276,7 +28276,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示即將發生不好的事"
   },
   {
-    "id": "word_1017",
+    "id": "1017",
     "word": "tickle",
     "ipa": "/ˈtɪkəl/",
     "translation": "搔癢、使發癢、逗樂",
@@ -28304,7 +28304,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示搔癢感或愉快的感覺"
   },
   {
-    "id": "word_1018",
+    "id": "1018",
     "word": "tide",
     "ipa": "/taɪd/",
     "translation": "潮汐、趨勢、潮流",
@@ -28332,7 +28332,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示幫助某人度過困難時期"
   },
   {
-    "id": "word_1019",
+    "id": "1019",
     "word": "tidy",
     "ipa": "/ˈtaɪdi/",
     "translation": "整潔的、整齊的",
@@ -28360,7 +28360,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示整理、收拾"
   },
   {
-    "id": "word_1020",
+    "id": "1020",
     "word": "tight",
     "ipa": "/taɪt/",
     "translation": "緊的、牢固的、嚴密的",
@@ -28388,7 +28388,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示緊緊地；或作名詞，表示緊身衣"
   },
   {
-    "id": "word_1021",
+    "id": "1021",
     "word": "tighten",
     "ipa": "/ˈtaɪt(ə)n/",
     "translation": "使變緊、拉緊、加強",
@@ -28416,7 +28416,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示變緊或加強"
   },
   {
-    "id": "word_1022",
+    "id": "1022",
     "word": "timber",
     "ipa": "/ˈtɪmbər/",
     "translation": "木材、木料",
@@ -28443,7 +28443,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用木材支撐"
   },
   {
-    "id": "word_1023",
+    "id": "1023",
     "word": "tissue",
     "ipa": "/ˈtɪʃuː/",
     "translation": "組織、面紙、薄紙",
@@ -28471,7 +28471,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示生物組織或薄紗織物"
   },
   {
-    "id": "word_1024",
+    "id": "1024",
     "word": "tobacco",
     "ipa": "/təˈbækoʊ/",
     "translation": "菸草、菸葉、菸草製品",
@@ -28499,7 +28499,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示與菸草相關的"
   },
   {
-    "id": "word_1025",
+    "id": "1025",
     "word": "ton",
     "ipa": "/tʌn/",
     "translation": "噸、大量",
@@ -28527,7 +28527,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作重量單位（英噸為1016公斤，美噸為907公斤）或口語表示大量"
   },
   {
-    "id": "word_1026",
+    "id": "1026",
     "word": "tortoise",
     "ipa": "/ˈtɔːr.t̬əs/",
     "translation": "烏龜、陸龜",
@@ -28553,7 +28553,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指行動緩慢的人或物"
   },
   {
-    "id": "word_1027",
+    "id": "1027",
     "word": "toss",
     "ipa": "/tɔːs/",
     "translation": "拋、扔、擲",
@@ -28581,7 +28581,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示拋擲的動作"
   },
   {
-    "id": "word_1028",
+    "id": "1028",
     "word": "tourism",
     "ipa": "/ˈtʊrɪzəm/",
     "translation": "旅遊業、觀光業",
@@ -28609,7 +28609,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指旅遊活動或觀光現象"
   },
   {
-    "id": "word_1029",
+    "id": "1029",
     "word": "tourist",
     "ipa": "/ˈtʊrɪst/",
     "translation": "遊客、觀光客、旅行者",
@@ -28637,7 +28637,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示旅遊的，例如 tourist attraction（旅遊景點）"
   },
   {
-    "id": "word_1030",
+    "id": "1030",
     "word": "tow",
     "ipa": "/toʊ/",
     "translation": "拖、拉、牽引",
@@ -28665,7 +28665,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示拖曳的行為或狀態"
   },
   {
-    "id": "word_1031",
+    "id": "1031",
     "word": "trace",
     "ipa": "/treɪs/",
     "translation": "追蹤、痕跡、微量",
@@ -28693,7 +28693,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示痕跡或微量"
   },
   {
-    "id": "word_1032",
+    "id": "1032",
     "word": "trader",
     "ipa": "/ˈtreɪdər/",
     "translation": "商人、交易者、貿易商",
@@ -28721,7 +28721,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示交易或從事貿易活動"
   },
   {
-    "id": "word_1033",
+    "id": "1033",
     "word": "trail",
     "ipa": "/treɪl/",
     "translation": "蹤跡、小徑、拖曳",
@@ -28749,7 +28749,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示拖曳、追蹤"
   },
   {
-    "id": "word_1034",
+    "id": "1034",
     "word": "transport",
     "ipa": "/trænsˈpɔːrt/",
     "translation": "運輸、運送",
@@ -28777,7 +28777,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示運輸系統或交通工具"
   },
   {
-    "id": "word_1035",
+    "id": "1035",
     "word": "trash",
     "ipa": "/træʃ/",
     "translation": "垃圾、廢物、無價值之物",
@@ -28805,7 +28805,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示丟棄或嚴厲批評"
   },
   {
-    "id": "word_1036",
+    "id": "1036",
     "word": "traveler",
     "ipa": "/ˈtrævələr/",
     "translation": "旅行者、旅客、遊客",
@@ -28833,7 +28833,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示旅行的，如 traveler's check（旅行支票）"
   },
   {
-    "id": "word_1037",
+    "id": "1037",
     "word": "tray",
     "ipa": "/treɪ/",
     "translation": "托盤、碟子",
@@ -28858,7 +28858,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指電腦中的文件夾圖標"
   },
   {
-    "id": "word_1038",
+    "id": "1038",
     "word": "tremble",
     "ipa": "/ˈtrɛmbəl/",
     "translation": "顫抖、發抖、哆嗦",
@@ -28886,7 +28886,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示顫抖的動作或狀態"
   },
   {
-    "id": "word_1039",
+    "id": "1039",
     "word": "trend",
     "ipa": "/trɛnd/",
     "translation": "趨勢、傾向、動向",
@@ -28914,7 +28914,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示傾向於"
   },
   {
-    "id": "word_1040",
+    "id": "1040",
     "word": "tribe",
     "ipa": "/traɪb/",
     "translation": "部落、族群、宗族",
@@ -28942,7 +28942,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作生物分類用語，表示族（介於亞科與屬之間的分類）"
   },
   {
-    "id": "word_1041",
+    "id": "1041",
     "word": "tricky",
     "ipa": "/ˈtrɪki/",
     "translation": "棘手的、狡猾的、難處理的",
@@ -28970,7 +28970,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示騙子或詭計"
   },
   {
-    "id": "word_1042",
+    "id": "1042",
     "word": "troop",
     "ipa": "/trup/",
     "translation": "部隊、軍隊、群",
@@ -28998,7 +28998,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示成群結隊地移動"
   },
   {
-    "id": "word_1043",
+    "id": "1043",
     "word": "tropical",
     "ipa": "/ˈtrɑpɪkəl/",
     "translation": "熱帶的、炎熱的、熱情的",
@@ -29026,7 +29026,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示熱帶地區或熱帶植物"
   },
   {
-    "id": "word_1044",
+    "id": "1044",
     "word": "trunk",
     "ipa": "/trʌŋk/",
     "translation": "樹幹、軀幹、行李箱",
@@ -29054,7 +29054,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指汽車後備箱或旅行用的大行李箱"
   },
   {
-    "id": "word_1045",
+    "id": "1045",
     "word": "truthful",
     "ipa": "/ˈtruθfəl/",
     "translation": "誠實的、真實的",
@@ -29082,7 +29082,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示誠實地"
   },
   {
-    "id": "word_1046",
+    "id": "1046",
     "word": "tub",
     "ipa": "/tʌb/",
     "translation": "浴缸、桶、盆",
@@ -29110,7 +29110,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示在浴缸中洗澡"
   },
   {
-    "id": "word_1047",
+    "id": "1047",
     "word": "tug",
     "ipa": "/tʌɡ/",
     "translation": "用力拉、拖、拽",
@@ -29138,7 +29138,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示猛拉、拖船"
   },
   {
-    "id": "word_1048",
+    "id": "1048",
     "word": "tulip",
     "ipa": "/ˈtuːlɪp/",
     "translation": "鬱金香、山慈姑",
@@ -29166,7 +29166,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指鬱金香屬植物"
   },
   {
-    "id": "word_1049",
+    "id": "1049",
     "word": "tumble",
     "ipa": "/ˈtʌmbəl/",
     "translation": "跌倒、滾落、翻滾",
@@ -29194,7 +29194,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示跌倒或翻滾的動作"
   },
   {
-    "id": "word_1050",
+    "id": "1050",
     "word": "tune",
     "ipa": "/tun/",
     "translation": "曲調、調子、調整",
@@ -29222,7 +29222,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示調整樂器或設備"
   },
   {
-    "id": "word_1051",
+    "id": "1051",
     "word": "tutor",
     "ipa": "/ˈtuːtər/",
     "translation": "家教、導師、指導教師",
@@ -29250,7 +29250,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示個別指導或輔導"
   },
   {
-    "id": "word_1052",
+    "id": "1052",
     "word": "twig",
     "ipa": "/twɪɡ/",
     "translation": "細枝、嫩枝",
@@ -29278,7 +29278,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示突然理解"
   },
   {
-    "id": "word_1053",
+    "id": "1053",
     "word": "twin",
     "ipa": "/twɪn/",
     "translation": "雙胞胎之一、成對的",
@@ -29306,7 +29306,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示成對的或雙重的"
   },
   {
-    "id": "word_1054",
+    "id": "1054",
     "word": "twist",
     "ipa": "/twɪst/",
     "translation": "扭轉、扭曲、轉動",
@@ -29334,7 +29334,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示扭轉、轉折"
   },
   {
-    "id": "word_1055",
+    "id": "1055",
     "word": "typewriter",
     "ipa": "/ˈtaɪpˌraɪtər/",
     "translation": "打字機",
@@ -29361,7 +29361,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示打字機的"
   },
   {
-    "id": "word_1056",
+    "id": "1056",
     "word": "typical",
     "ipa": "/ˈtɪpɪkəl/",
     "translation": "典型的、有代表性的、慣常的",
@@ -29389,7 +29389,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞 typically，表示通常地、典型地"
   },
   {
-    "id": "word_1057",
+    "id": "1057",
     "word": "union",
     "ipa": "/ˈjunɪən/",
     "translation": "工會、聯合、結合",
@@ -29417,7 +29417,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示聯合的，如 union representative（工會代表）"
   },
   {
-    "id": "word_1058",
+    "id": "1058",
     "word": "unite",
     "ipa": "/juˈnaɪt/",
     "translation": "聯合、團結、合併",
@@ -29445,7 +29445,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示聯合組織（較少見）"
   },
   {
-    "id": "word_1059",
+    "id": "1059",
     "word": "unity",
     "ipa": "/ˈjunəti/",
     "translation": "團結、統一、一致",
@@ -29473,7 +29473,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作數學用語，表示單位元素或數字1"
   },
   {
-    "id": "word_1060",
+    "id": "1060",
     "word": "universe",
     "ipa": "/ˈjunəˌvɝs/",
     "translation": "宇宙、天地萬物、世界",
@@ -29501,7 +29501,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指特定領域或範圍，例如『漫畫宇宙』"
   },
   {
-    "id": "word_1061",
+    "id": "1061",
     "word": "unless",
     "ipa": "/ənˈlɛs/",
     "translation": "除非、如果不",
@@ -29529,7 +29529,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作介系詞，表示除…之外"
   },
   {
-    "id": "word_1062",
+    "id": "1062",
     "word": "upset",
     "ipa": "/ˌʌpˈsɛt/",
     "translation": "心煩的、打亂、使不適",
@@ -29557,7 +29557,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示打翻、推翻；也可作名詞，表示混亂、不適"
   },
   {
-    "id": "word_1063",
+    "id": "1063",
     "word": "vacant",
     "ipa": "/ˈveɪkənt/",
     "translation": "空的、空缺的、茫然的",
@@ -29585,7 +29585,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示空職位或空缺"
   },
   {
-    "id": "word_1064",
+    "id": "1064",
     "word": "valuable",
     "ipa": "/ˈvæljuəbl/",
     "translation": "有價值的、貴重的、寶貴的",
@@ -29613,7 +29613,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示貴重物品"
   },
   {
-    "id": "word_1065",
+    "id": "1065",
     "word": "van",
     "ipa": "/væn/",
     "translation": "廂型車、貨車",
@@ -29641,7 +29641,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用廂型車運送"
   },
   {
-    "id": "word_1066",
+    "id": "1066",
     "word": "vanish",
     "ipa": "/ˈvænɪʃ/",
     "translation": "消失、突然不見、消散",
@@ -29669,7 +29669,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示弱化音（語音學術語）"
   },
   {
-    "id": "word_1067",
+    "id": "1067",
     "word": "variety",
     "ipa": "/vəˈraɪəti/",
     "translation": "多樣性、種類、變化",
@@ -29697,7 +29697,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示多樣性"
   },
   {
-    "id": "word_1068",
+    "id": "1068",
     "word": "various",
     "ipa": "/ˈvɛriəs/",
     "translation": "各種的、不同的、多樣的",
@@ -29725,7 +29725,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作代名詞，表示各種不同的人或事物"
   },
   {
-    "id": "word_1069",
+    "id": "1069",
     "word": "vary",
     "ipa": "/ˈvɛri/",
     "translation": "變化、改變、不同",
@@ -29753,7 +29753,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示使多樣化"
   },
   {
-    "id": "word_1070",
+    "id": "1070",
     "word": "vase",
     "ipa": "/veɪs/",
     "translation": "花瓶、裝飾瓶",
@@ -29778,7 +29778,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "偶爾在俚語中可指獎盃或裝飾性容器"
   },
   {
-    "id": "word_1071",
+    "id": "1071",
     "word": "vehicle",
     "ipa": "/ˈviːɪkəl/",
     "translation": "車輛、交通工具、媒介",
@@ -29806,7 +29806,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示傳達思想、情感的媒介"
   },
   {
-    "id": "word_1072",
+    "id": "1072",
     "word": "verse",
     "ipa": "/vɜrs/",
     "translation": "詩句、詩節、經文",
@@ -29833,7 +29833,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示熟悉或精通某事物"
   },
   {
-    "id": "word_1073",
+    "id": "1073",
     "word": "vest",
     "ipa": "/vɛst/",
     "translation": "背心、授予",
@@ -29860,7 +29860,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示授予權力或財產"
   },
   {
-    "id": "word_1074",
+    "id": "1074",
     "word": "vice-president",
     "ipa": "/ˌvaɪs ˈprɛzɪdənt/",
     "translation": "副總統、副總裁、副會長",
@@ -29888,7 +29888,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指企業或組織中的副總裁職位"
   },
   {
-    "id": "word_1075",
+    "id": "1075",
     "word": "victim",
     "ipa": "/ˈvɪktɪm/",
     "translation": "受害者、犧牲者、受難者",
@@ -29916,7 +29916,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作比喻用法，表示受騙者或受災對象"
   },
   {
-    "id": "word_1076",
+    "id": "1076",
     "word": "violence",
     "ipa": "/ˈvaɪələns/",
     "translation": "暴力、暴行、猛烈",
@@ -29944,7 +29944,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指自然現象的猛烈程度，如暴風雨的暴力"
   },
   {
-    "id": "word_1077",
+    "id": "1077",
     "word": "violent",
     "ipa": "/ˈvaɪələnt/",
     "translation": "暴力的、猛烈的、激烈的",
@@ -29972,7 +29972,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示暴力行為（較少見）"
   },
   {
-    "id": "word_1078",
+    "id": "1078",
     "word": "violet",
     "ipa": "/ˈvaɪələt/",
     "translation": "紫羅蘭、紫色",
@@ -30000,7 +30000,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示紫色的"
   },
   {
-    "id": "word_1079",
+    "id": "1079",
     "word": "visible",
     "ipa": "/ˈvɪzəbəl/",
     "translation": "可見的、明顯的",
@@ -30028,7 +30028,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示可見物"
   },
   {
-    "id": "word_1080",
+    "id": "1080",
     "word": "vision",
     "ipa": "/ˈvɪʒən/",
     "translation": "視力、視野、遠見",
@@ -30056,7 +30056,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示想像或預見"
   },
   {
-    "id": "word_1081",
+    "id": "1081",
     "word": "vitamin",
     "ipa": "/ˈvaɪtəmɪn/",
     "translation": "維生素、維他命",
@@ -30080,7 +30080,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作可數名詞，指特定種類的維生素"
   },
   {
-    "id": "word_1082",
+    "id": "1082",
     "word": "vivid",
     "ipa": "/ˈvɪvɪd/",
     "translation": "生動的、鮮明的、清晰的",
@@ -30108,7 +30108,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作形容詞，表示記憶或夢境非常清晰真實"
   },
   {
-    "id": "word_1083",
+    "id": "1083",
     "word": "volume",
     "ipa": "/ˈvɑːljəm/",
     "translation": "體積、音量、卷",
@@ -30136,7 +30136,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示書籍的卷或冊"
   },
   {
-    "id": "word_1084",
+    "id": "1084",
     "word": "wag",
     "ipa": "/wæɡ/",
     "translation": "搖擺、擺動、饒舌",
@@ -30164,7 +30164,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示愛開玩笑的人"
   },
   {
-    "id": "word_1085",
+    "id": "1085",
     "word": "wage",
     "ipa": "/weɪdʒ/",
     "translation": "工資、薪水、報酬",
@@ -30192,7 +30192,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示進行（戰爭、運動等）"
   },
   {
-    "id": "word_1086",
+    "id": "1086",
     "word": "wagon",
     "ipa": "/ˈwæɡən/",
     "translation": "貨車、四輪馬車、手推車",
@@ -30220,7 +30220,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用貨車運輸"
   },
   {
-    "id": "word_1087",
+    "id": "1087",
     "word": "waken",
     "ipa": "/ˈweɪkən/",
     "translation": "醒來、喚醒、覺醒",
@@ -30248,7 +30248,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作及物動詞，表示喚醒某人"
   },
   {
-    "id": "word_1088",
+    "id": "1088",
     "word": "wander",
     "ipa": "/ˈwɑːndər/",
     "translation": "漫步、閒逛、流浪",
@@ -30276,7 +30276,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示漫遊或閒逛"
   },
   {
-    "id": "word_1089",
+    "id": "1089",
     "word": "warmth",
     "ipa": "/wɔrmθ/",
     "translation": "溫暖、熱情、暖意",
@@ -30304,7 +30304,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指情感上的溫暖或熱情"
   },
   {
-    "id": "word_1090",
+    "id": "1090",
     "word": "warn",
     "ipa": "/wɔrn/",
     "translation": "警告、告誡、提醒",
@@ -30332,7 +30332,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示警告（較少見）"
   },
   {
-    "id": "word_1091",
+    "id": "1091",
     "word": "wax",
     "ipa": "/wæks/",
     "translation": "蠟、增加、變大",
@@ -30360,7 +30360,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示逐漸增加或變大；也可作形容詞，表示蠟製的"
   },
   {
-    "id": "word_1092",
+    "id": "1092",
     "word": "weaken",
     "ipa": "/ˈwiːkən/",
     "translation": "削弱、減弱、變弱",
@@ -30388,7 +30388,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不及物動詞，表示變弱"
   },
   {
-    "id": "word_1093",
+    "id": "1093",
     "word": "wealth",
     "ipa": "/wɛlθ/",
     "translation": "財富、財產、富裕",
@@ -30416,7 +30416,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作不可數名詞，表示大量、豐富（如 a wealth of information）"
   },
   {
-    "id": "word_1094",
+    "id": "1094",
     "word": "wealthy",
     "ipa": "/ˈwɛlθi/",
     "translation": "富有的、富裕的、有錢的",
@@ -30444,7 +30444,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示富人（複數形）"
   },
   {
-    "id": "word_1095",
+    "id": "1095",
     "word": "weave",
     "ipa": "/wiv/",
     "translation": "編織、交織、編排",
@@ -30472,7 +30472,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示織法或編織風格"
   },
   {
-    "id": "word_1096",
+    "id": "1096",
     "word": "web",
     "ipa": "/wɛb/",
     "translation": "網、蜘蛛網、網狀物",
@@ -30500,7 +30500,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用網覆蓋或形成網狀"
   },
   {
-    "id": "word_1097",
+    "id": "1097",
     "word": "weed",
     "ipa": "/wid/",
     "translation": "雜草、水草、大麻",
@@ -30528,7 +30528,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示除草或清除"
   },
   {
-    "id": "word_1098",
+    "id": "1098",
     "word": "weep",
     "ipa": "/wip/",
     "translation": "哭泣、流淚、悲傷",
@@ -30556,7 +30556,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示哭泣的行為或時期"
   },
   {
-    "id": "word_1099",
+    "id": "1099",
     "word": "wheat",
     "ipa": "/wit/",
     "translation": "小麥、麥子",
@@ -30584,7 +30584,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指小麥色（淺黃色）"
   },
   {
-    "id": "word_1100",
+    "id": "1100",
     "word": "whip",
     "ipa": "/wɪp/",
     "translation": "鞭子、鞭打、攪打",
@@ -30612,7 +30612,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示鞭子或政黨組織秘書"
   },
   {
-    "id": "word_1101",
+    "id": "1101",
     "word": "whistle",
     "ipa": "/ˈwɪsəl/",
     "translation": "口哨、哨子、吹口哨",
@@ -30640,7 +30640,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示吹口哨或發出哨聲"
   },
   {
-    "id": "word_1102",
+    "id": "1102",
     "word": "wicked",
     "ipa": "/ˈwɪkɪd/",
     "translation": "邪惡的、惡劣的、淘氣的",
@@ -30668,7 +30668,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作副詞，表示非常、極度"
   },
   {
-    "id": "word_1103",
+    "id": "1103",
     "word": "willow",
     "ipa": "/ˈwɪloʊ/",
     "translation": "柳樹、柳木",
@@ -30695,7 +30695,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指柳木製成的物品，如柳木棒球棒"
   },
   {
-    "id": "word_1104",
+    "id": "1104",
     "word": "wink",
     "ipa": "/wɪŋk/",
     "translation": "眨眼、使眼色",
@@ -30722,7 +30722,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示眨眼動作"
   },
   {
-    "id": "word_1105",
+    "id": "1105",
     "word": "wipe",
     "ipa": "/waɪp/",
     "translation": "擦拭、抹去、消滅",
@@ -30750,7 +30750,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示擦拭的動作"
   },
   {
-    "id": "word_1106",
+    "id": "1106",
     "word": "wisdom",
     "ipa": "/ˈwɪzdəm/",
     "translation": "智慧、明智、學問",
@@ -30778,7 +30778,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指特定文化或傳統的智慧結晶"
   },
   {
-    "id": "word_1107",
+    "id": "1107",
     "word": "wrap",
     "ipa": "/ræp/",
     "translation": "包裹、包裝、纏繞",
@@ -30806,7 +30806,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示披肩或包裝材料"
   },
   {
-    "id": "word_1108",
+    "id": "1108",
     "word": "wrist",
     "ipa": "/rɪst/",
     "translation": "手腕、腕關節",
@@ -30834,7 +30834,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用手腕動作傳球或擊球"
   },
   {
-    "id": "word_1109",
+    "id": "1109",
     "word": "x-ray",
     "ipa": "/ˈɛks ˌreɪ/",
     "translation": "X光、X射線",
@@ -30858,7 +30858,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用X光檢查"
   },
   {
-    "id": "word_1110",
+    "id": "1110",
     "word": "x-ray",
     "ipa": "/ˈɛks reɪ/",
     "translation": "X光、X射線",
@@ -30882,7 +30882,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用X光檢查"
   },
   {
-    "id": "word_1111",
+    "id": "1111",
     "word": "yawn",
     "ipa": "/jɔːn/",
     "translation": "打哈欠、哈欠",
@@ -30909,7 +30909,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示哈欠的動作"
   },
   {
-    "id": "word_1112",
+    "id": "1112",
     "word": "yell",
     "ipa": "/jɛl/",
     "translation": "叫喊、大喊、吼叫",
@@ -30937,7 +30937,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作名詞，表示叫喊聲"
   },
   {
-    "id": "word_1113",
+    "id": "1113",
     "word": "yolk",
     "ipa": "/joʊk/",
     "translation": "蛋黃、卵黃",
@@ -30964,7 +30964,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可指昆蟲卵中的營養物質"
   },
   {
-    "id": "word_1114",
+    "id": "1114",
     "word": "youngster",
     "ipa": "/ˈjʌŋstər/",
     "translation": "年輕人、少年、青少年",
@@ -30992,7 +30992,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": ""
   },
   {
-    "id": "word_1115",
+    "id": "1115",
     "word": "zipper",
     "ipa": "/ˈzɪpər/",
     "translation": "拉鍊、拉鏈",
@@ -31019,7 +31019,7 @@ export const level3Words: VocabularyWord[] = [
     "extraNotes": "也可作動詞，表示用拉鍊拉上或拉開"
   },
   {
-    "id": "word_1116",
+    "id": "1116",
     "word": "zone",
     "ipa": "/zoʊn/",
     "translation": "區域、地帶",
