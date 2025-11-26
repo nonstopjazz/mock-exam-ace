@@ -18,6 +18,7 @@ const worksheet = workbook.Sheets[sheetName];
 const rawData = XLSX.utils.sheet_to_json(worksheet);
 
 // Process and transform the data
+let autoIncrementId = 1;
 const processedWords = rawData.map((row, index) => {
   // Extract level number from "Level X" format
   const levelMatch = String(row['Level'] || '').match(/Level\s*(\d+)/i);
@@ -31,8 +32,11 @@ const processedWords = rawData.map((row, index) => {
   const synonyms = String(row['synonyms'] || '').split('|').filter(s => s.trim() !== '');
   const antonyms = String(row['antonyms'] || '').split('|').filter(a => a.trim() !== '');
 
+  // Use auto-increment ID (1, 2, 3...)
+  const id = autoIncrementId++;
+
   return {
-    id: `word_${index + 1}`,
+    id: String(id),
     word: String(row['word'] || '').trim(),
     ipa: String(row['ipa'] || '').trim(),
     translation: String(row['translation'] || '').trim(),
@@ -206,6 +210,26 @@ ${levels.map(l => `export { level${l}Words };`).join('\n')}
 fs.writeFileSync(path.join(outputDir, 'index.ts'), indexContent);
 console.log('Generated: index.ts');
 
+// Generate ID mapping file (for database update)
+const idMapping = processedWords.map(word => ({
+  id: word.id,
+  word: word.word,
+  level: word.level,
+}));
+
+// Save as JSON
+const mappingJsonPath = path.join(outputDir, 'id-mapping.json');
+fs.writeFileSync(mappingJsonPath, JSON.stringify(idMapping, null, 2));
+console.log(`Generated: id-mapping.json (${idMapping.length} entries)`);
+
+// Save as CSV for easy database import
+const csvHeader = 'id,word,level';
+const csvRows = idMapping.map(item => `${item.id},"${item.word}",${item.level}`);
+const csvContent = [csvHeader, ...csvRows].join('\n');
+const mappingCsvPath = path.join(outputDir, 'id-mapping.csv');
+fs.writeFileSync(mappingCsvPath, csvContent);
+console.log(`Generated: id-mapping.csv`);
+
 // Print summary
 console.log('\n=== Summary ===');
 console.log(`Total words: ${processedWords.length}`);
@@ -214,3 +238,6 @@ Object.keys(wordsByLevel).sort((a, b) => Number(a) - Number(b)).forEach(level =>
 });
 console.log(`Unique tags: ${allTags.size}`);
 console.log('\nVocabulary data generated successfully!');
+console.log(`\nID Mapping files saved to:`);
+console.log(`  - ${mappingJsonPath}`);
+console.log(`  - ${mappingCsvPath}`);
