@@ -183,3 +183,24 @@ export interface ExamResult {
     maxScore: number;
   }[];
 }
+
+// 題目詳解
+export interface QuestionExplanation {
+  questionId: string;
+  coreConceptTitle?: string;
+  coreConcept?: string;
+  keywordsTitle?: string;
+  keywords?: string[];
+  detailedAnalysisTitle?: string;
+  detailedAnalysis?: string;
+  videoEnabled?: boolean;
+  videoUrl?: string;
+  videoTitle?: string;
+}
+
+// 詳解頁面數據
+export interface ExplanationPageData {
+  examPaper: ExamPaper;
+  result: ExamResult;
+  explanations: Map<string, QuestionExplanation>;
+}
