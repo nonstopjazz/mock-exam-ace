@@ -1,36 +1,32 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ProgressBar } from "@/components/ProgressBar";
 import {
   Brain,
   ArrowLeft,
   Volume2,
   BookMarked,
-  Clock,
   TrendingUp,
   X,
   Minus,
   Check,
-  Layers,
-  Play,
   Settings,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useVocabularyStore } from "@/store/vocabularyStore";
-import { VocabularyWord, VOCABULARY_LEVELS } from "@/data/vocabulary";
+import { VocabularyWord } from "@/data/vocabulary";
+import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 
 const SRSReview = () => {
   const navigate = useNavigate();
   const {
-    selectedLevels,
-    setSelectedLevels,
     getWordsForSRS,
     updateWordProgress,
     getWordProgress,
+    getFilteredWordCount,
   } = useVocabularyStore();
 
   // Phase: 'selection' or 'review'
@@ -44,21 +40,14 @@ const SRSReview = () => {
   const currentCard = cards[currentIndex];
   const totalCards = cards.length;
 
-  // Toggle level selection
-  const toggleLevel = (level: number) => {
-    if (selectedLevels.includes(level)) {
-      setSelectedLevels(selectedLevels.filter(l => l !== level));
-    } else {
-      setSelectedLevels([...selectedLevels, level]);
-    }
-  };
-
   // Start the review session
   const startReview = () => {
-    const reviewWords = getWordsForSRS(wordLimit);
+    const filteredCount = getFilteredWordCount();
+    const actualLimit = Math.min(wordLimit, filteredCount);
+    const reviewWords = getWordsForSRS(actualLimit);
     if (reviewWords.length === 0) {
-      toast.error("No words available", {
-        description: "Please select at least one level with words to review."
+      toast.error("沒有符合條件的單字", {
+        description: "請調整篩選條件後再試一次"
       });
       return;
     }
@@ -131,101 +120,59 @@ const SRSReview = () => {
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              返回
             </Button>
 
             <div className="flex items-center gap-3">
               <Brain className="h-6 w-6 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold text-foreground">SRS Review</h1>
-                <p className="text-sm text-muted-foreground">Spaced Repetition System</p>
+                <h1 className="text-2xl font-bold text-foreground">SRS 智慧複習</h1>
+                <p className="text-sm text-muted-foreground">間隔重複記憶系統</p>
               </div>
             </div>
 
             <div className="w-20" />
           </div>
 
-          {/* Selection Card */}
-          <Card className="p-6">
-            <div className="space-y-6">
-              {/* Level Selection */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Layers className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-bold text-foreground">Select Levels</h2>
-                </div>
+          {/* Vocabulary Selector with all filters */}
+          <VocabularySelector
+            mode="srs"
+            title="選擇複習範圍"
+            description="設定篩選條件，選擇要複習的單字"
+            onStart={startReview}
+          />
 
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {VOCABULARY_LEVELS.filter(l => l.wordCount > 0).map((level) => {
-                    const isSelected = selectedLevels.includes(level.level);
-                    return (
-                      <div
-                        key={level.level}
-                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                          isSelected
-                            ? "border-primary bg-primary/5"
-                            : "border-muted hover:border-primary/50"
-                        }`}
-                        onClick={() => toggleLevel(level.level)}
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <Checkbox checked={isSelected} />
-                          <span className="font-bold">Level {level.level}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {level.wordCount.toLocaleString()} words
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
+          {/* Word Limit Selection */}
+          <Card className="mt-4 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                <span className="font-semibold text-foreground">複習數量</span>
               </div>
-
-              {/* Word Limit */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Settings className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-bold text-foreground">Review Count</h2>
-                </div>
-
-                <div className="flex gap-2">
-                  {[10, 20, 30, 50, 100].map((num) => (
-                    <Button
-                      key={num}
-                      variant={wordLimit === num ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setWordLimit(num)}
-                    >
-                      {num}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Start Button */}
-              <div className="pt-4 border-t">
-                <Button
-                  size="lg"
-                  className="w-full gap-2"
-                  disabled={selectedLevels.length === 0}
-                  onClick={startReview}
-                >
-                  <Play className="h-5 w-5" />
-                  Start Review ({wordLimit} words)
-                </Button>
+              <div className="flex gap-2">
+                {[10, 20, 30, 50, 100].map((num) => (
+                  <Button
+                    key={num}
+                    variant={wordLimit === num ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setWordLimit(num)}
+                  >
+                    {num}
+                  </Button>
+                ))}
               </div>
             </div>
           </Card>
 
           {/* Info Card */}
-          <Card className="mt-6 p-4 bg-gradient-to-br from-secondary/10 to-explorer/10 border-secondary/20">
+          <Card className="mt-4 p-4 bg-gradient-to-br from-secondary/10 to-explorer/10 border-secondary/20">
             <div className="flex items-start gap-3">
               <TrendingUp className="h-5 w-5 text-secondary mt-0.5" />
               <div>
-                <h3 className="font-semibold text-foreground mb-1">What is SRS?</h3>
+                <h3 className="font-semibold text-foreground mb-1">什麼是 SRS？</h3>
                 <p className="text-sm text-muted-foreground">
-                  Spaced Repetition System automatically schedules review based on your memory curve.
-                  The more times you answer correctly, the longer the review interval, helping you learn efficiently.
+                  間隔重複系統會根據你的記憶曲線自動安排複習時間。
+                  答對次數越多，複習間隔越長，幫助你高效學習。
                 </p>
               </div>
             </div>
