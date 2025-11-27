@@ -4,13 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -20,12 +13,16 @@ import {
   ChevronDown,
   ChevronUp,
   Layers,
-  Tag,
   Play,
   Filter,
+  Type,
+  Hash,
+  FolderOpen,
+  GraduationCap,
+  RotateCcw,
 } from "lucide-react";
-import { useVocabularyStore } from "@/store/vocabularyStore";
-import { VOCABULARY_LEVELS, VOCABULARY_TAGS } from "@/data/vocabulary";
+import { useVocabularyStore, TOPIC_CATEGORIES, PARTS_OF_SPEECH, ALPHABET, LearningStatus } from "@/store/vocabularyStore";
+import { VOCABULARY_LEVELS } from "@/data/vocabulary";
 
 interface VocabularySelectorProps {
   mode: 'srs' | 'flashcards' | 'quiz';
@@ -34,11 +31,13 @@ interface VocabularySelectorProps {
   description: string;
 }
 
-// Common tag categories
-const TAG_CATEGORIES = {
-  exam: ['GSAT', 'TOEIC', 'TOEFL', 'IELTS'],
-  topic: ['Travel', 'Travel & Transportation', 'Sports', 'Entertainment', 'Health', 'Education', 'Technology', 'Science', 'Business', 'Finance', 'Environment', 'Food', 'Art', 'Social Issues', 'Culture'],
-};
+// Learning status options
+const LEARNING_STATUS_OPTIONS: { value: LearningStatus; label: string; color: string }[] = [
+  { value: 'new', label: '未學過', color: 'bg-slate-500' },
+  { value: 'learning', label: '學習中', color: 'bg-blue-500' },
+  { value: 'reviewing', label: '待複習', color: 'bg-amber-500' },
+  { value: 'mastered', label: '已精通', color: 'bg-emerald-500' },
+];
 
 export const VocabularySelector = ({
   mode,
@@ -49,27 +48,32 @@ export const VocabularySelector = ({
   const {
     selectedLevels,
     selectedTags,
+    selectedLetters,
+    selectedPartsOfSpeech,
+    selectedCategories,
+    selectedLearningStatus,
     setSelectedLevels,
     setSelectedTags,
+    setSelectedLetters,
+    setSelectedPartsOfSpeech,
+    setSelectedCategories,
+    setSelectedLearningStatus,
     getLevelProgress,
-    getOverallProgress,
+    getFilteredWordCount,
+    clearAllFilters,
   } = useVocabularyStore();
 
-  const [isTagsOpen, setIsTagsOpen] = useState(false);
+  const [isLettersOpen, setIsLettersOpen] = useState(false);
+  const [isPosOpen, setIsPosOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [wordCount, setWordCount] = useState(0);
 
   // Calculate word count based on selection
   useEffect(() => {
-    const progress = getOverallProgress();
-    // This is a simplified calculation - actual implementation would filter
-    let count = 0;
-    VOCABULARY_LEVELS.forEach(level => {
-      if (selectedLevels.includes(level.level)) {
-        count += level.wordCount;
-      }
-    });
+    const count = getFilteredWordCount();
     setWordCount(count);
-  }, [selectedLevels, selectedTags]);
+  }, [selectedLevels, selectedTags, selectedLetters, selectedPartsOfSpeech, selectedCategories, selectedLearningStatus, getFilteredWordCount]);
 
   const toggleLevel = (level: number) => {
     if (selectedLevels.includes(level)) {
@@ -79,38 +83,69 @@ export const VocabularySelector = ({
     }
   };
 
-  const toggleTag = (tag: string) => {
-    if (selectedTags.includes(tag)) {
-      setSelectedTags(selectedTags.filter(t => t !== tag));
+  const toggleLetter = (letter: string) => {
+    if (selectedLetters.includes(letter)) {
+      setSelectedLetters(selectedLetters.filter(l => l !== letter));
     } else {
-      setSelectedTags([...selectedTags, tag]);
+      setSelectedLetters([...selectedLetters, letter]);
+    }
+  };
+
+  const togglePos = (pos: string) => {
+    if (selectedPartsOfSpeech.includes(pos)) {
+      setSelectedPartsOfSpeech(selectedPartsOfSpeech.filter(p => p !== pos));
+    } else {
+      setSelectedPartsOfSpeech([...selectedPartsOfSpeech, pos]);
+    }
+  };
+
+  const toggleCategory = (category: string) => {
+    if (selectedCategories.includes(category)) {
+      setSelectedCategories(selectedCategories.filter(c => c !== category));
+    } else {
+      setSelectedCategories([...selectedCategories, category]);
+    }
+  };
+
+  const toggleStatus = (status: LearningStatus) => {
+    if (selectedLearningStatus.includes(status)) {
+      setSelectedLearningStatus(selectedLearningStatus.filter(s => s !== status));
+    } else {
+      setSelectedLearningStatus([...selectedLearningStatus, status]);
     }
   };
 
   const selectAllLevels = () => {
-    setSelectedLevels(VOCABULARY_LEVELS.map(l => l.level));
+    setSelectedLevels(VOCABULARY_LEVELS.filter(l => l.wordCount > 0).map(l => l.level));
   };
 
   const clearLevels = () => {
     setSelectedLevels([]);
   };
 
-  const clearTags = () => {
-    setSelectedTags([]);
-  };
+  const hasActiveFilters = selectedLetters.length > 0 || selectedPartsOfSpeech.length > 0 ||
+    selectedCategories.length > 0 || selectedLearningStatus.length > 0 || selectedTags.length > 0;
 
   return (
     <Card className="p-6">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Filter className="h-6 w-6 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Filter className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">{title}</h2>
+              <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-foreground">{title}</h2>
-            <p className="text-sm text-muted-foreground">{description}</p>
-          </div>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearAllFilters} className="gap-1">
+              <RotateCcw className="h-4 w-4" />
+              重設篩選
+            </Button>
+          )}
         </div>
 
         {/* Level Selection */}
@@ -118,14 +153,14 @@ export const VocabularySelector = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Layers className="h-5 w-5 text-primary" />
-              <span className="font-semibold text-foreground">Level</span>
+              <span className="font-semibold text-foreground">Level 等級</span>
             </div>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={selectAllLevels}>
-                All
+                全選
               </Button>
               <Button variant="ghost" size="sm" onClick={clearLevels}>
-                Clear
+                清除
               </Button>
             </div>
           </div>
@@ -153,7 +188,7 @@ export const VocabularySelector = ({
                     <span className="font-bold text-foreground">Level {level.level}</span>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {level.wordCount} words
+                    {level.wordCount} 單字
                   </div>
                   {/* Progress bar */}
                   <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
@@ -165,7 +200,7 @@ export const VocabularySelector = ({
                     />
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
-                    Progress: {progress.learned}/{progress.total}
+                    進度: {progress.learned}/{progress.total}
                   </div>
                 </div>
               );
@@ -173,70 +208,242 @@ export const VocabularySelector = ({
           </div>
         </div>
 
-        {/* Tag Selection (Collapsible) */}
-        <Collapsible open={isTagsOpen} onOpenChange={setIsTagsOpen}>
+        {/* Letter Selection (A-Z) */}
+        <Collapsible open={isLettersOpen} onOpenChange={setIsLettersOpen}>
           <CollapsibleTrigger asChild>
             <Button variant="outline" className="w-full justify-between">
               <div className="flex items-center gap-2">
-                <Tag className="h-4 w-4" />
-                <span>Topic Filter</span>
-                {selectedTags.length > 0 && (
+                <Type className="h-4 w-4" />
+                <span>字母開頭篩選 (A-Z)</span>
+                {selectedLetters.length > 0 && (
                   <Badge variant="secondary" className="ml-2">
-                    {selectedTags.length} selected
+                    {selectedLetters.length} 個字母
                   </Badge>
                 )}
               </div>
-              {isTagsOpen ? (
+              {isLettersOpen ? (
                 <ChevronUp className="h-4 w-4" />
               ) : (
                 <ChevronDown className="h-4 w-4" />
               )}
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4 space-y-4">
-            {/* Clear Tags Button */}
-            {selectedTags.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={clearTags}>
-                Clear Tags
+          <CollapsibleContent className="mt-4">
+            <div className="flex flex-wrap gap-2">
+              {ALPHABET.map((letter) => {
+                const isSelected = selectedLetters.includes(letter);
+                return (
+                  <Button
+                    key={letter}
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    className="w-10 h-10 p-0 font-bold"
+                    onClick={() => toggleLetter(letter)}
+                  >
+                    {letter}
+                  </Button>
+                );
+              })}
+            </div>
+            {selectedLetters.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedLetters([])}
+                className="mt-2"
+              >
+                清除字母篩選
               </Button>
             )}
+          </CollapsibleContent>
+        </Collapsible>
 
-            {/* Popular Tags */}
+        {/* Part of Speech Selection */}
+        <Collapsible open={isPosOpen} onOpenChange={setIsPosOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between">
+              <div className="flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                <span>詞性篩選</span>
+                {selectedPartsOfSpeech.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {selectedPartsOfSpeech.length} 種詞性
+                  </Badge>
+                )}
+              </div>
+              {isPosOpen ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4">
             <div className="flex flex-wrap gap-2">
-              {VOCABULARY_TAGS.slice(0, 30).map((tag) => {
-                const isSelected = selectedTags.includes(tag);
+              {Object.entries(PARTS_OF_SPEECH).map(([key, { label }]) => {
+                const isSelected = selectedPartsOfSpeech.includes(key);
                 return (
                   <Badge
-                    key={tag}
+                    key={key}
                     variant={isSelected ? "default" : "outline"}
-                    className="cursor-pointer transition-all hover:scale-105"
-                    onClick={() => toggleTag(tag)}
+                    className="cursor-pointer transition-all hover:scale-105 px-3 py-1.5"
+                    onClick={() => togglePos(key)}
                   >
-                    {tag}
+                    {label}
                   </Badge>
                 );
               })}
             </div>
+            {selectedPartsOfSpeech.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedPartsOfSpeech([])}
+                className="mt-2"
+              >
+                清除詞性篩選
+              </Button>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Topic Categories Selection */}
+        <Collapsible open={isCategoriesOpen} onOpenChange={setIsCategoriesOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4" />
+                <span>主題分類篩選</span>
+                {selectedCategories.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {selectedCategories.length} 個分類
+                  </Badge>
+                )}
+              </div>
+              {isCategoriesOpen ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {Object.keys(TOPIC_CATEGORIES).map((category) => {
+                const isSelected = selectedCategories.includes(category);
+                return (
+                  <div
+                    key={category}
+                    className={`p-3 rounded-lg border-2 cursor-pointer transition-all text-center ${
+                      isSelected
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-muted hover:border-primary/50"
+                    }`}
+                    onClick={() => toggleCategory(category)}
+                  >
+                    <span className="font-medium">{category}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {selectedCategories.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedCategories([])}
+                className="mt-2"
+              >
+                清除分類篩選
+              </Button>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Learning Status Selection */}
+        <Collapsible open={isStatusOpen} onOpenChange={setIsStatusOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                <span>學習狀態篩選</span>
+                {selectedLearningStatus.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {selectedLearningStatus.length} 種狀態
+                  </Badge>
+                )}
+              </div>
+              {isStatusOpen ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4">
+            <div className="flex flex-wrap gap-3">
+              {LEARNING_STATUS_OPTIONS.map(({ value, label, color }) => {
+                const isSelected = selectedLearningStatus.includes(value);
+                return (
+                  <div
+                    key={value}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 cursor-pointer transition-all ${
+                      isSelected
+                        ? "border-primary bg-primary/10"
+                        : "border-muted hover:border-primary/50"
+                    }`}
+                    onClick={() => toggleStatus(value)}
+                  >
+                    <div className={`w-3 h-3 rounded-full ${color}`} />
+                    <span className="font-medium">{label}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {selectedLearningStatus.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedLearningStatus([])}
+                className="mt-2"
+              >
+                清除狀態篩選
+              </Button>
+            )}
           </CollapsibleContent>
         </Collapsible>
 
         {/* Summary & Start Button */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary" />
               <span className="text-lg font-semibold text-foreground">
-                {wordCount.toLocaleString()} words
+                {wordCount.toLocaleString()} 個單字
               </span>
             </div>
-            {selectedLevels.length > 0 && (
+            {selectedLevels.length > 0 && selectedLevels.length < 5 && (
               <Badge variant="secondary">
-                {selectedLevels.length} Levels
+                {selectedLevels.length} 個 Level
               </Badge>
             )}
-            {selectedTags.length > 0 && (
+            {selectedLetters.length > 0 && (
               <Badge variant="outline">
-                {selectedTags.length} Tags
+                {selectedLetters.join(', ')}
+              </Badge>
+            )}
+            {selectedPartsOfSpeech.length > 0 && (
+              <Badge variant="outline">
+                {selectedPartsOfSpeech.length} 種詞性
+              </Badge>
+            )}
+            {selectedCategories.length > 0 && (
+              <Badge variant="outline">
+                {selectedCategories.length} 個分類
+              </Badge>
+            )}
+            {selectedLearningStatus.length > 0 && (
+              <Badge variant="outline">
+                {selectedLearningStatus.length} 種狀態
               </Badge>
             )}
           </div>
@@ -244,11 +451,11 @@ export const VocabularySelector = ({
           <Button
             size="lg"
             className="w-full md:w-auto gap-2"
-            disabled={selectedLevels.length === 0}
+            disabled={wordCount === 0}
             onClick={onStart}
           >
             <Play className="h-5 w-5" />
-            Start
+            開始 ({wordCount})
           </Button>
         </div>
       </div>
