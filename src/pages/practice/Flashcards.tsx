@@ -12,8 +12,6 @@ import {
   Star,
   RotateCcw,
   TrendingUp,
-  Layers,
-  Play,
   Settings,
   Shuffle,
 } from "lucide-react";
@@ -21,13 +19,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useVocabularyStore } from "@/store/vocabularyStore";
-import { VocabularyWord, VOCABULARY_LEVELS } from "@/data/vocabulary";
+import { VocabularyWord } from "@/data/vocabulary";
+import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 
 const Flashcards = () => {
   const navigate = useNavigate();
   const {
-    selectedLevels,
-    setSelectedLevels,
     getWordsForFlashcards,
     updateWordProgress,
     getWordProgress,
@@ -43,21 +40,12 @@ const Flashcards = () => {
   const totalCards = cards.length;
   const currentCard = cards[currentIndex];
 
-  // Toggle level selection
-  const toggleLevel = (level: number) => {
-    if (selectedLevels.includes(level)) {
-      setSelectedLevels(selectedLevels.filter(l => l !== level));
-    } else {
-      setSelectedLevels([...selectedLevels, level]);
-    }
-  };
-
   // Start the flashcard session
   const startStudy = () => {
     let studyWords = getWordsForFlashcards();
     if (studyWords.length === 0) {
-      toast.error("No words available", {
-        description: "Please select at least one level."
+      toast.error("沒有符合條件的單字", {
+        description: "請調整篩選條件後再試一次"
       });
       return;
     }
@@ -154,86 +142,44 @@ const Flashcards = () => {
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              返回
             </Button>
 
             <div className="flex items-center gap-3">
               <FlipVertical2 className="h-6 w-6 text-secondary" />
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Flashcards</h1>
-                <p className="text-sm text-muted-foreground">Flip and Learn</p>
+                <h1 className="text-2xl font-bold text-foreground">翻轉卡片</h1>
+                <p className="text-sm text-muted-foreground">翻牌學習</p>
               </div>
             </div>
 
             <div className="w-20" />
           </div>
 
-          {/* Selection Card */}
-          <Card className="p-6">
-            <div className="space-y-6">
-              {/* Level Selection */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Layers className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-bold text-foreground">Select Levels</h2>
-                </div>
+          {/* Vocabulary Selector with all filters */}
+          <VocabularySelector
+            mode="flashcards"
+            title="選擇學習範圍"
+            description="設定篩選條件，選擇要學習的單字"
+            onStart={startStudy}
+          />
 
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {VOCABULARY_LEVELS.filter(l => l.wordCount > 0).map((level) => {
-                    const isSelected = selectedLevels.includes(level.level);
-                    return (
-                      <div
-                        key={level.level}
-                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                          isSelected
-                            ? "border-primary bg-primary/5"
-                            : "border-muted hover:border-primary/50"
-                        }`}
-                        onClick={() => toggleLevel(level.level)}
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <Checkbox checked={isSelected} />
-                          <span className="font-bold">Level {level.level}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {level.wordCount.toLocaleString()} words
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
+          {/* Shuffle Option */}
+          <Card className="mt-4 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                <span className="font-semibold text-foreground">選項設定</span>
               </div>
-
-              {/* Options */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Settings className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-bold text-foreground">Options</h2>
-                </div>
-
-                <div
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all inline-flex items-center gap-2 ${
-                    shuffled ? "border-primary bg-primary/5" : "border-muted"
-                  }`}
-                  onClick={() => setShuffled(!shuffled)}
-                >
-                  <Checkbox checked={shuffled} />
-                  <Shuffle className="h-4 w-4" />
-                  <span>Shuffle Cards</span>
-                </div>
-              </div>
-
-              {/* Start Button */}
-              <div className="pt-4 border-t">
-                <Button
-                  size="lg"
-                  className="w-full gap-2"
-                  disabled={selectedLevels.length === 0}
-                  onClick={startStudy}
-                >
-                  <Play className="h-5 w-5" />
-                  Start Flashcards
-                </Button>
+              <div
+                className={`p-3 rounded-lg border-2 cursor-pointer transition-all inline-flex items-center gap-2 ${
+                  shuffled ? "border-primary bg-primary/5" : "border-muted"
+                }`}
+                onClick={() => setShuffled(!shuffled)}
+              >
+                <Checkbox checked={shuffled} />
+                <Shuffle className="h-4 w-4" />
+                <span>隨機排序</span>
               </div>
             </div>
           </Card>

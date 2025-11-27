@@ -1,7 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ProgressBar } from "@/components/ProgressBar";
 import {
   Zap,
@@ -14,16 +13,15 @@ import {
   CheckCircle2,
   XCircle,
   Award,
-  Layers,
-  Play,
   Settings,
 } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useConfetti } from "@/hooks/galaxy/useConfetti";
 import { useVocabularyStore } from "@/store/vocabularyStore";
-import { VocabularyWord, VOCABULARY_LEVELS, getAllWords } from "@/data/vocabulary";
+import { VocabularyWord, getAllWords } from "@/data/vocabulary";
+import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 
 interface QuizQuestion {
   id: string;
@@ -67,10 +65,9 @@ const QuickQuiz = () => {
   const navigate = useNavigate();
   const { celebrate } = useConfetti();
   const {
-    selectedLevels,
-    setSelectedLevels,
     getWordsForQuiz,
     updateWordProgress,
+    getFilteredWordCount,
   } = useVocabularyStore();
 
   // Phase: 'selection', 'playing', or 'finished'
@@ -88,24 +85,16 @@ const QuickQuiz = () => {
   const totalQuestions = questions.length;
   const currentQuestion = questions[currentQuestionIndex];
 
-  // Toggle level selection
-  const toggleLevel = (level: number) => {
-    if (selectedLevels.includes(level)) {
-      setSelectedLevels(selectedLevels.filter(l => l !== level));
-    } else {
-      setSelectedLevels([...selectedLevels, level]);
-    }
-  };
-
   // Start quiz
   const startQuiz = () => {
-    const words = getWordsForQuiz(questionCount * 2); // Get more words to have variety
-    if (words.length < 4) {
-      toast.error("Not enough words", {
-        description: "Please select levels with more words."
+    const filteredCount = getFilteredWordCount();
+    if (filteredCount < 4) {
+      toast.error("單字數量不足", {
+        description: "請調整篩選條件，至少需要 4 個單字"
       });
       return;
     }
+    const words = getWordsForQuiz(questionCount * 2); // Get more words to have variety
     const generatedQuestions = generateQuestions(words, questionCount);
     setQuestions(generatedQuestions);
     setCurrentQuestionIndex(0);
@@ -208,94 +197,52 @@ const QuickQuiz = () => {
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              返回
             </Button>
 
             <div className="flex items-center gap-3">
               <Zap className="h-6 w-6 text-accent" />
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Quick Quiz</h1>
-                <p className="text-sm text-muted-foreground">Timed Challenge</p>
+                <h1 className="text-2xl font-bold text-foreground">快速測驗</h1>
+                <p className="text-sm text-muted-foreground">限時挑戰</p>
               </div>
             </div>
 
             <div className="w-20" />
           </div>
 
-          {/* Selection Card */}
-          <Card className="p-6">
-            <div className="space-y-6">
-              {/* Level Selection */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Layers className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-bold text-foreground">Select Levels</h2>
-                </div>
+          {/* Vocabulary Selector with all filters */}
+          <VocabularySelector
+            mode="quiz"
+            title="選擇測驗範圍"
+            description="設定篩選條件，選擇要測驗的單字"
+            onStart={startQuiz}
+          />
 
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {VOCABULARY_LEVELS.filter(l => l.wordCount > 0).map((level) => {
-                    const isSelected = selectedLevels.includes(level.level);
-                    return (
-                      <div
-                        key={level.level}
-                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                          isSelected
-                            ? "border-primary bg-primary/5"
-                            : "border-muted hover:border-primary/50"
-                        }`}
-                        onClick={() => toggleLevel(level.level)}
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <Checkbox checked={isSelected} />
-                          <span className="font-bold">Level {level.level}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {level.wordCount.toLocaleString()} words
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
+          {/* Question Count */}
+          <Card className="mt-4 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                <span className="font-semibold text-foreground">題目數量</span>
               </div>
-
-              {/* Question Count */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Settings className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-bold text-foreground">Question Count</h2>
-                </div>
-
-                <div className="flex gap-2">
-                  {[5, 10, 15, 20, 30].map((num) => (
-                    <Button
-                      key={num}
-                      variant={questionCount === num ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setQuestionCount(num)}
-                    >
-                      {num}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Start Button */}
-              <div className="pt-4 border-t">
-                <Button
-                  size="lg"
-                  className="w-full gap-2"
-                  disabled={selectedLevels.length === 0}
-                  onClick={startQuiz}
-                >
-                  <Play className="h-5 w-5" />
-                  Start Quiz ({questionCount} questions)
-                </Button>
+              <div className="flex gap-2">
+                {[5, 10, 15, 20, 30].map((num) => (
+                  <Button
+                    key={num}
+                    variant={questionCount === num ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setQuestionCount(num)}
+                  >
+                    {num}
+                  </Button>
+                ))}
               </div>
             </div>
           </Card>
 
           {/* Info Card */}
-          <Card className="mt-6 p-4 bg-gradient-to-br from-accent/10 to-treasure/10 border-accent/20">
+          <Card className="mt-4 p-4 bg-gradient-to-br from-accent/10 to-treasure/10 border-accent/20">
             <div className="flex items-start gap-3">
               <Flame className="h-5 w-5 text-accent mt-0.5" />
               <div>
