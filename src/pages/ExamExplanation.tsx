@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
+import { Layout } from '@/components/layout/Layout';
+import { Button } from '@/components/ui/button';
 import { ExplanationHeader } from '@/components/exam/explanation/ExplanationHeader';
 import { ExplanationPassage } from '@/components/exam/explanation/ExplanationPassage';
 import { ExplanationQuestion } from '@/components/exam/explanation/ExplanationQuestion';
@@ -7,6 +9,8 @@ import { ExplanationText } from '@/components/exam/explanation/ExplanationText';
 import { ExplanationVideo } from '@/components/exam/explanation/ExplanationVideo';
 import { ExplanationNavigation } from '@/components/exam/explanation/ExplanationNavigation';
 import { Question, QuestionExplanation } from '@/types/exam';
+import { useExamStore } from '@/store/examStore';
+import { MOCK_EXAM_PAPER } from '@/data/mock-exam';
 import { toast } from 'sonner';
 
 // 模擬數據 - 實際使用時應從 API 或 store 獲取
@@ -61,6 +65,7 @@ const mockQuestions: Question[] = [
 const mockStudentAnswers = new Map([['q1', 'B']]);
 
 export default function ExamExplanation() {
+  const { attemptId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const questionIndexParam = searchParams.get('question');
@@ -69,29 +74,41 @@ export default function ExamExplanation() {
   );
   const [isAdmin] = useState(false); // 實際應從用戶狀態獲取
 
-  // 實際使用時應從 props 或 store 獲取
-  const questions = mockQuestions;
-  const explanations = mockExplanations;
-  const studentAnswers = mockStudentAnswers;
+  // 從 store 獲取考試數據
+  const { examPaper, answers } = useExamStore();
+  const paper = examPaper || MOCK_EXAM_PAPER;
+  const allQuestions = paper.sections.flatMap((s) => s.questions);
 
-  const currentQuestion = questions[currentQuestionIndex];
+  // 模擬詳解數據（實際應從 API 獲取）
+  const explanations = mockExplanations;
+  const studentAnswers = new Map(
+    Object.entries(answers).map(([key, value]) => [key, value])
+  );
+
+  const currentQuestion = allQuestions[currentQuestionIndex];
   const currentExplanation = explanations.get(currentQuestion?.id);
   const studentAnswer = studentAnswers.get(currentQuestion?.id);
 
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      const newIndex = currentQuestionIndex - 1;
+      setCurrentQuestionIndex(newIndex);
+      // 更新 URL 參數
+      navigate(`/exam/explanation/${attemptId}?question=${newIndex}`, { replace: true });
     }
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    if (currentQuestionIndex < allQuestions.length - 1) {
+      const newIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(newIndex);
+      // 更新 URL 參數
+      navigate(`/exam/explanation/${attemptId}?question=${newIndex}`, { replace: true });
     }
   };
 
   const handleBackToResults = () => {
-    navigate('/exam-result');
+    navigate(`/exam/result/${attemptId}`);
   };
 
   const handleUploadVideo = (file: File) => {
@@ -137,53 +154,60 @@ export default function ExamExplanation() {
 
   if (!currentQuestion) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="text-center">
-          <p className="text-lg text-muted-foreground">找不到題目資料</p>
+      <Layout>
+        <div className="container mx-auto py-8">
+          <div className="text-center space-y-4">
+            <p className="text-lg text-muted-foreground">找不到題目資料</p>
+            <Button onClick={() => navigate(`/exam/result/${attemptId}`)}>
+              返回結果頁
+            </Button>
+          </div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="container mx-auto py-6 px-4 max-w-4xl space-y-6">
-        {/* 頁面標題區 */}
-        <ExplanationHeader
-          question={currentQuestion}
-          questionNumber={currentQuestionIndex + 1}
-        />
+    <Layout>
+      <div className="min-h-screen bg-background pb-24">
+        <div className="container mx-auto py-6 px-4 max-w-4xl space-y-6">
+          {/* 頁面標題區 */}
+          <ExplanationHeader
+            question={currentQuestion}
+            questionNumber={currentQuestionIndex + 1}
+          />
 
-        {/* 題幹區 */}
-        <ExplanationPassage passage={getPassage()} title={getPassageTitle()} />
+          {/* 題幹區 */}
+          <ExplanationPassage passage={getPassage()} title={getPassageTitle()} />
 
-        {/* 題目本體與選項 */}
-        <ExplanationQuestion question={currentQuestion} studentAnswer={studentAnswer} />
+          {/* 題目本體與選項 */}
+          <ExplanationQuestion question={currentQuestion} studentAnswer={studentAnswer} />
 
-        {/* 詳解文字 */}
-        <ExplanationText explanation={currentExplanation} />
+          {/* 詳解文字 */}
+          <ExplanationText explanation={currentExplanation} />
 
-        {/* 影片講解 */}
-        <ExplanationVideo
-          explanation={currentExplanation}
-          isAdmin={isAdmin}
-          onUploadVideo={handleUploadVideo}
-          onToggleVideo={handleToggleVideo}
-        />
-      </div>
-
-      {/* 導航按鈕（固定在底部） */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t">
-        <div className="container mx-auto max-w-4xl">
-          <ExplanationNavigation
-            currentQuestionIndex={currentQuestionIndex}
-            totalQuestions={questions.length}
-            onPrevious={handlePrevious}
-            onNext={handleNext}
-            onBackToResults={handleBackToResults}
+          {/* 影片講解 */}
+          <ExplanationVideo
+            explanation={currentExplanation}
+            isAdmin={isAdmin}
+            onUploadVideo={handleUploadVideo}
+            onToggleVideo={handleToggleVideo}
           />
         </div>
+
+        {/* 導航按鈕（固定在底部） */}
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t">
+          <div className="container mx-auto max-w-4xl">
+            <ExplanationNavigation
+              currentQuestionIndex={currentQuestionIndex}
+              totalQuestions={allQuestions.length}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              onBackToResults={handleBackToResults}
+            />
+          </div>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 }

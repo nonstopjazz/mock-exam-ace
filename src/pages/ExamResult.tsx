@@ -440,12 +440,17 @@ const ExamResult = () => {
                           </span>
                         </div>
 
-                        {/* TODO: 解析佔位 */}
-                        <div className="pt-2 border-t">
-                          <span className="font-medium text-muted-foreground">解析：</span>
-                          <p className="mt-1 text-muted-foreground italic">
-                            （待串接 API 提供詳細解析與學習建議）
-                          </p>
+                        {/* 查看詳解按鈕 */}
+                        <div className="pt-3 border-t flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/exam/explanation/${attemptId}?question=${wrong.questionNumber - 1}`)}
+                            className="gap-2"
+                          >
+                            <BookMarked className="h-4 w-4" />
+                            查看詳解
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -457,7 +462,15 @@ const ExamResult = () => {
 
           {/* Actions */}
           <div className="flex flex-wrap gap-4 justify-center">
-            <Button size="lg" onClick={() => navigate("/exam")}>
+            <Button 
+              size="lg" 
+              onClick={() => navigate(`/exam/explanation/${attemptId}`)}
+              className="gap-2"
+            >
+              <BookMarked className="h-4 w-4" />
+              查看完整詳解
+            </Button>
+            <Button size="lg" variant="outline" onClick={() => navigate("/exam")}>
               再次練習
             </Button>
             <Button size="lg" variant="outline" onClick={() => navigate("/dashboard")}>

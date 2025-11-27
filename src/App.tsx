@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import ExamList from "./pages/ExamList";
 import ExamNew from "./pages/ExamNew";
 import ExamResult from "./pages/ExamResult";
+import ExamExplanation from "./pages/ExamExplanation";
 import Dashboard from "./pages/Dashboard";
 import Essay from "./pages/Essay";
 import Admin from "./pages/Admin";
@@ -56,6 +57,7 @@ const App = () => (
           <Route path="/exams" element={<ExamList />} />
           <Route path="/exam" element={<ExamNew />} />
           <Route path="/exam/result/:attemptId" element={<ExamResult />} />
+          <Route path="/exam/explanation/:attemptId" element={<ExamExplanation />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/essay" element={<Essay />} />
 
