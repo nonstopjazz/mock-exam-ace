@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import { ConfettiCanvasHandle } from '@/components/ConfettiCanvas';
+import { ConfettiCanvasHandle } from '@/components/galaxy/ConfettiCanvas';
 import { ParticleEffect } from '@/lib/particles';
 
 export const useConfetti = () => {

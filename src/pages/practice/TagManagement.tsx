@@ -91,16 +91,24 @@ const TagManagement = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
+              <div className="space-y-2">
                 <Label htmlFor="category">分類</Label>
+                <Input
                   id="category"
                   value={formData.category || ""}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   placeholder="例：題目類型、難度等"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="color">標籤顏色</Label>
+                <Input
                   id="color"
                   type="color"
                   value={formData.color || "#3b82f6"}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>取消</Button>

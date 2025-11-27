@@ -90,14 +90,22 @@ const VocabularyManagement = () => {
                   onChange={(e) => setFormData({ ...formData, word: e.target.value })}
                 />
               </div>
+              <div className="space-y-2">
                 <Label htmlFor="translation">中文翻譯</Label>
+                <Input
                   id="translation"
                   value={formData.translation || ""}
                   onChange={(e) => setFormData({ ...formData, translation: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="category">分類</Label>
+                <Input
                   id="category"
                   value={formData.category || ""}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>取消</Button>
