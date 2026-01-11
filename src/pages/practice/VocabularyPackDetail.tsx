@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Carousel,
   CarouselContent,
   CarouselItem,
@@ -20,7 +25,8 @@ import {
   Users,
   Calendar,
   TrendingUp,
-  ImageIcon,
+  ZoomIn,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,6 +64,7 @@ const VocabularyPackDetail = () => {
   const { packId } = useParams();
   const navigate = useNavigate();
   const [isCollected, setIsCollected] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<ThemeImage | null>(null);
 
   // 模拟数据 - 实际应该根据 packId 从 API 获取
   const packs: Record<string, VocabularyPack> = {
@@ -296,17 +303,23 @@ const VocabularyPackDetail = () => {
               <CarouselContent>
                 {pack.themeImages.map((image) => (
                   <CarouselItem key={image.id}>
-                    <div className="relative overflow-hidden rounded-2xl">
+                    <div 
+                      className="relative overflow-hidden rounded-2xl cursor-pointer group"
+                      onClick={() => setSelectedImage(image)}
+                    >
                       <img
                         src={image.url}
                         alt={image.caption}
-                        className="w-full h-48 sm:h-64 md:h-80 object-cover"
+                        className="w-full h-48 sm:h-64 md:h-80 object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+                      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 flex items-end justify-between">
                         <p className="text-white text-sm sm:text-base md:text-lg font-medium drop-shadow-lg">
                           {image.caption}
                         </p>
+                        <div className="bg-white/20 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ZoomIn className="h-5 w-5 text-white" />
+                        </div>
                       </div>
                     </div>
                   </CarouselItem>
@@ -326,6 +339,39 @@ const VocabularyPackDetail = () => {
             </div>
           </div>
         )}
+
+        {/* Image Lightbox Modal */}
+        <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+          <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] p-0 overflow-hidden bg-black/95 border-none">
+            <DialogTitle className="sr-only">
+              {selectedImage?.caption || "圖片檢視"}
+            </DialogTitle>
+            {selectedImage && (
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 z-10 text-white hover:bg-white/20"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <X className="h-6 w-6" />
+                </Button>
+                <div className="overflow-auto max-h-[85vh]">
+                  <img
+                    src={selectedImage.url}
+                    alt={selectedImage.caption}
+                    className="w-full h-auto"
+                  />
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                  <p className="text-white text-center text-lg font-medium">
+                    {selectedImage.caption}
+                  </p>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Pack Header */}
         <Card className="p-8 mb-6 bg-gradient-to-br from-primary/10 to-accent/10">
