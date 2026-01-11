@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import {
   ChevronLeft,
   BookmarkPlus,
   CheckCircle,
@@ -13,6 +20,7 @@ import {
   Users,
   Calendar,
   TrendingUp,
+  ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +34,12 @@ interface Word {
   partOfSpeech: string;
 }
 
+interface ThemeImage {
+  id: string;
+  url: string;
+  caption: string;
+}
+
 interface VocabularyPack {
   id: string;
   title: string;
@@ -37,6 +51,7 @@ interface VocabularyPack {
   datePublished: string;
   author: string;
   words: Word[];
+  themeImages: ThemeImage[];
 }
 
 const VocabularyPackDetail = () => {
@@ -56,6 +71,11 @@ const VocabularyPackDetail = () => {
       difficulty: "中高級",
       datePublished: "2024-03-15",
       author: "環境學習小組",
+      themeImages: [
+        { id: "1", url: "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=800&h=400&fit=crop", caption: "全球暖化導致冰川融化" },
+        { id: "2", url: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&h=400&fit=crop", caption: "氣候變遷影響自然生態" },
+        { id: "3", url: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=800&h=400&fit=crop", caption: "可再生能源是未來趨勢" },
+      ],
       words: [
         {
           id: "1",
@@ -141,6 +161,12 @@ const VocabularyPackDetail = () => {
       difficulty: "中級",
       datePublished: "2024-03-14",
       author: "社會議題研究組",
+      themeImages: [
+        { id: "1", url: "https://images.unsplash.com/photo-1491013516836-7db643ee125a?w=800&h=400&fit=crop", caption: "少子化影響家庭結構" },
+        { id: "2", url: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&h=400&fit=crop", caption: "人口老化帶來的挑戰" },
+        { id: "3", url: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&h=400&fit=crop", caption: "教育政策需因應人口變化" },
+        { id: "4", url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=400&fit=crop", caption: "女性勞動參與率提升" },
+      ],
       words: [
         {
           id: "1",
@@ -190,6 +216,11 @@ const VocabularyPackDetail = () => {
       difficulty: "中級",
       datePublished: "2024-03-13",
       author: "綠色生活推廣組",
+      themeImages: [
+        { id: "1", url: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&h=400&fit=crop", caption: "垃圾分類是環保第一步" },
+        { id: "2", url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=400&fit=crop", caption: "減少塑膠使用保護海洋" },
+        { id: "3", url: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&h=400&fit=crop", caption: "循環經濟創造永續未來" },
+      ],
       words: [
         {
           id: "1",
@@ -257,6 +288,44 @@ const VocabularyPackDetail = () => {
           <ChevronLeft className="h-4 w-4 mr-1" />
           返回單字複習中心
         </Button>
+
+        {/* Hero Image Carousel */}
+        {pack.themeImages && pack.themeImages.length > 0 && (
+          <div className="mb-6">
+            <Carousel className="w-full" opts={{ loop: true }}>
+              <CarouselContent>
+                {pack.themeImages.map((image) => (
+                  <CarouselItem key={image.id}>
+                    <div className="relative overflow-hidden rounded-2xl">
+                      <img
+                        src={image.url}
+                        alt={image.caption}
+                        className="w-full h-48 sm:h-64 md:h-80 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+                        <p className="text-white text-sm sm:text-base md:text-lg font-medium drop-shadow-lg">
+                          {image.caption}
+                        </p>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="left-2 sm:left-4" />
+              <CarouselNext className="right-2 sm:right-4" />
+            </Carousel>
+            {/* Carousel Indicators */}
+            <div className="flex justify-center gap-2 mt-3">
+              {pack.themeImages.map((_, index) => (
+                <div
+                  key={index}
+                  className="w-2 h-2 rounded-full bg-primary/30 transition-colors"
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Pack Header */}
         <Card className="p-8 mb-6 bg-gradient-to-br from-primary/10 to-accent/10">
