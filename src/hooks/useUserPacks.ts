@@ -257,3 +257,49 @@ export function usePackWithItems(packId: string | undefined) {
 
   return { pack, loading, error };
 }
+
+// Hook to fetch vocabulary items from multiple packs
+export function usePackItems(packIds: string[]) {
+  const [items, setItems] = useState<PackItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchItems = useCallback(async () => {
+    if (packIds.length === 0) {
+      setItems([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('pack_items')
+        .select('*')
+        .in('pack_id', packIds)
+        .order('sort_order', { ascending: true });
+
+      if (fetchError) {
+        console.error('Error fetching pack items:', fetchError);
+        setError(fetchError.message);
+        setItems([]);
+        return;
+      }
+
+      setItems(data || []);
+    } catch (err) {
+      console.error('Exception fetching pack items:', err);
+      setError('載入單字失敗');
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [packIds.join(',')]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
+  return { items, loading, error, refetch: fetchItems };
+}
