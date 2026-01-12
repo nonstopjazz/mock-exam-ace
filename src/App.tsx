@@ -2,10 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/galaxy/AppSidebar";
 import { Navbar } from "./components/layout/Navbar";
+import { LockedPage } from "./components/gates/LockedPage";
+import { IS_PRODUCTION } from "./config/features";
 import Home from "./pages/Home";
 import ExamList from "./pages/ExamList";
 import ExamNew from "./pages/ExamNew";
@@ -54,31 +56,39 @@ const App = () => (
         <Routes>
           {/* Main app routes */}
           <Route path="/" element={<Home />} />
-          <Route path="/exams" element={<ExamList />} />
-          <Route path="/exam" element={<ExamNew />} />
-          <Route path="/exam/result/:attemptId" element={<ExamResult />} />
-          <Route path="/exam/explanation/:attemptId" element={<ExamExplanation />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/essay" element={<Essay />} />
 
-          {/* Admin routes - with Navbar only, no sidebar */}
-          <Route path="/admin" element={<><Navbar /><AdminDashboard /></>} />
-          <Route path="/admin/upload" element={<><Navbar /><Admin /></>} />
-          <Route path="/admin/course-management" element={<><Navbar /><CourseManagement /></>} />
-          <Route path="/admin/exam-management" element={<><Navbar /><ExamManagement /></>} />
-          <Route path="/admin/vocabulary-management" element={<><Navbar /><VocabularyManagement /></>} />
-          <Route path="/admin/vocabulary-packs" element={<><Navbar /><VocabularyPackList /></>} />
-          <Route path="/admin/quest-map-management" element={<><Navbar /><QuestMapManagement /></>} />
-          <Route path="/admin/shop-management" element={<><Navbar /><ShopManagement /></>} />
-          <Route path="/admin/achievement-management" element={<><Navbar /><AchievementManagement /></>} />
-          <Route path="/admin/tag-management" element={<><Navbar /><TagManagement /></>} />
+          {/* Phase 2: Locked - Exam routes */}
+          <Route path="/exams" element={<LockedPage title="學測模考" description="模考功能即將推出，敬請期待！" />} />
+          <Route path="/exam" element={<LockedPage title="學測模考" description="模考功能即將推出，敬請期待！" />} />
+          <Route path="/exam/result/:attemptId" element={<LockedPage title="模考結果" description="模考功能即將推出，敬請期待！" />} />
+          <Route path="/exam/explanation/:attemptId" element={<LockedPage title="題目解析" description="模考功能即將推出，敬請期待！" />} />
+          <Route path="/dashboard" element={<LockedPage title="學習儀表板" description="儀表板功能即將推出，敬請期待！" />} />
+          <Route path="/essay" element={<LockedPage title="AI 作文批改" description="作文批改功能即將推出，敬請期待！" />} />
 
-          {/* Video Courses - with Navbar only, no sidebar */}
-          <Route path="/courses" element={<><Navbar /><VideoCourses /></>} />
-          <Route path="/course/:courseId" element={<><Navbar /><CourseDetail /></>} />
-          <Route path="/drip-course/:courseId" element={<><Navbar /><DripCourse /></>} />
-          <Route path="/course-management" element={<><Navbar /><CourseManagement /></>} />
-          <Route path="/course-management/:courseId/edit" element={<><Navbar /><CourseEdit /></>} />
+          {/* Admin routes - blocked in production, accessible in dev */}
+          {IS_PRODUCTION ? (
+            <Route path="/admin/*" element={<Navigate to="/" replace />} />
+          ) : (
+            <>
+              <Route path="/admin" element={<><Navbar /><AdminDashboard /></>} />
+              <Route path="/admin/upload" element={<><Navbar /><Admin /></>} />
+              <Route path="/admin/course-management" element={<><Navbar /><CourseManagement /></>} />
+              <Route path="/admin/exam-management" element={<><Navbar /><ExamManagement /></>} />
+              <Route path="/admin/vocabulary-management" element={<><Navbar /><VocabularyManagement /></>} />
+              <Route path="/admin/vocabulary-packs" element={<><Navbar /><VocabularyPackList /></>} />
+              <Route path="/admin/quest-map-management" element={<><Navbar /><QuestMapManagement /></>} />
+              <Route path="/admin/shop-management" element={<><Navbar /><ShopManagement /></>} />
+              <Route path="/admin/achievement-management" element={<><Navbar /><AchievementManagement /></>} />
+              <Route path="/admin/tag-management" element={<><Navbar /><TagManagement /></>} />
+            </>
+          )}
+
+          {/* Video Courses - hidden/locked for now */}
+          <Route path="/courses" element={<LockedPage title="影片課程" description="課程功能即將推出，敬請期待！" />} />
+          <Route path="/course/:courseId" element={<LockedPage title="影片課程" description="課程功能即將推出，敬請期待！" />} />
+          <Route path="/drip-course/:courseId" element={<LockedPage title="影片課程" description="課程功能即將推出，敬請期待！" />} />
+          <Route path="/course-management" element={<Navigate to="/" replace />} />
+          <Route path="/course-management/:courseId/edit" element={<Navigate to="/" replace />} />
 
           {/* Quest page without sidebar (full-screen immersive experience) */}
           <Route path="/practice/quest/:lessonId" element={<PracticeQuest />} />
