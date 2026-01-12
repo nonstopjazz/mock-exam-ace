@@ -13,6 +13,7 @@ import { IS_PRODUCTION } from "./config/features";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
+import ClaimPack from "./pages/ClaimPack";
 import ExamList from "./pages/ExamList";
 import ExamNew from "./pages/ExamNew";
 import ExamResult from "./pages/ExamResult";
@@ -65,6 +66,9 @@ const App = () => (
             {/* Auth routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+
+            {/* Claim pack route */}
+            <Route path="/claim/:token" element={<ClaimPack />} />
 
           {/* Phase 2: Locked - Exam routes */}
           <Route path="/exams" element={<LockedPage title="學測模考" description="模考功能即將推出，敬請期待！" />} />

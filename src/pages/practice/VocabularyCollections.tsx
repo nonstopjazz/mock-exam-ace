@@ -31,72 +31,29 @@ import {
   CheckCircle2,
   ChevronRight,
   BookOpen,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
-interface VocabularyPack {
-  id: string;
-  title: string;
-  theme: string;
-  description: string;
-  wordCount: number;
-  source: string;
-  difficulty: string;
-  dateCollected: string;
-  progress: number;
-}
+import { useUserPacks } from "@/hooks/useUserPacks";
 
 const VocabularyCollections = () => {
   const navigate = useNavigate();
+  const { packs, loading, error, refetch, removePack } = useUserPacks();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTheme, setSelectedTheme] = useState<string>("all");
   const [selectedPacks, setSelectedPacks] = useState<string[]>([]);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [targetCategory, setTargetCategory] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const [collectedPacks] = useState<VocabularyPack[]>([
-    {
-      id: "1",
-      title: "全球暖化",
-      theme: "環境議題",
-      description: "探討全球暖化相關的核心詞彙，涵蓋氣候變遷、溫室效應、碳排放等概念",
-      wordCount: 15,
-      source: "環境教育社群",
-      difficulty: "中高級",
-      dateCollected: "2024-03-15",
-      progress: 40,
-    },
-    {
-      id: "2",
-      title: "少子化",
-      theme: "社會議題",
-      description: "討論少子化現象的相關詞彙，涵蓋人口統計、生育率、社會福利等面向",
-      wordCount: 12,
-      source: "社會學習社群",
-      difficulty: "中級",
-      dateCollected: "2024-03-14",
-      progress: 75,
-    },
-    {
-      id: "3",
-      title: "垃圾問題",
-      theme: "環境議題",
-      description: "聚焦於垃圾處理與環境保護的核心詞彙，包含回收、減廢、循環經濟等概念",
-      wordCount: 10,
-      source: "環保行動聯盟",
-      difficulty: "中級",
-      dateCollected: "2024-03-13",
-      progress: 20,
-    },
-  ]);
-
+  // Get unique themes from packs
   const themes = [
     { value: "all", label: "全部主題" },
-    { value: "環境議題", label: "環境議題" },
-    { value: "社會議題", label: "社會議題" },
-    { value: "商務英語", label: "商務英語" },
-    { value: "學術英語", label: "學術英語" },
+    ...Array.from(new Set(packs.map(p => p.theme).filter(Boolean)))
+      .map(theme => ({ value: theme!, label: theme! }))
   ];
 
   const categories = [
@@ -105,10 +62,10 @@ const VocabularyCollections = () => {
     { value: "待複習", label: "待複習" },
   ];
 
-  const filteredPacks = collectedPacks.filter((pack) => {
+  const filteredPacks = packs.filter((pack) => {
     const matchesSearch =
       pack.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pack.description.includes(searchQuery);
+      (pack.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
     const matchesTheme = selectedTheme === "all" || pack.theme === selectedTheme;
     return matchesSearch && matchesTheme;
   });
@@ -127,9 +84,23 @@ const VocabularyCollections = () => {
     }
   };
 
-  const handleDelete = () => {
-    toast.success(`已移除 ${selectedPacks.length} 個單字集`);
+  const handleDelete = async () => {
+    if (selectedPacks.length === 0) return;
+
+    setIsDeleting(true);
+    let successCount = 0;
+
+    for (const claimId of selectedPacks) {
+      const { error } = await removePack(claimId);
+      if (!error) successCount++;
+    }
+
+    setIsDeleting(false);
     setSelectedPacks([]);
+
+    if (successCount > 0) {
+      toast.success(`已移除 ${successCount} 個單字集`);
+    }
   };
 
   const handleMove = () => {
@@ -144,9 +115,9 @@ const VocabularyCollections = () => {
   };
 
   const handleExport = () => {
-    const exportData = collectedPacks
+    const exportData = packs
       .filter((p) => selectedPacks.includes(p.id))
-      .map((p) => `${p.title}\t${p.theme}\t${p.wordCount} 個單字`)
+      .map((p) => `${p.title}\t${p.theme || '-'}\t${p.word_count} 個單字`)
       .join("\n");
 
     const blob = new Blob([exportData], { type: "text/plain" });
@@ -160,7 +131,37 @@ const VocabularyCollections = () => {
     toast.success(`已匯出 ${selectedPacks.length} 個單字集清單`);
   };
 
-  const totalWords = filteredPacks.reduce((sum, pack) => sum + pack.wordCount, 0);
+  const totalWords = filteredPacks.reduce((sum, pack) => sum + pack.word_count, 0);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">載入收藏中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <Card className="p-12 text-center">
+            <h3 className="text-xl font-semibold text-foreground mb-2">載入失敗</h3>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={refetch}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              重試
+            </Button>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -184,7 +185,7 @@ const VocabularyCollections = () => {
             <div>
               <h1 className="text-4xl font-bold text-foreground">我的收藏單字集</h1>
               <p className="text-muted-foreground">
-                共 {collectedPacks.length} 個單字集 • {totalWords} 個單字
+                共 {packs.length} 個單字集 • {totalWords} 個單字
                 {selectedPacks.length > 0 && ` • 已選擇 ${selectedPacks.length} 個`}
               </p>
             </div>
@@ -220,11 +221,19 @@ const VocabularyCollections = () => {
               </SelectContent>
             </Select>
 
-            {/* Select All */}
-            <Button variant="outline" onClick={selectAll} className="w-full md:w-auto">
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              {selectedPacks.length === filteredPacks.length ? "取消全選" : "全選"}
+            {/* Refresh */}
+            <Button variant="outline" onClick={refetch} className="w-full md:w-auto">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              重新整理
             </Button>
+
+            {/* Select All */}
+            {filteredPacks.length > 0 && (
+              <Button variant="outline" onClick={selectAll} className="w-full md:w-auto">
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                {selectedPacks.length === filteredPacks.length ? "取消全選" : "全選"}
+              </Button>
+            )}
           </div>
         </Card>
 
@@ -276,8 +285,17 @@ const VocabularyCollections = () => {
                   匯出
                 </Button>
 
-                <Button variant="destructive" size="sm" onClick={handleDelete}>
-                  <Trash2 className="h-4 w-4 mr-2" />
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-2" />
+                  )}
                   移除
                 </Button>
               </div>
@@ -309,23 +327,29 @@ const VocabularyCollections = () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline" className="text-xs">
-                          <Tag className="h-3 w-3 mr-1" />
-                          {pack.theme}
-                        </Badge>
-                        <Badge variant="secondary" className="text-xs">
-                          {pack.difficulty}
-                        </Badge>
+                        {pack.theme && (
+                          <Badge variant="outline" className="text-xs">
+                            <Tag className="h-3 w-3 mr-1" />
+                            {pack.theme}
+                          </Badge>
+                        )}
+                        {pack.difficulty && (
+                          <Badge variant="secondary" className="text-xs">
+                            {pack.difficulty}
+                          </Badge>
+                        )}
                       </div>
                       <h3
                         className="text-xl font-bold text-foreground mb-1 cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => navigate(`/practice/vocabulary/pack/${pack.id}`)}
+                        onClick={() => navigate(`/practice/vocabulary/pack/${pack.pack_id}`)}
                       >
                         {pack.title}
                       </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {pack.description}
-                      </p>
+                      {pack.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {pack.description}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -334,10 +358,9 @@ const VocabularyCollections = () => {
                     <div className="flex items-center gap-2">
                       <BookOpen className="h-4 w-4 text-primary" />
                       <span className="text-sm font-medium text-foreground">
-                        {pack.wordCount} 個單字
+                        {pack.word_count} 個單字
                       </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">{pack.source}</span>
                   </div>
 
                   {/* Progress */}
@@ -356,7 +379,7 @@ const VocabularyCollections = () => {
 
                   {/* Meta Info */}
                   <div className="text-xs text-muted-foreground">
-                    收藏時間：{pack.dateCollected}
+                    收藏時間：{new Date(pack.claimed_at).toLocaleDateString('zh-TW')}
                   </div>
 
                   {/* Actions */}
@@ -365,7 +388,7 @@ const VocabularyCollections = () => {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => navigate(`/practice/vocabulary/pack/${pack.id}`)}
+                      onClick={() => navigate(`/practice/vocabulary/pack/${pack.pack_id}`)}
                     >
                       查看詳情
                     </Button>
@@ -387,11 +410,13 @@ const VocabularyCollections = () => {
         {filteredPacks.length === 0 && (
           <Card className="p-12 text-center">
             <BookmarkPlus className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">沒有找到單字集</h3>
+            <h3 className="text-xl font-semibold text-foreground mb-2">
+              {packs.length === 0 ? "還沒有收藏任何單字集" : "沒有找到單字集"}
+            </h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery || selectedTheme !== "all"
-                ? "嘗試調整搜尋條件或篩選器"
-                : "開始收藏你喜歡的單字集吧"}
+              {packs.length === 0
+                ? "從社群取得邀請碼，領取你的第一個單字包"
+                : "嘗試調整搜尋條件或篩選器"}
             </p>
             <Button onClick={() => navigate("/practice/vocabulary")}>前往單字複習中心</Button>
           </Card>
@@ -432,13 +457,12 @@ const VocabularyCollections = () => {
               <div>
                 <h4 className="font-semibold text-foreground mb-1">如何取得更多單字包？</h4>
                 <p className="text-sm text-muted-foreground mb-2">
-                  單字包不會直接顯示在平台上，需要透過社群互動來取得：
+                  單字包透過邀請碼領取：
                 </p>
                 <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
                   <li>參與我們的社群討論（Discord、Facebook 等）</li>
-                  <li>回應其他成員的學習分享</li>
-                  <li>從社群成員或管理員那裡取得單字包連結</li>
-                  <li>點擊連結後即可查看並收藏該單字包</li>
+                  <li>從社群成員或管理員那裡取得邀請碼</li>
+                  <li>點擊邀請連結（如 /claim/XXXX）即可領取</li>
                 </ul>
               </div>
             </div>
