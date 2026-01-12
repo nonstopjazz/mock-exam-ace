@@ -55,15 +55,51 @@ export function getSimulatedPhase(): SimulatedPhase {
   return (stored ? parseInt(stored, 10) : 0) as SimulatedPhase;
 }
 
-// The actual switcher component
-export function DevPhaseSwitcher() {
-  // CRITICAL: Never render in production
-  if (!import.meta.env.DEV) {
-    return null;
+// Check if dev mode is enabled via URL param or localStorage
+function isDevModeEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+
+  // Always show in development
+  if (import.meta.env.DEV) return true;
+
+  // Check URL param: ?devmode=true
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("devmode") === "true") {
+    // Persist to localStorage so it survives navigation
+    localStorage.setItem("dev_mode_enabled", "true");
+    return true;
   }
 
+  // Check localStorage (set by URL param)
+  if (localStorage.getItem("dev_mode_enabled") === "true") {
+    return true;
+  }
+
+  return false;
+}
+
+// Clear dev mode
+export function clearDevMode() {
+  localStorage.removeItem("dev_mode_enabled");
+  localStorage.removeItem(STORAGE_KEY);
+  window.location.href = "/";
+}
+
+// The actual switcher component
+export function DevPhaseSwitcher() {
+  const [isEnabled, setIsEnabled] = useState(false);
   const [phase, setPhase] = useSimulatedPhase();
   const [isOpen, setIsOpen] = useState(false);
+
+  // Check dev mode on mount (needs to run client-side)
+  useEffect(() => {
+    setIsEnabled(isDevModeEnabled());
+  }, []);
+
+  // Don't render if not enabled
+  if (!isEnabled) {
+    return null;
+  }
 
   const currentPhase = phaseLabels[phase];
 
@@ -121,9 +157,21 @@ export function DevPhaseSwitcher() {
             })}
           </div>
 
-          <div className="mt-3 pt-3 border-t">
+          <div className="mt-3 pt-3 border-t space-y-2">
+            {!import.meta.env.DEV && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                onClick={clearDevMode}
+              >
+                退出開發模式
+              </Button>
+            )}
             <p className="text-xs text-orange-500/80">
-              Production 環境不會顯示此切換器
+              {import.meta.env.DEV
+                ? "本機開發環境"
+                : "透過 ?devmode=true 啟用"}
             </p>
           </div>
         </div>
