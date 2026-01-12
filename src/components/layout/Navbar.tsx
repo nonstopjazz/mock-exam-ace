@@ -29,8 +29,8 @@ export const Navbar = () => {
         {/* Logo */}
         <NavLink to="/" className="flex items-center gap-2 text-lg md:text-xl font-bold text-primary">
           <BookOpen className="h-5 w-5 md:h-6 md:w-6" />
-          <span className="hidden sm:inline">學測英文模考</span>
-          <span className="sm:hidden">英文模考</span>
+          <span className="hidden sm:inline">Joe救學測英文</span>
+          <span className="sm:hidden">Joe救英文</span>
         </NavLink>
 
         {/* Desktop Navigation */}
@@ -70,7 +70,7 @@ export const Navbar = () => {
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5" />
-                學測英文模考
+                Joe救學測英文
               </SheetTitle>
             </SheetHeader>
             <div className="mt-8 flex flex-col gap-4">
