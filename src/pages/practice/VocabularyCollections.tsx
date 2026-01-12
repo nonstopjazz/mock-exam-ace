@@ -257,8 +257,13 @@ const VocabularyCollections = () => {
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <h3 className="text-xl font-semibold text-foreground">精選單字包預覽</h3>
-              <Badge variant="secondary">公開</Badge>
+              <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
+                示意
+              </Badge>
             </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              以下為單字包範例，實際領取需透過邀請碼
+            </p>
 
             {loadingPublic ? (
               <div className="flex justify-center py-12">
@@ -271,9 +276,15 @@ const VocabularyCollections = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {publicPacks.map((pack) => (
-                  <Card key={pack.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <Card key={pack.id} className="overflow-hidden hover:shadow-lg transition-shadow relative">
+                    {/* Demo Badge */}
+                    <div className="absolute top-2 right-2 z-10">
+                      <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50/90 backdrop-blur-sm text-xs">
+                        示意
+                      </Badge>
+                    </div>
                     {/* Cover Image */}
-                    {pack.cover_image?.image_url && (
+                    {pack.cover_image?.image_url ? (
                       <div className="aspect-video bg-muted overflow-hidden">
                         <img
                           src={pack.cover_image.image_url}
@@ -281,9 +292,13 @@ const VocabularyCollections = () => {
                           className="w-full h-full object-cover"
                         />
                       </div>
+                    ) : (
+                      <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                        <BookOpen className="h-12 w-12 text-primary/40" />
+                      </div>
                     )}
                     <div className="p-6 space-y-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {pack.theme && (
                           <Badge variant="outline" className="text-xs">
                             <Tag className="h-3 w-3 mr-1" />
@@ -307,10 +322,10 @@ const VocabularyCollections = () => {
                           variant="outline"
                           size="sm"
                           className="w-full"
-                          onClick={() => navigate("/login?returnUrl=/practice/vocabulary/collections")}
+                          onClick={() => navigate(`/practice/vocabulary/pack/${pack.id}`)}
                         >
-                          <Lock className="h-4 w-4 mr-2" />
-                          登入後查看
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          預覽單字
                         </Button>
                       </div>
                     </div>
