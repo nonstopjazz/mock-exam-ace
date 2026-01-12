@@ -317,18 +317,15 @@ const VocabularyCollections = () => {
                           {pack.description}
                         </p>
                       )}
-                      <div className="pt-2 space-y-2">
-                        <p className="text-xs text-muted-foreground text-center">
-                          需邀請碼領取
-                        </p>
+                      <div className="pt-2">
                         <Button
                           variant="outline"
                           size="sm"
                           className="w-full"
-                          onClick={() => navigate("/login?returnUrl=/practice/vocabulary/collections")}
+                          onClick={() => navigate(`/practice/vocabulary/pack/${pack.id}`)}
                         >
-                          <LogIn className="h-4 w-4 mr-2" />
-                          登入領取
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          預覽單字
                         </Button>
                       </div>
                     </div>
