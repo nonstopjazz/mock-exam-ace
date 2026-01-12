@@ -12,6 +12,7 @@ import {
   Minus,
   Check,
   Settings,
+  Loader2,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +20,24 @@ import { toast } from "sonner";
 import { useVocabularyStore } from "@/store/vocabularyStore";
 import { VocabularyWord } from "@/data/vocabulary";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
+import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
+import { usePackItems, PackItem } from "@/hooks/useUserPacks";
+import { usePackItemProgress } from "@/hooks/usePackItemProgress";
+
+// Convert PackItem to VocabularyWord format
+const convertPackItemToVocabularyWord = (item: PackItem): VocabularyWord => ({
+  id: item.id,
+  word: item.word,
+  translation: item.definition || '',
+  ipa: item.phonetic || '',
+  partOfSpeech: item.part_of_speech || '',
+  example: item.example_sentence || '',
+  exampleTranslation: '',
+  synonyms: [],
+  antonyms: [],
+  level: 1,
+  tags: [],
+});
 
 const SRSReview = () => {
   const navigate = useNavigate();
@@ -28,6 +47,16 @@ const SRSReview = () => {
     getWordProgress,
     getFilteredWordCount,
   } = useVocabularyStore();
+
+  // Source selection state
+  const [selectedSource, setSelectedSource] = useState<VocabularySource>('local');
+  const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
+
+  // Fetch pack items when a pack is selected
+  const { items: packItems, loading: packLoading, error: packError } = usePackItems(selectedPackId);
+
+  // Pack item progress tracking
+  const { updateProgress: updatePackItemProgress } = usePackItemProgress();
 
   // Phase: 'selection' or 'review'
   const [phase, setPhase] = useState<'selection' | 'review'>('selection');
@@ -42,15 +71,50 @@ const SRSReview = () => {
 
   // Start the review session
   const startReview = () => {
-    const filteredCount = getFilteredWordCount();
-    const actualLimit = Math.min(wordLimit, filteredCount);
-    const reviewWords = getWordsForSRS(actualLimit);
-    if (reviewWords.length === 0) {
-      toast.error("沒有符合條件的單字", {
-        description: "請調整篩選條件後再試一次"
-      });
-      return;
+    let reviewWords: VocabularyWord[] = [];
+
+    if (selectedSource === 'pack') {
+      // Use pack items
+      if (!selectedPackId) {
+        toast.error("請選擇收藏包", {
+          description: "請先選擇一個收藏包"
+        });
+        return;
+      }
+      if (packLoading) {
+        toast.error("載入中", {
+          description: "請稍候..."
+        });
+        return;
+      }
+      if (packError) {
+        toast.error("載入失敗", {
+          description: packError
+        });
+        return;
+      }
+      if (packItems.length === 0) {
+        toast.error("收藏包沒有單字", {
+          description: "此收藏包沒有單字"
+        });
+        return;
+      }
+      // Convert and shuffle pack items
+      const allPackWords = packItems.map(item => convertPackItemToVocabularyWord(item));
+      reviewWords = [...allPackWords].sort(() => Math.random() - 0.5).slice(0, wordLimit);
+    } else {
+      // Use local vocabulary
+      const filteredCount = getFilteredWordCount();
+      const actualLimit = Math.min(wordLimit, filteredCount);
+      reviewWords = getWordsForSRS(actualLimit);
+      if (reviewWords.length === 0) {
+        toast.error("沒有符合條件的單字", {
+          description: "請調整篩選條件後再試一次"
+        });
+        return;
+      }
     }
+
     setCards(reviewWords);
     setCurrentIndex(0);
     setReviewedCount(0);
@@ -69,8 +133,12 @@ const SRSReview = () => {
 
     const result = responseMap[response];
 
-    // Update word progress in store
-    updateWordProgress(currentCard.id, result.isCorrect, response);
+    // Update progress based on source
+    if (selectedSource === 'pack' && selectedPackId) {
+      updatePackItemProgress(selectedPackId, currentCard.id, result.isCorrect, response);
+    } else {
+      updateWordProgress(currentCard.id, result.isCorrect, response);
+    }
 
     toast.success(`Marked: ${result.label}`, {
       description: `Next review: ${result.nextReview}`
@@ -134,13 +202,57 @@ const SRSReview = () => {
             <div className="w-20" />
           </div>
 
-          {/* Vocabulary Selector with all filters */}
-          <VocabularySelector
-            mode="srs"
-            title="選擇複習範圍"
-            description="設定篩選條件，選擇要複習的單字"
-            onStart={startReview}
+          {/* Source Selection */}
+          <CollectionPackSelector
+            selectedSource={selectedSource}
+            selectedPackId={selectedPackId}
+            onSourceChange={setSelectedSource}
+            onPackSelect={setSelectedPackId}
           />
+
+          {/* Vocabulary Selector (only shown for local source) */}
+          {selectedSource === 'local' && (
+            <VocabularySelector
+              mode="srs"
+              title="選擇複習範圍"
+              description="設定篩選條件，選擇要複習的單字"
+              onStart={startReview}
+            />
+          )}
+
+          {/* Pack Start Button (shown for pack source) */}
+          {selectedSource === 'pack' && (
+            <Card className="p-6">
+              <div className="flex flex-col items-center gap-4">
+                {packLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>載入中...</span>
+                  </div>
+                ) : packError ? (
+                  <div className="text-destructive">{packError}</div>
+                ) : selectedPackId ? (
+                  <>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-foreground">{packItems.length}</div>
+                      <div className="text-muted-foreground">個單字</div>
+                    </div>
+                    <Button
+                      size="lg"
+                      className="gap-2"
+                      onClick={startReview}
+                      disabled={packItems.length === 0}
+                    >
+                      <Brain className="h-5 w-5" />
+                      開始複習
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-muted-foreground">請選擇一個收藏包</div>
+                )}
+              </div>
+            </Card>
+          )}
 
           {/* Word Limit Selection */}
           <Card className="mt-4 p-4">
