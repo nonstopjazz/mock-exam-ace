@@ -7,8 +7,12 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/galaxy/AppSidebar";
 import { Navbar } from "./components/layout/Navbar";
 import { LockedPage } from "./components/gates/LockedPage";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { AuthProvider } from "./contexts/AuthContext";
 import { IS_PRODUCTION } from "./config/features";
 import Home from "./pages/Home";
+import Login from "./pages/Login";
+import AuthCallback from "./pages/AuthCallback";
 import ExamList from "./pages/ExamList";
 import ExamNew from "./pages/ExamNew";
 import ExamResult from "./pages/ExamResult";
@@ -53,9 +57,14 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Main app routes */}
-          <Route path="/" element={<Home />} />
+        <AuthProvider>
+          <Routes>
+            {/* Main app routes */}
+            <Route path="/" element={<Home />} />
+
+            {/* Auth routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
           {/* Phase 2: Locked - Exam routes */}
           <Route path="/exams" element={<LockedPage title="學測模考" description="模考功能即將推出，敬請期待！" />} />
@@ -118,7 +127,11 @@ const App = () => (
                         <Route path="/vocabulary/srs" element={<SRSReview />} />
                         <Route path="/vocabulary/flashcards" element={<Flashcards />} />
                         <Route path="/vocabulary/quiz" element={<QuickQuiz />} />
-                        <Route path="/vocabulary/collections" element={<VocabularyCollections />} />
+                        <Route path="/vocabulary/collections" element={
+                          <ProtectedRoute>
+                            <VocabularyCollections />
+                          </ProtectedRoute>
+                        } />
                         <Route path="/vocabulary/pack/:packId" element={<VocabularyPackDetail />} />
                       </Routes>
                     </main>
@@ -128,8 +141,9 @@ const App = () => (
             </>
           } />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
