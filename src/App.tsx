@@ -8,8 +8,14 @@ import { AppSidebar } from "@/components/galaxy/AppSidebar";
 import { Navbar } from "./components/layout/Navbar";
 import { LockedPage } from "./components/gates/LockedPage";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { RequireAdmin } from "./components/auth/RequireAdmin";
 import { AuthProvider } from "./contexts/AuthContext";
 import { IS_PRODUCTION } from "./config/features";
+
+// Admin pages
+import PacksAdmin from "./pages/admin/PacksAdmin";
+import PackItemsAdmin from "./pages/admin/PackItemsAdmin";
+import TokensAdmin from "./pages/admin/TokensAdmin";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -78,9 +84,26 @@ const App = () => (
           <Route path="/dashboard" element={<LockedPage title="學習儀表板" description="儀表板功能即將推出，敬請期待！" />} />
           <Route path="/essay" element={<LockedPage title="AI 作文批改" description="作文批改功能即將推出，敬請期待！" />} />
 
-          {/* Admin routes - blocked in production, accessible in dev */}
+          {/* Admin routes - protected by RequireAdmin (production-ready) */}
+          <Route path="/admin/packs" element={
+            <RequireAdmin>
+              <PacksAdmin />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/packs/:packId/items" element={
+            <RequireAdmin>
+              <PackItemsAdmin />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/tokens" element={
+            <RequireAdmin>
+              <TokensAdmin />
+            </RequireAdmin>
+          } />
+
+          {/* Legacy admin routes - blocked in production, accessible in dev */}
           {IS_PRODUCTION ? (
-            <Route path="/admin/*" element={<Navigate to="/" replace />} />
+            <Route path="/admin" element={<Navigate to="/admin/packs" replace />} />
           ) : (
             <>
               <Route path="/admin" element={<><Navbar /><AdminDashboard /></>} />
