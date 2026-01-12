@@ -9,6 +9,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { UserStatus } from "@/components/auth/UserStatus";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const navigationItems = [
   { to: "/exams", label: "選擇試題", icon: ClipboardList },
@@ -16,20 +18,12 @@ const navigationItems = [
   { to: "/dashboard", label: "儀表板", icon: LayoutDashboard },
   { to: "/essay", label: "作文批改", icon: PenTool },
   { to: "/courses", label: "影片課程", icon: Video },
-  { to: "/admin", label: "後台管理", icon: Shield, adminOnly: true },
+  { to: "/admin/packs", label: "後台管理", icon: Shield, adminOnly: true },
 ];
 
 export const Navbar = () => {
   const [open, setOpen] = useState(false);
-  // TODO: Replace with actual authentication system
-  // For now, check localStorage for admin status
-  const [isAdmin, setIsAdmin] = useState(localStorage.getItem('isAdmin') === 'true');
-
-  const toggleAdmin = () => {
-    const newAdminStatus = !isAdmin;
-    setIsAdmin(newAdminStatus);
-    localStorage.setItem('isAdmin', String(newAdminStatus));
-  };
+  const { isAdmin } = useAdmin();
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -62,19 +56,9 @@ export const Navbar = () => {
           })}
         </div>
 
-        {/* Desktop Login Button & Admin Toggle */}
+        {/* Desktop User Status */}
         <div className="hidden md:flex items-center gap-2">
-          <Button
-            variant={isAdmin ? "default" : "outline"}
-            size="sm"
-            onClick={toggleAdmin}
-            className="text-xs"
-          >
-            {isAdmin ? "管理員模式" : "切換管理員"}
-          </Button>
-          <Button variant="outline" size="sm">
-            登入
-          </Button>
+          <UserStatus />
         </div>
 
         {/* Mobile Menu */}
@@ -110,17 +94,9 @@ export const Navbar = () => {
                   </NavLink>
                 );
               })}
-              <div className="mt-4 px-4 space-y-2">
-                <Button
-                  variant={isAdmin ? "default" : "outline"}
-                  className="w-full"
-                  onClick={toggleAdmin}
-                >
-                  {isAdmin ? "管理員模式" : "切換管理員"}
-                </Button>
-                <Button variant="outline" className="w-full">
-                  登入
-                </Button>
+              {/* Mobile User Status */}
+              <div className="mt-4 border-t pt-4">
+                <UserStatus compact />
               </div>
             </div>
           </SheetContent>
