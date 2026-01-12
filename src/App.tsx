@@ -30,6 +30,7 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 // Galaxy Quest (遊戲化練習)
+import Phase0Index from "./pages/practice/Phase0Index";
 import PracticeIndex from "./pages/practice/Index";
 import PracticeQuests from "./pages/practice/Quests";
 import PracticeQuest from "./pages/practice/Quest";
@@ -126,43 +127,21 @@ const App = () => (
           <Route path="/course-management" element={<Navigate to="/" replace />} />
           <Route path="/course-management/:courseId/edit" element={<Navigate to="/" replace />} />
 
-          {/* Quest page without sidebar (full-screen immersive experience) */}
-          <Route path="/practice/quest/:lessonId" element={<PracticeQuest />} />
+          {/* Phase 0: Practice pages without sidebar */}
+          <Route path="/practice" element={<><Navbar /><Phase0Index /></>} />
+          <Route path="/practice/vocabulary" element={<><Navbar /><VocabularyHub /></>} />
+          <Route path="/practice/vocabulary/srs" element={<><Navbar /><SRSReview /></>} />
+          <Route path="/practice/vocabulary/flashcards" element={<><Navbar /><Flashcards /></>} />
+          <Route path="/practice/vocabulary/quiz" element={<><Navbar /><QuickQuiz /></>} />
+          <Route path="/practice/vocabulary/collections" element={<><Navbar /><VocabularyCollections /></>} />
+          <Route path="/practice/vocabulary/pack/:packId" element={<><Navbar /><VocabularyPackDetail /></>} />
 
-          {/* Galaxy Quest - All other pages with sidebar */}
-          <Route path="/practice/*" element={
-            <>
-              <Navbar />
-              <SidebarProvider>
-                <div className="flex min-h-screen w-full">
-                  <AppSidebar />
-                  <div className="flex-1 flex flex-col">
-                    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 backdrop-blur-sm bg-background/95">
-                      <SidebarTrigger className="-ml-1" />
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-semibold text-foreground">WordQuest 編年史</h2>
-                      </div>
-                    </header>
-                    <main className="flex-1">
-                      <Routes>
-                        <Route path="/" element={<PracticeIndex />} />
-                        <Route path="/quests" element={<PracticeQuests />} />
-                        <Route path="/achievements" element={<PracticeAchievements />} />
-                        <Route path="/shop" element={<PracticeShop />} />
-                        <Route path="/profile" element={<PracticeProfile />} />
-                        <Route path="/vocabulary" element={<VocabularyHub />} />
-                        <Route path="/vocabulary/srs" element={<SRSReview />} />
-                        <Route path="/vocabulary/flashcards" element={<Flashcards />} />
-                        <Route path="/vocabulary/quiz" element={<QuickQuiz />} />
-                        <Route path="/vocabulary/collections" element={<VocabularyCollections />} />
-                        <Route path="/vocabulary/pack/:packId" element={<VocabularyPackDetail />} />
-                      </Routes>
-                    </main>
-                  </div>
-                </div>
-              </SidebarProvider>
-            </>
-          } />
+          {/* Phase 2: Locked game features */}
+          <Route path="/practice/quest/:lessonId" element={<LockedPage title="任務關卡" description="任務地圖功能即將推出，敬請期待！" />} />
+          <Route path="/practice/quests" element={<LockedPage title="任務地圖" description="任務地圖功能即將推出，敬請期待！" />} />
+          <Route path="/practice/achievements" element={<LockedPage title="成就系統" description="成就系統功能即將推出，敬請期待！" />} />
+          <Route path="/practice/shop" element={<LockedPage title="寶石商店" description="寶石商店功能即將推出，敬請期待！" />} />
+          <Route path="/practice/profile" element={<LockedPage title="個人檔案" description="個人檔案功能即將推出，敬請期待！" />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

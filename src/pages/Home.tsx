@@ -33,37 +33,22 @@ const Home = () => {
 
   // All features with their required phase
   const allFeatures: Feature[] = [
-    // Phase 0: Vocabulary basics
+    // Phase 0: Vocabulary (public MVP)
     {
       icon: Layers,
-      title: "Level 2-6 字庫",
-      description: "5543 個學測高頻單字，分級學習",
+      title: "單字複習中心",
+      description: "5543 個學測高頻單字，SRS 智慧複習、閃卡、測驗",
       path: "/practice/vocabulary",
       phase: 0,
     },
-    {
-      icon: Brain,
-      title: "SRS 智慧複習",
-      description: "間隔重複演算法，科學記憶",
-      path: "/practice/vocabulary/srs",
-      phase: 0,
-    },
-    {
-      icon: Zap,
-      title: "多元練習模式",
-      description: "翻轉卡片、快速測驗、進階篩選",
-      path: "/practice/vocabulary",
-      phase: 0,
-    },
-    // Phase 1: Free member features
     {
       icon: Heart,
       title: "詞彙收藏",
-      description: "收藏重點單字，建立個人化字庫",
+      description: "瀏覽公開單字包，透過邀請碼領取主題字庫",
       path: "/practice/vocabulary/collections",
-      phase: 1,
+      phase: 0,
     },
-    // Phase 2: Premium features
+    // Phase 2: Premium features (hidden for now)
     {
       icon: Clock,
       title: "真實模擬考",
