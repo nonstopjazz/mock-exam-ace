@@ -46,6 +46,7 @@ import VideoCourses from "./pages/practice/VideoCourses";
 import CourseDetail from "./pages/practice/CourseDetail";
 import DripCourse from "./pages/practice/DripCourse";
 import VocabularyPackDetail from "./pages/practice/VocabularyPackDetail";
+import WeakWords from "./pages/practice/WeakWords";
 import CourseManagement from "./pages/practice/CourseManagement";
 import CourseEdit from "./pages/practice/CourseEdit";
 import AdminDashboard from "./pages/practice/AdminDashboard";
@@ -135,6 +136,7 @@ const App = () => (
           <Route path="/practice/vocabulary/quiz" element={<><Navbar /><QuickQuiz /></>} />
           <Route path="/practice/vocabulary/collections" element={<><Navbar /><VocabularyCollections /></>} />
           <Route path="/practice/vocabulary/pack/:packId" element={<><Navbar /><VocabularyPackDetail /></>} />
+          <Route path="/practice/vocabulary/weak-words" element={<><Navbar /><WeakWords /></>} />
 
           {/* Phase 2: Locked game features */}
           <Route path="/practice/quest/:lessonId" element={<LockedPage title="任務關卡" description="任務地圖功能即將推出，敬請期待！" />} />

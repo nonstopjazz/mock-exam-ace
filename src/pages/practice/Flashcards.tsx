@@ -24,6 +24,7 @@ import { VocabularyWord } from "@/data/vocabulary";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
 import { usePackItems, PackItem } from "@/hooks/useUserPacks";
+import { usePackItemProgress } from "@/hooks/usePackItemProgress";
 
 // Convert PackItem to VocabularyWord format
 const convertPackItemToVocabularyWord = (item: PackItem, index: number): VocabularyWord => ({
@@ -54,6 +55,9 @@ const Flashcards = () => {
 
   // Fetch pack items when a pack is selected
   const { items: packItems, loading: packLoading, error: packError } = usePackItems(selectedPackId);
+
+  // Pack item progress tracking
+  const { updateProgress: updatePackItemProgress } = usePackItemProgress();
 
   // Phase: 'selection' or 'study'
   const [phase, setPhase] = useState<'selection' | 'study'>('selection');
@@ -140,7 +144,13 @@ const Flashcards = () => {
 
   const handleLevelUp = () => {
     if (!currentCard) return;
-    updateWordProgress(currentCard.id, true, 'easy');
+
+    // Update progress based on source
+    if (selectedSource === 'pack' && selectedPackId) {
+      updatePackItemProgress(selectedPackId, currentCard.id, true, 'easy');
+    } else {
+      updateWordProgress(currentCard.id, true, 'easy');
+    }
     toast.success("Progress Updated!", {
       description: `${currentCard.word} marked as known.`
     });
