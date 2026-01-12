@@ -18,9 +18,48 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useVocabularyStore } from "@/store/vocabularyStore";
+import { useVocabularyStore, WordProgress } from "@/store/vocabularyStore";
 import { VOCABULARY_LEVELS, TOTAL_WORDS } from "@/data/vocabulary";
 import { isFeatureEnabled } from "@/config/features";
+
+// Calculate error statistics from word progress
+const calculateErrorStats = (wordProgress: Record<string, WordProgress>) => {
+  const progressValues = Object.values(wordProgress);
+
+  if (progressValues.length === 0) {
+    return {
+      errorRate: 0,
+      weakWordsCount: 0,
+      totalCorrect: 0,
+      totalReviews: 0,
+    };
+  }
+
+  let totalReviews = 0;
+  let totalCorrect = 0;
+  let weakWordsCount = 0;
+
+  progressValues.forEach(progress => {
+    totalReviews += progress.reviewCount;
+    totalCorrect += progress.correctCount;
+
+    // Count weak words (mastery level < 3 and has been reviewed)
+    if (progress.reviewCount > 0 && progress.masteryLevel < 3) {
+      weakWordsCount++;
+    }
+  });
+
+  const errorRate = totalReviews > 0
+    ? Math.round(((totalReviews - totalCorrect) / totalReviews) * 100)
+    : 0;
+
+  return {
+    errorRate,
+    weakWordsCount,
+    totalCorrect,
+    totalReviews,
+  };
+};
 
 const VocabularyHub = () => {
   const navigate = useNavigate();
@@ -31,6 +70,7 @@ const VocabularyHub = () => {
     totalReviewCount,
     streakDays,
     setSelectedLevels,
+    wordProgress,
   } = useVocabularyStore();
 
   const [stats, setStats] = useState({
@@ -40,15 +80,25 @@ const VocabularyHub = () => {
     total: TOTAL_WORDS,
   });
 
+  const [errorStats, setErrorStats] = useState({
+    errorRate: 0,
+    weakWordsCount: 0,
+    totalCorrect: 0,
+    totalReviews: 0,
+  });
+
   useEffect(() => {
     const progress = getOverallProgress();
     setStats({
-      reviewDue: progress.reviewDue || 24,
+      reviewDue: progress.reviewDue || 0,
       learned: progress.learned,
       mastered: progress.mastered,
       total: progress.total || TOTAL_WORDS,
     });
-  }, [getOverallProgress]);
+
+    // Calculate error statistics
+    setErrorStats(calculateErrorStats(wordProgress));
+  }, [getOverallProgress, wordProgress]);
 
   const masteryPercentage = stats.total > 0 ? Math.round((stats.learned / stats.total) * 100) : 0;
 
@@ -272,60 +322,63 @@ const VocabularyHub = () => {
                 <Target className="h-5 w-5 text-destructive" />
                 錯題統計
               </h3>
-              <Button variant="ghost" size="sm">查看全部</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/practice/vocabulary/weak-words")}>
+                查看弱點
+              </Button>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <span className="text-sm text-foreground">本週錯誤率</span>
-                <span className="text-lg font-bold text-destructive">23%</span>
+                <span className="text-sm text-foreground">整體錯誤率</span>
+                <span className={`text-lg font-bold ${errorStats.errorRate > 30 ? 'text-destructive' : errorStats.errorRate > 15 ? 'text-warning' : 'text-success'}`}>
+                  {errorStats.errorRate}%
+                </span>
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">最常錯誤類型</span>
-                  <span className="text-foreground font-medium">動詞時態</span>
+                  <span className="text-muted-foreground">總複習次數</span>
+                  <span className="text-foreground font-medium">{errorStats.totalReviews.toLocaleString()} 次</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">需加強單字</span>
-                  <span className="text-foreground font-medium">34 個</span>
+                  <span className="text-foreground font-medium">{errorStats.weakWordsCount} 個</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">連續答對紀錄</span>
-                  <span className="text-success font-medium">18 題</span>
+                  <span className="text-muted-foreground">正確率</span>
+                  <span className="text-success font-medium">{100 - errorStats.errorRate}%</span>
                 </div>
               </div>
             </div>
           </Card>
 
-          {/* Weekly Progress Detail */}
+          {/* Learning Progress Detail */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
-                本週學習時間
+                學習進度
               </h3>
-              <Button variant="ghost" size="sm">詳細記錄</Button>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <span className="text-sm text-foreground">累計學習時間</span>
-                <span className="text-lg font-bold text-primary">5.2 小時</span>
+                <span className="text-sm text-foreground">累計複習次數</span>
+                <span className="text-lg font-bold text-primary">{totalReviewCount.toLocaleString()} 次</span>
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">單字複習次數</span>
-                  <span className="text-foreground font-medium">432 次</span>
+                  <span className="text-muted-foreground">已學習單字</span>
+                  <span className="text-foreground font-medium">{totalWordsLearned.toLocaleString()} 個</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">新學單字數</span>
-                  <span className="text-foreground font-medium">67 個</span>
+                  <span className="text-muted-foreground">已精通單字</span>
+                  <span className="text-foreground font-medium">{stats.mastered.toLocaleString()} 個</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">連續學習天數</span>
-                  <span className="text-success font-medium">12 天 🔥</span>
+                  <span className="text-success font-medium">{streakDays} 天 {streakDays > 0 ? '🔥' : ''}</span>
                 </div>
               </div>
             </div>
