@@ -154,11 +154,7 @@ const App = () => (
                         <Route path="/vocabulary/srs" element={<SRSReview />} />
                         <Route path="/vocabulary/flashcards" element={<Flashcards />} />
                         <Route path="/vocabulary/quiz" element={<QuickQuiz />} />
-                        <Route path="/vocabulary/collections" element={
-                          <ProtectedRoute>
-                            <VocabularyCollections />
-                          </ProtectedRoute>
-                        } />
+                        <Route path="/vocabulary/collections" element={<VocabularyCollections />} />
                         <Route path="/vocabulary/pack/:packId" element={<VocabularyPackDetail />} />
                       </Routes>
                     </main>
