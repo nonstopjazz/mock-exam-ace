@@ -14,6 +14,7 @@ import {
   XCircle,
   Award,
   Settings,
+  Loader2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +23,23 @@ import { useConfetti } from "@/hooks/galaxy/useConfetti";
 import { useVocabularyStore } from "@/store/vocabularyStore";
 import { VocabularyWord, getAllWords } from "@/data/vocabulary";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
+import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
+import { usePackItems, PackItem } from "@/hooks/useUserPacks";
+
+// Convert PackItem to VocabularyWord format
+const convertPackItemToVocabularyWord = (item: PackItem): VocabularyWord => ({
+  id: item.id,
+  word: item.word,
+  translation: item.definition || '',
+  ipa: item.phonetic || '',
+  partOfSpeech: item.part_of_speech || '',
+  example: item.example_sentence || '',
+  exampleTranslation: '',
+  synonyms: [],
+  antonyms: [],
+  level: 1,
+  tags: [],
+});
 
 interface QuizQuestion {
   id: string;
@@ -33,8 +51,9 @@ interface QuizQuestion {
 }
 
 // Generate quiz questions from vocabulary data
-const generateQuestions = (words: VocabularyWord[], count: number): QuizQuestion[] => {
-  const allWords = getAllWords();
+const generateQuestions = (words: VocabularyWord[], count: number, alternativeWordPool?: VocabularyWord[]): QuizQuestion[] => {
+  // Use alternative word pool for wrong answers if provided, otherwise use getAllWords()
+  const allWords = alternativeWordPool || getAllWords();
   const shuffledWords = [...words].sort(() => Math.random() - 0.5).slice(0, count);
 
   return shuffledWords.map((word) => {
@@ -70,6 +89,13 @@ const QuickQuiz = () => {
     getFilteredWordCount,
   } = useVocabularyStore();
 
+  // Source selection state
+  const [selectedSource, setSelectedSource] = useState<VocabularySource>('local');
+  const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
+
+  // Fetch pack items when a pack is selected
+  const { items: packItems, loading: packLoading, error: packError } = usePackItems(selectedPackId);
+
   // Phase: 'selection', 'playing', or 'finished'
   const [phase, setPhase] = useState<'selection' | 'playing' | 'finished'>('selection');
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -87,15 +113,50 @@ const QuickQuiz = () => {
 
   // Start quiz
   const startQuiz = () => {
-    const filteredCount = getFilteredWordCount();
-    if (filteredCount < 4) {
-      toast.error("單字數量不足", {
-        description: "請調整篩選條件，至少需要 4 個單字"
-      });
-      return;
+    let words: VocabularyWord[] = [];
+    let wordPool: VocabularyWord[] | undefined = undefined;
+
+    if (selectedSource === 'pack') {
+      // Use pack items
+      if (!selectedPackId) {
+        toast.error("請選擇收藏包", {
+          description: "請先選擇一個收藏包"
+        });
+        return;
+      }
+      if (packLoading) {
+        toast.error("載入中", {
+          description: "請稍候..."
+        });
+        return;
+      }
+      if (packError) {
+        toast.error("載入失敗", {
+          description: packError
+        });
+        return;
+      }
+      if (packItems.length < 4) {
+        toast.error("收藏包單字不足", {
+          description: "至少需要 4 個單字才能進行測驗"
+        });
+        return;
+      }
+      words = packItems.map(item => convertPackItemToVocabularyWord(item));
+      wordPool = words; // Use pack items as the word pool for wrong answers
+    } else {
+      // Use local vocabulary
+      const filteredCount = getFilteredWordCount();
+      if (filteredCount < 4) {
+        toast.error("單字數量不足", {
+          description: "請調整篩選條件，至少需要 4 個單字"
+        });
+        return;
+      }
+      words = getWordsForQuiz(questionCount * 2); // Get more words to have variety
     }
-    const words = getWordsForQuiz(questionCount * 2); // Get more words to have variety
-    const generatedQuestions = generateQuestions(words, questionCount);
+
+    const generatedQuestions = generateQuestions(words, questionCount, wordPool);
     setQuestions(generatedQuestions);
     setCurrentQuestionIndex(0);
     setSelectedAnswer(null);
@@ -211,13 +272,60 @@ const QuickQuiz = () => {
             <div className="w-20" />
           </div>
 
-          {/* Vocabulary Selector with all filters */}
-          <VocabularySelector
-            mode="quiz"
-            title="選擇測驗範圍"
-            description="設定篩選條件，選擇要測驗的單字"
-            onStart={startQuiz}
+          {/* Source Selection */}
+          <CollectionPackSelector
+            selectedSource={selectedSource}
+            selectedPackId={selectedPackId}
+            onSourceChange={setSelectedSource}
+            onPackSelect={setSelectedPackId}
           />
+
+          {/* Vocabulary Selector (only shown for local source) */}
+          {selectedSource === 'local' && (
+            <VocabularySelector
+              mode="quiz"
+              title="選擇測驗範圍"
+              description="設定篩選條件，選擇要測驗的單字"
+              onStart={startQuiz}
+            />
+          )}
+
+          {/* Pack Start Button (shown for pack source) */}
+          {selectedSource === 'pack' && (
+            <Card className="p-6">
+              <div className="flex flex-col items-center gap-4">
+                {packLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>載入中...</span>
+                  </div>
+                ) : packError ? (
+                  <div className="text-destructive">{packError}</div>
+                ) : selectedPackId ? (
+                  <>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-foreground">{packItems.length}</div>
+                      <div className="text-muted-foreground">個單字</div>
+                    </div>
+                    <Button
+                      size="lg"
+                      className="gap-2"
+                      onClick={startQuiz}
+                      disabled={packItems.length < 4}
+                    >
+                      <Zap className="h-5 w-5" />
+                      開始測驗
+                    </Button>
+                    {packItems.length < 4 && (
+                      <p className="text-sm text-muted-foreground">至少需要 4 個單字</p>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-muted-foreground">請選擇一個收藏包</div>
+                )}
+              </div>
+            </Card>
+          )}
 
           {/* Question Count */}
           <Card className="mt-4 p-4">

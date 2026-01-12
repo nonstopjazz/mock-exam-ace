@@ -257,3 +257,66 @@ export function usePackWithItems(packId: string | undefined) {
 
   return { pack, loading, error };
 }
+
+// Hook to fetch pack items by pack_id (for use in flashcards/quiz)
+export function usePackItems(packId: string | null) {
+  const { user } = useAuth();
+  const [items, setItems] = useState<PackItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!packId || !user) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    const fetchItems = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // First verify user has access to this pack
+        const { data: claimData, error: claimError } = await supabase
+          .from('user_pack_claims')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('pack_id', packId)
+          .single();
+
+        if (claimError || !claimData) {
+          setError('無權限存取此單字包');
+          setItems([]);
+          return;
+        }
+
+        // Fetch pack items
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('pack_items')
+          .select('*')
+          .eq('pack_id', packId)
+          .order('sort_order', { ascending: true });
+
+        if (itemsError) {
+          console.error('Error fetching items:', itemsError);
+          setError('載入單字失敗');
+          setItems([]);
+          return;
+        }
+
+        setItems(itemsData || []);
+      } catch (err) {
+        console.error('Exception fetching pack items:', err);
+        setError('載入失敗');
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, [packId, user]);
+
+  return { items, loading, error };
+}
