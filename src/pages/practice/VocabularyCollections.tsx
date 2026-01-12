@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,13 +33,28 @@ import {
   BookOpen,
   Loader2,
   RefreshCw,
+  LogIn,
+  Sparkles,
+  Lock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useUserPacks } from "@/hooks/useUserPacks";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
+
+interface PublicPack {
+  id: string;
+  title: string;
+  description: string | null;
+  theme: string | null;
+  difficulty: string | null;
+  cover_image?: { image_url: string } | null;
+}
 
 const VocabularyCollections = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const { packs, loading, error, refetch, removePack } = useUserPacks();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,6 +63,41 @@ const VocabularyCollections = () => {
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [targetCategory, setTargetCategory] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Public packs for non-logged-in users
+  const [publicPacks, setPublicPacks] = useState<PublicPack[]>([]);
+  const [loadingPublic, setLoadingPublic] = useState(false);
+
+  // Fetch public packs for preview
+  useEffect(() => {
+    if (!user && !authLoading) {
+      fetchPublicPacks();
+    }
+  }, [user, authLoading]);
+
+  async function fetchPublicPacks() {
+    setLoadingPublic(true);
+    const { data, error } = await supabase
+      .from('packs')
+      .select(`
+        id, title, description, theme, difficulty,
+        cover_image:pack_images!pack_id(image_url)
+      `)
+      .eq('is_public', true)
+      .eq('is_active', true)
+      .limit(6);
+
+    if (!error && data) {
+      const processed = data.map(pack => ({
+        ...pack,
+        cover_image: Array.isArray(pack.cover_image) && pack.cover_image.length > 0
+          ? pack.cover_image[0]
+          : null
+      }));
+      setPublicPacks(processed);
+    }
+    setLoadingPublic(false);
+  }
 
   // Get unique themes from packs
   const themes = [
@@ -133,7 +183,170 @@ const VocabularyCollections = () => {
 
   const totalWords = filteredPacks.reduce((sum, pack) => sum + pack.word_count, 0);
 
-  // Loading state
+  // Auth loading state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">載入中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Guest view (not logged in)
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/practice/vocabulary")}
+              className="mb-4"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              返回單字複習中心
+            </Button>
+
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-3 rounded-lg bg-primary/10">
+                <BookmarkPlus className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-foreground">詞彙收藏</h1>
+                <p className="text-muted-foreground">
+                  登入後即可收藏並管理你的單字包
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Login CTA */}
+          <Card className="mb-8 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-primary/20">
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="p-4 rounded-full bg-primary/20">
+                  <Sparkles className="h-10 w-10 text-primary" />
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h2 className="text-2xl font-bold text-foreground mb-2">
+                    開始收藏你的專屬單字包
+                  </h2>
+                  <p className="text-muted-foreground mb-4">
+                    登入後，你可以透過邀請碼領取單字包、追蹤學習進度、開始 SRS 複習
+                  </p>
+                  <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                    <Button onClick={() => navigate("/login?returnUrl=/practice/vocabulary/collections")}>
+                      <LogIn className="h-4 w-4 mr-2" />
+                      登入 / 註冊
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate("/practice/vocabulary")}>
+                      先逛逛單字中心
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Public Packs Preview */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="text-xl font-semibold text-foreground">精選單字包預覽</h3>
+              <Badge variant="secondary">公開</Badge>
+            </div>
+
+            {loadingPublic ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : publicPacks.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">目前沒有公開的單字包</p>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {publicPacks.map((pack) => (
+                  <Card key={pack.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                    {/* Cover Image */}
+                    {pack.cover_image?.image_url && (
+                      <div className="aspect-video bg-muted overflow-hidden">
+                        <img
+                          src={pack.cover_image.image_url}
+                          alt={pack.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="p-6 space-y-3">
+                      <div className="flex items-center gap-2">
+                        {pack.theme && (
+                          <Badge variant="outline" className="text-xs">
+                            <Tag className="h-3 w-3 mr-1" />
+                            {pack.theme}
+                          </Badge>
+                        )}
+                        {pack.difficulty && (
+                          <Badge variant="secondary" className="text-xs">
+                            {pack.difficulty}
+                          </Badge>
+                        )}
+                      </div>
+                      <h4 className="text-lg font-bold text-foreground">{pack.title}</h4>
+                      {pack.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {pack.description}
+                        </p>
+                      )}
+                      <div className="pt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => navigate("/login?returnUrl=/practice/vocabulary/collections")}
+                        >
+                          <Lock className="h-4 w-4 mr-2" />
+                          登入後查看
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* How to Get Packs */}
+          <Card className="bg-gradient-to-br from-accent/10 to-primary/10 border-accent/20">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-accent/20">
+                  <BookmarkPlus className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground mb-1">如何取得單字包？</h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    單字包透過邀請碼領取：
+                  </p>
+                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                    <li>參與我們的社群討論（Discord、Facebook 等）</li>
+                    <li>從社群成員或管理員那裡取得邀請碼</li>
+                    <li>登入後點擊邀請連結（如 /claim/XXXX）即可領取</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state (logged in)
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -163,6 +376,7 @@ const VocabularyCollections = () => {
     );
   }
 
+  // Logged in view
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
