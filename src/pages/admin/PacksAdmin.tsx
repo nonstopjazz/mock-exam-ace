@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Pencil, Trash2, List, Key, ArrowLeft } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, List, Key, ArrowLeft, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Pack {
@@ -49,6 +49,7 @@ interface Pack {
   description: string | null;
   theme: string | null;
   difficulty: string | null;
+  cover_image_url: string | null;
   is_public: boolean;
   is_active: boolean;
   created_at: string;
@@ -85,6 +86,10 @@ export default function PacksAdmin() {
   const [packToDelete, setPackToDelete] = useState<Pack | null>(null);
   const [formData, setFormData] = useState<PackFormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -113,6 +118,8 @@ export default function PacksAdmin() {
   function openCreateDialog() {
     setEditingPack(null);
     setFormData(initialFormData);
+    setImageFile(null);
+    setImagePreview(null);
     setDialogOpen(true);
   }
 
@@ -126,12 +133,85 @@ export default function PacksAdmin() {
       is_public: pack.is_public,
       is_active: pack.is_active,
     });
+    setImageFile(null);
+    setImagePreview(pack.cover_image_url);
     setDialogOpen(true);
   }
 
   function openDeleteDialog(pack: Pack) {
     setPackToDelete(pack);
     setDeleteDialogOpen(true);
+  }
+
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: '請選擇圖片檔案',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: '圖片大小不能超過 2MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
+  function clearImage() {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }
+
+  async function uploadImage(packId: string): Promise<string | null> {
+    if (!imageFile) return editingPack?.cover_image_url || null;
+
+    setUploadingImage(true);
+    const fileExt = imageFile.name.split('.').pop();
+    const fileName = `${packId}.${fileExt}`;
+
+    // Delete old image if exists
+    if (editingPack?.cover_image_url) {
+      const oldPath = editingPack.cover_image_url.split('/').pop();
+      if (oldPath) {
+        await supabase.storage.from('pack-covers').remove([oldPath]);
+      }
+    }
+
+    const { error } = await supabase.storage
+      .from('pack-covers')
+      .upload(fileName, imageFile, { upsert: true });
+
+    setUploadingImage(false);
+
+    if (error) {
+      toast({
+        title: '圖片上傳失敗',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('pack-covers')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -156,7 +236,7 @@ export default function PacksAdmin() {
     };
 
     if (editingPack) {
-      // Update
+      // Update pack
       const { error } = await supabase
         .from('packs')
         .update(packData)
@@ -168,26 +248,62 @@ export default function PacksAdmin() {
           description: error.message,
           variant: 'destructive',
         });
-      } else {
-        toast({ title: '更新成功' });
-        setDialogOpen(false);
-        fetchPacks();
+        setSubmitting(false);
+        return;
       }
-    } else {
-      // Create
-      const { error } = await supabase.from('packs').insert(packData);
 
-      if (error) {
+      // Upload image if changed
+      if (imageFile) {
+        const imageUrl = await uploadImage(editingPack.id);
+        if (imageUrl) {
+          await supabase
+            .from('packs')
+            .update({ cover_image_url: imageUrl })
+            .eq('id', editingPack.id);
+        }
+      } else if (imagePreview === null && editingPack.cover_image_url) {
+        // Image was cleared
+        await supabase
+          .from('packs')
+          .update({ cover_image_url: null })
+          .eq('id', editingPack.id);
+      }
+
+      toast({ title: '更新成功' });
+      setDialogOpen(false);
+      fetchPacks();
+    } else {
+      // Create pack
+      const { data, error } = await supabase
+        .from('packs')
+        .insert(packData)
+        .select('id')
+        .single();
+
+      if (error || !data) {
         toast({
           title: '建立失敗',
-          description: error.message,
+          description: error?.message,
           variant: 'destructive',
         });
-      } else {
-        toast({ title: '建立成功' });
-        setDialogOpen(false);
-        fetchPacks();
+        setSubmitting(false);
+        return;
       }
+
+      // Upload image if provided
+      if (imageFile) {
+        const imageUrl = await uploadImage(data.id);
+        if (imageUrl) {
+          await supabase
+            .from('packs')
+            .update({ cover_image_url: imageUrl })
+            .eq('id', data.id);
+        }
+      }
+
+      toast({ title: '建立成功' });
+      setDialogOpen(false);
+      fetchPacks();
     }
 
     setSubmitting(false);
@@ -195,6 +311,14 @@ export default function PacksAdmin() {
 
   async function handleDelete() {
     if (!packToDelete) return;
+
+    // Delete cover image if exists
+    if (packToDelete.cover_image_url) {
+      const fileName = packToDelete.cover_image_url.split('/').pop();
+      if (fileName) {
+        await supabase.storage.from('pack-covers').remove([fileName]);
+      }
+    }
 
     const { error } = await supabase
       .from('packs')
@@ -253,6 +377,7 @@ export default function PacksAdmin() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[60px]">封面</TableHead>
                 <TableHead>標題</TableHead>
                 <TableHead>主題</TableHead>
                 <TableHead>難度</TableHead>
@@ -264,6 +389,19 @@ export default function PacksAdmin() {
             <TableBody>
               {packs.map((pack) => (
                 <TableRow key={pack.id}>
+                  <TableCell>
+                    {pack.cover_image_url ? (
+                      <img
+                        src={pack.cover_image_url}
+                        alt={pack.title}
+                        className="w-10 h-10 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">{pack.title}</TableCell>
                   <TableCell>{pack.theme || '-'}</TableCell>
                   <TableCell>{pack.difficulty || '-'}</TableCell>
@@ -316,7 +454,7 @@ export default function PacksAdmin() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editingPack ? '編輯單字包' : '新增單字包'}
@@ -327,6 +465,51 @@ export default function PacksAdmin() {
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="space-y-4 py-4">
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <Label>封面圖片</Label>
+                <div className="flex items-start gap-4">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-24 h-24 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={clearImage}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      className="w-24 h-24 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground mt-1">上傳圖片</span>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    <p>建議尺寸：400x400px</p>
+                    <p>最大 2MB</p>
+                    <p>支援 JPG、PNG、WebP</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="title">標題 *</Label>
                 <Input
@@ -429,8 +612,8 @@ export default function PacksAdmin() {
               >
                 取消
               </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button type="submit" disabled={submitting || uploadingImage}>
+                {(submitting || uploadingImage) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editingPack ? '更新' : '建立'}
               </Button>
             </DialogFooter>
