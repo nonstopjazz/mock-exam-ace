@@ -1,6 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LayoutDashboard, PenTool, Shield, Gamepad2, Menu, Video, ClipboardList } from "lucide-react";
+import { BookOpen, Shield, Gamepad2, Menu } from "lucide-react";
 import { useState } from "react";
 import {
   Sheet,
@@ -12,12 +12,10 @@ import {
 import { UserStatus } from "@/components/auth/UserStatus";
 import { useAdmin } from "@/hooks/useAdmin";
 
+// Phase 0: Only show vocabulary practice
+// Phase 2 items (exams, dashboard, essay, courses) are hidden until launch
 const navigationItems = [
-  { to: "/exams", label: "選擇試題", icon: ClipboardList },
-  { to: "/practice", label: "每日練習", icon: Gamepad2 },
-  { to: "/dashboard", label: "儀表板", icon: LayoutDashboard },
-  { to: "/essay", label: "作文批改", icon: PenTool },
-  { to: "/courses", label: "影片課程", icon: Video },
+  { to: "/practice", label: "單字練習", icon: Gamepad2 },
   { to: "/admin/packs", label: "後台管理", icon: Shield, adminOnly: true },
 ];
 
