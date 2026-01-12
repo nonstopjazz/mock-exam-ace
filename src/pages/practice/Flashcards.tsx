@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Settings,
   Shuffle,
+  Loader2,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +22,23 @@ import { toast } from "sonner";
 import { useVocabularyStore } from "@/store/vocabularyStore";
 import { VocabularyWord } from "@/data/vocabulary";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
+import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
+import { usePackItems, PackItem } from "@/hooks/useUserPacks";
+
+// Convert PackItem to VocabularyWord format
+const convertPackItemToVocabularyWord = (item: PackItem, index: number): VocabularyWord => ({
+  id: item.id,
+  word: item.word,
+  translation: item.definition || '',
+  ipa: item.phonetic || '',
+  partOfSpeech: item.part_of_speech || '',
+  example: item.example_sentence || '',
+  exampleTranslation: '',
+  synonyms: [],
+  antonyms: [],
+  level: 1,
+  tags: [],
+});
 
 const Flashcards = () => {
   const navigate = useNavigate();
@@ -29,6 +47,13 @@ const Flashcards = () => {
     updateWordProgress,
     getWordProgress,
   } = useVocabularyStore();
+
+  // Source selection state
+  const [selectedSource, setSelectedSource] = useState<VocabularySource>('local');
+  const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
+
+  // Fetch pack items when a pack is selected
+  const { items: packItems, loading: packLoading, error: packError } = usePackItems(selectedPackId);
 
   // Phase: 'selection' or 'study'
   const [phase, setPhase] = useState<'selection' | 'study'>('selection');
@@ -42,13 +67,46 @@ const Flashcards = () => {
 
   // Start the flashcard session
   const startStudy = () => {
-    let studyWords = getWordsForFlashcards();
-    if (studyWords.length === 0) {
-      toast.error("沒有符合條件的單字", {
-        description: "請調整篩選條件後再試一次"
-      });
-      return;
+    let studyWords: VocabularyWord[] = [];
+
+    if (selectedSource === 'pack') {
+      // Use pack items
+      if (!selectedPackId) {
+        toast.error("請選擇收藏包", {
+          description: "請先選擇一個收藏包"
+        });
+        return;
+      }
+      if (packLoading) {
+        toast.error("載入中", {
+          description: "請稍候..."
+        });
+        return;
+      }
+      if (packError) {
+        toast.error("載入失敗", {
+          description: packError
+        });
+        return;
+      }
+      if (packItems.length === 0) {
+        toast.error("收藏包沒有單字", {
+          description: "此收藏包沒有單字"
+        });
+        return;
+      }
+      studyWords = packItems.map((item, index) => convertPackItemToVocabularyWord(item, index));
+    } else {
+      // Use local vocabulary
+      studyWords = getWordsForFlashcards();
+      if (studyWords.length === 0) {
+        toast.error("沒有符合條件的單字", {
+          description: "請調整篩選條件後再試一次"
+        });
+        return;
+      }
     }
+
     if (shuffled) {
       studyWords = [...studyWords].sort(() => Math.random() - 0.5);
     }
@@ -156,13 +214,57 @@ const Flashcards = () => {
             <div className="w-20" />
           </div>
 
-          {/* Vocabulary Selector with all filters */}
-          <VocabularySelector
-            mode="flashcards"
-            title="選擇學習範圍"
-            description="設定篩選條件，選擇要學習的單字"
-            onStart={startStudy}
+          {/* Source Selection */}
+          <CollectionPackSelector
+            selectedSource={selectedSource}
+            selectedPackId={selectedPackId}
+            onSourceChange={setSelectedSource}
+            onPackSelect={setSelectedPackId}
           />
+
+          {/* Vocabulary Selector (only shown for local source) */}
+          {selectedSource === 'local' && (
+            <VocabularySelector
+              mode="flashcards"
+              title="選擇學習範圍"
+              description="設定篩選條件，選擇要學習的單字"
+              onStart={startStudy}
+            />
+          )}
+
+          {/* Pack Start Button (shown for pack source) */}
+          {selectedSource === 'pack' && (
+            <Card className="p-6">
+              <div className="flex flex-col items-center gap-4">
+                {packLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>載入中...</span>
+                  </div>
+                ) : packError ? (
+                  <div className="text-destructive">{packError}</div>
+                ) : selectedPackId ? (
+                  <>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-foreground">{packItems.length}</div>
+                      <div className="text-muted-foreground">個單字</div>
+                    </div>
+                    <Button
+                      size="lg"
+                      className="gap-2"
+                      onClick={startStudy}
+                      disabled={packItems.length === 0}
+                    >
+                      <FlipVertical2 className="h-5 w-5" />
+                      開始學習
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-muted-foreground">請選擇一個收藏包</div>
+                )}
+              </div>
+            </Card>
+          )}
 
           {/* Shuffle Option */}
           <Card className="mt-4 p-4">
