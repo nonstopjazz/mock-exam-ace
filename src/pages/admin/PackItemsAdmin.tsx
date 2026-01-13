@@ -31,8 +31,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Plus, Pencil, Trash2, ArrowLeft, GripVertical } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, ArrowLeft, GripVertical, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { BatchUploadDialog } from '@/components/admin/BatchUploadDialog';
 
 interface Pack {
   id: string;
@@ -80,6 +81,7 @@ export default function PackItemsAdmin() {
   const [itemToDelete, setItemToDelete] = useState<PackItem | null>(null);
   const [formData, setFormData] = useState<ItemFormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
+  const [batchUploadOpen, setBatchUploadOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -253,10 +255,16 @@ export default function PackItemsAdmin() {
             管理此單字包中的單字 ({items.length} 個)
           </p>
         </div>
-        <Button onClick={openCreateDialog}>
-          <Plus className="h-4 w-4 mr-2" />
-          新增單字
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setBatchUploadOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            批次上傳
+          </Button>
+          <Button onClick={openCreateDialog}>
+            <Plus className="h-4 w-4 mr-2" />
+            新增單字
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -447,6 +455,20 @@ export default function PackItemsAdmin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Batch Upload Dialog */}
+      {packId && (
+        <BatchUploadDialog
+          open={batchUploadOpen}
+          onOpenChange={setBatchUploadOpen}
+          packId={packId}
+          existingCount={items.length}
+          onSuccess={() => {
+            fetchItems();
+            toast({ title: '批次上傳成功' });
+          }}
+        />
+      )}
     </div>
   );
 }
