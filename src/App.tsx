@@ -17,6 +17,7 @@ import PacksAdmin from "./pages/admin/PacksAdmin";
 import PackItemsAdmin from "./pages/admin/PackItemsAdmin";
 import TokensAdmin from "./pages/admin/TokensAdmin";
 import BlogAdmin from "./pages/admin/BlogAdmin";
+import AdminHome from "./pages/admin/AdminHome";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -115,12 +116,16 @@ const App = () => (
             </RequireAdmin>
           } />
 
-          {/* Legacy admin routes - blocked in production, accessible in dev */}
-          {IS_PRODUCTION ? (
-            <Route path="/admin" element={<Navigate to="/admin/packs" replace />} />
-          ) : (
+          {/* Admin Home - main dashboard */}
+          <Route path="/admin" element={
+            <RequireAdmin>
+              <AdminHome />
+            </RequireAdmin>
+          } />
+
+          {/* Legacy admin routes - only in dev mode */}
+          {!IS_PRODUCTION && (
             <>
-              <Route path="/admin" element={<><Navbar /><AdminDashboard /></>} />
               <Route path="/admin/upload" element={<><Navbar /><Admin /></>} />
               <Route path="/admin/course-management" element={<><Navbar /><CourseManagement /></>} />
               <Route path="/admin/exam-management" element={<><Navbar /><ExamManagement /></>} />
