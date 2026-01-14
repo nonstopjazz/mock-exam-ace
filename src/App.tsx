@@ -16,6 +16,7 @@ import { IS_PRODUCTION } from "./config/features";
 import PacksAdmin from "./pages/admin/PacksAdmin";
 import PackItemsAdmin from "./pages/admin/PackItemsAdmin";
 import TokensAdmin from "./pages/admin/TokensAdmin";
+import BlogAdmin from "./pages/admin/BlogAdmin";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -106,6 +107,11 @@ const App = () => (
           <Route path="/admin/tokens" element={
             <RequireAdmin>
               <TokensAdmin />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/blog" element={
+            <RequireAdmin>
+              <BlogAdmin />
             </RequireAdmin>
           } />
 
