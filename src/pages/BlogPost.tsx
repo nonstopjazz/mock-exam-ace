@@ -10,26 +10,48 @@ import {
   Clock,
   Share2,
   Bookmark,
+  BookmarkCheck,
   ChevronRight,
   Facebook,
   Twitter,
   Link as LinkIcon,
   Tag,
   AlertCircle,
+  Heart,
 } from "lucide-react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { useBlogPost, useRelatedPosts, useBlogCategories } from "@/hooks/useBlog";
+import { useBlogPost, useRelatedPosts, useBlogCategories, useBlogInteractions } from "@/hooks/useBlog";
+import { useAuth } from "@/contexts/AuthContext";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Fetch post data from Supabase
   const { post, loading: postLoading, error: postError } = useBlogPost(slug);
   const { posts: relatedPosts, loading: relatedLoading } = useRelatedPosts(post?.id, post?.category, 3);
   const { categories } = useBlogCategories();
+
+  // Interaction hooks
+  const {
+    isLiked,
+    isBookmarked,
+    likeCount,
+    recordView,
+    toggleLike,
+    toggleBookmark,
+    recordShare,
+  } = useBlogInteractions(post?.id);
+
+  // Record page view when post loads
+  useEffect(() => {
+    if (post?.id) {
+      recordView();
+    }
+  }, [post?.id, recordView]);
 
   // SEO meta tags
   useEffect(() => {
@@ -149,9 +171,12 @@ const BlogPost = () => {
     return categories.find((c) => c.id === categoryId)?.label || categoryId;
   };
 
-  const handleShare = (platform: string) => {
+  const handleShare = async (platform: string) => {
     const url = window.location.href;
     const title = post.title;
+
+    // Record share in database
+    recordShare(platform);
 
     switch (platform) {
       case "facebook":
@@ -170,8 +195,30 @@ const BlogPost = () => {
     }
   };
 
-  const handleBookmark = () => {
-    toast.success("文章已加入收藏！");
+  const handleLike = async () => {
+    if (!user) {
+      toast.error("請先登入才能按喜歡");
+      return;
+    }
+    const result = await toggleLike();
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(isLiked ? "已取消喜歡" : "已加入喜歡！");
+    }
+  };
+
+  const handleBookmark = async () => {
+    if (!user) {
+      toast.error("請先登入才能收藏文章");
+      return;
+    }
+    const result = await toggleBookmark();
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(result.removed ? "已取消收藏" : "文章已加入收藏！");
+    }
   };
 
   // Process markdown-like content to HTML
@@ -311,7 +358,18 @@ const BlogPost = () => {
 
                 {/* Share Section */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="font-medium">分享這篇文章：</p>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant={isLiked ? "default" : "outline"}
+                      size="sm"
+                      onClick={handleLike}
+                      className={`gap-2 ${isLiked ? "bg-red-500 hover:bg-red-600" : "hover:text-red-500"}`}
+                    >
+                      <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
+                      <span>{likeCount}</span>
+                    </Button>
+                    <p className="font-medium text-muted-foreground">分享這篇文章：</p>
+                  </div>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
@@ -343,8 +401,17 @@ const BlogPost = () => {
                     <Button variant="outline" size="icon" onClick={() => handleShare("copy")}>
                       <LinkIcon className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon" onClick={handleBookmark}>
-                      <Bookmark className="h-4 w-4" />
+                    <Button
+                      variant={isBookmarked ? "default" : "outline"}
+                      size="icon"
+                      onClick={handleBookmark}
+                      className={isBookmarked ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+                    >
+                      {isBookmarked ? (
+                        <BookmarkCheck className="h-4 w-4" />
+                      ) : (
+                        <Bookmark className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -354,20 +421,32 @@ const BlogPost = () => {
               <aside className="hidden lg:block">
                 <div className="sticky top-24 space-y-4">
                   <Button
+                    variant={isLiked ? "default" : "outline"}
+                    className={`w-full justify-start gap-2 ${isLiked ? "bg-red-500 hover:bg-red-600" : ""}`}
+                    onClick={handleLike}
+                  >
+                    <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
+                    喜歡 ({likeCount})
+                  </Button>
+                  <Button
+                    variant={isBookmarked ? "default" : "outline"}
+                    className={`w-full justify-start gap-2 ${isBookmarked ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+                    onClick={handleBookmark}
+                  >
+                    {isBookmarked ? (
+                      <BookmarkCheck className="h-4 w-4" />
+                    ) : (
+                      <Bookmark className="h-4 w-4" />
+                    )}
+                    {isBookmarked ? "已收藏" : "收藏文章"}
+                  </Button>
+                  <Button
                     variant="outline"
                     className="w-full justify-start gap-2"
                     onClick={() => handleShare("copy")}
                   >
                     <Share2 className="h-4 w-4" />
                     分享文章
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2"
-                    onClick={handleBookmark}
-                  >
-                    <Bookmark className="h-4 w-4" />
-                    收藏文章
                   </Button>
                 </div>
               </aside>

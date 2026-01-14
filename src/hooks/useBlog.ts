@@ -414,3 +414,321 @@ export function calculateReadTime(content: string): number {
   // Approximately 500 Chinese characters per minute
   return Math.max(1, Math.ceil(content.length / 500));
 }
+
+// =============================================
+// Statistics Types
+// =============================================
+
+export interface BlogPostStats {
+  id: string;
+  title: string;
+  slug: string;
+  isPublished: boolean;
+  category: string;
+  createdAt: string;
+  publishedAt: string | null;
+  viewCount: number;
+  likeCount: number;
+  bookmarkCount: number;
+  commentCount: number;
+  shareCount: number;
+}
+
+export interface BlogOverviewStats {
+  totalPosts: number;
+  publishedPosts: number;
+  draftPosts: number;
+  totalViews: number;
+  totalLikes: number;
+  totalBookmarks: number;
+  totalComments: number;
+  totalShares: number;
+  categoryBreakdown: { category: string; count: number }[];
+  topPosts: BlogPostStats[];
+}
+
+// =============================================
+// Hook: useBlogStats - 文章統計
+// =============================================
+
+export function useBlogStats() {
+  const [stats, setStats] = useState<BlogOverviewStats | null>(null);
+  const [postStats, setPostStats] = useState<BlogPostStats[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStats = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Fetch post stats from view
+      const { data: statsData, error: statsError } = await supabase
+        .from('blog_post_stats')
+        .select('*')
+        .order('view_count', { ascending: false });
+
+      if (statsError) {
+        console.error('Error fetching blog stats:', statsError);
+        setError(statsError.message);
+        return;
+      }
+
+      const transformedStats: BlogPostStats[] = (statsData || []).map((s: any) => ({
+        id: s.id,
+        title: s.title,
+        slug: s.slug,
+        isPublished: s.is_published,
+        category: s.category,
+        createdAt: s.created_at,
+        publishedAt: s.published_at,
+        viewCount: s.view_count || 0,
+        likeCount: s.like_count || 0,
+        bookmarkCount: s.bookmark_count || 0,
+        commentCount: s.comment_count || 0,
+        shareCount: s.share_count || 0,
+      }));
+
+      setPostStats(transformedStats);
+
+      // Calculate overview stats
+      const published = transformedStats.filter(p => p.isPublished);
+      const drafts = transformedStats.filter(p => !p.isPublished);
+
+      // Category breakdown
+      const categoryMap = new Map<string, number>();
+      transformedStats.forEach(p => {
+        categoryMap.set(p.category, (categoryMap.get(p.category) || 0) + 1);
+      });
+      const categoryBreakdown = Array.from(categoryMap.entries()).map(([category, count]) => ({
+        category,
+        count,
+      }));
+
+      const overview: BlogOverviewStats = {
+        totalPosts: transformedStats.length,
+        publishedPosts: published.length,
+        draftPosts: drafts.length,
+        totalViews: transformedStats.reduce((sum, p) => sum + p.viewCount, 0),
+        totalLikes: transformedStats.reduce((sum, p) => sum + p.likeCount, 0),
+        totalBookmarks: transformedStats.reduce((sum, p) => sum + p.bookmarkCount, 0),
+        totalComments: transformedStats.reduce((sum, p) => sum + p.commentCount, 0),
+        totalShares: transformedStats.reduce((sum, p) => sum + p.shareCount, 0),
+        categoryBreakdown,
+        topPosts: transformedStats.slice(0, 5),
+      };
+
+      setStats(overview);
+    } catch (err) {
+      console.error('Exception fetching blog stats:', err);
+      setError('載入統計失敗');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  return { stats, postStats, loading, error, refetch: fetchStats };
+}
+
+// =============================================
+// Hook: useBlogInteractions - 文章互動功能
+// =============================================
+
+export function useBlogInteractions(postId: string | undefined) {
+  const { user } = useAuth();
+  const [isLiked, setIsLiked] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch current user's interaction status
+  useEffect(() => {
+    if (!postId) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchInteractionStatus = async () => {
+      setLoading(true);
+
+      // Get like count
+      const { count: likes } = await supabase
+        .from('blog_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', postId);
+
+      setLikeCount(likes || 0);
+
+      // Check if current user liked/bookmarked
+      if (user) {
+        const { data: likeData } = await supabase
+          .from('blog_likes')
+          .select('id')
+          .eq('post_id', postId)
+          .eq('user_id', user.id)
+          .single();
+
+        setIsLiked(!!likeData);
+
+        const { data: bookmarkData } = await supabase
+          .from('blog_bookmarks')
+          .select('id')
+          .eq('post_id', postId)
+          .eq('user_id', user.id)
+          .single();
+
+        setIsBookmarked(!!bookmarkData);
+      }
+
+      setLoading(false);
+    };
+
+    fetchInteractionStatus();
+  }, [postId, user]);
+
+  // Record page view
+  const recordView = useCallback(async () => {
+    if (!postId) return;
+
+    await supabase.from('blog_page_views').insert({
+      post_id: postId,
+      user_id: user?.id || null,
+      referrer: document.referrer || null,
+      user_agent: navigator.userAgent,
+    });
+  }, [postId, user]);
+
+  // Toggle like
+  const toggleLike = useCallback(async () => {
+    if (!postId || !user) return { error: '請先登入' };
+
+    if (isLiked) {
+      // Unlike
+      const { error } = await supabase
+        .from('blog_likes')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', user.id);
+
+      if (!error) {
+        setIsLiked(false);
+        setLikeCount(prev => Math.max(0, prev - 1));
+      }
+      return { error: error?.message || null };
+    } else {
+      // Like
+      const { error } = await supabase
+        .from('blog_likes')
+        .insert({ post_id: postId, user_id: user.id });
+
+      if (!error) {
+        setIsLiked(true);
+        setLikeCount(prev => prev + 1);
+      }
+      return { error: error?.message || null };
+    }
+  }, [postId, user, isLiked]);
+
+  // Toggle bookmark
+  const toggleBookmark = useCallback(async () => {
+    if (!postId || !user) return { error: '請先登入' };
+
+    if (isBookmarked) {
+      // Remove bookmark
+      const { error } = await supabase
+        .from('blog_bookmarks')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', user.id);
+
+      if (!error) {
+        setIsBookmarked(false);
+      }
+      return { error: error?.message || null, removed: true };
+    } else {
+      // Add bookmark
+      const { error } = await supabase
+        .from('blog_bookmarks')
+        .insert({ post_id: postId, user_id: user.id });
+
+      if (!error) {
+        setIsBookmarked(true);
+      }
+      return { error: error?.message || null, removed: false };
+    }
+  }, [postId, user, isBookmarked]);
+
+  // Record share
+  const recordShare = useCallback(async (platform: string) => {
+    if (!postId) return;
+
+    await supabase.from('blog_shares').insert({
+      post_id: postId,
+      user_id: user?.id || null,
+      platform,
+    });
+  }, [postId, user]);
+
+  return {
+    isLiked,
+    isBookmarked,
+    likeCount,
+    loading,
+    recordView,
+    toggleLike,
+    toggleBookmark,
+    recordShare,
+  };
+}
+
+// =============================================
+// Hook: useUserBookmarks - 使用者收藏清單
+// =============================================
+
+export function useUserBookmarks() {
+  const { user } = useAuth();
+  const [bookmarks, setBookmarks] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      setBookmarks([]);
+      setLoading(false);
+      return;
+    }
+
+    const fetchBookmarks = async () => {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from('blog_bookmarks')
+        .select(`
+          post_id,
+          blog_posts (*)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching bookmarks:', error);
+        setBookmarks([]);
+      } else {
+        const posts = (data || [])
+          .map((b: any) => b.blog_posts)
+          .filter(Boolean)
+          .map(transformPost);
+        setBookmarks(posts);
+      }
+
+      setLoading(false);
+    };
+
+    fetchBookmarks();
+  }, [user]);
+
+  return { bookmarks, loading };
+}
