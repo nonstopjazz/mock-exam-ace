@@ -28,6 +28,8 @@ import Dashboard from "./pages/Dashboard";
 import Essay from "./pages/Essay";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 
 // Galaxy Quest (遊戲化練習)
 import Phase0Index from "./pages/practice/Phase0Index";
@@ -70,6 +72,10 @@ const App = () => (
           <Routes>
             {/* Main app routes */}
             <Route path="/" element={<Home />} />
+
+            {/* Blog routes */}
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
 
             {/* Auth routes */}
             <Route path="/login" element={<Login />} />

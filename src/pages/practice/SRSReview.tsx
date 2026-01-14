@@ -37,6 +37,9 @@ const convertPackItemToVocabularyWord = (item: PackItem): VocabularyWord => ({
   antonyms: [],
   level: 1,
   tags: [],
+  difficulty: 'medium',
+  category: '',
+  extraNotes: '',
 });
 
 const SRSReview = () => {

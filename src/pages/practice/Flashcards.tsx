@@ -39,6 +39,9 @@ const convertPackItemToVocabularyWord = (item: PackItem, index: number): Vocabul
   antonyms: [],
   level: 1,
   tags: [],
+  difficulty: 'medium',
+  category: '',
+  extraNotes: '',
 });
 
 const Flashcards = () => {
