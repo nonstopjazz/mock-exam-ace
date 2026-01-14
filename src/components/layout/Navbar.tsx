@@ -1,6 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Shield, Gamepad2, Menu } from "lucide-react";
+import { BookOpen, Shield, Gamepad2, Menu, FileText } from "lucide-react";
 import { useState } from "react";
 import {
   Sheet,
@@ -16,6 +16,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 // Phase 2 items (exams, dashboard, essay, courses) are hidden until launch
 const navigationItems = [
   { to: "/practice", label: "單字練習", icon: Gamepad2 },
+  { to: "/blog", label: "學習專欄", icon: FileText },
   { to: "/admin/packs", label: "後台管理", icon: Shield, adminOnly: true },
 ];
 
