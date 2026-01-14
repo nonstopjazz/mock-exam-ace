@@ -17,7 +17,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 const navigationItems = [
   { to: "/practice", label: "單字練習", icon: Gamepad2 },
   { to: "/blog", label: "學習專欄", icon: FileText },
-  { to: "/admin/packs", label: "後台管理", icon: Shield, adminOnly: true },
+  { to: "/admin", label: "後台管理", icon: Shield, adminOnly: true },
 ];
 
 export const Navbar = () => {
