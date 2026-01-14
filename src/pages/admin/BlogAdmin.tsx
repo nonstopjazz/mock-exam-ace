@@ -40,13 +40,14 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Loader2, Plus, Pencil, Trash2, ArrowLeft, Upload, Eye, EyeOff,
-  Image as ImageIcon, FileText, Settings, ExternalLink
+  Image as ImageIcon, FileText, Settings, ExternalLink,
+  Heart, BookmarkIcon, MessageSquare, Share2, TrendingUp, BarChart3
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useBlogAdmin, useBlogCategories, BlogPostDB, calculateReadTime } from '@/hooks/useBlog';
+import { useBlogAdmin, useBlogCategories, useBlogStats, BlogPostDB, calculateReadTime } from '@/hooks/useBlog';
 
 interface PostFormData {
   slug: string;
@@ -95,6 +96,7 @@ export default function BlogAdmin() {
 
   const { posts, loading, createPost, updatePost, deletePost, togglePublish, uploadImage, refetch } = useBlogAdmin();
   const { categories } = useBlogCategories();
+  const { stats, postStats, loading: statsLoading, refetch: refetchStats } = useBlogStats();
   const { toast } = useToast();
 
   // Generate slug from title
@@ -372,6 +374,95 @@ export default function BlogAdmin() {
         </Button>
       </div>
 
+      {/* Statistics Dashboard */}
+      {!statsLoading && stats && (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            統計總覽
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-200/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-blue-500/20 p-2">
+                    <Eye className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">總瀏覽</p>
+                    <p className="text-xl font-bold">{stats.totalViews.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-200/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-red-500/20 p-2">
+                    <Heart className="h-4 w-4 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">總喜歡</p>
+                    <p className="text-xl font-bold">{stats.totalLikes.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border-yellow-200/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-yellow-500/20 p-2">
+                    <BookmarkIcon className="h-4 w-4 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">總收藏</p>
+                    <p className="text-xl font-bold">{stats.totalBookmarks.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-200/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-green-500/20 p-2">
+                    <MessageSquare className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">總留言</p>
+                    <p className="text-xl font-bold">{stats.totalComments.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-200/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-purple-500/20 p-2">
+                    <Share2 className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">總分享</p>
+                    <p className="text-xl font-bold">{stats.totalShares.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="mt-4 flex gap-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <FileText className="h-4 w-4" />
+              共 {stats.totalPosts} 篇文章
+            </span>
+            <span className="text-green-600">
+              {stats.publishedPosts} 已發布
+            </span>
+            <span className="text-yellow-600">
+              {stats.draftPosts} 草稿
+            </span>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -388,6 +479,7 @@ export default function BlogAdmin() {
                 <TableHead className="w-[80px]">封面</TableHead>
                 <TableHead>標題</TableHead>
                 <TableHead>分類</TableHead>
+                <TableHead>互動數據</TableHead>
                 <TableHead>狀態</TableHead>
                 <TableHead>更新時間</TableHead>
                 <TableHead className="w-[120px]">操作</TableHead>
@@ -417,6 +509,25 @@ export default function BlogAdmin() {
                     <Badge variant="outline">
                       {categories.find(c => c.id === post.category)?.label || post.category}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const stat = postStats.find(s => s.id === post.id);
+                      if (!stat) return <span className="text-muted-foreground text-xs">-</span>;
+                      return (
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1" title="瀏覽">
+                            <Eye className="h-3 w-3" /> {stat.viewCount}
+                          </span>
+                          <span className="flex items-center gap-1 text-red-500" title="喜歡">
+                            <Heart className="h-3 w-3" /> {stat.likeCount}
+                          </span>
+                          <span className="flex items-center gap-1 text-yellow-500" title="收藏">
+                            <BookmarkIcon className="h-3 w-3" /> {stat.bookmarkCount}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     <Button

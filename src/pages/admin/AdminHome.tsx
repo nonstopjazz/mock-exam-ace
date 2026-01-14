@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   Users,
   TrendingUp,
+  GraduationCap,
 } from 'lucide-react';
 
 interface AdminCardProps {
@@ -73,6 +74,12 @@ export default function AdminHome() {
       description: '撰寫、編輯部落格文章，管理 SEO 設定',
       icon: <FileText className="h-6 w-6" />,
       href: '/admin/blog',
+    },
+    {
+      title: '模擬考管理',
+      description: '上傳學測試卷、管理題目，查看作答統計',
+      icon: <GraduationCap className="h-6 w-6" />,
+      href: '/admin/exams',
       badge: '新功能',
     },
   ];
@@ -94,7 +101,7 @@ export default function AdminHome() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid gap-4 sm:grid-cols-3 mb-8">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-200/50">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -134,6 +141,19 @@ export default function AdminHome() {
               </div>
             </CardContent>
           </Card>
+          <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-200/50">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="rounded-full bg-orange-500/20 p-3">
+                  <GraduationCap className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">模擬考試</p>
+                  <p className="text-2xl font-bold">管理中</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Admin Modules */}
@@ -166,6 +186,12 @@ export default function AdminHome() {
               <Button variant="outline" className="gap-2">
                 <FileText className="h-4 w-4" />
                 撰寫文章
+              </Button>
+            </Link>
+            <Link to="/admin/exams">
+              <Button variant="outline" className="gap-2">
+                <GraduationCap className="h-4 w-4" />
+                上傳試卷
               </Button>
             </Link>
             <Link to="/" target="_blank">
