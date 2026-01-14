@@ -17,6 +17,7 @@ import PacksAdmin from "./pages/admin/PacksAdmin";
 import PackItemsAdmin from "./pages/admin/PackItemsAdmin";
 import TokensAdmin from "./pages/admin/TokensAdmin";
 import BlogAdmin from "./pages/admin/BlogAdmin";
+import ExamAdmin from "./pages/admin/ExamAdmin";
 import AdminHome from "./pages/admin/AdminHome";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -113,6 +114,11 @@ const App = () => (
           <Route path="/admin/blog" element={
             <RequireAdmin>
               <BlogAdmin />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/exams" element={
+            <RequireAdmin>
+              <ExamAdmin />
             </RequireAdmin>
           } />
 
