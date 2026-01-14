@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft,
   Calendar,
@@ -14,24 +15,118 @@ import {
   Twitter,
   Link as LinkIcon,
   Tag,
+  AlertCircle,
 } from "lucide-react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { useEffect } from "react";
 import { toast } from "sonner";
-import { getBlogPostBySlug, getRelatedPosts, BLOG_CATEGORIES } from "@/data/mock-blog";
+import { useBlogPost, useRelatedPosts, useBlogCategories } from "@/hooks/useBlog";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  const post = slug ? getBlogPostBySlug(slug) : undefined;
-  const relatedPosts = post ? getRelatedPosts(post.id, 3) : [];
+  // Fetch post data from Supabase
+  const { post, loading: postLoading, error: postError } = useBlogPost(slug);
+  const { posts: relatedPosts, loading: relatedLoading } = useRelatedPosts(post?.id, post?.category, 3);
+  const { categories } = useBlogCategories();
 
-  if (!post) {
+  // SEO meta tags
+  useEffect(() => {
+    if (!post) return;
+
+    const title = post.seoTitle || post.title;
+    const description = post.seoDescription || post.excerpt;
+    const image = post.ogImage || post.coverImage;
+    const url = window.location.href;
+
+    // Update document title
+    document.title = `${title} | 學測英文學習`;
+
+    // Helper to create/update meta tag
+    const setMeta = (name: string, content: string, property?: boolean) => {
+      const attr = property ? 'property' : 'name';
+      let tag = document.querySelector(`meta[${attr}="${name}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute(attr, name);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    };
+
+    // Basic meta tags
+    setMeta('description', description);
+    if (post.seoKeywords?.length) {
+      setMeta('keywords', post.seoKeywords.join(', '));
+    }
+
+    // Open Graph
+    setMeta('og:title', title, true);
+    setMeta('og:description', description, true);
+    setMeta('og:type', 'article', true);
+    setMeta('og:url', url, true);
+    if (image) {
+      setMeta('og:image', image, true);
+    }
+
+    // Twitter Card
+    setMeta('twitter:card', 'summary_large_image');
+    setMeta('twitter:title', title);
+    setMeta('twitter:description', description);
+    if (image) {
+      setMeta('twitter:image', image);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.title = '學測英文學習';
+    };
+  }, [post]);
+
+  // Loading state
+  if (postLoading) {
+    return (
+      <Layout>
+        <header className="relative">
+          <Skeleton className="h-[40vh] min-h-[300px] w-full" />
+          <div className="container mx-auto px-4">
+            <div className="relative -mt-32 md:-mt-40">
+              <Card className="mx-auto max-w-4xl border-2 shadow-xl">
+                <CardHeader className="space-y-4 pb-4">
+                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-6 w-1/2" />
+                </CardHeader>
+              </Card>
+            </div>
+          </div>
+        </header>
+        <div className="container mx-auto px-4 py-12">
+          <div className="mx-auto max-w-4xl">
+            <Card className="p-6 md:p-8 lg:p-10">
+              <Skeleton className="mb-4 h-6 w-full" />
+              <Skeleton className="mb-4 h-6 w-full" />
+              <Skeleton className="mb-4 h-6 w-3/4" />
+              <Skeleton className="mb-4 h-6 w-full" />
+              <Skeleton className="h-6 w-1/2" />
+            </Card>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Error or not found state
+  if (postError || !post) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-20 text-center">
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
           <h1 className="mb-4 text-3xl font-bold">找不到文章</h1>
-          <p className="mb-8 text-muted-foreground">這篇文章可能已經被移除或網址錯誤。</p>
+          <p className="mb-8 text-muted-foreground">
+            {postError || "這篇文章可能已經被移除或網址錯誤。"}
+          </p>
           <Button onClick={() => navigate("/blog")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             返回部落格
@@ -51,7 +146,7 @@ const BlogPost = () => {
   };
 
   const getCategoryLabel = (categoryId: string) => {
-    return BLOG_CATEGORIES.find((c) => c.id === categoryId)?.label || categoryId;
+    return categories.find((c) => c.id === categoryId)?.label || categoryId;
   };
 
   const handleShare = (platform: string) => {

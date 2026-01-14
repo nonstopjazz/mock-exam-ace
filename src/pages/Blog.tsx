@@ -4,19 +4,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Search, User, ChevronRight, BookOpen, TrendingUp } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar, Clock, Search, User, ChevronRight, BookOpen, TrendingUp, AlertCircle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { mockBlogPosts, BLOG_CATEGORIES, BlogPost } from "@/data/mock-blog";
+import { useBlogPosts, useBlogCategories, BlogPost } from "@/hooks/useBlog";
 
 const Blog = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
+  // Fetch real data from Supabase
+  const { posts: allPosts, loading: postsLoading, error: postsError } = useBlogPosts();
+  const { categories, loading: categoriesLoading } = useBlogCategories();
+
   // Filter posts based on search and category
   const filteredPosts = useMemo(() => {
-    return mockBlogPosts.filter((post) => {
+    return allPosts.filter((post) => {
       const matchesSearch =
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -26,11 +31,11 @@ const Blog = () => {
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [allPosts, searchQuery, selectedCategory]);
 
   // Featured post (first post)
-  const featuredPost = mockBlogPosts[0];
-  const remainingPosts = filteredPosts.filter((post) => post.id !== featuredPost.id);
+  const featuredPost = allPosts[0];
+  const remainingPosts = filteredPosts.filter((post) => featuredPost && post.id !== featuredPost.id);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -42,8 +47,84 @@ const Blog = () => {
   };
 
   const getCategoryLabel = (categoryId: string) => {
-    return BLOG_CATEGORIES.find((c) => c.id === categoryId)?.label || categoryId;
+    return categories.find((c) => c.id === categoryId)?.label || categoryId;
   };
+
+  // Loading state
+  if (postsLoading || categoriesLoading) {
+    return (
+      <Layout>
+        <section className="relative bg-gradient-to-br from-primary/10 via-secondary/5 to-background py-16 md:py-24">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-3xl text-center">
+              <Skeleton className="mx-auto mb-4 h-6 w-32" />
+              <Skeleton className="mx-auto mb-6 h-12 w-3/4" />
+              <Skeleton className="mx-auto mb-8 h-6 w-2/3" />
+            </div>
+          </div>
+        </section>
+        <section className="py-12">
+          <div className="container mx-auto px-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="overflow-hidden">
+                  <Skeleton className="aspect-video w-full" />
+                  <CardHeader>
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-6 w-full" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="mt-2 h-4 w-2/3" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      </Layout>
+    );
+  }
+
+  // Error state
+  if (postsError) {
+    return (
+      <Layout>
+        <section className="py-20">
+          <div className="container mx-auto px-4 text-center">
+            <AlertCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
+            <h1 className="mb-4 text-2xl font-bold">載入失敗</h1>
+            <p className="text-muted-foreground">{postsError}</p>
+          </div>
+        </section>
+      </Layout>
+    );
+  }
+
+  // Empty state (no posts in database)
+  if (allPosts.length === 0) {
+    return (
+      <Layout>
+        <section className="relative bg-gradient-to-br from-primary/10 via-secondary/5 to-background py-16 md:py-24">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-3xl text-center">
+              <Badge variant="secondary" className="mb-4">
+                <BookOpen className="mr-1 h-3 w-3" />
+                學測英文學習專欄
+              </Badge>
+              <h1 className="mb-6 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+                學習<span className="gradient-text">技巧</span>與
+                <span className="gradient-text">攻略</span>
+              </h1>
+              <p className="mb-8 text-lg text-muted-foreground md:text-xl">
+                文章即將推出，敬請期待！
+              </p>
+            </div>
+          </div>
+        </section>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -87,7 +168,7 @@ const Blog = () => {
         <div className="container mx-auto px-4">
           <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
             <TabsList className="h-auto w-full justify-start gap-2 rounded-none border-0 bg-transparent p-0 py-4 overflow-x-auto flex-nowrap">
-              {BLOG_CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <TabsTrigger
                   key={category.id}
                   value={category.id}
@@ -102,7 +183,7 @@ const Blog = () => {
       </section>
 
       {/* Featured Post */}
-      {selectedCategory === "all" && !searchQuery && (
+      {selectedCategory === "all" && !searchQuery && featuredPost && (
         <section className="py-12">
           <div className="container mx-auto px-4">
             <div className="mb-6 flex items-center gap-2">
