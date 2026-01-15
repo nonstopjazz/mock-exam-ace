@@ -24,6 +24,7 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { useBlogPost, useRelatedPosts, useBlogCategories, useBlogInteractions } from "@/hooks/useBlog";
 import { useAuth } from "@/contexts/AuthContext";
+import { TableOfContents } from "@/components/blog/TableOfContents";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -221,12 +222,28 @@ const BlogPost = () => {
     }
   };
 
+  // Generate slug for heading IDs
+  const generateSlug = (text: string): string => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s\u4e00-\u9fff-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+  };
+
   // Process markdown-like content to HTML
   const processContent = (content: string) => {
     return content
-      // Headers
-      .replace(/^### (.+)$/gm, '<h3 class="text-xl font-bold mt-8 mb-4 text-foreground">$1</h3>')
-      .replace(/^## (.+)$/gm, '<h2 class="text-2xl font-bold mt-10 mb-6 text-foreground">$1</h2>')
+      // Headers with IDs for TOC anchor links
+      .replace(/^### (.+)$/gm, (_match, text) => {
+        const id = generateSlug(text);
+        return `<h3 id="${id}" class="text-xl font-bold mt-8 mb-4 text-foreground scroll-mt-24">${text}</h3>`;
+      })
+      .replace(/^## (.+)$/gm, (_match, text) => {
+        const id = generateSlug(text);
+        return `<h2 id="${id}" class="text-2xl font-bold mt-10 mb-6 text-foreground scroll-mt-24">${text}</h2>`;
+      })
       // Bold
       .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
       // Lists
@@ -347,6 +364,9 @@ const BlogPost = () => {
                 </p>
 
                 <Separator className="mb-8" />
+
+                {/* Table of Contents */}
+                <TableOfContents content={post.content} />
 
                 {/* Article Body */}
                 <div
