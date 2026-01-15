@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useBlogAdmin, useBlogCategories, useBlogStats, BlogPostDB, calculateReadTime } from '@/hooks/useBlog';
+import { RichTextEditor } from '@/components/editor/RichTextEditor';
 
 interface PostFormData {
   slug: string;
@@ -681,90 +682,20 @@ export default function BlogAdmin() {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>內文 (Markdown) *</Label>
-                      <div className="flex gap-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => insertMarkdown('## ', '')}
-                        >
-                          H2
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => insertMarkdown('### ', '')}
-                        >
-                          H3
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => insertMarkdown('**', '**')}
-                        >
-                          B
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => insertMarkdown('*', '*')}
-                        >
-                          I
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => insertMarkdown('- ', '')}
-                        >
-                          List
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => insertMarkdown('> ', '')}
-                        >
-                          Quote
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleInlineImageUpload}
-                        >
-                          <ImageIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={previewMode ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setPreviewMode(!previewMode)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {previewMode ? (
-                      <Card className="p-4 min-h-[300px] max-h-[400px] overflow-y-auto prose prose-sm max-w-none">
-                        <div dangerouslySetInnerHTML={{ __html: renderMarkdown(formData.content) }} />
-                      </Card>
-                    ) : (
-                      <Textarea
-                        ref={contentTextareaRef}
-                        value={formData.content}
-                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                        placeholder="使用 Markdown 格式撰寫文章內容..."
-                        rows={12}
-                        className="font-mono text-sm"
-                      />
-                    )}
+                    <Label>內文 *</Label>
+                    <RichTextEditor
+                      content={formData.content}
+                      onChange={(html) => setFormData({ ...formData, content: html })}
+                      onImageUpload={async (file) => {
+                        const { url, error } = await uploadImage(file, 'content');
+                        if (error) {
+                          toast({ title: '圖片上傳失敗', description: error, variant: 'destructive' });
+                          return null;
+                        }
+                        return url;
+                      }}
+                      placeholder="開始撰寫文章內容..."
+                    />
                   </div>
 
                   <div className="flex items-center justify-between pt-2">
