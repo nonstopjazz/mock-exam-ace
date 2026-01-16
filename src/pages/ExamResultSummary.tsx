@@ -417,15 +417,15 @@ const ExamResultSummary = () => {
                 </p>
               </div>
 
-              {/* User Avatar */}
-              <div className="shrink-0 flex flex-col items-center gap-3 sm:self-start">
-                <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-2 border-primary/20 shadow-md">
+              {/* User Avatar - aligned with score circle height */}
+              <div className="shrink-0 flex flex-col items-center justify-between h-32 sm:h-40">
+                <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-2 border-primary/20 shadow-md">
                   <AvatarImage src={MOCK_USER.avatar} alt={MOCK_USER.name} />
                   <AvatarFallback className="bg-primary/10 text-primary">
-                    <User className="w-9 h-9" />
+                    <User className="w-10 h-10 sm:w-12 sm:h-12" />
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-base sm:text-lg font-medium text-foreground">{MOCK_USER.name}</span>
+                <span className="text-lg sm:text-xl font-medium text-foreground">{MOCK_USER.name}</span>
               </div>
             </div>
           </div>
