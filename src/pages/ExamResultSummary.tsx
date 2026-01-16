@@ -1,0 +1,417 @@
+import { Layout } from "@/components/layout/Layout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { useState } from "react";
+
+// Mock exam data
+const MOCK_EXAMS = [
+  { id: "114-gsat", name: "114 學年度學測英文", year: "114" },
+  { id: "113-gsat", name: "113 學年度學測英文", year: "113" },
+  { id: "112-gsat", name: "112 學年度學測英文", year: "112" },
+];
+
+const MOCK_RESULTS: Record<string, ExamResult> = {
+  "114-gsat": {
+    totalScore: 78,
+    maxScore: 100,
+    gsatLevel: 13,
+    benchmark: "前標",
+    summary: "整體表現優異，閱讀理解與單字能力突出，建議加強混合題型的作答策略。",
+    reading: {
+      vocabulary: { correct: 7, total: 10 },
+      cloze: { correct: 6, total: 10 },
+      sentenceCompletion: { correct: 8, total: 10 },
+      paragraphStructure: { correct: 2, total: 4 },
+      readingComprehension: { correct: 8, total: 12 },
+    },
+    mixed: { score: 8, maxScore: 10 },
+    writing: {
+      translation: { score: 6, maxScore: 8 },
+      essay: { score: 15, maxScore: 20 },
+      essayPrompt: "Describe a memorable experience that changed your perspective on life. Explain what happened and how it influenced your thinking.",
+    },
+  },
+  "113-gsat": {
+    totalScore: 72,
+    maxScore: 100,
+    gsatLevel: 12,
+    benchmark: "均標",
+    summary: "整體表現穩定，閱讀測驗需加強時間分配，寫作方面有進步空間。",
+    reading: {
+      vocabulary: { correct: 6, total: 10 },
+      cloze: { correct: 5, total: 10 },
+      sentenceCompletion: { correct: 7, total: 10 },
+      paragraphStructure: { correct: 3, total: 4 },
+      readingComprehension: { correct: 7, total: 12 },
+    },
+    mixed: { score: 6, maxScore: 10 },
+    writing: {
+      translation: { score: 5, maxScore: 8 },
+      essay: { score: 13, maxScore: 20 },
+      essayPrompt: "Write about a person who has had a significant impact on your life and explain why.",
+    },
+  },
+  "112-gsat": {
+    totalScore: 65,
+    maxScore: 100,
+    gsatLevel: 11,
+    benchmark: "後標",
+    summary: "基礎能力尚可，需加強綜合測驗與篇章結構的練習，寫作需注意文法正確性。",
+    reading: {
+      vocabulary: { correct: 5, total: 10 },
+      cloze: { correct: 4, total: 10 },
+      sentenceCompletion: { correct: 6, total: 10 },
+      paragraphStructure: { correct: 2, total: 4 },
+      readingComprehension: { correct: 6, total: 12 },
+    },
+    mixed: { score: 5, maxScore: 10 },
+    writing: {
+      translation: { score: 4, maxScore: 8 },
+      essay: { score: 11, maxScore: 20 },
+      essayPrompt: "Discuss the advantages and disadvantages of social media in modern life.",
+    },
+  },
+};
+
+interface ExamResult {
+  totalScore: number;
+  maxScore: number;
+  gsatLevel: number;
+  benchmark: "前標" | "均標" | "後標";
+  summary: string;
+  reading: {
+    vocabulary: { correct: number; total: number };
+    cloze: { correct: number; total: number };
+    sentenceCompletion: { correct: number; total: number };
+    paragraphStructure: { correct: number; total: number };
+    readingComprehension: { correct: number; total: number };
+  };
+  mixed: { score: number; maxScore: number };
+  writing: {
+    translation: { score: number; maxScore: number };
+    essay: { score: number; maxScore: number };
+    essayPrompt: string;
+  };
+}
+
+// Score ring component
+const ScoreRing = ({ 
+  percentage, 
+  size = 48,
+  strokeWidth = 4,
+}: { 
+  percentage: number; 
+  size?: number;
+  strokeWidth?: number;
+}) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percentage / 100) * circumference;
+  
+  const getColor = () => {
+    if (percentage >= 80) return "hsl(var(--success))";
+    if (percentage >= 60) return "hsl(var(--primary))";
+    if (percentage >= 40) return "hsl(var(--warning))";
+    return "hsl(var(--destructive))";
+  };
+
+  return (
+    <svg width={size} height={size} className="transform -rotate-90">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="hsl(var(--muted))"
+        strokeWidth={strokeWidth}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke={getColor()}
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        className="transition-all duration-500"
+      />
+    </svg>
+  );
+};
+
+// Reading section card
+const ReadingCard = ({ 
+  title, 
+  correct, 
+  total,
+}: { 
+  title: string; 
+  correct: number; 
+  total: number;
+}) => {
+  const percentage = Math.round((correct / total) * 100);
+  
+  return (
+    <div className="bg-card border rounded-xl p-4 flex flex-col items-center gap-3 hover:shadow-md transition-shadow">
+      <div className="relative">
+        <ScoreRing percentage={percentage} size={56} strokeWidth={5} />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xs font-medium text-muted-foreground">{percentage}%</span>
+        </div>
+      </div>
+      <div className="text-center">
+        <p className="text-sm text-muted-foreground mb-1">{title}</p>
+        <p className="text-2xl font-bold tracking-tight">
+          {correct} <span className="text-lg font-normal text-muted-foreground">/ {total}</span>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// Benchmark badge
+const BenchmarkBadge = ({ benchmark }: { benchmark: "前標" | "均標" | "後標" }) => {
+  const variants: Record<string, { bg: string; text: string }> = {
+    "前標": { bg: "bg-success/10", text: "text-success" },
+    "均標": { bg: "bg-primary/10", text: "text-primary" },
+    "後標": { bg: "bg-warning/10", text: "text-warning" },
+  };
+  
+  return (
+    <span className={`px-3 py-1 rounded-full text-sm font-medium ${variants[benchmark].bg} ${variants[benchmark].text}`}>
+      {benchmark}
+    </span>
+  );
+};
+
+const ExamResultSummary = () => {
+  const [selectedExam, setSelectedExam] = useState(MOCK_EXAMS[0].id);
+  const result = MOCK_RESULTS[selectedExam];
+  const currentExamIndex = MOCK_EXAMS.findIndex((e) => e.id === selectedExam);
+  const currentExam = MOCK_EXAMS[currentExamIndex];
+
+  const handlePrevExam = () => {
+    if (currentExamIndex > 0) {
+      setSelectedExam(MOCK_EXAMS[currentExamIndex - 1].id);
+    }
+  };
+
+  const handleNextExam = () => {
+    if (currentExamIndex < MOCK_EXAMS.length - 1) {
+      setSelectedExam(MOCK_EXAMS[currentExamIndex + 1].id);
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="container mx-auto px-4 py-6 max-w-5xl">
+        {/* Exam Switcher */}
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handlePrevExam}
+            disabled={currentExamIndex === 0}
+            className="shrink-0"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          
+          <Select value={selectedExam} onValueChange={setSelectedExam}>
+            <SelectTrigger className="max-w-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MOCK_EXAMS.map((exam) => (
+                <SelectItem key={exam.id} value={exam.id}>
+                  {exam.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleNextExam}
+            disabled={currentExamIndex === MOCK_EXAMS.length - 1}
+            className="shrink-0"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Section 1: Hero - Overall Result */}
+        <Card className="mb-6 border-2 overflow-hidden">
+          <div className="bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
+              {/* Score Circle */}
+              <div className="relative shrink-0">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-8 border-primary/20 flex items-center justify-center bg-card shadow-lg">
+                  <div className="text-center">
+                    <p className="text-4xl sm:text-5xl font-bold text-primary">{result.totalScore}</p>
+                    <p className="text-sm text-muted-foreground">/ {result.maxScore}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Info */}
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-3 mb-3">
+                  <Badge variant="secondary" className="text-base px-4 py-1">
+                    {result.gsatLevel} 級分
+                  </Badge>
+                  <BenchmarkBadge benchmark={result.benchmark} />
+                </div>
+                <h1 className="text-xl sm:text-2xl font-semibold text-foreground mb-3">
+                  {currentExam.name}
+                </h1>
+                <p className="text-muted-foreground leading-relaxed max-w-lg">
+                  {result.summary}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Section 2: Reading Sections */}
+        <Card className="mb-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <span className="w-1 h-5 bg-primary rounded-full" />
+              選擇題表現
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              <ReadingCard 
+                title="單字題" 
+                correct={result.reading.vocabulary.correct} 
+                total={result.reading.vocabulary.total} 
+              />
+              <ReadingCard 
+                title="綜合測驗" 
+                correct={result.reading.cloze.correct} 
+                total={result.reading.cloze.total} 
+              />
+              <ReadingCard 
+                title="文意選填" 
+                correct={result.reading.sentenceCompletion.correct} 
+                total={result.reading.sentenceCompletion.total} 
+              />
+              <ReadingCard 
+                title="篇章結構" 
+                correct={result.reading.paragraphStructure.correct} 
+                total={result.reading.paragraphStructure.total} 
+              />
+              <ReadingCard 
+                title="閱讀測驗" 
+                correct={result.reading.readingComprehension.correct} 
+                total={result.reading.readingComprehension.total} 
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Section 3 & 4: Mixed + Writing (Side by Side on larger screens) */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Mixed Questions */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <span className="w-1 h-5 bg-secondary rounded-full" />
+                混合題
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center gap-6 py-4">
+                <div className="relative">
+                  <ScoreRing 
+                    percentage={(result.mixed.score / result.mixed.maxScore) * 100} 
+                    size={80} 
+                    strokeWidth={6} 
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg font-bold">{Math.round((result.mixed.score / result.mixed.maxScore) * 100)}%</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-3xl font-bold">
+                    {result.mixed.score} <span className="text-lg font-normal text-muted-foreground">/ {result.mixed.maxScore}</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">得分</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Writing Section */}
+          <Card className="lg:col-span-2">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <span className="w-1 h-5 bg-accent rounded-full" />
+                寫作題
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid sm:grid-cols-2 gap-6">
+                {/* Scores */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">翻譯題</p>
+                      <p className="text-2xl font-bold">
+                        {result.writing.translation.score} 
+                        <span className="text-base font-normal text-muted-foreground"> / {result.writing.translation.maxScore}</span>
+                      </p>
+                    </div>
+                    <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary rounded-full transition-all duration-500"
+                        style={{ width: `${(result.writing.translation.score / result.writing.translation.maxScore) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">作文題</p>
+                      <p className="text-2xl font-bold">
+                        {result.writing.essay.score} 
+                        <span className="text-base font-normal text-muted-foreground"> / {result.writing.essay.maxScore}</span>
+                      </p>
+                    </div>
+                    <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-accent rounded-full transition-all duration-500"
+                        style={{ width: `${(result.writing.essay.score / result.writing.essay.maxScore) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Essay Prompt */}
+                <div className="p-4 bg-card border-2 border-dashed border-muted rounded-xl">
+                  <div className="flex items-start gap-2 mb-2">
+                    <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-sm font-medium text-muted-foreground">作文題目</p>
+                  </div>
+                  <p className="text-sm leading-relaxed text-foreground/80">
+                    {result.writing.essayPrompt}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+export default ExamResultSummary;
