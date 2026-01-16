@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, FileText, PenLine, MessageSquareText, Image, Layers, BookOpen, Languages, Lightbulb, Palette } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, PenLine, MessageSquareText, Image, Layers, BookOpen, Languages, Lightbulb, Palette, TrendingUp } from "lucide-react";
 import { useState } from "react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 // Mock exam data
 const MOCK_EXAMS = [
@@ -652,6 +653,158 @@ const ExamResultSummary = () => {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Section 6: Historical Trend Chart */}
+        <Card className="mt-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <span className="w-1 h-5 bg-secondary rounded-full" />
+              <TrendingUp className="h-4 w-4" />
+              歷次成績趨勢
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              // Convert grades to numeric scores for charting
+              const gradeToScore = (grade: string): number => {
+                const map: Record<string, number> = {
+                  "A+": 100, "A": 90, "B+": 80, "B": 70, "C+": 60, "C": 50, "D": 40
+                };
+                return map[grade] || 0;
+              };
+
+              // Build trend data from all exams
+              const trendData = MOCK_EXAMS.slice().reverse().map((exam) => {
+                const examResult = MOCK_RESULTS[exam.id];
+                const categories = examResult.essayFeedback.categories;
+                
+                const dataPoint: Record<string, string | number> = {
+                  name: exam.year + "學測",
+                  總分: examResult.totalScore,
+                };
+                
+                categories.forEach((cat) => {
+                  dataPoint[cat.label] = gradeToScore(cat.grade);
+                });
+                
+                return dataPoint;
+              });
+
+              // Get all unique category labels
+              const allCategories = new Set<string>();
+              MOCK_EXAMS.forEach((exam) => {
+                MOCK_RESULTS[exam.id].essayFeedback.categories.forEach((cat) => {
+                  allCategories.add(cat.label);
+                });
+              });
+
+              const categoryColors: Record<string, string> = {
+                "結構": "hsl(var(--primary))",
+                "內容": "hsl(var(--success))",
+                "文法": "hsl(var(--warning))",
+                "用詞": "hsl(var(--secondary))",
+              };
+
+              return (
+                <div className="space-y-4">
+                  {/* Legend explanation */}
+                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-primary" /> A+=100
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-primary/80" /> A=90
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-primary/60" /> B+=80
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-primary/40" /> B=70
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-warning" /> C+=60
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-warning/60" /> C=50
+                    </span>
+                  </div>
+
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={trendData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis 
+                          dataKey="name" 
+                          tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={{ stroke: "hsl(var(--border))" }}
+                        />
+                        <YAxis 
+                          domain={[0, 100]} 
+                          tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={{ stroke: "hsl(var(--border))" }}
+                          tickFormatter={(value) => {
+                            if (value === 100) return "A+";
+                            if (value === 90) return "A";
+                            if (value === 80) return "B+";
+                            if (value === 70) return "B";
+                            if (value === 60) return "C+";
+                            if (value === 50) return "C";
+                            return "";
+                          }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: "hsl(var(--card))", 
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                            fontSize: "12px"
+                          }}
+                          formatter={(value: number) => {
+                            if (value === 100) return "A+";
+                            if (value === 90) return "A";
+                            if (value === 80) return "B+";
+                            if (value === 70) return "B";
+                            if (value === 60) return "C+";
+                            if (value === 50) return "C";
+                            if (value === 40) return "D";
+                            return value;
+                          }}
+                        />
+                        <Legend 
+                          wrapperStyle={{ fontSize: "12px" }}
+                          iconType="circle"
+                        />
+                        {Array.from(allCategories).map((cat) => (
+                          <Line
+                            key={cat}
+                            type="monotone"
+                            dataKey={cat}
+                            stroke={categoryColors[cat] || "hsl(var(--muted-foreground))"}
+                            strokeWidth={2}
+                            dot={{ r: 4, fill: categoryColors[cat] || "hsl(var(--muted-foreground))" }}
+                            activeDot={{ r: 6 }}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Summary insights */}
+                  <div className="grid sm:grid-cols-2 gap-3 pt-2">
+                    <div className="p-3 bg-success/10 border border-success/30 rounded-lg">
+                      <p className="text-xs font-medium text-success mb-1">📈 進步最多</p>
+                      <p className="text-sm text-foreground/80">內容表現從 C+ 提升至 A+，進步 3 個等級</p>
+                    </div>
+                    <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg">
+                      <p className="text-xs font-medium text-warning mb-1">⚠️ 需要加強</p>
+                      <p className="text-sm text-foreground/80">文法維持在 B+~C+ 之間，建議加強練習</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       </div>
