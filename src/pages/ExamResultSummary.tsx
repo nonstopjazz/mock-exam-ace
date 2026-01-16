@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, PenLine, MessageSquareText, Image } from "lucide-react";
 import { useState } from "react";
 
 // Mock exam data
@@ -33,6 +33,11 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
       essay: { score: 15, maxScore: 20 },
       essayPrompt: "Describe a memorable experience that changed your perspective on life. Explain what happened and how it influenced your thinking.",
     },
+    essaySubmission: {
+      type: "text",
+      content: "One memorable experience that changed my perspective on life was when I volunteered at a local elderly care center last summer. Before this experience, I had always taken my family for granted and rarely thought about the challenges that older people face.\n\nDuring my time there, I met Mrs. Chen, an 85-year-old woman who had been living alone since her husband passed away. Despite her loneliness, she always greeted everyone with a warm smile and shared stories about her youth. She taught me that happiness doesn't come from material possessions but from meaningful connections with others.\n\nThis experience made me realize how important it is to cherish every moment with our loved ones and to show kindness to strangers. Now, I make it a point to call my grandparents every week and volunteer regularly at the center.",
+    },
+    essayFeedback: "**整體評語：** 文章結構完整，敘事流暢，能清楚表達經歷對自己的影響。\n\n**優點：**\n- 開頭有效引入主題\n- 以具體例子（陳奶奶）支持論點\n- 結尾呼應主題，展現個人成長\n\n**改進建議：**\n- 可增加更多感官描寫，使場景更生動\n- 第二段轉折處可加強連接詞的使用\n- 建議使用更多樣的句型結構\n\n**文法修正：**\n- \"I had always taken my family for granted\" ✓ 正確使用過去完成式\n- 注意 \"elderly care center\" 可改為 \"senior care facility\" 更正式",
   },
   "113-gsat": {
     totalScore: 72,
@@ -53,6 +58,14 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
       essay: { score: 13, maxScore: 20 },
       essayPrompt: "Write about a person who has had a significant impact on your life and explain why.",
     },
+    essaySubmission: {
+      type: "images",
+      images: [
+        "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600&h=800&fit=crop",
+        "https://images.unsplash.com/photo-1517842645767-c639042777db?w=600&h=800&fit=crop",
+      ],
+    },
+    essayFeedback: "**整體評語：** 文章描述了一位重要人物對自己的影響，但論述略顯平淡。\n\n**優點：**\n- 選擇了明確的主題人物\n- 有提及具體的影響事例\n\n**改進建議：**\n- 需要更深入探討「為什麼」這個人如此重要\n- 建議增加更多情感層面的描寫\n- 結尾部分可以更具體說明如何將這些影響應用在生活中\n\n**文法修正：**\n- 注意動詞時態一致性\n- 部分句子過長，建議分割為較短的句子",
   },
   "112-gsat": {
     totalScore: 65,
@@ -73,6 +86,11 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
       essay: { score: 11, maxScore: 20 },
       essayPrompt: "Discuss the advantages and disadvantages of social media in modern life.",
     },
+    essaySubmission: {
+      type: "text",
+      content: "Social media is very popular today. Many people use Facebook and Instagram every day. I think social media has good and bad things.\n\nThe good thing is we can talk to friends easily. We can also learn news quickly. Many people share interesting things on social media.\n\nBut social media also has problems. Some people spend too much time on it. They don't study or exercise. Also, some information on social media is not true.\n\nIn conclusion, social media is useful but we should use it carefully.",
+    },
+    essayFeedback: "**整體評語：** 文章結構基本完整，但內容深度不足，用詞較為簡單。\n\n**優點：**\n- 有基本的段落架構\n- 論點清楚區分優缺點\n\n**改進建議：**\n- 需要更具體的例子來支持論點\n- 用詞過於簡單，建議使用更豐富的詞彙\n- 可以加入個人經驗或觀察來增加說服力\n- 結論段落過於簡短，需要更完整的總結\n\n**文法修正：**\n- \"I think social media has good and bad things\" 可改為 \"I believe social media has both advantages and disadvantages\"\n- 避免重複使用 \"social media\"，可用 \"it\" 或 \"these platforms\" 替代",
   },
 };
 
@@ -95,6 +113,12 @@ interface ExamResult {
     essay: { score: number; maxScore: number };
     essayPrompt: string;
   };
+  essaySubmission: {
+    type: "text" | "images";
+    content?: string;
+    images?: string[];
+  };
+  essayFeedback: string;
 }
 
 // Score ring component
@@ -409,6 +433,73 @@ const ExamResultSummary = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Section 5: Essay Submission & Feedback */}
+        <Card className="mt-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <span className="w-1 h-5 bg-primary rounded-full" />
+              作文繳交與批改
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Student Submission */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  {result.essaySubmission.type === "text" ? (
+                    <PenLine className="h-4 w-4" />
+                  ) : (
+                    <Image className="h-4 w-4" />
+                  )}
+                  <span>學生作答</span>
+                </div>
+                
+                {result.essaySubmission.type === "text" ? (
+                  <div className="p-4 bg-muted/30 rounded-xl border max-h-80 overflow-y-auto">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+                      {result.essaySubmission.content}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {result.essaySubmission.images?.map((img, index) => (
+                      <div key={index} className="relative rounded-xl overflow-hidden border bg-muted/30">
+                        <img 
+                          src={img} 
+                          alt={`作文圖片 ${index + 1}`}
+                          className="w-full h-auto max-h-60 object-contain"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Feedback */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <MessageSquareText className="h-4 w-4" />
+                  <span>批改意見</span>
+                </div>
+                <div className="p-4 bg-card border-2 border-primary/20 rounded-xl max-h-80 overflow-y-auto">
+                  <div 
+                    className="text-sm leading-relaxed prose prose-sm max-w-none
+                      [&_strong]:text-foreground [&_strong]:font-semibold
+                      [&_p]:text-foreground/90 [&_p]:my-2
+                      [&_li]:text-foreground/90"
+                    dangerouslySetInnerHTML={{ 
+                      __html: result.essayFeedback
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n- /g, '<br/>• ')
+                        .replace(/\n/g, '<br/>')
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
