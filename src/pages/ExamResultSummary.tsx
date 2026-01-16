@@ -3,7 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, FileText, PenLine, MessageSquareText, Image, Layers, BookOpen, Languages, Lightbulb, Palette } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, PenLine, MessageSquareText, Image, Layers, BookOpen, Languages, Lightbulb, Palette, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// Mock user data
+const MOCK_USER = {
+  name: "王小明",
+  avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face",
+};
 import { useState } from "react";
 
 // Mock exam data
@@ -408,6 +415,17 @@ const ExamResultSummary = () => {
                 <p className="text-muted-foreground leading-relaxed max-w-lg">
                   {result.summary}
                 </p>
+              </div>
+
+              {/* User Avatar */}
+              <div className="shrink-0 flex flex-col items-center gap-2 sm:self-start">
+                <Avatar className="w-14 h-14 sm:w-16 sm:h-16 border-2 border-primary/20 shadow-md">
+                  <AvatarImage src={MOCK_USER.avatar} alt={MOCK_USER.name} />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    <User className="w-6 h-6" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium text-foreground">{MOCK_USER.name}</span>
               </div>
             </div>
           </div>
