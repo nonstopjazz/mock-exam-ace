@@ -45,6 +45,7 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
           label: "結構",
           icon: "structure",
           color: "primary",
+          grade: "A",
           items: ["開頭有效引入主題", "結尾呼應主題，展現個人成長", "段落分明，邏輯清晰"],
         },
         {
@@ -52,6 +53,7 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
           label: "內容",
           icon: "content",
           color: "success",
+          grade: "A+",
           items: ["以具體例子（陳奶奶）支持論點", "可增加更多感官描寫，使場景更生動"],
         },
         {
@@ -59,6 +61,7 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
           label: "文法",
           icon: "grammar",
           color: "warning",
+          grade: "B+",
           items: ["正確使用過去完成式 ✓", "第二段轉折處可加強連接詞的使用"],
         },
         {
@@ -66,6 +69,7 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
           label: "用詞",
           icon: "vocabulary",
           color: "secondary",
+          grade: "B",
           items: ["\"elderly care center\" 可改為 \"senior care facility\" 更正式", "建議使用更多樣的句型結構"],
         },
       ],
@@ -105,6 +109,7 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
           label: "結構",
           icon: "structure",
           color: "primary",
+          grade: "B",
           items: ["選擇了明確的主題人物", "結尾部分可以更具體說明影響的應用"],
         },
         {
@@ -112,6 +117,7 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
           label: "內容",
           icon: "content",
           color: "success",
+          grade: "B+",
           items: ["有提及具體的影響事例", "需要更深入探討「為什麼」這個人如此重要", "建議增加更多情感層面的描寫"],
         },
         {
@@ -119,6 +125,7 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
           label: "文法",
           icon: "grammar",
           color: "warning",
+          grade: "C+",
           items: ["注意動詞時態一致性", "部分句子過長，建議分割為較短的句子"],
         },
       ],
@@ -155,6 +162,7 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
           label: "結構",
           icon: "structure",
           color: "primary",
+          grade: "B",
           items: ["有基本的段落架構", "論點清楚區分優缺點", "結論段落過於簡短，需要更完整的總結"],
         },
         {
@@ -162,6 +170,7 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
           label: "內容",
           icon: "content",
           color: "success",
+          grade: "C+",
           items: ["需要更具體的例子來支持論點", "可以加入個人經驗或觀察來增加說服力"],
         },
         {
@@ -169,6 +178,7 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
           label: "用詞",
           icon: "vocabulary",
           color: "secondary",
+          grade: "C",
           items: ["用詞過於簡單，建議使用更豐富的詞彙", "\"good and bad things\" 可改為 \"advantages and disadvantages\"", "避免重複使用 \"social media\"，可用 \"it\" 或 \"these platforms\" 替代"],
         },
         {
@@ -176,6 +186,7 @@ const MOCK_RESULTS: Record<string, ExamResult> = {
           label: "文法",
           icon: "grammar",
           color: "warning",
+          grade: "C+",
           items: ["\"I think\" 可改為 \"I believe\" 更正式"],
         },
       ],
@@ -214,6 +225,7 @@ interface ExamResult {
       label: string;
       icon: "structure" | "grammar" | "vocabulary" | "content" | "style";
       color: string;
+      grade: "A+" | "A" | "B+" | "B" | "C+" | "C" | "D";
       items: string[];
     }[];
   };
@@ -604,13 +616,27 @@ const ExamResultSummary = () => {
                       warning: "bg-warning/10 text-warning border-warning/30",
                       secondary: "bg-secondary/10 text-secondary-foreground border-secondary/30",
                     };
+                    const gradeColorMap: Record<string, string> = {
+                      "A+": "bg-success text-success-foreground",
+                      "A": "bg-success/80 text-success-foreground",
+                      "B+": "bg-primary text-primary-foreground",
+                      "B": "bg-primary/80 text-primary-foreground",
+                      "C+": "bg-warning text-warning-foreground",
+                      "C": "bg-warning/80 text-warning-foreground",
+                      "D": "bg-destructive text-destructive-foreground",
+                    };
                     const Icon = iconMap[category.icon];
                     
                     return (
                       <div key={category.id} className="border rounded-lg overflow-hidden">
-                        <div className={`flex items-center gap-2 px-3 py-2 ${colorMap[category.color]} border-b`}>
-                          <Icon className="h-3.5 w-3.5" />
-                          <span className="text-xs font-semibold">{category.label}</span>
+                        <div className={`flex items-center justify-between px-3 py-2 ${colorMap[category.color]} border-b`}>
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-3.5 w-3.5" />
+                            <span className="text-xs font-semibold">{category.label}</span>
+                          </div>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${gradeColorMap[category.grade]}`}>
+                            {category.grade}
+                          </span>
                         </div>
                         <ul className="p-3 space-y-1.5 bg-card">
                           {category.items.map((item, idx) => (
