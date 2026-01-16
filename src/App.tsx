@@ -33,6 +33,7 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import ExamResultSummary from "./pages/ExamResultSummary";
 
 // Galaxy Quest (遊戲化練習)
 import Phase0Index from "./pages/practice/Phase0Index";
@@ -93,6 +94,7 @@ const App = () => (
           <Route path="/exam/result/:attemptId" element={<LockedPage title="模考結果" description="模考功能即將推出，敬請期待！" />} />
           <Route path="/exam/explanation/:attemptId" element={<LockedPage title="題目解析" description="模考功能即將推出，敬請期待！" />} />
           <Route path="/dashboard" element={<LockedPage title="學習儀表板" description="儀表板功能即將推出，敬請期待！" />} />
+          <Route path="/dashboard/result-summary" element={<ExamResultSummary />} />
           <Route path="/essay" element={<LockedPage title="AI 作文批改" description="作文批改功能即將推出，敬請期待！" />} />
 
           {/* Admin routes - protected by RequireAdmin (production-ready) */}

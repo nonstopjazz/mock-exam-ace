@@ -619,7 +619,7 @@ export function useExamAdmin() {
     const { data, error: insertError } = await supabase
       .from('question_groups')
       .insert({
-        id: group.id || `${group.groupType.toUpperCase()}_G${group.groupOrder}`,
+        id: `${group.groupType.toUpperCase()}_G${group.groupOrder}`,
         exam_id: group.examId,
         group_type: group.groupType,
         group_order: group.groupOrder,
