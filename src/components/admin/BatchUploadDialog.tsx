@@ -349,6 +349,14 @@ export function BatchUploadDialog({
         {/* Step 2: Preview */}
         {step === 'preview' && (
           <div className="space-y-4 py-4">
+            {/* Important Notice */}
+            <Alert className="bg-amber-50 border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                請確認下方資料無誤後，點擊底部的「<strong>確認上傳</strong>」按鈕完成匯入
+              </AlertDescription>
+            </Alert>
+
             {/* Summary */}
             <div className="flex items-center gap-4">
               <Badge variant="outline" className="text-base py-1 px-3">
@@ -486,9 +494,11 @@ export function BatchUploadDialog({
               <Button
                 onClick={handleUpload}
                 disabled={validItems.length === 0}
+                size="lg"
+                className="bg-green-600 hover:bg-green-700 text-white px-8"
               >
-                <Upload className="h-4 w-4 mr-2" />
-                上傳 {validItems.length} 筆
+                <CheckCircle2 className="h-5 w-5 mr-2" />
+                確認上傳 {validItems.length} 筆
               </Button>
             </>
           )}
