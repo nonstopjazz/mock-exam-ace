@@ -95,12 +95,15 @@ export function useUserPacks() {
       // Get cover images for each pack (separate query)
       let coverImages: Record<string, string> = {};
       if (packIds.length > 0) {
-        const { data: imageData } = await supabase
+        const { data: imageData, error: imageError } = await supabase
           .from('pack_images')
           .select('pack_id, image_url, is_cover')
           .in('pack_id', packIds)
           .order('is_cover', { ascending: false })
           .order('sort_order', { ascending: true });
+
+        console.log('Pack IDs for image query:', packIds);
+        console.log('Image query result:', imageData, 'Error:', imageError);
 
         if (imageData) {
           // Group by pack_id and get the cover image (is_cover=true first, then first image)
@@ -110,6 +113,7 @@ export function useUserPacks() {
             }
           }
         }
+        console.log('Cover images map:', coverImages);
       }
 
       // Transform data
