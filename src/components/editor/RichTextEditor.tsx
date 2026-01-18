@@ -14,6 +14,7 @@ import {
   Strikethrough,
   Heading2,
   Heading3,
+  Heading4,
   List,
   ListOrdered,
   Quote,
@@ -43,7 +44,7 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({
         heading: {
-          levels: [2, 3],
+          levels: [2, 3, 4],
         },
       }),
       Image.configure({
@@ -178,6 +179,16 @@ export function RichTextEditor({
           aria-label="Heading 3"
         >
           <Heading3 className="h-4 w-4" />
+        </Toggle>
+        <Toggle
+          size="sm"
+          pressed={editor.isActive('heading', { level: 4 })}
+          onPressedChange={() =>
+            editor.chain().focus().toggleHeading({ level: 4 }).run()
+          }
+          aria-label="Heading 4"
+        >
+          <Heading4 className="h-4 w-4" />
         </Toggle>
 
         <Separator orientation="vertical" className="mx-1 h-6" />
