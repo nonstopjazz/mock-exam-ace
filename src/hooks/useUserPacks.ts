@@ -23,6 +23,7 @@ export interface UserPack {
   progress: number;
   claimed_at: string;
   last_studied_at: string | null;
+  cover_image_url: string | null;
 }
 
 export interface PackWithItems extends UserPack {
@@ -46,7 +47,7 @@ export function useUserPacks() {
     setError(null);
 
     try {
-      // Fetch user's claimed packs with pack details and word count
+      // Fetch user's claimed packs with pack details, word count, and cover image
       const { data, error: fetchError } = await supabase
         .from('user_pack_claims')
         .select(`
@@ -59,7 +60,11 @@ export function useUserPacks() {
             title,
             description,
             theme,
-            difficulty
+            difficulty,
+            cover_image:pack_images!pack_id (
+              image_url,
+              is_cover
+            )
           )
         `)
         .eq('user_id', user.id)
@@ -93,18 +98,25 @@ export function useUserPacks() {
       // Transform data
       const transformedPacks: UserPack[] = (data || [])
         .filter((d: any) => d.pack)
-        .map((d: any) => ({
-          id: d.id,
-          pack_id: d.pack.id,
-          title: d.pack.title,
-          description: d.pack.description,
-          theme: d.pack.theme,
-          difficulty: d.pack.difficulty,
-          word_count: wordCounts[d.pack.id] || 0,
-          progress: d.progress || 0,
-          claimed_at: d.claimed_at,
-          last_studied_at: d.last_studied_at,
-        }));
+        .map((d: any) => {
+          // Find cover image (prefer is_cover=true, fallback to first image)
+          const images = d.pack.cover_image || [];
+          const coverImage = images.find((img: any) => img.is_cover) || images[0];
+
+          return {
+            id: d.id,
+            pack_id: d.pack.id,
+            title: d.pack.title,
+            description: d.pack.description,
+            theme: d.pack.theme,
+            difficulty: d.pack.difficulty,
+            word_count: wordCounts[d.pack.id] || 0,
+            progress: d.progress || 0,
+            claimed_at: d.claimed_at,
+            last_studied_at: d.last_studied_at,
+            cover_image_url: coverImage?.image_url || null,
+          };
+        });
 
       setPacks(transformedPacks);
     } catch (err) {
