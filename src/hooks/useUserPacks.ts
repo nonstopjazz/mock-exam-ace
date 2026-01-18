@@ -102,9 +102,6 @@ export function useUserPacks() {
           .order('is_cover', { ascending: false })
           .order('sort_order', { ascending: true });
 
-        console.log('Pack IDs for image query:', packIds);
-        console.log('Image query result:', imageData, 'Error:', imageError);
-
         if (imageData) {
           // Group by pack_id and get the cover image (is_cover=true first, then first image)
           for (const img of imageData) {
@@ -113,7 +110,6 @@ export function useUserPacks() {
             }
           }
         }
-        console.log('Cover images map:', coverImages);
       }
 
       // Transform data
