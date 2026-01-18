@@ -47,7 +47,7 @@ export function useUserPacks() {
     setError(null);
 
     try {
-      // Fetch user's claimed packs with pack details, word count, and cover image
+      // Fetch user's claimed packs with pack details
       const { data, error: fetchError } = await supabase
         .from('user_pack_claims')
         .select(`
@@ -60,11 +60,7 @@ export function useUserPacks() {
             title,
             description,
             theme,
-            difficulty,
-            cover_image:pack_images!pack_id (
-              image_url,
-              is_cover
-            )
+            difficulty
           )
         `)
         .eq('user_id', user.id)
@@ -77,9 +73,10 @@ export function useUserPacks() {
         return;
       }
 
-      // Get word counts for each pack
+      // Get pack IDs for additional queries
       const packIds = data?.map((d: any) => d.pack?.id).filter(Boolean) || [];
 
+      // Get word counts for each pack
       let wordCounts: Record<string, number> = {};
       if (packIds.length > 0) {
         const { data: countData } = await supabase
@@ -95,28 +92,42 @@ export function useUserPacks() {
         }
       }
 
+      // Get cover images for each pack (separate query)
+      let coverImages: Record<string, string> = {};
+      if (packIds.length > 0) {
+        const { data: imageData } = await supabase
+          .from('pack_images')
+          .select('pack_id, image_url, is_cover')
+          .in('pack_id', packIds)
+          .order('is_cover', { ascending: false })
+          .order('sort_order', { ascending: true });
+
+        if (imageData) {
+          // Group by pack_id and get the cover image (is_cover=true first, then first image)
+          for (const img of imageData) {
+            if (!coverImages[img.pack_id]) {
+              coverImages[img.pack_id] = img.image_url;
+            }
+          }
+        }
+      }
+
       // Transform data
       const transformedPacks: UserPack[] = (data || [])
         .filter((d: any) => d.pack)
-        .map((d: any) => {
-          // Find cover image (prefer is_cover=true, fallback to first image)
-          const images = d.pack.cover_image || [];
-          const coverImage = images.find((img: any) => img.is_cover) || images[0];
-
-          return {
-            id: d.id,
-            pack_id: d.pack.id,
-            title: d.pack.title,
-            description: d.pack.description,
-            theme: d.pack.theme,
-            difficulty: d.pack.difficulty,
-            word_count: wordCounts[d.pack.id] || 0,
-            progress: d.progress || 0,
-            claimed_at: d.claimed_at,
-            last_studied_at: d.last_studied_at,
-            cover_image_url: coverImage?.image_url || null,
-          };
-        });
+        .map((d: any) => ({
+          id: d.id,
+          pack_id: d.pack.id,
+          title: d.pack.title,
+          description: d.pack.description,
+          theme: d.pack.theme,
+          difficulty: d.pack.difficulty,
+          word_count: wordCounts[d.pack.id] || 0,
+          progress: d.progress || 0,
+          claimed_at: d.claimed_at,
+          last_studied_at: d.last_studied_at,
+          cover_image_url: coverImages[d.pack.id] || null,
+        }));
 
       setPacks(transformedPacks);
     } catch (err) {
