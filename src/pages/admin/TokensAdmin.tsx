@@ -47,6 +47,7 @@ import {
   Copy,
   Shuffle,
   ExternalLink,
+  Pencil,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -101,6 +102,7 @@ export default function TokensAdmin() {
   const [tokenToDelete, setTokenToDelete] = useState<InviteToken | null>(null);
   const [formData, setFormData] = useState<TokenFormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
+  const [editingToken, setEditingToken] = useState<InviteToken | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -144,9 +146,22 @@ export default function TokensAdmin() {
   }
 
   function openCreateDialog() {
+    setEditingToken(null);
     setFormData({
       ...initialFormData,
       token: generateRandomToken(),
+    });
+    setDialogOpen(true);
+  }
+
+  function openEditDialog(token: InviteToken) {
+    setEditingToken(token);
+    setFormData({
+      pack_id: token.pack_id,
+      token: token.token,
+      max_uses: token.max_uses?.toString() || '',
+      expires_at: token.expires_at ? token.expires_at.slice(0, 16) : '',
+      is_active: token.is_active,
     });
     setDialogOpen(true);
   }
@@ -215,18 +230,40 @@ export default function TokensAdmin() {
       is_active: formData.is_active,
     };
 
-    const { error } = await supabase.from('invite_tokens').insert(tokenData);
+    if (editingToken) {
+      // Update existing token
+      const { error } = await supabase
+        .from('invite_tokens')
+        .update(tokenData)
+        .eq('id', editingToken.id);
 
-    if (error) {
-      toast({
-        title: '建立失敗',
-        description: error.code === '23505' ? 'Token 已存在' : error.message,
-        variant: 'destructive',
-      });
+      if (error) {
+        toast({
+          title: '更新失敗',
+          description: error.code === '23505' ? 'Token 已存在' : error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({ title: '更新成功' });
+        setDialogOpen(false);
+        setEditingToken(null);
+        fetchTokens();
+      }
     } else {
-      toast({ title: '建立成功' });
-      setDialogOpen(false);
-      fetchTokens();
+      // Create new token
+      const { error } = await supabase.from('invite_tokens').insert(tokenData);
+
+      if (error) {
+        toast({
+          title: '建立失敗',
+          description: error.code === '23505' ? 'Token 已存在' : error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({ title: '建立成功' });
+        setDialogOpen(false);
+        fetchTokens();
+      }
     }
 
     setSubmitting(false);
@@ -305,7 +342,7 @@ export default function TokensAdmin() {
                 <TableHead>過期時間</TableHead>
                 <TableHead>狀態</TableHead>
                 <TableHead>建立時間</TableHead>
-                <TableHead className="w-[150px]">操作</TableHead>
+                <TableHead className="w-[180px]">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -355,6 +392,14 @@ export default function TokensAdmin() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          title="編輯"
+                          onClick={() => openEditDialog(token)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           title={token.is_active ? '停用' : '啟用'}
                           onClick={() => handleToggleActive(token)}
                         >
@@ -381,13 +426,16 @@ export default function TokensAdmin() {
         </div>
       )}
 
-      {/* Create Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Create/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) setEditingToken(null);
+      }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>新增 Token</DialogTitle>
+            <DialogTitle>{editingToken ? '編輯 Token' : '新增 Token'}</DialogTitle>
             <DialogDescription>
-              建立新的邀請碼讓使用者領取單字包
+              {editingToken ? '修改邀請碼設定' : '建立新的邀請碼讓使用者領取單字包'}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
@@ -486,7 +534,7 @@ export default function TokensAdmin() {
               </Button>
               <Button type="submit" disabled={submitting}>
                 {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                建立
+                {editingToken ? '更新' : '建立'}
               </Button>
             </DialogFooter>
           </form>
