@@ -29,8 +29,8 @@ function generateSlug(text: string): string {
 function extractHeadings(html: string): TocItem[] {
   const headings: TocItem[] = [];
 
-  // Match H2 and H3 tags
-  const regex = /<h([23])[^>]*>([^<]+)<\/h[23]>/gi;
+  // Match H2, H3, and H4 tags
+  const regex = /<h([234])[^>]*>([^<]+)<\/h[234]>/gi;
   let match;
 
   while ((match = regex.exec(html)) !== null) {
@@ -52,14 +52,14 @@ function extractHeadingsFromMarkdown(markdown: string): TocItem[] {
   const lines = markdown.split('\n');
 
   for (const line of lines) {
-    // Match ## and ### headings
-    const match = line.match(/^(#{2,3})\s+(.+)$/);
+    // Match ##, ###, and #### headings
+    const match = line.match(/^(#{2,4})\s+(.+)$/);
     if (match) {
       const level = match[1].length;
       const text = match[2].trim();
       const id = generateSlug(text);
 
-      if (text && level <= 3) {
+      if (text && level <= 4) {
         headings.push({ id, text, level });
       }
     }
@@ -75,7 +75,7 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
   // Extract headings from content (supports both HTML and Markdown)
   const headings = useMemo(() => {
     // Check if content is HTML or Markdown
-    if (content.includes('<h2') || content.includes('<h3')) {
+    if (content.includes('<h2') || content.includes('<h3') || content.includes('<h4')) {
       return extractHeadings(content);
     }
     return extractHeadingsFromMarkdown(content);
@@ -152,7 +152,8 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
                 <li
                   key={`${heading.id}-${index}`}
                   className={cn(
-                    heading.level === 3 && 'ml-4'
+                    heading.level === 3 && 'ml-4',
+                    heading.level === 4 && 'ml-8'
                   )}
                 >
                   <button
