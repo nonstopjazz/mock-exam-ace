@@ -546,40 +546,62 @@ const VocabularyCollections = () => {
                     : "hover:shadow-lg"
                 }`}
               >
-                <div className="p-6 space-y-4">
-                  {/* Header with Checkbox */}
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => toggleSelectPack(pack.id)}
-                      className="mt-1"
+                {/* Cover Image */}
+                {pack.cover_image_url ? (
+                  <div className="aspect-video bg-muted overflow-hidden relative">
+                    <img
+                      src={pack.cover_image_url}
+                      alt={pack.title}
+                      className="w-full h-full object-cover"
                     />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        {pack.theme && (
-                          <Badge variant="outline" className="text-xs">
-                            <Tag className="h-3 w-3 mr-1" />
-                            {pack.theme}
-                          </Badge>
-                        )}
-                        {pack.difficulty && (
-                          <Badge variant="secondary" className="text-xs">
-                            {pack.difficulty}
-                          </Badge>
-                        )}
-                      </div>
-                      <h3
-                        className="text-xl font-bold text-foreground mb-1 cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => navigate(`/practice/vocabulary/pack/${pack.pack_id}`)}
-                      >
-                        {pack.title}
-                      </h3>
-                      {pack.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {pack.description}
-                        </p>
+                    <div className="absolute top-2 left-2">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleSelectPack(pack.id)}
+                        className="bg-white/80 backdrop-blur-sm"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center relative">
+                    <BookOpen className="h-12 w-12 text-primary/40" />
+                    <div className="absolute top-2 left-2">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleSelectPack(pack.id)}
+                        className="bg-white/80 backdrop-blur-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-6 space-y-4">
+                  {/* Header */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      {pack.theme && (
+                        <Badge variant="outline" className="text-xs">
+                          <Tag className="h-3 w-3 mr-1" />
+                          {pack.theme}
+                        </Badge>
+                      )}
+                      {pack.difficulty && (
+                        <Badge variant="secondary" className="text-xs">
+                          {pack.difficulty}
+                        </Badge>
                       )}
                     </div>
+                    <h3
+                      className="text-xl font-bold text-foreground mb-1 cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => navigate(`/practice/vocabulary/pack/${pack.pack_id}`)}
+                    >
+                      {pack.title}
+                    </h3>
+                    {pack.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {pack.description}
+                      </p>
+                    )}
                   </div>
 
                   {/* Stats */}
