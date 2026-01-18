@@ -40,7 +40,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Pencil, Trash2, List, Key, ArrowLeft, Upload, X, Image as ImageIcon, Star, GripVertical } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Plus, Pencil, Trash2, List, Key, ArrowLeft, Upload, X, Image as ImageIcon, Star, GripVertical, FileSpreadsheet, Download, Info } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 
 interface PackImage {
@@ -110,6 +112,30 @@ export default function PacksAdmin() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
+
+  // Download vocabulary template
+  function downloadTemplate() {
+    const template = [
+      ['word', 'definition', 'part_of_speech', 'phonetic', 'example_sentence'],
+      ['climate change', '氣候變遷', 'n.', '/ˈklaɪmət tʃeɪndʒ/', 'Climate change is affecting weather patterns worldwide.'],
+      ['sustainable', '可持續的', 'adj.', '/səˈsteɪnəbəl/', 'We need to find sustainable solutions.'],
+      ['renewable', '可再生的', 'adj.', '/rɪˈnjuːəbəl/', 'Solar power is a renewable energy source.'],
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(template);
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 20 }, // word
+      { wch: 15 }, // definition
+      { wch: 15 }, // part_of_speech
+      { wch: 25 }, // phonetic
+      { wch: 50 }, // example_sentence
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '單字範本');
+    XLSX.writeFile(wb, '單字包上傳範本.xlsx');
+    toast({ title: '範本已下載' });
+  }
 
   useEffect(() => {
     fetchPacks();
@@ -502,6 +528,10 @@ export default function PacksAdmin() {
           <h1 className="text-2xl font-bold">單字包管理</h1>
           <p className="text-muted-foreground">管理所有單字包</p>
         </div>
+        <Button variant="outline" onClick={downloadTemplate}>
+          <Download className="h-4 w-4 mr-2" />
+          下載 Excel 範本
+        </Button>
         <Link to="/admin/tokens">
           <Button variant="outline">
             <Key className="h-4 w-4 mr-2" />
@@ -513,6 +543,17 @@ export default function PacksAdmin() {
           新增單字包
         </Button>
       </div>
+
+      {/* Usage Guide */}
+      <Alert className="mb-6">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          <strong>使用說明：</strong>
+          1. 點擊「下載 Excel 範本」取得單字上傳格式 →
+          2. 填寫單字資料後，點擊單字包的「單字管理」→
+          3. 點擊「批次上傳」上傳 Excel 檔案
+        </AlertDescription>
+      </Alert>
 
       {loading ? (
         <div className="flex justify-center py-12">
@@ -533,7 +574,7 @@ export default function PacksAdmin() {
                 <TableHead>難度</TableHead>
                 <TableHead>狀態</TableHead>
                 <TableHead>建立時間</TableHead>
-                <TableHead className="w-[150px]">操作</TableHead>
+                <TableHead className="w-[200px]">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -573,14 +614,15 @@ export default function PacksAdmin() {
                   <TableCell>
                     <div className="flex gap-1">
                       <Link to={`/admin/packs/${pack.id}/items`}>
-                        <Button variant="ghost" size="icon" title="管理單字">
-                          <List className="h-4 w-4" />
+                        <Button variant="outline" size="sm" title="管理單字 & 批次上傳">
+                          <FileSpreadsheet className="h-4 w-4 mr-1" />
+                          單字管理
                         </Button>
                       </Link>
                       <Button
                         variant="ghost"
                         size="icon"
-                        title="編輯"
+                        title="編輯單字包"
                         onClick={() => openEditDialog(pack)}
                       >
                         <Pencil className="h-4 w-4" />
