@@ -347,10 +347,9 @@ const ExamAdmin = () => {
       // 匯入題組內的題目
       const groupQuestions = questionData.slice(1).filter(q => q[1] === groupId);
       for (const qRow of groupQuestions) {
-        // 判斷選項類型：如果 optionsType 欄位是 'image' 或選項內容是 URL，則設為 image
-        const optionsTypeValue = qRow[16] || '';
-        const isImageOptions = optionsTypeValue.toLowerCase() === 'image' ||
-          (qRow[4] && qRow[4].toString().startsWith('http'));
+        // 判斷選項類型：只有明確填寫 'image' 才設為 image，其他（空白、text）都是文字
+        const optionsTypeValue = (qRow[16] || '').toString().toLowerCase().trim();
+        const isImageOptions = optionsTypeValue === 'image';
 
         await addGroupQuestion({
           groupId,
