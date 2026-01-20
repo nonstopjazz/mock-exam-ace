@@ -256,14 +256,15 @@ const ExamAdmin = () => {
             examId,
             questionNumber: row[0],
             prompt: row[2] || '',
-            essayType: (row[3] || '記敘文') as any,
-            wordCountRequirement: parseInt(row[4]) || 120,
-            scoringCriteria: row[5] || '',
-            sampleEssay: row[6] || '',
-            writingTips: row[7] || '',
-            errorTypeTags: row[8] ? row[8].split(',').map((t: string) => t.trim()) : [],
-            topicTags: row[9] ? row[9].split(',').map((t: string) => t.trim()) : [],
-            score: parseFloat(row[10]) || 20,
+            promptImage: row[3] || '', // 新增：題目圖片 URL
+            essayType: (row[4] || '記敘文') as any,
+            wordCountRequirement: parseInt(row[5]) || 120,
+            scoringCriteria: row[6] || '',
+            sampleEssay: row[7] || '',
+            writingTips: row[8] || '',
+            errorTypeTags: row[9] ? row[9].split(',').map((t: string) => t.trim()) : [],
+            topicTags: row[10] ? row[10].split(',').map((t: string) => t.trim()) : [],
+            score: parseFloat(row[11]) || 20,
           });
         }
       }
@@ -332,6 +333,7 @@ const ExamAdmin = () => {
       } else if (groupType === 'reading') {
         groupPayload.articleType = row[6] || '';
         groupPayload.topicTags = row[7] ? row[7].split(',').map((t: string) => t.trim()) : [];
+        groupPayload.contentImage = row[8] || ''; // 新增：文章圖片 URL
       } else if (groupType === 'mixed') {
         groupPayload.chartDescription = row[4] || '';
         groupPayload.topicTags = row[6] ? row[6].split(',').map((t: string) => t.trim()) : [];
@@ -345,6 +347,11 @@ const ExamAdmin = () => {
       // 匯入題組內的題目
       const groupQuestions = questionData.slice(1).filter(q => q[1] === groupId);
       for (const qRow of groupQuestions) {
+        // 判斷選項類型：如果 optionsType 欄位是 'image' 或選項內容是 URL，則設為 image
+        const optionsTypeValue = qRow[16] || '';
+        const isImageOptions = optionsTypeValue.toLowerCase() === 'image' ||
+          (qRow[4] && qRow[4].toString().startsWith('http'));
+
         await addGroupQuestion({
           groupId,
           questionNumber: parseInt(qRow[0]),
@@ -354,6 +361,7 @@ const ExamAdmin = () => {
           optionB: qRow[5] || '',
           optionC: qRow[6] || '',
           optionD: qRow[7] || '',
+          optionsType: isImageOptions ? 'image' : 'text', // 新增：選項類型
           correctAnswer: qRow[8] || qRow[3] || '',
           explanation: qRow[9] || qRow[4] || '',
           grammarSmall: qRow[10] || qRow[5] || '',

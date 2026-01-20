@@ -631,6 +631,7 @@ export function useExamAdmin() {
         group_order: group.groupOrder,
         title: group.title,
         content: group.content,
+        content_image: group.contentImage, // 文章圖片 URL
         content_translation: group.contentTranslation,
         option_count: group.optionCount,
         option_list: group.optionList,
@@ -670,6 +671,7 @@ export function useExamAdmin() {
         option_b: question.optionB,
         option_c: question.optionC,
         option_d: question.optionD,
+        options_type: question.optionsType || 'text', // 選項類型：text 或 image
         correct_answer: question.correctAnswer,
         explanation: question.explanation,
         mixed_type: question.mixedType,
@@ -734,6 +736,7 @@ export function useExamAdmin() {
         exam_id: question.examId,
         question_number: question.questionNumber,
         prompt: question.prompt,
+        prompt_image: question.promptImage, // 作文題目圖片 URL
         essay_type: question.essayType,
         word_count_requirement: question.wordCountRequirement,
         scoring_criteria: question.scoringCriteria,
