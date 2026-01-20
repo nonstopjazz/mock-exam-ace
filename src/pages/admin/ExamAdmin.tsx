@@ -715,10 +715,19 @@ const ExamAdmin = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(exam)}
-                            title="編輯"
+                            title="編輯基本資訊"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                          <Link to={`/admin/exams/${exam.id}/questions`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="編輯題目與圖片"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </Link>
                           <Button
                             variant="ghost"
                             size="sm"

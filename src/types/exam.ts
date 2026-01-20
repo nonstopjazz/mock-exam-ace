@@ -76,6 +76,7 @@ export interface ReadingSet extends BaseQuestion {
   type: 'reading';
   setId: string; // 區分三組
   passage: string;
+  passageImage?: string; // 文章圖片
   title?: string;
   questions: {
     questionNumber: number; // 1-4
@@ -83,7 +84,9 @@ export interface ReadingSet extends BaseQuestion {
     options: {
       label: 'A' | 'B' | 'C' | 'D';
       text: string;
+      imageUrl?: string; // 選項圖片
     }[];
+    optionsType?: 'text' | 'image'; // 選項類型
     correctAnswer: 'A' | 'B' | 'C' | 'D';
   }[];
 }
@@ -118,6 +121,7 @@ export interface TranslationQuestion extends BaseQuestion {
 export interface EssayTask extends BaseQuestion {
   type: 'essay';
   prompt: string;
+  promptImage?: string; // 題目圖片
   wordLimit: {
     min: number;
     max: number;

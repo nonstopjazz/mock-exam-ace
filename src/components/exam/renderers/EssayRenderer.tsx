@@ -34,7 +34,17 @@ export const EssayRenderer = ({ question, answer, onAnswerChange }: Props) => {
       <CardContent className="space-y-6">
         <div>
           <p className="font-medium mb-2">題目：</p>
-          <div className="bg-muted/30 p-4 rounded-lg">
+          <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+            {/* Prompt Image */}
+            {question.promptImage && (
+              <div className="rounded-lg overflow-hidden border bg-muted">
+                <img
+                  src={question.promptImage}
+                  alt="作文題目圖片"
+                  className="w-full max-h-80 object-contain"
+                />
+              </div>
+            )}
             <p className="whitespace-pre-wrap leading-relaxed">{question.prompt}</p>
           </div>
         </div>
