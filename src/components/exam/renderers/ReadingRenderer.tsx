@@ -9,6 +9,50 @@ interface Props {
   onAnswerChange: (answer: Record<number, string>) => void;
 }
 
+// 解析文章內容，將 [IMG:url] 標記轉換為圖片元素
+const renderPassageWithImages = (passage: string) => {
+  // 匹配 [IMG:url] 格式
+  const imgRegex = /\[IMG:(https?:\/\/[^\]]+)\]/g;
+  const parts: (string | { type: 'image'; url: string })[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = imgRegex.exec(passage)) !== null) {
+    // 加入圖片前的文字
+    if (match.index > lastIndex) {
+      parts.push(passage.slice(lastIndex, match.index));
+    }
+    // 加入圖片
+    parts.push({ type: 'image', url: match[1] });
+    lastIndex = match.index + match[0].length;
+  }
+
+  // 加入最後一段文字
+  if (lastIndex < passage.length) {
+    parts.push(passage.slice(lastIndex));
+  }
+
+  return parts.map((part, index) => {
+    if (typeof part === 'string') {
+      return (
+        <span key={index} className="whitespace-pre-wrap">
+          {part}
+        </span>
+      );
+    } else {
+      return (
+        <img
+          key={index}
+          src={part.url}
+          alt="文章圖片"
+          className="inline-block max-w-full my-4 rounded-lg border bg-muted"
+          style={{ maxHeight: '400px', objectFit: 'contain' }}
+        />
+      );
+    }
+  });
+};
+
 export const ReadingRenderer = ({ question, answer = {}, onAnswerChange }: Props) => {
   const handleQuestionAnswer = (questionNumber: number, value: string) => {
     onAnswerChange({ ...answer, [questionNumber]: value });
@@ -21,7 +65,7 @@ export const ReadingRenderer = ({ question, answer = {}, onAnswerChange }: Props
           {question.title && <CardTitle>{question.title}</CardTitle>}
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Passage Image */}
+          {/* Passage Image (若有獨立的文章圖片欄位) */}
           {question.passageImage && (
             <div className="rounded-lg overflow-hidden border bg-muted">
               <img
@@ -31,7 +75,10 @@ export const ReadingRenderer = ({ question, answer = {}, onAnswerChange }: Props
               />
             </div>
           )}
-          <p className="whitespace-pre-wrap leading-relaxed text-base">{question.passage}</p>
+          {/* 文章內容（支援 [IMG:url] 行內圖片標記） */}
+          <div className="leading-relaxed text-base">
+            {renderPassageWithImages(question.passage)}
+          </div>
         </CardContent>
       </Card>
 
