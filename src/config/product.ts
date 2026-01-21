@@ -140,10 +140,10 @@ const TOEIC_CONFIG: ProductConfig = {
 
 const KIDS_CONFIG: ProductConfig = {
   id: 'KIDS',
-  name: 'Joe救兒童英語',
+  name: 'Joe的兒童閱讀學院',
   tagline: '兒童英語學習平台',
   logo: '🎮',
-  shortName: 'Joe英語',
+  shortName: 'Joe閱讀',
   primaryColor: 'hsl(24.6 95% 53.1%)', // Orange
 
   features: {
