@@ -13,6 +13,7 @@ import {
   TrendingUp,
   GraduationCap,
 } from 'lucide-react';
+import { PRODUCT_CONFIG } from '@/config/product';
 
 interface AdminCardProps {
   title: string;
@@ -211,7 +212,7 @@ export default function AdminHome() {
 
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-muted-foreground">
-          <p>學測英文學習平台 · 後台管理系統</p>
+          <p>{PRODUCT_CONFIG.name} · 後台管理系統</p>
         </div>
       </div>
     </div>
