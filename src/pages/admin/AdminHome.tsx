@@ -82,6 +82,12 @@ export default function AdminHome() {
       href: '/admin/exams',
       badge: '新功能',
     },
+    {
+      title: '網站設定',
+      description: '管理導航選單、功能開關與網站設定',
+      icon: <Settings className="h-6 w-6" />,
+      href: '/admin/settings',
+    },
   ];
 
   return (

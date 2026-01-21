@@ -51,6 +51,7 @@ export interface QuestionGroup {
   groupOrder: number;
   title?: string;
   content: string;
+  contentImage?: string; // 閱讀測驗本文圖片
   contentTranslation?: string;
   optionCount?: number;
   optionList?: string;
@@ -76,6 +77,7 @@ export interface GroupQuestion {
   optionB?: string;
   optionC?: string;
   optionD?: string;
+  optionsType?: 'text' | 'image'; // 選項類型：文字或圖片URL
   correctAnswer: string;
   explanation?: string;
   mixedType?: MixedQuestionType;
@@ -110,6 +112,7 @@ export interface EssayQuestion {
   examId: string;
   questionNumber: string;
   prompt: string;
+  promptImage?: string; // 作文題目圖片
   essayType: EssayType;
   wordCountRequirement: number;
   scoringCriteria?: string;
@@ -211,6 +214,7 @@ function transformQuestionGroup(data: any): QuestionGroup {
     groupOrder: data.group_order,
     title: data.title,
     content: data.content,
+    contentImage: data.content_image,
     contentTranslation: data.content_translation,
     optionCount: data.option_count,
     optionList: data.option_list,
@@ -237,6 +241,7 @@ function transformGroupQuestion(data: any): GroupQuestion {
     optionB: data.option_b,
     optionC: data.option_c,
     optionD: data.option_d,
+    optionsType: data.options_type || 'text',
     correctAnswer: data.correct_answer,
     explanation: data.explanation,
     mixedType: data.mixed_type,
@@ -273,6 +278,7 @@ function transformEssayQuestion(data: any): EssayQuestion {
     examId: data.exam_id,
     questionNumber: data.question_number,
     prompt: data.prompt,
+    promptImage: data.prompt_image,
     essayType: data.essay_type,
     wordCountRequirement: data.word_count_requirement,
     scoringCriteria: data.scoring_criteria,
@@ -625,6 +631,7 @@ export function useExamAdmin() {
         group_order: group.groupOrder,
         title: group.title,
         content: group.content,
+        content_image: group.contentImage, // 文章圖片 URL
         content_translation: group.contentTranslation,
         option_count: group.optionCount,
         option_list: group.optionList,
@@ -664,6 +671,7 @@ export function useExamAdmin() {
         option_b: question.optionB,
         option_c: question.optionC,
         option_d: question.optionD,
+        options_type: question.optionsType || 'text', // 選項類型：text 或 image
         correct_answer: question.correctAnswer,
         explanation: question.explanation,
         mixed_type: question.mixedType,
@@ -728,6 +736,7 @@ export function useExamAdmin() {
         exam_id: question.examId,
         question_number: question.questionNumber,
         prompt: question.prompt,
+        prompt_image: question.promptImage, // 作文題目圖片 URL
         essay_type: question.essayType,
         word_count_requirement: question.wordCountRequirement,
         scoring_criteria: question.scoringCriteria,
@@ -748,6 +757,94 @@ export function useExamAdmin() {
     return transformEssayQuestion(data);
   }, []);
 
+  // 更新題組（含圖片）
+  const updateQuestionGroup = useCallback(async (groupId: string, updates: Partial<QuestionGroup>) => {
+    setLoading(true);
+    setError(null);
+
+    const updateData: any = {};
+    if (updates.title !== undefined) updateData.title = updates.title;
+    if (updates.content !== undefined) updateData.content = updates.content;
+    if (updates.contentImage !== undefined) updateData.content_image = updates.contentImage;
+    if (updates.contentTranslation !== undefined) updateData.content_translation = updates.contentTranslation;
+    if (updates.articleType !== undefined) updateData.article_type = updates.articleType;
+    if (updates.chartDescription !== undefined) updateData.chart_description = updates.chartDescription;
+    if (updates.topicTags !== undefined) updateData.topic_tags = updates.topicTags;
+
+    const { data, error: updateError } = await supabase
+      .from('question_groups')
+      .update(updateData)
+      .eq('id', groupId)
+      .select()
+      .single();
+
+    setLoading(false);
+    if (updateError) {
+      setError(updateError.message);
+      return null;
+    }
+    return transformQuestionGroup(data);
+  }, []);
+
+  // 更新題組內題目（含選項圖片）
+  const updateGroupQuestion = useCallback(async (questionId: string, updates: Partial<GroupQuestion>) => {
+    setLoading(true);
+    setError(null);
+
+    const updateData: any = {};
+    if (updates.questionText !== undefined) updateData.question_text = updates.questionText;
+    if (updates.optionA !== undefined) updateData.option_a = updates.optionA;
+    if (updates.optionB !== undefined) updateData.option_b = updates.optionB;
+    if (updates.optionC !== undefined) updateData.option_c = updates.optionC;
+    if (updates.optionD !== undefined) updateData.option_d = updates.optionD;
+    if (updates.optionsType !== undefined) updateData.options_type = updates.optionsType;
+    if (updates.correctAnswer !== undefined) updateData.correct_answer = updates.correctAnswer;
+    if (updates.explanation !== undefined) updateData.explanation = updates.explanation;
+
+    const { data, error: updateError } = await supabase
+      .from('group_questions')
+      .update(updateData)
+      .eq('id', questionId)
+      .select()
+      .single();
+
+    setLoading(false);
+    if (updateError) {
+      setError(updateError.message);
+      return null;
+    }
+    return transformGroupQuestion(data);
+  }, []);
+
+  // 更新作文題（含圖片）
+  const updateEssayQuestion = useCallback(async (questionId: string, updates: Partial<EssayQuestion>) => {
+    setLoading(true);
+    setError(null);
+
+    const updateData: any = {};
+    if (updates.prompt !== undefined) updateData.prompt = updates.prompt;
+    if (updates.promptImage !== undefined) updateData.prompt_image = updates.promptImage;
+    if (updates.essayType !== undefined) updateData.essay_type = updates.essayType;
+    if (updates.wordCountRequirement !== undefined) updateData.word_count_requirement = updates.wordCountRequirement;
+    if (updates.scoringCriteria !== undefined) updateData.scoring_criteria = updates.scoringCriteria;
+    if (updates.sampleEssay !== undefined) updateData.sample_essay = updates.sampleEssay;
+    if (updates.writingTips !== undefined) updateData.writing_tips = updates.writingTips;
+
+    const { data, error: updateError } = await supabase
+      .from('essay_questions')
+      .update(updateData)
+      .eq('id', questionId)
+      .select()
+      .single();
+
+    setLoading(false);
+    if (updateError) {
+      setError(updateError.message);
+      return null;
+    }
+    return transformEssayQuestion(data);
+  }, []);
+
   return {
     loading,
     error,
@@ -762,6 +859,9 @@ export function useExamAdmin() {
     addGroupQuestion,
     addTranslationQuestion,
     addEssayQuestion,
+    updateQuestionGroup,
+    updateGroupQuestion,
+    updateEssayQuestion,
   };
 }
 

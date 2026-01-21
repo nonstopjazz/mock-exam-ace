@@ -1,6 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Shield, Gamepad2, Menu, FileText } from "lucide-react";
+import { BookOpen, Shield, Menu, Gamepad2, FileText, GraduationCap, LayoutDashboard, PenTool, Video } from "lucide-react";
 import { useState } from "react";
 import {
   Sheet,
@@ -11,18 +11,36 @@ import {
 } from "@/components/ui/sheet";
 import { UserStatus } from "@/components/auth/UserStatus";
 import { useAdmin } from "@/hooks/useAdmin";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
-// Phase 0: Only show vocabulary practice
-// Phase 2 items (exams, dashboard, essay, courses) are hidden until launch
-const navigationItems = [
-  { to: "/practice", label: "單字練習", icon: Gamepad2 },
-  { to: "/blog", label: "學習專欄", icon: FileText },
-  { to: "/admin", label: "後台管理", icon: Shield, adminOnly: true },
-];
+// Icon mapping for dynamic navigation
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  vocabulary: Gamepad2,
+  blog: FileText,
+  exams: GraduationCap,
+  dashboard: LayoutDashboard,
+  essay: PenTool,
+  courses: Video,
+};
 
 export const Navbar = () => {
   const [open, setOpen] = useState(false);
   const { isAdmin } = useAdmin();
+  const { getEnabledTabs } = useSiteSettings();
+
+  // Get dynamic navigation items from settings
+  const enabledTabs = getEnabledTabs();
+
+  // Build navigation items: dynamic tabs + admin (if admin)
+  const navigationItems = [
+    ...enabledTabs.map(tab => ({
+      to: tab.path,
+      label: tab.label,
+      icon: iconMap[tab.key] || FileText,
+    })),
+    // Admin link always at the end (only visible to admins)
+    ...(isAdmin ? [{ to: "/admin", label: "後台管理", icon: Shield }] : []),
+  ];
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -37,9 +55,6 @@ export const Navbar = () => {
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-6">
           {navigationItems.map((item) => {
-            // Skip admin-only items if user is not admin
-            if (item.adminOnly && !isAdmin) return null;
-
             const Icon = item.icon;
             return (
               <NavLink
@@ -76,9 +91,6 @@ export const Navbar = () => {
             </SheetHeader>
             <div className="mt-8 flex flex-col gap-4">
               {navigationItems.map((item) => {
-                // Skip admin-only items if user is not admin
-                if (item.adminOnly && !isAdmin) return null;
-
                 const Icon = item.icon;
                 return (
                   <NavLink

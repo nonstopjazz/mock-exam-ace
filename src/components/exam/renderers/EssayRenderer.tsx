@@ -10,6 +10,46 @@ interface Props {
   onAnswerChange: (answer: string) => void;
 }
 
+// 解析文字內容，將 [IMG:url] 標記轉換為圖片元素
+const renderTextWithImages = (text: string) => {
+  const imgRegex = /\[IMG:(https?:\/\/[^\]]+)\]/g;
+  const parts: (string | { type: 'image'; url: string })[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = imgRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push({ type: 'image', url: match[1] });
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.map((part, index) => {
+    if (typeof part === 'string') {
+      return (
+        <span key={index} className="whitespace-pre-wrap">
+          {part}
+        </span>
+      );
+    } else {
+      return (
+        <img
+          key={index}
+          src={part.url}
+          alt="題目圖片"
+          className="inline-block max-w-full my-4 rounded-lg border bg-muted"
+          style={{ maxHeight: '400px', objectFit: 'contain' }}
+        />
+      );
+    }
+  });
+};
+
 export const EssayRenderer = ({ question, answer, onAnswerChange }: Props) => {
   const [wordCount, setWordCount] = useState(0);
 
@@ -34,8 +74,21 @@ export const EssayRenderer = ({ question, answer, onAnswerChange }: Props) => {
       <CardContent className="space-y-6">
         <div>
           <p className="font-medium mb-2">題目：</p>
-          <div className="bg-muted/30 p-4 rounded-lg">
-            <p className="whitespace-pre-wrap leading-relaxed">{question.prompt}</p>
+          <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+            {/* Prompt Image (若有獨立的題目圖片欄位) */}
+            {question.promptImage && (
+              <div className="rounded-lg overflow-hidden border bg-muted">
+                <img
+                  src={question.promptImage}
+                  alt="作文題目圖片"
+                  className="w-full max-h-80 object-contain"
+                />
+              </div>
+            )}
+            {/* 題目內容（支援 [IMG:url] 行內圖片標記） */}
+            <div className="leading-relaxed">
+              {renderTextWithImages(question.prompt)}
+            </div>
           </div>
         </div>
 

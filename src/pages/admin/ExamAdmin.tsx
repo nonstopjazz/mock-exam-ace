@@ -250,6 +250,7 @@ const ExamAdmin = () => {
 
       const essaySheet = workbook.Sheets['14.作文題'];
       if (essaySheet) {
+        // 作文題欄位：題號(0), 試卷ID(1), 作文題目(2), 作文類型(3), 字數要求(4), 評分標準(5), 範文(6), 寫作提示(7), 錯誤類型標籤(8), 主題標籤(9), 配分(10), 題目圖片(11)
         const essayData = XLSX.utils.sheet_to_json(essaySheet, { header: 1 }) as any[][];
         for (const row of essayData.slice(1).filter(r => r[0])) {
           await addEssayQuestion({
@@ -264,6 +265,7 @@ const ExamAdmin = () => {
             errorTypeTags: row[8] ? row[8].split(',').map((t: string) => t.trim()) : [],
             topicTags: row[9] ? row[9].split(',').map((t: string) => t.trim()) : [],
             score: parseFloat(row[10]) || 20,
+            promptImage: row[11] || '', // 新增：題目圖片 URL（放在最後一欄）
           });
         }
       }
@@ -332,6 +334,7 @@ const ExamAdmin = () => {
       } else if (groupType === 'reading') {
         groupPayload.articleType = row[6] || '';
         groupPayload.topicTags = row[7] ? row[7].split(',').map((t: string) => t.trim()) : [];
+        groupPayload.contentImage = row[8] || ''; // 新增：文章圖片 URL
       } else if (groupType === 'mixed') {
         groupPayload.chartDescription = row[4] || '';
         groupPayload.topicTags = row[6] ? row[6].split(',').map((t: string) => t.trim()) : [];
@@ -345,25 +348,54 @@ const ExamAdmin = () => {
       // 匯入題組內的題目
       const groupQuestions = questionData.slice(1).filter(q => q[1] === groupId);
       for (const qRow of groupQuestions) {
-        await addGroupQuestion({
-          groupId,
-          questionNumber: parseInt(qRow[0]),
-          blankNumber: qRow[2] ? parseInt(qRow[2]) : undefined,
-          questionText: qRow[3] || '',
-          optionA: qRow[4] || '',
-          optionB: qRow[5] || '',
-          optionC: qRow[6] || '',
-          optionD: qRow[7] || '',
-          correctAnswer: qRow[8] || qRow[3] || '',
-          explanation: qRow[9] || qRow[4] || '',
-          grammarSmall: qRow[10] || qRow[5] || '',
-          grammarMedium: qRow[11] || qRow[6] || '',
-          grammarLarge: qRow[12] || '',
-          levelTag: qRow[13] ? parseInt(qRow[13]) : undefined,
-          phraseTag: qRow[14] || '',
-          questionTypeTag: qRow[10] || '',
-          score: parseFloat(qRow[15] || qRow[6]) || 2,
-        });
+        // 根據題組類型使用不同的欄位索引
+        if (groupType === 'reading') {
+          // 閱讀測驗題目欄位：題號(0), 組別ID(1), 題目(2), 選項A-D(3-6), 正確答案(7), 詳解(8), 題型標籤(9), Level標籤(10), 片語標籤(11), 配分(12), 選項類型(13)
+          const optionsTypeValue = (qRow[13] || '').toString().toLowerCase().trim();
+          const isImageOptions = optionsTypeValue === 'image';
+
+          await addGroupQuestion({
+            groupId,
+            questionNumber: parseInt(qRow[0]),
+            questionText: qRow[2] || '',
+            optionA: qRow[3] || '',
+            optionB: qRow[4] || '',
+            optionC: qRow[5] || '',
+            optionD: qRow[6] || '',
+            optionsType: isImageOptions ? 'image' : 'text',
+            correctAnswer: qRow[7] || '',
+            explanation: qRow[8] || '',
+            questionTypeTag: qRow[9] || '',
+            levelTag: qRow[10] ? parseInt(qRow[10]) : undefined,
+            phraseTag: qRow[11] || '',
+            score: parseFloat(qRow[12]) || 2,
+          });
+        } else {
+          // 其他題組（克漏字、文意選填、篇章結構、混合題）使用原本的欄位配置
+          const optionsTypeValue = (qRow[16] || '').toString().toLowerCase().trim();
+          const isImageOptions = optionsTypeValue === 'image';
+
+          await addGroupQuestion({
+            groupId,
+            questionNumber: parseInt(qRow[0]),
+            blankNumber: qRow[2] ? parseInt(qRow[2]) : undefined,
+            questionText: qRow[3] || '',
+            optionA: qRow[4] || '',
+            optionB: qRow[5] || '',
+            optionC: qRow[6] || '',
+            optionD: qRow[7] || '',
+            optionsType: isImageOptions ? 'image' : 'text',
+            correctAnswer: qRow[8] || qRow[3] || '',
+            explanation: qRow[9] || qRow[4] || '',
+            grammarSmall: qRow[10] || qRow[5] || '',
+            grammarMedium: qRow[11] || qRow[6] || '',
+            grammarLarge: qRow[12] || '',
+            levelTag: qRow[13] ? parseInt(qRow[13]) : undefined,
+            phraseTag: qRow[14] || '',
+            questionTypeTag: qRow[10] || '',
+            score: parseFloat(qRow[15] || qRow[6]) || 2,
+          });
+        }
       }
     }
   };
@@ -715,10 +747,19 @@ const ExamAdmin = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(exam)}
-                            title="編輯"
+                            title="編輯基本資訊"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                          <Link to={`/admin/exams/${exam.id}/questions`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="編輯題目與圖片"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </Link>
                           <Button
                             variant="ghost"
                             size="sm"
