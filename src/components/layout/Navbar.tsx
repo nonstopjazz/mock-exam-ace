@@ -12,6 +12,7 @@ import {
 import { UserStatus } from "@/components/auth/UserStatus";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { PRODUCT_CONFIG } from "@/config/product";
 
 // Icon mapping for dynamic navigation
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -48,8 +49,8 @@ export const Navbar = () => {
         {/* Logo */}
         <NavLink to="/" className="flex items-center gap-2 text-lg md:text-xl font-bold text-primary">
           <BookOpen className="h-5 w-5 md:h-6 md:w-6" />
-          <span className="hidden sm:inline">Joe救學測英文</span>
-          <span className="sm:hidden">Joe救英文</span>
+          <span className="hidden sm:inline">{PRODUCT_CONFIG.name}</span>
+          <span className="sm:hidden">{PRODUCT_CONFIG.shortName}</span>
         </NavLink>
 
         {/* Desktop Navigation */}
@@ -86,7 +87,7 @@ export const Navbar = () => {
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5" />
-                Joe救學測英文
+                {PRODUCT_CONFIG.name}
               </SheetTitle>
             </SheetHeader>
             <div className="mt-8 flex flex-col gap-4">
