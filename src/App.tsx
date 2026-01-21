@@ -19,6 +19,7 @@ import TokensAdmin from "./pages/admin/TokensAdmin";
 import BlogAdmin from "./pages/admin/BlogAdmin";
 import ExamAdmin from "./pages/admin/ExamAdmin";
 import ExamQuestionsEditor from "./pages/admin/ExamQuestionsEditor";
+import SiteSettings from "./pages/admin/SiteSettings";
 import AdminHome from "./pages/admin/AdminHome";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -127,6 +128,11 @@ const App = () => (
           <Route path="/admin/exams/:examId/questions" element={
             <RequireAdmin>
               <ExamQuestionsEditor />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/settings" element={
+            <RequireAdmin>
+              <SiteSettings />
             </RequireAdmin>
           } />
 
