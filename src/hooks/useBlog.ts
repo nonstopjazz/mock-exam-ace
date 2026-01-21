@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { APP_PRODUCT } from '@/config/product';
 
 // Types matching the DB schema
 export interface BlogCategory {
@@ -21,6 +22,7 @@ export interface BlogPostDB {
   author_email: string | null;
   category: string;
   tags: string[];
+  product_tags: string[]; // 產品標籤：gsat, toeic, kids, general
   published_at: string | null;
   read_time: number | null;
   is_published: boolean;
@@ -79,7 +81,7 @@ function transformPost(dbPost: BlogPostDB): BlogPost {
   };
 }
 
-// Hook to fetch all published blog posts
+// Hook to fetch all published blog posts (filtered by current product)
 export function useBlogPosts() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,10 +92,14 @@ export function useBlogPosts() {
     setError(null);
 
     try {
+      // 取得目前產品的標籤（小寫）
+      const productTag = APP_PRODUCT.toLowerCase();
+
       const { data, error: fetchError } = await supabase
         .from('blog_posts')
         .select('*')
         .eq('is_published', true)
+        .or(`product_tags.cs.{${productTag}},product_tags.cs.{general}`)
         .order('published_at', { ascending: false });
 
       if (fetchError) {
@@ -121,7 +127,7 @@ export function useBlogPosts() {
   return { posts, loading, error, refetch: fetchPosts };
 }
 
-// Hook to fetch a single blog post by slug
+// Hook to fetch a single blog post by slug (filtered by current product)
 export function useBlogPost(slug: string | undefined) {
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
@@ -138,11 +144,14 @@ export function useBlogPost(slug: string | undefined) {
       setError(null);
 
       try {
+        const productTag = APP_PRODUCT.toLowerCase();
+
         const { data, error: fetchError } = await supabase
           .from('blog_posts')
           .select('*')
           .eq('slug', slug)
           .eq('is_published', true)
+          .or(`product_tags.cs.{${productTag}},product_tags.cs.{general}`)
           .single();
 
         if (fetchError) {
@@ -168,7 +177,7 @@ export function useBlogPost(slug: string | undefined) {
   return { post, loading, error };
 }
 
-// Hook to fetch related posts
+// Hook to fetch related posts (filtered by current product)
 export function useRelatedPosts(postId: string | undefined, category: string | undefined, limit: number = 3) {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,12 +193,15 @@ export function useRelatedPosts(postId: string | undefined, category: string | u
       setLoading(true);
 
       try {
+        const productTag = APP_PRODUCT.toLowerCase();
+
         const { data, error } = await supabase
           .from('blog_posts')
           .select('*')
           .eq('is_published', true)
           .eq('category', category)
           .neq('id', postId)
+          .or(`product_tags.cs.{${productTag}},product_tags.cs.{general}`)
           .order('published_at', { ascending: false })
           .limit(limit);
 

@@ -50,6 +50,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useBlogAdmin, useBlogCategories, useBlogStats, BlogPostDB, calculateReadTime } from '@/hooks/useBlog';
 import { RichTextEditor } from '@/components/editor/RichTextEditor';
 
+// 產品標籤選項
+const PRODUCT_TAG_OPTIONS = [
+  { value: 'general', label: '通用（所有子站）' },
+  { value: 'gsat', label: '學測英文' },
+  { value: 'toeic', label: '多益英文' },
+  { value: 'kids', label: '兒童英語' },
+];
+
 interface PostFormData {
   slug: string;
   title: string;
@@ -60,6 +68,7 @@ interface PostFormData {
   author_avatar: string;
   category: string;
   tags: string;
+  product_tags: string[]; // 產品標籤
   is_published: boolean;
   seo_title: string;
   seo_description: string;
@@ -76,6 +85,7 @@ const initialFormData: PostFormData = {
   author_avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=joe',
   category: '',
   tags: '',
+  product_tags: ['general'], // 預設為通用
   is_published: false,
   seo_title: '',
   seo_description: '',
@@ -130,6 +140,7 @@ export default function BlogAdmin() {
       author_avatar: post.author_avatar || '',
       category: post.category,
       tags: (post.tags || []).join(', '),
+      product_tags: post.product_tags || ['general'],
       is_published: post.is_published,
       seo_title: post.seo_title || '',
       seo_description: post.seo_description || '',
@@ -274,6 +285,7 @@ export default function BlogAdmin() {
       author_avatar: formData.author_avatar.trim() || null,
       category: formData.category,
       tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+      product_tags: formData.product_tags.length > 0 ? formData.product_tags : ['general'],
       is_published: formData.is_published,
       read_time: calculateReadTime(formData.content),
       seo_title: formData.seo_title.trim() || null,
@@ -480,6 +492,7 @@ export default function BlogAdmin() {
                 <TableHead className="w-[80px]">封面</TableHead>
                 <TableHead>標題</TableHead>
                 <TableHead>分類</TableHead>
+                <TableHead>子站</TableHead>
                 <TableHead>互動數據</TableHead>
                 <TableHead>狀態</TableHead>
                 <TableHead>更新時間</TableHead>
@@ -510,6 +523,15 @@ export default function BlogAdmin() {
                     <Badge variant="outline">
                       {categories.find(c => c.id === post.category)?.label || post.category}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {(post.product_tags || ['general']).map((tag) => (
+                        <Badge key={tag} variant="secondary" className="text-xs">
+                          {tag === 'general' ? '通用' : tag === 'gsat' ? '學測' : tag === 'toeic' ? '多益' : tag === 'kids' ? '兒童' : tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {(() => {
@@ -668,6 +690,47 @@ export default function BlogAdmin() {
                         placeholder="學習技巧, 單字, SRS"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>顯示於哪些子站</Label>
+                    <div className="flex flex-wrap gap-3">
+                      {PRODUCT_TAG_OPTIONS.map((option) => (
+                        <label
+                          key={option.value}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                            formData.product_tags.includes(option.value)
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.product_tags.includes(option.value)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData({
+                                  ...formData,
+                                  product_tags: [...formData.product_tags, option.value],
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  product_tags: formData.product_tags.filter((t) => t !== option.value),
+                                });
+                              }
+                            }}
+                            className="sr-only"
+                          />
+                          <span className={`text-sm ${formData.product_tags.includes(option.value) ? 'font-medium' : ''}`}>
+                            {option.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      選擇「通用」則所有子站都會顯示此文章
+                    </p>
                   </div>
 
                   <div className="space-y-2">
