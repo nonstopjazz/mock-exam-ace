@@ -261,6 +261,7 @@ export function usePackWithItems(packId: string | undefined) {
           description: packInfo.description,
           theme: packInfo.theme,
           difficulty: packInfo.difficulty,
+          cover_image_url: packInfo.cover_image_url || null,
           word_count: itemsData?.length || 0,
           progress: claimData.progress || 0,
           claimed_at: claimData.claimed_at,
