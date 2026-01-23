@@ -409,7 +409,7 @@ const VocabularyCollections = () => {
             >
               {/* Cover Image */}
               {pack.cover_image_url ? (
-                <div className="aspect-video xl:h-28 bg-muted overflow-hidden">
+                <div className="aspect-video xl:aspect-[4/3] bg-muted overflow-hidden">
                   <img
                     src={pack.cover_image_url}
                     alt={pack.title}
@@ -417,7 +417,7 @@ const VocabularyCollections = () => {
                   />
                 </div>
               ) : (
-                <div className="aspect-video xl:h-28 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                <div className="aspect-video xl:aspect-[4/3] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
                   <BookOpen className="h-12 w-12 xl:h-8 xl:w-8 text-primary/40" />
                 </div>
               )}
