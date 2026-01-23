@@ -18,6 +18,7 @@ export interface UserPack {
   title: string;
   description: string | null;
   theme: string | null;
+  skill_type: string | null;
   difficulty: string | null;
   word_count: number;
   progress: number;
@@ -60,6 +61,7 @@ export function useUserPacks() {
             title,
             description,
             theme,
+            skill_type,
             difficulty
           )
         `)
@@ -121,6 +123,7 @@ export function useUserPacks() {
           title: d.pack.title,
           description: d.pack.description,
           theme: d.pack.theme,
+          skill_type: d.pack.skill_type,
           difficulty: d.pack.difficulty,
           word_count: wordCounts[d.pack.id] || 0,
           progress: d.progress || 0,
