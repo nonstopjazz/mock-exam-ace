@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BookmarkPlus,
   Search,
@@ -33,9 +34,18 @@ interface PublicPack {
   title: string;
   description: string | null;
   theme: string | null;
+  skill_type: string | null;
   difficulty: string | null;
   cover_image?: { image_url: string } | null;
 }
+
+// 英文能力類型
+const SKILL_TYPES = [
+  { value: 'all', label: '全部' },
+  { value: 'vocabulary', label: '單字' },
+  { value: 'writing', label: '寫作' },
+  { value: 'reading', label: '閱讀' },
+];
 
 const VocabularyCollections = () => {
   const navigate = useNavigate();
@@ -43,6 +53,7 @@ const VocabularyCollections = () => {
   const { packs, loading, error, refetch } = useUserPacks();
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSkillType, setSelectedSkillType] = useState<string>("all");
   const [selectedTheme, setSelectedTheme] = useState<string>("all");
 
   // Public packs for non-logged-in users
@@ -61,7 +72,7 @@ const VocabularyCollections = () => {
     const { data, error } = await supabase
       .from('packs')
       .select(`
-        id, title, description, theme, difficulty,
+        id, title, description, theme, skill_type, difficulty,
         cover_image:pack_images!pack_id(image_url)
       `)
       .eq('is_public', true)
@@ -91,8 +102,9 @@ const VocabularyCollections = () => {
     const matchesSearch =
       pack.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (pack.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+    const matchesSkillType = selectedSkillType === "all" || pack.skill_type === selectedSkillType;
     const matchesTheme = selectedTheme === "all" || pack.theme === selectedTheme;
-    return matchesSearch && matchesTheme;
+    return matchesSearch && matchesSkillType && matchesTheme;
   });
 
   const totalWords = filteredPacks.reduce((sum, pack) => sum + pack.word_count, 0);
@@ -334,6 +346,23 @@ const VocabularyCollections = () => {
           </div>
         </div>
 
+        {/* Skill Type Tabs */}
+        <div className="mb-4">
+          <Tabs value={selectedSkillType} onValueChange={setSelectedSkillType}>
+            <TabsList className="h-auto w-full justify-start gap-2 bg-transparent p-0">
+              {SKILL_TYPES.map((skill) => (
+                <TabsTrigger
+                  key={skill.value}
+                  value={skill.value}
+                  className="rounded-full px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  {skill.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
+
         {/* Search and Filter Bar */}
         <Card className="p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -396,7 +425,12 @@ const VocabularyCollections = () => {
               <div className="p-6 space-y-4">
                 {/* Header */}
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    {pack.skill_type && (
+                      <Badge className="text-xs">
+                        {SKILL_TYPES.find(s => s.value === pack.skill_type)?.label || pack.skill_type}
+                      </Badge>
+                    )}
                     {pack.theme && (
                       <Badge variant="outline" className="text-xs">
                         <Tag className="h-3 w-3 mr-1" />

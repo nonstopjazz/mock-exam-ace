@@ -58,6 +58,7 @@ interface Pack {
   title: string;
   description: string | null;
   theme: string | null;
+  skill_type: string | null;
   difficulty: string | null;
   is_public: boolean;
   is_active: boolean;
@@ -70,6 +71,7 @@ interface PackFormData {
   title: string;
   description: string;
   theme: string;
+  skill_type: string;
   difficulty: string;
   is_public: boolean;
   is_active: boolean;
@@ -83,12 +85,18 @@ interface PendingImage {
 }
 
 const THEMES = ['環境議題', '社會議題', '商務英語', '科技', '健康醫療', '教育', '其他'];
+const SKILL_TYPES = [
+  { value: 'vocabulary', label: '單字' },
+  { value: 'writing', label: '寫作' },
+  { value: 'reading', label: '閱讀' },
+];
 const DIFFICULTIES = ['初級', '中級', '中高級', '高級'];
 
 const initialFormData: PackFormData = {
   title: '',
   description: '',
   theme: '',
+  skill_type: '',
   difficulty: '',
   is_public: false,
   is_active: true,
@@ -205,6 +213,7 @@ export default function PacksAdmin() {
       title: pack.title,
       description: pack.description || '',
       theme: pack.theme || '',
+      skill_type: pack.skill_type || '',
       difficulty: pack.difficulty || '',
       is_public: pack.is_public,
       is_active: pack.is_active,
@@ -417,6 +426,7 @@ export default function PacksAdmin() {
       title: formData.title.trim(),
       description: formData.description.trim() || null,
       theme: formData.theme || null,
+      skill_type: formData.skill_type || null,
       difficulty: formData.difficulty || null,
       is_public: formData.is_public,
       is_active: formData.is_active,
@@ -570,6 +580,7 @@ export default function PacksAdmin() {
               <TableRow>
                 <TableHead className="w-[60px]">封面</TableHead>
                 <TableHead>標題</TableHead>
+                <TableHead>英文能力</TableHead>
                 <TableHead>主題</TableHead>
                 <TableHead>難度</TableHead>
                 <TableHead>狀態</TableHead>
@@ -594,6 +605,13 @@ export default function PacksAdmin() {
                     )}
                   </TableCell>
                   <TableCell className="font-medium">{pack.title}</TableCell>
+                  <TableCell>
+                    {pack.skill_type ? (
+                      <Badge variant="outline">
+                        {SKILL_TYPES.find(s => s.value === pack.skill_type)?.label || pack.skill_type}
+                      </Badge>
+                    ) : '-'}
+                  </TableCell>
                   <TableCell>{pack.theme || '-'}</TableCell>
                   <TableCell>{pack.difficulty || '-'}</TableCell>
                   <TableCell>
@@ -764,7 +782,27 @@ export default function PacksAdmin() {
                   rows={3}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>英文能力</Label>
+                  <Select
+                    value={formData.skill_type}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, skill_type: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="選擇類型" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SKILL_TYPES.map((skill) => (
+                        <SelectItem key={skill.value} value={skill.value}>
+                          {skill.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2">
                   <Label>主題</Label>
                   <Select
