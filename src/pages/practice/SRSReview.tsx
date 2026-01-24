@@ -58,12 +58,13 @@ const SRSReview = () => {
     getFilteredWordCount,
   } = useVocabularyStore();
 
-  // Get pack ID from URL parameter (e.g., ?pack=xxx)
+  // Get URL parameters (e.g., ?pack=xxx or ?source=pack)
   const urlPackId = searchParams.get('pack');
+  const urlSource = searchParams.get('source');
 
-  // Source selection state - default to 'pack' if URL has pack parameter
+  // Source selection state - default to 'pack' if URL has pack parameter or source=pack
   const [selectedSource, setSelectedSource] = useState<VocabularySource>(
-    urlPackId ? 'pack' : 'local'
+    urlPackId || urlSource === 'pack' ? 'pack' : 'local'
   );
   const [selectedPackIds, setSelectedPackIds] = useState<string[]>(
     urlPackId ? [urlPackId] : []
