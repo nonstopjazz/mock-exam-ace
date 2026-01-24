@@ -14,8 +14,8 @@ import {
   Settings,
   Loader2,
 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useVocabularyStore } from "@/store/vocabularyStore";
 import { VocabularyWord } from "@/data/vocabulary";
@@ -50,6 +50,7 @@ const convertPackItemToVocabularyWord = (item: PackItem): ExtendedVocabularyWord
 
 const SRSReview = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const {
     getWordsForSRS,
     updateWordProgress,
@@ -57,9 +58,16 @@ const SRSReview = () => {
     getFilteredWordCount,
   } = useVocabularyStore();
 
-  // Source selection state
-  const [selectedSource, setSelectedSource] = useState<VocabularySource>('local');
-  const [selectedPackIds, setSelectedPackIds] = useState<string[]>([]);
+  // Get pack ID from URL parameter (e.g., ?pack=xxx)
+  const urlPackId = searchParams.get('pack');
+
+  // Source selection state - default to 'pack' if URL has pack parameter
+  const [selectedSource, setSelectedSource] = useState<VocabularySource>(
+    urlPackId ? 'pack' : 'local'
+  );
+  const [selectedPackIds, setSelectedPackIds] = useState<string[]>(
+    urlPackId ? [urlPackId] : []
+  );
 
   // Fetch pack items when packs are selected (supports multiple packs)
   const { items: packItems, loading: packLoading, error: packError } = useMultiPackItems(selectedPackIds);
