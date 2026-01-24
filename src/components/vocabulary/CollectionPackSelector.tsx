@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   BookOpen,
   Package,
@@ -16,35 +17,82 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export type VocabularySource = 'local' | 'pack';
 
-interface CollectionPackSelectorProps {
-  selectedSource: VocabularySource;
+// Single select props (backward compatible)
+interface SingleSelectProps {
+  multiSelect?: false;
   selectedPackId: string | null;
-  onSourceChange: (source: VocabularySource) => void;
   onPackSelect: (packId: string | null) => void;
+  selectedPackIds?: never;
+  onPacksSelect?: never;
 }
 
-export const CollectionPackSelector = ({
-  selectedSource,
-  selectedPackId,
-  onSourceChange,
-  onPackSelect,
-}: CollectionPackSelectorProps) => {
+// Multi select props
+interface MultiSelectProps {
+  multiSelect: true;
+  selectedPackIds: string[];
+  onPacksSelect: (packIds: string[]) => void;
+  selectedPackId?: never;
+  onPackSelect?: never;
+}
+
+type CollectionPackSelectorProps = {
+  selectedSource: VocabularySource;
+  onSourceChange: (source: VocabularySource) => void;
+} & (SingleSelectProps | MultiSelectProps);
+
+export const CollectionPackSelector = (props: CollectionPackSelectorProps) => {
+  const {
+    selectedSource,
+    onSourceChange,
+  } = props;
+
+  const isMultiSelect = props.multiSelect === true;
   const { user } = useAuth();
   const { packs, loading, error } = useUserPacks();
 
   const handleSourceSelect = (source: VocabularySource) => {
     onSourceChange(source);
     if (source === 'local') {
-      onPackSelect(null);
+      if (isMultiSelect) {
+        props.onPacksSelect([]);
+      } else {
+        props.onPackSelect(null);
+      }
     }
   };
 
   const handlePackSelect = (pack: UserPack) => {
     onSourceChange('pack');
-    onPackSelect(pack.pack_id);
+    if (isMultiSelect) {
+      const currentIds = props.selectedPackIds;
+      const isSelected = currentIds.includes(pack.pack_id);
+      if (isSelected) {
+        props.onPacksSelect(currentIds.filter(id => id !== pack.pack_id));
+      } else {
+        props.onPacksSelect([...currentIds, pack.pack_id]);
+      }
+    } else {
+      props.onPackSelect(pack.pack_id);
+    }
   };
 
-  const selectedPack = packs.find(p => p.pack_id === selectedPackId);
+  const isPackSelected = (packId: string) => {
+    if (isMultiSelect) {
+      return props.selectedPackIds.includes(packId);
+    }
+    return props.selectedPackId === packId;
+  };
+
+  const getSelectedPacks = () => {
+    if (isMultiSelect) {
+      return packs.filter(p => props.selectedPackIds.includes(p.pack_id));
+    }
+    const pack = packs.find(p => p.pack_id === props.selectedPackId);
+    return pack ? [pack] : [];
+  };
+
+  const selectedPacksList = getSelectedPacks();
+  const totalSelectedWords = selectedPacksList.reduce((sum, p) => sum + p.word_count, 0);
 
   return (
     <Card className="p-4 mb-4">
@@ -131,60 +179,83 @@ export const CollectionPackSelector = ({
               </div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {packs.map((pack) => (
-                  <div
-                    key={pack.pack_id}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                      selectedPackId === pack.pack_id
-                        ? "border-primary bg-primary/5"
-                        : "border-muted hover:border-primary/30 hover:bg-muted/50"
-                    }`}
-                    onClick={() => handlePackSelect(pack)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="font-medium text-foreground">{pack.title}</div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {pack.word_count} 單字
-                          </Badge>
-                          {pack.theme && (
-                            <Badge variant="outline" className="text-xs">
-                              {pack.theme}
+                {packs.map((pack) => {
+                  const selected = isPackSelected(pack.pack_id);
+                  return (
+                    <div
+                      key={pack.pack_id}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        selected
+                          ? "border-primary bg-primary/5"
+                          : "border-muted hover:border-primary/30 hover:bg-muted/50"
+                      }`}
+                      onClick={() => handlePackSelect(pack)}
+                    >
+                      <div className="flex items-center justify-between">
+                        {isMultiSelect && (
+                          <Checkbox
+                            checked={selected}
+                            className="mr-3"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
+                        <div className="flex-1">
+                          <div className="font-medium text-foreground">{pack.title}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {pack.word_count} 單字
                             </Badge>
-                          )}
-                          {pack.difficulty && (
-                            <Badge variant="outline" className="text-xs">
-                              {pack.difficulty}
-                            </Badge>
-                          )}
+                            {pack.theme && (
+                              <Badge variant="outline" className="text-xs">
+                                {pack.theme}
+                              </Badge>
+                            )}
+                            {pack.difficulty && (
+                              <Badge variant="outline" className="text-xs">
+                                {pack.difficulty}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
+                        {selected ? (
+                          <Check className="h-5 w-5 text-primary" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                        )}
                       </div>
-                      {selectedPackId === pack.pack_id ? (
-                        <Check className="h-5 w-5 text-primary" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         )}
 
         {/* Selected Pack Summary */}
-        {selectedSource === 'pack' && selectedPack && (
+        {selectedSource === 'pack' && selectedPacksList.length > 0 && (
           <div className="mt-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
             <div className="flex items-center gap-2">
               <Package className="h-4 w-4 text-primary" />
               <span className="font-medium text-foreground">
-                已選擇: {selectedPack.title}
+                {isMultiSelect ? (
+                  <>已選擇 {selectedPacksList.length} 個收藏包</>
+                ) : (
+                  <>已選擇: {selectedPacksList[0]?.title}</>
+                )}
               </span>
               <Badge variant="secondary" className="ml-auto">
-                {selectedPack.word_count} 單字
+                {totalSelectedWords} 單字
               </Badge>
             </div>
+            {isMultiSelect && selectedPacksList.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {selectedPacksList.map(pack => (
+                  <Badge key={pack.pack_id} variant="outline" className="text-xs">
+                    {pack.title}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

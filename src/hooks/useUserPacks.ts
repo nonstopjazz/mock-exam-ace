@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export interface PackItem {
   id: string;
+  pack_id: string;
   word: string;
   definition: string | null;
   part_of_speech: string | null;
@@ -344,6 +345,75 @@ export function usePackItems(packId: string | null) {
 
     fetchItems();
   }, [packId, user]);
+
+  return { items, loading, error };
+}
+
+// Hook to fetch pack items from multiple packs (for mixed review)
+export function useMultiPackItems(packIds: string[]) {
+  const { user } = useAuth();
+  const [items, setItems] = useState<PackItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!packIds.length || !user) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    const fetchItems = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // First verify user has access to all these packs
+        const { data: claimData, error: claimError } = await supabase
+          .from('user_pack_claims')
+          .select('pack_id')
+          .eq('user_id', user.id)
+          .in('pack_id', packIds);
+
+        if (claimError) {
+          setError('驗證權限失敗');
+          setItems([]);
+          return;
+        }
+
+        const authorizedPackIds = claimData?.map(c => c.pack_id) || [];
+        if (authorizedPackIds.length === 0) {
+          setError('無權限存取這些單字包');
+          setItems([]);
+          return;
+        }
+
+        // Fetch pack items from all authorized packs
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('pack_items')
+          .select('*')
+          .in('pack_id', authorizedPackIds)
+          .order('sort_order', { ascending: true });
+
+        if (itemsError) {
+          console.error('Error fetching items:', itemsError);
+          setError('載入單字失敗');
+          setItems([]);
+          return;
+        }
+
+        setItems(itemsData || []);
+      } catch (err) {
+        console.error('Exception fetching pack items:', err);
+        setError('載入失敗');
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, [packIds.join(','), user]);
 
   return { items, loading, error };
 }
