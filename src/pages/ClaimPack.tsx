@@ -64,6 +64,19 @@ export default function ClaimPack() {
 
       if (error) {
         console.error('Claim error:', error);
+
+        // Check if it's a duplicate key error (already claimed)
+        if (error.code === '23505' || error.message?.includes('duplicate key')) {
+          setStatus('already_claimed');
+          // Try to get pack info for display
+          setResult({
+            success: true,
+            already_claimed: true,
+            pack_title: '此單字包',
+          });
+          return;
+        }
+
         setStatus('error');
         setErrorMessage(error.message || '領取失敗');
         return;
