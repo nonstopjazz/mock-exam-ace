@@ -95,6 +95,23 @@ export function useUserPacks() {
         }
       }
 
+      // Get learned word counts from pack_item_progress (dynamic progress calculation)
+      let learnedCounts: Record<string, number> = {};
+      if (packIds.length > 0) {
+        const { data: progressData } = await supabase
+          .from('pack_item_progress')
+          .select('pack_id')
+          .eq('user_id', user.id)
+          .in('pack_id', packIds);
+
+        if (progressData) {
+          learnedCounts = progressData.reduce((acc: Record<string, number>, item: any) => {
+            acc[item.pack_id] = (acc[item.pack_id] || 0) + 1;
+            return acc;
+          }, {});
+        }
+      }
+
       // Get cover images for each pack (separate query)
       let coverImages: Record<string, string> = {};
       if (packIds.length > 0) {
@@ -115,23 +132,32 @@ export function useUserPacks() {
         }
       }
 
-      // Transform data
+      // Transform data with dynamic progress calculation
       const transformedPacks: UserPack[] = (data || [])
         .filter((d: any) => d.pack)
-        .map((d: any) => ({
-          id: d.id,
-          pack_id: d.pack.id,
-          title: d.pack.title,
-          description: d.pack.description,
-          theme: d.pack.theme,
-          skill_type: d.pack.skill_type,
-          difficulty: d.pack.difficulty,
-          word_count: wordCounts[d.pack.id] || 0,
-          progress: d.progress || 0,
-          claimed_at: d.claimed_at,
-          last_studied_at: d.last_studied_at,
-          cover_image_url: coverImages[d.pack.id] || null,
-        }));
+        .map((d: any) => {
+          const totalWords = wordCounts[d.pack.id] || 0;
+          const learnedWords = learnedCounts[d.pack.id] || 0;
+          // Calculate progress: (learned / total) * 100, rounded to integer
+          const calculatedProgress = totalWords > 0
+            ? Math.round((learnedWords / totalWords) * 100)
+            : 0;
+
+          return {
+            id: d.id,
+            pack_id: d.pack.id,
+            title: d.pack.title,
+            description: d.pack.description,
+            theme: d.pack.theme,
+            skill_type: d.pack.skill_type,
+            difficulty: d.pack.difficulty,
+            word_count: totalWords,
+            progress: calculatedProgress,
+            claimed_at: d.claimed_at,
+            last_studied_at: d.last_studied_at,
+            cover_image_url: coverImages[d.pack.id] || null,
+          };
+        });
 
       setPacks(transformedPacks);
     } catch (err) {
