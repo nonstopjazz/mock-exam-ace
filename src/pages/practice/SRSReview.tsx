@@ -21,11 +21,16 @@ import { useVocabularyStore } from "@/store/vocabularyStore";
 import { VocabularyWord } from "@/data/vocabulary";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
-import { usePackItems, PackItem } from "@/hooks/useUserPacks";
+import { useMultiPackItems, PackItem } from "@/hooks/useUserPacks";
 import { usePackItemProgress } from "@/hooks/usePackItemProgress";
 
+// Extended VocabularyWord with pack_id for tracking
+interface ExtendedVocabularyWord extends VocabularyWord {
+  pack_id?: string;
+}
+
 // Convert PackItem to VocabularyWord format
-const convertPackItemToVocabularyWord = (item: PackItem): VocabularyWord => ({
+const convertPackItemToVocabularyWord = (item: PackItem): ExtendedVocabularyWord => ({
   id: item.id,
   word: item.word,
   translation: item.definition || '',
@@ -40,6 +45,7 @@ const convertPackItemToVocabularyWord = (item: PackItem): VocabularyWord => ({
   difficulty: 'medium',
   category: '',
   extraNotes: '',
+  pack_id: item.pack_id,
 });
 
 const SRSReview = () => {
@@ -53,17 +59,17 @@ const SRSReview = () => {
 
   // Source selection state
   const [selectedSource, setSelectedSource] = useState<VocabularySource>('local');
-  const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
+  const [selectedPackIds, setSelectedPackIds] = useState<string[]>([]);
 
-  // Fetch pack items when a pack is selected
-  const { items: packItems, loading: packLoading, error: packError } = usePackItems(selectedPackId);
+  // Fetch pack items when packs are selected (supports multiple packs)
+  const { items: packItems, loading: packLoading, error: packError } = useMultiPackItems(selectedPackIds);
 
   // Pack item progress tracking
   const { updateProgress: updatePackItemProgress } = usePackItemProgress();
 
   // Phase: 'selection' or 'review'
   const [phase, setPhase] = useState<'selection' | 'review'>('selection');
-  const [cards, setCards] = useState<VocabularyWord[]>([]);
+  const [cards, setCards] = useState<ExtendedVocabularyWord[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reviewedCount, setReviewedCount] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -78,9 +84,9 @@ const SRSReview = () => {
 
     if (selectedSource === 'pack') {
       // Use pack items
-      if (!selectedPackId) {
+      if (selectedPackIds.length === 0) {
         toast.error("請選擇收藏包", {
-          description: "請先選擇一個收藏包"
+          description: "請至少選擇一個收藏包"
         });
         return;
       }
@@ -98,11 +104,11 @@ const SRSReview = () => {
       }
       if (packItems.length === 0) {
         toast.error("收藏包沒有單字", {
-          description: "此收藏包沒有單字"
+          description: "選擇的收藏包沒有單字"
         });
         return;
       }
-      // Convert and shuffle pack items
+      // Convert and shuffle pack items from all selected packs
       const allPackWords = packItems.map(item => convertPackItemToVocabularyWord(item));
       reviewWords = [...allPackWords].sort(() => Math.random() - 0.5).slice(0, wordLimit);
     } else {
@@ -137,8 +143,8 @@ const SRSReview = () => {
     const result = responseMap[response];
 
     // Update progress based on source
-    if (selectedSource === 'pack' && selectedPackId) {
-      updatePackItemProgress(selectedPackId, currentCard.id, result.isCorrect, response);
+    if (selectedSource === 'pack' && currentCard.pack_id) {
+      updatePackItemProgress(currentCard.pack_id, currentCard.id, result.isCorrect, response);
     } else {
       updateWordProgress(currentCard.id, result.isCorrect, response);
     }
@@ -208,9 +214,10 @@ const SRSReview = () => {
           {/* Source Selection */}
           <CollectionPackSelector
             selectedSource={selectedSource}
-            selectedPackId={selectedPackId}
+            multiSelect
+            selectedPackIds={selectedPackIds}
             onSourceChange={setSelectedSource}
-            onPackSelect={setSelectedPackId}
+            onPacksSelect={setSelectedPackIds}
           />
 
           {/* Vocabulary Selector (only shown for local source) */}
@@ -234,11 +241,13 @@ const SRSReview = () => {
                   </div>
                 ) : packError ? (
                   <div className="text-destructive">{packError}</div>
-                ) : selectedPackId ? (
+                ) : selectedPackIds.length > 0 ? (
                   <>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-foreground">{packItems.length}</div>
-                      <div className="text-muted-foreground">個單字</div>
+                      <div className="text-muted-foreground">
+                        個單字（來自 {selectedPackIds.length} 個收藏包）
+                      </div>
                     </div>
                     <Button
                       size="lg"
@@ -247,11 +256,11 @@ const SRSReview = () => {
                       disabled={packItems.length === 0}
                     >
                       <Brain className="h-5 w-5" />
-                      開始複習
+                      開始混合複習
                     </Button>
                   </>
                 ) : (
-                  <div className="text-muted-foreground">請選擇一個收藏包</div>
+                  <div className="text-muted-foreground">請選擇收藏包（可多選）</div>
                 )}
               </div>
             </Card>
