@@ -540,7 +540,7 @@ const VocabularyCollections = () => {
                 <Button variant="outline" onClick={() => navigate("/practice/vocabulary")}>
                   發現更多單字集
                 </Button>
-                <Button onClick={() => navigate("/practice/vocabulary/srs")}>
+                <Button onClick={() => navigate("/practice/vocabulary/srs?source=pack")}>
                   開始複習
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
