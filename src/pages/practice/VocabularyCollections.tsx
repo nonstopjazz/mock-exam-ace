@@ -498,7 +498,7 @@ const VocabularyCollections = () => {
                   <Button
                     size="sm"
                     className="flex-1 xl:text-xs xl:h-8"
-                    onClick={() => navigate("/practice/vocabulary/srs")}
+                    onClick={() => navigate(`/practice/vocabulary/srs?pack=${pack.pack_id}`)}
                   >
                     開始複習
                   </Button>
