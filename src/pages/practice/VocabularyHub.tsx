@@ -215,11 +215,9 @@ const VocabularyHub = () => {
             >
               <Package className="h-5 w-5" />
               <span className="hidden md:inline">單字收藏包</span>
-              {userPacks.length > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {userPacks.length}
-                </Badge>
-              )}
+              <Badge variant="secondary" className="text-xs ml-1">
+                {userPacks.length}
+              </Badge>
               <ChevronRight className="h-4 w-4 hidden md:block" />
             </Button>
           </div>
