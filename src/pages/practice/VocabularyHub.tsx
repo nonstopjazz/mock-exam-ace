@@ -23,6 +23,7 @@ import { useVocabularyStore, WordProgress } from "@/store/vocabularyStore";
 import { VOCABULARY_LEVELS, TOTAL_WORDS } from "@/data/vocabulary";
 import { isFeatureEnabled } from "@/config/features";
 import { useUserPacks } from "@/hooks/useUserPacks";
+import { useUserStats } from "@/hooks/useUserStats";
 
 // Calculate error statistics from word progress
 const calculateErrorStats = (wordProgress: Record<string, WordProgress>) => {
@@ -79,6 +80,13 @@ const VocabularyHub = () => {
   const { packs: userPacks } = useUserPacks();
   const totalPackWords = userPacks.reduce((sum, pack) => sum + pack.word_count, 0);
 
+  // Get synced user stats (for logged-in users)
+  const { stats: userStats, isLoggedIn } = useUserStats();
+
+  // Use synced stats for logged-in users, localStorage stats for others
+  const displayStreakDays = isLoggedIn ? userStats.streakDays : streakDays;
+  const displayReviewCount = isLoggedIn ? userStats.totalReviewCount : totalReviewCount;
+
   const [stats, setStats] = useState({
     reviewDue: 0,
     learned: 0,
@@ -108,6 +116,10 @@ const VocabularyHub = () => {
 
   const masteryPercentage = stats.total > 0 ? Math.round((stats.learned / stats.total) * 100) : 0;
 
+  // Calculate suggested new words to learn (if no review due)
+  const suggestedNewWords = Math.min(20, stats.total - stats.learned);
+  const hasReviewDue = stats.reviewDue > 0;
+
   const modes = [
     {
       id: "srs",
@@ -118,8 +130,8 @@ const VocabularyHub = () => {
       iconColor: "text-primary",
       badge: "推薦",
       badgeVariant: "default" as const,
-      count: stats.reviewDue || 24,
-      countLabel: "今日待複習",
+      count: hasReviewDue ? stats.reviewDue : suggestedNewWords,
+      countLabel: hasReviewDue ? "待複習" : "建議學習",
       path: "/practice/vocabulary/srs"
     },
     {
@@ -229,14 +241,22 @@ const VocabularyHub = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold text-foreground">待複習單字</h3>
+                <h3 className="font-semibold text-foreground">
+                  {hasReviewDue ? "待複習單字" : "建議學習"}
+                </h3>
               </div>
-              <Badge variant="default">進行中</Badge>
+              <Badge variant={hasReviewDue ? "default" : "secondary"}>
+                {hasReviewDue ? "待複習" : "新單字"}
+              </Badge>
             </div>
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-foreground">{stats.reviewDue || 24}</span>
-                <span className="text-muted-foreground">個單字待複習</span>
+                <span className="text-4xl font-bold text-foreground">
+                  {hasReviewDue ? stats.reviewDue : suggestedNewWords}
+                </span>
+                <span className="text-muted-foreground">
+                  {hasReviewDue ? "個單字待複習" : "個新單字"}
+                </span>
               </div>
               <ProgressBar current={stats.learned} max={stats.total} showValues={false} />
               <p className="text-sm text-muted-foreground">已學習 {stats.learned} / {stats.total.toLocaleString()}</p>
@@ -266,15 +286,18 @@ const VocabularyHub = () => {
                 <TrendingUp className="h-5 w-5 text-accent" />
                 <h3 className="font-semibold text-foreground">學習統計</h3>
               </div>
+              {!isLoggedIn && (
+                <Badge variant="outline" className="text-xs">本裝置</Badge>
+              )}
             </div>
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-foreground">{totalReviewCount}</span>
+                <span className="text-4xl font-bold text-foreground">{displayReviewCount}</span>
                 <span className="text-sm text-muted-foreground">次複習</span>
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-sm text-muted-foreground">連續學習</span>
-                <span className="text-success font-medium">{streakDays} 天</span>
+                <span className="text-success font-medium">{displayStreakDays} 天 {displayStreakDays > 0 ? '🔥' : ''}</span>
               </div>
               <p className="text-sm text-muted-foreground">精通單字 {stats.mastered} 個</p>
             </div>
@@ -385,7 +408,7 @@ const VocabularyHub = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <span className="text-sm text-foreground">累計複習次數</span>
-                <span className="text-lg font-bold text-primary">{totalReviewCount.toLocaleString()} 次</span>
+                <span className="text-lg font-bold text-primary">{displayReviewCount.toLocaleString()} 次</span>
               </div>
 
               <div className="space-y-2">
@@ -399,7 +422,7 @@ const VocabularyHub = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">連續學習天數</span>
-                  <span className="text-success font-medium">{streakDays} 天 {streakDays > 0 ? '🔥' : ''}</span>
+                  <span className="text-success font-medium">{displayStreakDays} 天 {displayStreakDays > 0 ? '🔥' : ''}</span>
                 </div>
               </div>
             </div>

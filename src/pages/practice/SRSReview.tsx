@@ -23,6 +23,7 @@ import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
 import { useMultiPackItems, PackItem } from "@/hooks/useUserPacks";
 import { usePackItemProgress } from "@/hooks/usePackItemProgress";
+import { useUserStats } from "@/hooks/useUserStats";
 
 // Extended VocabularyWord with pack_id for tracking
 interface ExtendedVocabularyWord extends VocabularyWord {
@@ -75,6 +76,9 @@ const SRSReview = () => {
 
   // Pack item progress tracking
   const { updateProgress: updatePackItemProgress } = usePackItemProgress();
+
+  // User stats for syncing streak and review counts
+  const { recordReview } = useUserStats();
 
   // Phase: 'selection' or 'review'
   const [phase, setPhase] = useState<'selection' | 'review'>('selection');
@@ -168,6 +172,9 @@ const SRSReview = () => {
       setCurrentIndex(prev => prev + 1);
       setShowAnswer(false);
     } else {
+      // Record review stats (for logged-in users, syncs to database)
+      recordReview(totalCards);
+
       toast.success("Review Complete!", {
         description: `You reviewed ${totalCards} words.`
       });
