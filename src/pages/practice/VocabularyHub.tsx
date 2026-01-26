@@ -197,29 +197,30 @@ const VocabularyHub = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-primary/10">
-                <BookOpen className="h-8 w-8 text-primary" />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 md:p-3 rounded-lg bg-primary/10 shrink-0">
+                <BookOpen className="h-6 w-6 md:h-8 md:w-8 text-primary" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold text-foreground">單字複習中心</h1>
-                <p className="text-muted-foreground">選擇你的複習模式，開始今天的學習</p>
+              <div className="min-w-0">
+                <h1 className="text-2xl md:text-4xl font-bold text-foreground truncate">單字複習中心</h1>
+                <p className="text-sm md:text-base text-muted-foreground hidden sm:block">選擇你的複習模式，開始今天的學習</p>
               </div>
             </div>
             <Button
               variant="ghost"
-              className="gap-2 text-muted-foreground hover:text-foreground"
+              size="sm"
+              className="gap-1 md:gap-2 text-muted-foreground hover:text-foreground shrink-0"
               onClick={() => navigate("/practice/vocabulary/collections")}
             >
               <Package className="h-5 w-5" />
-              <span>單字收藏包</span>
+              <span className="hidden md:inline">單字收藏包</span>
               {userPacks.length > 0 && (
-                <Badge variant="secondary" className="ml-1">
+                <Badge variant="secondary" className="text-xs">
                   {userPacks.length}
                 </Badge>
               )}
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 hidden md:block" />
             </Button>
           </div>
         </div>
