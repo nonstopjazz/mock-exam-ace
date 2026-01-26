@@ -23,6 +23,7 @@ import { useVocabularyStore, WordProgress } from "@/store/vocabularyStore";
 import { VOCABULARY_LEVELS, TOTAL_WORDS } from "@/data/vocabulary";
 import { isFeatureEnabled } from "@/config/features";
 import { useUserPacks } from "@/hooks/useUserPacks";
+import { useUserStats } from "@/hooks/useUserStats";
 
 // Calculate error statistics from word progress
 const calculateErrorStats = (wordProgress: Record<string, WordProgress>) => {
@@ -78,6 +79,13 @@ const VocabularyHub = () => {
   // Get user's collection packs
   const { packs: userPacks } = useUserPacks();
   const totalPackWords = userPacks.reduce((sum, pack) => sum + pack.word_count, 0);
+
+  // Get synced user stats (for logged-in users)
+  const { stats: userStats, isLoggedIn } = useUserStats();
+
+  // Use synced stats for logged-in users, localStorage stats for others
+  const displayStreakDays = isLoggedIn ? userStats.streakDays : streakDays;
+  const displayReviewCount = isLoggedIn ? userStats.totalReviewCount : totalReviewCount;
 
   const [stats, setStats] = useState({
     reviewDue: 0,
@@ -278,15 +286,18 @@ const VocabularyHub = () => {
                 <TrendingUp className="h-5 w-5 text-accent" />
                 <h3 className="font-semibold text-foreground">學習統計</h3>
               </div>
+              {!isLoggedIn && (
+                <Badge variant="outline" className="text-xs">本裝置</Badge>
+              )}
             </div>
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-foreground">{totalReviewCount}</span>
+                <span className="text-4xl font-bold text-foreground">{displayReviewCount}</span>
                 <span className="text-sm text-muted-foreground">次複習</span>
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-sm text-muted-foreground">連續學習</span>
-                <span className="text-success font-medium">{streakDays} 天</span>
+                <span className="text-success font-medium">{displayStreakDays} 天 {displayStreakDays > 0 ? '🔥' : ''}</span>
               </div>
               <p className="text-sm text-muted-foreground">精通單字 {stats.mastered} 個</p>
             </div>
@@ -397,7 +408,7 @@ const VocabularyHub = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <span className="text-sm text-foreground">累計複習次數</span>
-                <span className="text-lg font-bold text-primary">{totalReviewCount.toLocaleString()} 次</span>
+                <span className="text-lg font-bold text-primary">{displayReviewCount.toLocaleString()} 次</span>
               </div>
 
               <div className="space-y-2">
@@ -411,7 +422,7 @@ const VocabularyHub = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">連續學習天數</span>
-                  <span className="text-success font-medium">{streakDays} 天 {streakDays > 0 ? '🔥' : ''}</span>
+                  <span className="text-success font-medium">{displayStreakDays} 天 {displayStreakDays > 0 ? '🔥' : ''}</span>
                 </div>
               </div>
             </div>
