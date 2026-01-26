@@ -108,6 +108,10 @@ const VocabularyHub = () => {
 
   const masteryPercentage = stats.total > 0 ? Math.round((stats.learned / stats.total) * 100) : 0;
 
+  // Calculate suggested new words to learn (if no review due)
+  const suggestedNewWords = Math.min(20, stats.total - stats.learned);
+  const hasReviewDue = stats.reviewDue > 0;
+
   const modes = [
     {
       id: "srs",
@@ -118,8 +122,8 @@ const VocabularyHub = () => {
       iconColor: "text-primary",
       badge: "推薦",
       badgeVariant: "default" as const,
-      count: stats.reviewDue || 24,
-      countLabel: "今日待複習",
+      count: hasReviewDue ? stats.reviewDue : suggestedNewWords,
+      countLabel: hasReviewDue ? "待複習" : "建議學習",
       path: "/practice/vocabulary/srs"
     },
     {
@@ -229,14 +233,22 @@ const VocabularyHub = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold text-foreground">待複習單字</h3>
+                <h3 className="font-semibold text-foreground">
+                  {hasReviewDue ? "待複習單字" : "建議學習"}
+                </h3>
               </div>
-              <Badge variant="default">進行中</Badge>
+              <Badge variant={hasReviewDue ? "default" : "secondary"}>
+                {hasReviewDue ? "待複習" : "新單字"}
+              </Badge>
             </div>
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-foreground">{stats.reviewDue || 24}</span>
-                <span className="text-muted-foreground">個單字待複習</span>
+                <span className="text-4xl font-bold text-foreground">
+                  {hasReviewDue ? stats.reviewDue : suggestedNewWords}
+                </span>
+                <span className="text-muted-foreground">
+                  {hasReviewDue ? "個單字待複習" : "個新單字"}
+                </span>
               </div>
               <ProgressBar current={stats.learned} max={stats.total} showValues={false} />
               <p className="text-sm text-muted-foreground">已學習 {stats.learned} / {stats.total.toLocaleString()}</p>
