@@ -15,12 +15,14 @@ import {
   ChevronRight,
   Layers,
   GraduationCap,
+  Package,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useVocabularyStore, WordProgress } from "@/store/vocabularyStore";
 import { VOCABULARY_LEVELS, TOTAL_WORDS } from "@/data/vocabulary";
 import { isFeatureEnabled } from "@/config/features";
+import { useUserPacks } from "@/hooks/useUserPacks";
 
 // Calculate error statistics from word progress
 const calculateErrorStats = (wordProgress: Record<string, WordProgress>) => {
@@ -72,6 +74,10 @@ const VocabularyHub = () => {
     setSelectedLevels,
     wordProgress,
   } = useVocabularyStore();
+
+  // Get user's collection packs
+  const { packs: userPacks } = useUserPacks();
+  const totalPackWords = userPacks.reduce((sum, pack) => sum + pack.word_count, 0);
 
   const [stats, setStats] = useState({
     reviewDue: 0,
@@ -191,14 +197,30 @@ const VocabularyHub = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 rounded-lg bg-primary/10">
-              <BookOpen className="h-8 w-8 text-primary" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-primary/10">
+                <BookOpen className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-foreground">單字複習中心</h1>
+                <p className="text-muted-foreground">選擇你的複習模式，開始今天的學習</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-4xl font-bold text-foreground">單字複習中心</h1>
-              <p className="text-muted-foreground">選擇你的複習模式，開始今天的學習</p>
-            </div>
+            <Button
+              variant="ghost"
+              className="gap-2 text-muted-foreground hover:text-foreground"
+              onClick={() => navigate("/practice/vocabulary/collections")}
+            >
+              <Package className="h-5 w-5" />
+              <span>單字收藏包</span>
+              {userPacks.length > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {userPacks.length}
+                </Badge>
+              )}
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
