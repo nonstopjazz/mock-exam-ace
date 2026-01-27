@@ -58,6 +58,13 @@ function AdminCard({ title, description, icon, href, badge, stats }: AdminCardPr
 export default function AdminHome() {
   const adminModules = [
     {
+      title: '使用者管理',
+      description: '查看使用者資料、年級分佈，匯出資料',
+      icon: <Users className="h-6 w-6" />,
+      href: '/admin/users',
+      badge: '新功能',
+    },
+    {
       title: '單字包管理',
       description: '建立、編輯單字包，管理單字內容與圖片',
       icon: <Package className="h-6 w-6" />,
@@ -81,7 +88,6 @@ export default function AdminHome() {
       description: '上傳學測試卷、管理題目，查看作答統計',
       icon: <GraduationCap className="h-6 w-6" />,
       href: '/admin/exams',
-      badge: '新功能',
     },
     {
       title: '網站設定',

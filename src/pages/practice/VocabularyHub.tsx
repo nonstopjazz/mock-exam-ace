@@ -17,13 +17,16 @@ import {
   GraduationCap,
   Package,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useVocabularyStore, WordProgress } from "@/store/vocabularyStore";
 import { VOCABULARY_LEVELS, TOTAL_WORDS } from "@/data/vocabulary";
 import { isFeatureEnabled } from "@/config/features";
 import { useUserPacks } from "@/hooks/useUserPacks";
 import { useUserStats } from "@/hooks/useUserStats";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { useAuth } from "@/contexts/AuthContext";
+import { GradeSelectionModal } from "@/components/profile/GradeSelectionModal";
 
 // Calculate error statistics from word progress
 const calculateErrorStats = (wordProgress: Record<string, WordProgress>) => {
@@ -82,6 +85,40 @@ const VocabularyHub = () => {
 
   // Get synced user stats (for logged-in users)
   const { stats: userStats, isLoggedIn } = useUserStats();
+
+  // Get user profile for grade selection
+  const { user } = useAuth();
+  const { hasProfile, loading: profileLoading } = useUserProfile();
+  const [showGradeModal, setShowGradeModal] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+
+  // Navigate with profile check - only prompt logged-in users
+  const navigateWithProfileCheck = useCallback((path: string) => {
+    if (user && !hasProfile && !profileLoading) {
+      setPendingNavigation(path);
+      setShowGradeModal(true);
+    } else {
+      navigate(path);
+    }
+  }, [user, hasProfile, profileLoading, navigate]);
+
+  // Handle grade selection completion
+  const handleGradeComplete = () => {
+    setShowGradeModal(false);
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+      setPendingNavigation(null);
+    }
+  };
+
+  // Handle skip
+  const handleGradeSkip = () => {
+    setShowGradeModal(false);
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+      setPendingNavigation(null);
+    }
+  };
 
   // Use synced stats for logged-in users, localStorage stats for others
   const displayStreakDays = isLoggedIn ? userStats.streakDays : streakDays;
@@ -201,7 +238,7 @@ const VocabularyHub = () => {
 
   const handleStartLevel = (level: number) => {
     setSelectedLevels([level]);
-    navigate("/practice/vocabulary/srs");
+    navigateWithProfileCheck("/practice/vocabulary/srs");
   };
 
   return (
@@ -346,7 +383,7 @@ const VocabularyHub = () => {
                     <Button
                       className="w-full"
                       variant="default"
-                      onClick={() => navigate(mode.path)}
+                      onClick={() => navigateWithProfileCheck(mode.path)}
                     >
                       開始複習
                     </Button>
@@ -554,6 +591,13 @@ const VocabularyHub = () => {
           </div>
         )}
       </div>
+
+      {/* Grade Selection Modal for first-time users */}
+      <GradeSelectionModal
+        open={showGradeModal}
+        onComplete={handleGradeComplete}
+        allowSkip={false}
+      />
     </div>
   );
 };
