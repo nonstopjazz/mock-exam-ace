@@ -15,6 +15,12 @@ export const GRADE_OPTIONS: Record<ProductType, { value: string; label: string }
     { value: '重考', label: '重考生' },
   ],
   TOEIC: [
+    { value: '國一', label: '國一' },
+    { value: '國二', label: '國二' },
+    { value: '國三', label: '國三' },
+    { value: '高一', label: '高一' },
+    { value: '高二', label: '高二' },
+    { value: '高三', label: '高三' },
     { value: '大學生', label: '大學生' },
     { value: '上班族', label: '上班族' },
     { value: '其他', label: '其他' },

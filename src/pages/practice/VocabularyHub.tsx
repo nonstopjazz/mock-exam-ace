@@ -596,8 +596,7 @@ const VocabularyHub = () => {
       <GradeSelectionModal
         open={showGradeModal}
         onComplete={handleGradeComplete}
-        onSkip={handleGradeSkip}
-        allowSkip={true}
+        allowSkip={false}
       />
     </div>
   );
