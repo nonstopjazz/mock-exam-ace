@@ -54,14 +54,20 @@ const SRSReview = () => {
   const [searchParams] = useSearchParams();
   const {
     getWordsForSRS,
+    getDueWords,
+    getOverallProgress,
     updateWordProgress,
     getWordProgress,
     getFilteredWordCount,
   } = useVocabularyStore();
 
-  // Get URL parameters (e.g., ?pack=xxx or ?source=pack)
+  // Get URL parameters (e.g., ?pack=xxx or ?source=pack or ?mode=due)
   const urlPackId = searchParams.get('pack');
   const urlSource = searchParams.get('source');
+  const urlMode = searchParams.get('mode');
+
+  // Get due words count
+  const { reviewDue } = getOverallProgress();
 
   // Source selection state - default to 'pack' if URL has pack parameter or source=pack
   const [selectedSource, setSelectedSource] = useState<VocabularySource>(
@@ -90,6 +96,29 @@ const SRSReview = () => {
 
   const currentCard = cards[currentIndex];
   const totalCards = cards.length;
+
+  // Start reviewing due words only
+  const startDueWordsReview = () => {
+    const dueWords = getDueWords(100);
+    if (dueWords.length === 0) {
+      toast.error("沒有待複習的單字", {
+        description: "所有單字都還沒到複習時間"
+      });
+      return;
+    }
+    setCards(dueWords);
+    setCurrentIndex(0);
+    setReviewedCount(0);
+    setShowAnswer(false);
+    setPhase('review');
+  };
+
+  // Auto-start if mode=due
+  useEffect(() => {
+    if (urlMode === 'due' && reviewDue > 0) {
+      startDueWordsReview();
+    }
+  }, [urlMode]);
 
   // Start the review session
   const startReview = () => {
@@ -225,6 +254,36 @@ const SRSReview = () => {
             </div>
 
             <div className="w-20" />
+          </div>
+
+          {/* Due Words Quick Start */}
+          {reviewDue > 0 && (
+            <Card className="mb-4 p-6 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-center sm:text-left">
+                  <h3 className="text-lg font-semibold text-foreground">
+                    有 {reviewDue} 個單字待複習
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    這些單字已經到了複習時間，建議立即複習
+                  </p>
+                </div>
+                <Button
+                  size="lg"
+                  className="gap-2 shrink-0"
+                  onClick={startDueWordsReview}
+                >
+                  <Brain className="h-5 w-5" />
+                  複習到期單字 ({reviewDue})
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {/* Custom Review Section */}
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-foreground mb-2">自訂複習範圍</h3>
+            <p className="text-sm text-muted-foreground mb-4">選擇收藏包或本機單字庫來複習</p>
           </div>
 
           {/* Source Selection */}

@@ -98,6 +98,7 @@ interface VocabularyState {
 
   // Actions - Get Words
   getWordsForSRS: (limit?: number) => VocabularyWord[];
+  getDueWords: (limit?: number) => VocabularyWord[];
   getWordsForFlashcards: () => VocabularyWord[];
   getWordsForQuiz: (count?: number) => VocabularyWord[];
   getFilteredWordCount: () => number;
@@ -366,6 +367,27 @@ export const useVocabularyStore = create<VocabularyState>()(
         });
 
         return wordsWithProgress.slice(0, limit).map(item => item.word);
+      },
+
+      getDueWords: (limit = 100) => {
+        const state = get();
+        const now = Date.now();
+
+        // Get only words that have been studied AND are due for review
+        const dueWords = vocabularyDataSync.filter(word => {
+          const progress = state.wordProgress[word.id];
+          // Must have been studied (reviewCount > 0) AND due for review (nextReviewTime <= now)
+          return progress && progress.reviewCount > 0 && progress.nextReviewTime <= now;
+        });
+
+        // Sort by next review time (oldest first)
+        dueWords.sort((a, b) => {
+          const aTime = state.wordProgress[a.id]?.nextReviewTime || 0;
+          const bTime = state.wordProgress[b.id]?.nextReviewTime || 0;
+          return aTime - bTime;
+        });
+
+        return dueWords.slice(0, limit);
       },
 
       getWordsForFlashcards: () => {
