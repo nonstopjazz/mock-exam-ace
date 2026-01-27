@@ -169,7 +169,7 @@ const VocabularyHub = () => {
       badgeVariant: "default" as const,
       count: hasReviewDue ? stats.reviewDue : suggestedNewWords,
       countLabel: hasReviewDue ? "待複習" : "建議學習",
-      path: hasReviewDue ? "/practice/vocabulary/srs?mode=due" : "/practice/vocabulary/srs"
+      path: "/practice/vocabulary/srs"
     },
     {
       id: "flashcards",
