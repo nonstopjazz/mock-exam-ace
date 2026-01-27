@@ -20,6 +20,7 @@ import BlogAdmin from "./pages/admin/BlogAdmin";
 import ExamAdmin from "./pages/admin/ExamAdmin";
 import ExamQuestionsEditor from "./pages/admin/ExamQuestionsEditor";
 import SiteSettings from "./pages/admin/SiteSettings";
+import UsersAdmin from "./pages/admin/UsersAdmin";
 import AdminHome from "./pages/admin/AdminHome";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -133,6 +134,11 @@ const App = () => (
           <Route path="/admin/settings" element={
             <RequireAdmin>
               <SiteSettings />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/users" element={
+            <RequireAdmin>
+              <UsersAdmin />
             </RequireAdmin>
           } />
 
