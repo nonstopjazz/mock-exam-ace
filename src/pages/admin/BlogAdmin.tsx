@@ -304,7 +304,7 @@ export default function BlogAdmin() {
         toast({ title: '更新失敗', description: error, variant: 'destructive' });
       } else {
         toast({ title: '更新成功' });
-        setDialogOpen(false);
+        // 不關閉對話框，讓用戶可以繼續編輯
         refetch();
       }
     } else {
