@@ -25,7 +25,7 @@ import {
   Redo,
   Minus,
 } from 'lucide-react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface RichTextEditorProps {
   content: string;
@@ -40,6 +40,11 @@ export function RichTextEditor({
   onImageUpload,
   placeholder = '開始撰寫文章內容...',
 }: RichTextEditorProps) {
+  // Track if update is from internal editing (not external prop change)
+  const isInternalUpdate = useRef(false);
+  // Track the last content we set externally to avoid unnecessary resets
+  const lastExternalContent = useRef(content);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -71,13 +76,27 @@ export function RichTextEditor({
       },
     },
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      // Mark as internal update before calling onChange
+      isInternalUpdate.current = true;
+      const html = editor.getHTML();
+      lastExternalContent.current = html;
+      onChange(html);
     },
   });
 
-  // Sync external content changes
+  // Sync external content changes (e.g., loading a different article)
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
+    if (!editor) return;
+
+    // Skip if this update was triggered by internal editing
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
+
+    // Only set content if it's genuinely different (external change like loading new article)
+    if (content !== lastExternalContent.current) {
+      lastExternalContent.current = content;
       editor.commands.setContent(content);
     }
   }, [content, editor]);
