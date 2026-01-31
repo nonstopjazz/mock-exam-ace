@@ -80,6 +80,8 @@ export function RichTextEditor({
       isInternalUpdate.current = true;
       const html = editor.getHTML();
       lastExternalContent.current = html;
+      // DEBUG: Log HTML content to check heading preservation
+      console.log('[Editor onUpdate] HTML:', html);
       onChange(html);
     },
   });
@@ -90,12 +92,16 @@ export function RichTextEditor({
 
     // Skip if this update was triggered by internal editing
     if (isInternalUpdate.current) {
+      console.log('[Editor useEffect] Skipping - internal update');
       isInternalUpdate.current = false;
       return;
     }
 
     // Only set content if it's genuinely different (external change like loading new article)
     if (content !== lastExternalContent.current) {
+      console.log('[Editor useEffect] Setting content from external source');
+      console.log('[Editor useEffect] New content:', content);
+      console.log('[Editor useEffect] Last content:', lastExternalContent.current);
       lastExternalContent.current = content;
       editor.commands.setContent(content);
     }
