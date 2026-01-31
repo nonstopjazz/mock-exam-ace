@@ -260,32 +260,30 @@ export function BlockNoteEditor({
         <Separator orientation="vertical" className="mx-1 h-6" />
 
         {/* Colors */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           {/* Text Color */}
-          <label className="relative cursor-pointer" title="文字顏色">
+          <div className="flex items-center gap-1">
+            <Type className="h-4 w-4 text-muted-foreground" />
             <input
               type="color"
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="w-6 h-6 cursor-pointer border border-border rounded"
               onChange={(e) => setTextColor(e.target.value)}
               defaultValue="#000000"
+              title="文字顏色"
             />
-            <div className="h-8 w-8 flex items-center justify-center rounded hover:bg-accent">
-              <Type className="h-4 w-4" />
-            </div>
-          </label>
+          </div>
 
           {/* Background Color */}
-          <label className="relative cursor-pointer" title="背景顏色">
+          <div className="flex items-center gap-1">
+            <Highlighter className="h-4 w-4 text-muted-foreground" />
             <input
               type="color"
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="w-6 h-6 cursor-pointer border border-border rounded"
               onChange={(e) => setBackgroundColor(e.target.value)}
               defaultValue="#ffff00"
+              title="背景顏色"
             />
-            <div className="h-8 w-8 flex items-center justify-center rounded hover:bg-accent">
-              <Highlighter className="h-4 w-4" />
-            </div>
-          </label>
+          </div>
         </div>
 
         <Separator orientation="vertical" className="mx-1 h-6" />
