@@ -5,12 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, FileText, PenLine, MessageSquareText, Image, Layers, BookOpen, Languages, Lightbulb, Palette, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-// Mock user data
-const MOCK_USER = {
-  name: "王小明",
-  avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face",
-};
+import { useAvatar } from "@/hooks/useAvatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { useState } from "react";
 
 // Mock exam data
@@ -333,6 +330,12 @@ const BenchmarkBadge = ({ benchmark }: { benchmark: "前標" | "均標" | "後�
 const ExamResultSummary = () => {
   const [selectedExam, setSelectedExam] = useState(MOCK_EXAMS[0].id);
   const result = MOCK_RESULTS[selectedExam];
+
+  // 頭像和用戶資訊
+  const { avatarUrl } = useAvatar();
+  const { user } = useAuth();
+  const { profile } = useUserProfile();
+  const displayName = profile?.display_name || user?.email?.split('@')[0] || '訪客';
   const currentExamIndex = MOCK_EXAMS.findIndex((e) => e.id === selectedExam);
   const currentExam = MOCK_EXAMS[currentExamIndex];
 
@@ -420,12 +423,12 @@ const ExamResultSummary = () => {
               {/* User Avatar - aligned with score circle height */}
               <div className="shrink-0 flex flex-col items-center justify-between h-32 sm:h-40">
                 <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-2 border-primary/20 shadow-md">
-                  <AvatarImage src={MOCK_USER.avatar} alt={MOCK_USER.name} />
+                  <AvatarImage src={avatarUrl} alt={displayName} />
                   <AvatarFallback className="bg-primary/10 text-primary">
                     <User className="w-10 h-10 sm:w-12 sm:h-12" />
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-lg sm:text-xl font-medium text-foreground">{MOCK_USER.name}</span>
+                <span className="text-lg sm:text-xl font-medium text-foreground">{displayName}</span>
               </div>
             </div>
           </div>

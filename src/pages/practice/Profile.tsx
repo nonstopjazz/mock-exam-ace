@@ -2,21 +2,26 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { 
-  User, 
-  Gem, 
-  Trophy, 
-  Target, 
-  Clock, 
-  TrendingUp, 
+import {
+  User,
+  Gem,
+  Trophy,
+  Target,
+  Clock,
+  TrendingUp,
   Calendar,
   Award,
   BookOpen,
-  CheckCircle
+  CheckCircle,
+  Check
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAvatar } from "@/hooks/useAvatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const Profile = () => {
+  const { avatarId, avatarUrl, selectableAvatars, setAvatarId, isSpecialUser } = useAvatar();
+
   const userData = {
     username: "冒險追尋者",
     level: 7,
@@ -75,9 +80,12 @@ const Profile = () => {
         <Card className="p-8 mb-8 bg-gradient-to-br from-primary/5 to-secondary/5">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             {/* Avatar */}
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <User className="h-12 w-12 text-primary-foreground" />
-            </div>
+            <Avatar className="w-24 h-24 border-2 border-primary/20 shadow-md">
+              <AvatarImage src={avatarUrl} alt="頭像" />
+              <AvatarFallback className="bg-gradient-to-br from-primary to-accent">
+                <User className="h-12 w-12 text-primary-foreground" />
+              </AvatarFallback>
+            </Avatar>
 
             {/* User Info */}
             <div className="flex-1">
@@ -263,6 +271,40 @@ const Profile = () => {
             <Card className="p-6">
               <h3 className="text-xl font-bold text-foreground mb-6">設定</h3>
               <div className="space-y-6">
+                {/* 頭像選擇 */}
+                <div>
+                  <h4 className="font-semibold text-foreground mb-3">選擇頭像</h4>
+                  {isSpecialUser ? (
+                    <p className="text-sm text-muted-foreground">你擁有專屬頭像，無法更換</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-3">
+                      {selectableAvatars.map((avatar) => (
+                        <button
+                          key={avatar.id}
+                          onClick={() => setAvatarId(avatar.id)}
+                          className={`relative rounded-full overflow-hidden transition-all ${
+                            avatarId === avatar.id
+                              ? 'ring-4 ring-primary ring-offset-2'
+                              : 'hover:ring-2 hover:ring-primary/50 hover:ring-offset-1'
+                          }`}
+                        >
+                          <Avatar className="w-16 h-16">
+                            <AvatarImage src={avatar.url} alt={`頭像 ${avatar.id}`} />
+                            <AvatarFallback>
+                              <User className="h-8 w-8" />
+                            </AvatarFallback>
+                          </Avatar>
+                          {avatarId === avatar.id && (
+                            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                              <Check className="h-6 w-6 text-primary" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <h4 className="font-semibold text-foreground mb-3">偏好設定</h4>
                   <div className="space-y-3">
