@@ -24,6 +24,8 @@ import {
   Link as LinkIcon,
   Undo,
   Redo,
+  Type,
+  Highlighter,
 } from 'lucide-react';
 
 interface BlockNoteEditorProps {
@@ -156,6 +158,14 @@ export function BlockNoteEditor({
     }
   };
 
+  const setTextColor = (color: string) => {
+    editor.addStyles({ textColor: color });
+  };
+
+  const setBackgroundColor = (color: string) => {
+    editor.addStyles({ backgroundColor: color });
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden bg-background blocknote-editor">
       {/* Fixed Toolbar at Top */}
@@ -246,6 +256,37 @@ export function BlockNoteEditor({
         >
           <AlignRight className="h-4 w-4" />
         </Button>
+
+        <Separator orientation="vertical" className="mx-1 h-6" />
+
+        {/* Colors */}
+        <div className="flex items-center gap-1">
+          {/* Text Color */}
+          <label className="relative cursor-pointer" title="文字顏色">
+            <input
+              type="color"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              onChange={(e) => setTextColor(e.target.value)}
+              defaultValue="#000000"
+            />
+            <div className="h-8 w-8 flex items-center justify-center rounded hover:bg-accent">
+              <Type className="h-4 w-4" />
+            </div>
+          </label>
+
+          {/* Background Color */}
+          <label className="relative cursor-pointer" title="背景顏色">
+            <input
+              type="color"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              onChange={(e) => setBackgroundColor(e.target.value)}
+              defaultValue="#ffff00"
+            />
+            <div className="h-8 w-8 flex items-center justify-center rounded hover:bg-accent">
+              <Highlighter className="h-4 w-4" />
+            </div>
+          </label>
+        </div>
 
         <Separator orientation="vertical" className="mx-1 h-6" />
 
