@@ -13,8 +13,8 @@ const AVATAR_CONFIG = {
   } as Record<string, string>,
   // 頭像路徑
   basePath: '/avatars/',
-  // 頭像副檔名
-  extension: '.png',
+  // 頭像副檔名（實際檔名格式：01-small.webp）
+  extension: '-small.webp',
 };
 
 const STORAGE_KEY = 'user_avatar_id';

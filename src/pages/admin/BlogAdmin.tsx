@@ -82,7 +82,7 @@ const initialFormData: PostFormData = {
   content: '',
   cover_image: '',
   author_name: 'Joe老師',
-  author_avatar: '/avatars/99.png',
+  author_avatar: '/avatars/99-small.webp',
   category: '',
   tags: '',
   product_tags: ['general'], // 預設為通用
