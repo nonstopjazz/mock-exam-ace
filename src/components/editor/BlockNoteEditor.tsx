@@ -17,7 +17,8 @@ export function BlockNoteEditor({
   placeholder = '開始撰寫文章內容...',
 }: BlockNoteEditorProps) {
   const isInternalUpdate = useRef(false);
-  const lastExternalContent = useRef(content);
+  const hasInitialized = useRef(false);
+  const lastExternalContent = useRef<string>('');
 
   const editor = useCreateBlockNote({
     initialContent: undefined,
@@ -29,23 +30,34 @@ export function BlockNoteEditor({
       : undefined,
   });
 
-  // Initialize content from HTML
+  // Initialize content from HTML on first load or when content changes externally
   useEffect(() => {
-    if (!editor || !content) return;
+    if (!editor) return;
 
-    const initContent = async () => {
-      try {
-        const blocks = await editor.tryParseHTMLToBlocks(content);
-        editor.replaceBlocks(editor.document, blocks);
-        lastExternalContent.current = content;
-      } catch (e) {
-        console.error('Failed to parse HTML content:', e);
-      }
-    };
+    // Skip if this was triggered by internal editing
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
 
-    // Only init once on mount or when content changes externally
-    if (content !== lastExternalContent.current && !isInternalUpdate.current) {
-      initContent();
+    // Load content if: first time OR content changed externally
+    const shouldLoadContent = !hasInitialized.current || content !== lastExternalContent.current;
+
+    if (shouldLoadContent && content) {
+      const loadContent = async () => {
+        try {
+          const blocks = await editor.tryParseHTMLToBlocks(content);
+          editor.replaceBlocks(editor.document, blocks);
+          lastExternalContent.current = content;
+          hasInitialized.current = true;
+        } catch (e) {
+          console.error('Failed to parse HTML content:', e);
+        }
+      };
+      loadContent();
+    } else if (!content && !hasInitialized.current) {
+      // Empty content on first load is OK
+      hasInitialized.current = true;
     }
   }, [editor, content]);
 
