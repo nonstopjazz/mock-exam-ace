@@ -48,7 +48,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useBlogAdmin, useBlogCategories, useBlogStats, BlogPostDB, calculateReadTime } from '@/hooks/useBlog';
-import { RichTextEditor } from '@/components/editor/RichTextEditor';
+import { BlockNoteEditor } from '@/components/editor/BlockNoteEditor';
 
 // 產品標籤選項
 const PRODUCT_TAG_OPTIONS = [
@@ -746,7 +746,7 @@ export default function BlogAdmin() {
 
                   <div className="space-y-2">
                     <Label>內文 *</Label>
-                    <RichTextEditor
+                    <BlockNoteEditor
                       content={formData.content}
                       onChange={(html) => setFormData({ ...formData, content: html })}
                       onImageUpload={async (file) => {
