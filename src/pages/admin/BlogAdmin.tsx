@@ -604,7 +604,21 @@ export default function BlogAdmin() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent
+          className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+          onInteractOutside={(e) => {
+            // 防止點擊外部關閉對話框（編輯時）
+            if (editingPost) {
+              e.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            // 防止按 ESC 關閉對話框（編輯時）
+            if (editingPost) {
+              e.preventDefault();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>
               {editingPost ? '編輯文章' : '新增文章'}

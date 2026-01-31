@@ -167,9 +167,9 @@ export function BlockNoteEditor({
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-background blocknote-editor">
-      {/* Fixed Toolbar at Top */}
-      <div className="border-b bg-muted/30 p-2 flex flex-wrap items-center gap-1">
+    <div className="border rounded-lg overflow-hidden bg-background blocknote-editor relative">
+      {/* Sticky Toolbar - follows scroll */}
+      <div className="border-b bg-muted/30 p-2 flex flex-wrap items-center gap-1 sticky top-0 z-50 backdrop-blur-sm bg-background/95">
         {/* Undo/Redo */}
         <Button
           type="button"
@@ -308,6 +308,10 @@ export function BlockNoteEditor({
       />
 
       <style>{`
+        .blocknote-editor {
+          max-height: 60vh;
+          overflow-y: auto;
+        }
         .blocknote-editor .bn-editor {
           min-height: 300px;
           padding: 1rem;
