@@ -4,6 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSiteIdentifier } from '@/hooks/useSiteIdentifier';
 import { supabase } from '@/lib/supabase';
 import { Loader2, CheckCircle2, XCircle, Gift, LogIn } from 'lucide-react';
 
@@ -29,6 +30,7 @@ export default function ClaimPack() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { siteId } = useSiteIdentifier();
 
   const [status, setStatus] = useState<ClaimStatus>('loading');
   const [result, setResult] = useState<ClaimResult | null>(null);
@@ -60,6 +62,7 @@ export default function ClaimPack() {
     try {
       const { data, error } = await supabase.rpc('claim_pack_with_token', {
         p_token: token,
+        p_site: siteId,
       });
 
       if (error) {

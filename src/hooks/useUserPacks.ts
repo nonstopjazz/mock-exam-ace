@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { getSiteId } from '@/hooks/useSiteIdentifier';
 
 export interface PackItem {
   id: string;
@@ -49,7 +50,10 @@ export function useUserPacks() {
     setError(null);
 
     try {
-      // Fetch user's claimed packs with pack details
+      // 取得當前站點
+      const currentSite = getSiteId();
+
+      // Fetch user's claimed packs with pack details (filtered by site)
       const { data, error: fetchError } = await supabase
         .from('user_pack_claims')
         .select(`
@@ -57,6 +61,7 @@ export function useUserPacks() {
           progress,
           claimed_at,
           last_studied_at,
+          site,
           pack:packs (
             id,
             title,
@@ -67,6 +72,7 @@ export function useUserPacks() {
           )
         `)
         .eq('user_id', user.id)
+        .eq('site', currentSite)
         .order('claimed_at', { ascending: false });
 
       if (fetchError) {
@@ -246,7 +252,10 @@ export function usePackWithItems(packId: string | undefined) {
       setError(null);
 
       try {
-        // Fetch pack details
+        // 取得當前站點
+        const currentSite = getSiteId();
+
+        // Fetch pack details (filtered by site)
         const { data: claimData, error: claimError } = await supabase
           .from('user_pack_claims')
           .select(`
@@ -254,6 +263,7 @@ export function usePackWithItems(packId: string | undefined) {
             progress,
             claimed_at,
             last_studied_at,
+            site,
             pack:packs (
               id,
               title,
@@ -264,6 +274,7 @@ export function usePackWithItems(packId: string | undefined) {
           `)
           .eq('user_id', user.id)
           .eq('pack_id', packId)
+          .eq('site', currentSite)
           .single();
 
         if (claimError) {
@@ -331,12 +342,16 @@ export function usePackItems(packId: string | null) {
       setError(null);
 
       try {
-        // First verify user has access to this pack
+        // 取得當前站點
+        const currentSite = getSiteId();
+
+        // First verify user has access to this pack (filtered by site)
         const { data: claimData, error: claimError } = await supabase
           .from('user_pack_claims')
           .select('id')
           .eq('user_id', user.id)
           .eq('pack_id', packId)
+          .eq('site', currentSite)
           .single();
 
         if (claimError || !claimData) {
@@ -394,11 +409,15 @@ export function useMultiPackItems(packIds: string[]) {
       setError(null);
 
       try {
-        // First verify user has access to all these packs
+        // 取得當前站點
+        const currentSite = getSiteId();
+
+        // First verify user has access to all these packs (filtered by site)
         const { data: claimData, error: claimError } = await supabase
           .from('user_pack_claims')
           .select('pack_id')
           .eq('user_id', user.id)
+          .eq('site', currentSite)
           .in('pack_id', packIds);
 
         if (claimError) {
