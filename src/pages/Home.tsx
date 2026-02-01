@@ -37,7 +37,7 @@ const Home = () => {
     {
       icon: Layers,
       title: "單字複習中心",
-      description: "5543 個學測高頻單字，SRS 智慧複習、閃卡、測驗",
+      description: "5543 個多益高頻單字，SRS 智慧複習、閃卡、測驗",
       path: "/practice/vocabulary",
       phase: 0,
     },
@@ -52,7 +52,7 @@ const Home = () => {
     {
       icon: Clock,
       title: "真實模擬考",
-      description: "完整還原學測考試時間與流程",
+      description: "完整還原多益考試時間與流程",
       path: "/exams",
       phase: 2,
     },
@@ -80,7 +80,7 @@ const Home = () => {
   const heroContent = {
     0: {
       highlight: "單字練習",
-      subtitle: "5543 個學測高頻單字，Level 2-6 分級字庫，免費開放練習",
+      subtitle: "5543 個多益高頻單字，Level 2-6 分級字庫，免費開放練習",
       cta: "開始練習單字",
       ctaPath: "/practice/vocabulary",
     },
@@ -92,7 +92,7 @@ const Home = () => {
     },
     2: {
       highlight: "模擬考系統",
-      subtitle: "真實模擬、精準分析、有效提升 — 你的學測英文得分夥伴",
+      subtitle: "真實模擬、精準分析、有效提升 — 你的多益英文得分夥伴",
       cta: "選擇試題",
       ctaPath: "/exams",
     },
@@ -121,7 +121,7 @@ const Home = () => {
             )}
 
             <h1 className="mb-6 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
-              學測英文
+              多益英文
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 {" "}{heroContent.highlight}
               </span>
@@ -243,7 +243,7 @@ const Home = () => {
           <p className="mb-8 text-lg opacity-90">
             {simulatedPhase === 2
               ? "立即開始你的第一次模擬考試"
-              : "立即開始練習學測高頻單字"}
+              : "立即開始練習多益高頻單字"}
           </p>
           <Button
             size="lg"
