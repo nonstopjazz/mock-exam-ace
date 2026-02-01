@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-export type SiteId = 'gsat' | 'toeic' | 'gept';
+export type SiteId = 'gsat' | 'toeic' | 'kids';
 
 interface SiteConfig {
   id: SiteId;
@@ -19,10 +19,10 @@ const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
     name: '多益英文',
     domain: 'toeic.ilearn.blog',
   },
-  gept: {
-    id: 'gept',
-    name: '全民英檢',
-    domain: 'gept.ilearn.blog',
+  kids: {
+    id: 'kids',
+    name: '兒童英文',
+    domain: 'kids.ilearn.blog',
   },
 };
 
@@ -30,7 +30,7 @@ const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
 function detectSiteFromHostname(hostname: string): SiteId {
   if (hostname.includes('gsat')) return 'gsat';
   if (hostname.includes('toeic')) return 'toeic';
-  if (hostname.includes('gept')) return 'gept';
+  if (hostname.includes('kids')) return 'kids';
 
   // 開發環境：可以透過環境變數指定，預設為 toeic
   const envSite = import.meta.env.VITE_SITE_ID as SiteId | undefined;
