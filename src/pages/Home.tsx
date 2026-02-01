@@ -8,7 +8,6 @@ import {
   Brain,
   Layers,
   Zap,
-  Lock,
   Clock,
   Target,
   Award,
@@ -37,7 +36,7 @@ const Home = () => {
     {
       icon: Layers,
       title: "單字複習中心",
-      description: "5543 個學測高頻單字，SRS 智慧複習、閃卡、測驗",
+      description: "5543 個多益高頻單字，SRS 智慧複習、閃卡、測驗",
       path: "/practice/vocabulary",
       phase: 0,
     },
@@ -52,7 +51,7 @@ const Home = () => {
     {
       icon: Clock,
       title: "真實模擬考",
-      description: "完整還原學測考試時間與流程",
+      description: "完整還原多益考試時間與流程",
       path: "/exams",
       phase: 2,
     },
@@ -72,15 +71,14 @@ const Home = () => {
     },
   ];
 
-  // Split features into available and locked based on simulated phase
+  // Filter available features based on simulated phase
   const availableFeatures = allFeatures.filter((f) => f.phase <= simulatedPhase);
-  const lockedFeatures = allFeatures.filter((f) => f.phase > simulatedPhase);
 
   // Dynamic hero content based on phase
   const heroContent = {
     0: {
       highlight: "單字練習",
-      subtitle: "5543 個學測高頻單字，Level 2-6 分級字庫，免費開放練習",
+      subtitle: "5543 個多益高頻單字，Level 2-6 分級字庫，免費開放練習",
       cta: "開始練習單字",
       ctaPath: "/practice/vocabulary",
     },
@@ -92,7 +90,7 @@ const Home = () => {
     },
     2: {
       highlight: "模擬考系統",
-      subtitle: "真實模擬、精準分析、有效提升 — 你的學測英文得分夥伴",
+      subtitle: "真實模擬、精準分析、有效提升 — 你的多益英文得分夥伴",
       cta: "選擇試題",
       ctaPath: "/exams",
     },
@@ -121,7 +119,7 @@ const Home = () => {
             )}
 
             <h1 className="mb-6 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
-              學測英文
+              多益英文
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 {" "}{heroContent.highlight}
               </span>
@@ -200,42 +198,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Coming Soon Section - only show if there are locked features */}
-      {lockedFeatures.length > 0 && (
-        <section className="py-20 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <div className="mb-12 text-center">
-              <h2 className="mb-4 text-2xl sm:text-3xl font-bold text-muted-foreground">
-                即將推出
-              </h2>
-              <p className="text-muted-foreground">更多學習功能開發中</p>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              {lockedFeatures.map((feature, index) => (
-                <Card key={index} className="border-2 border-dashed opacity-60">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                        <feature.icon className="h-6 w-6" />
-                      </div>
-                      <Badge variant="outline" className="text-muted-foreground">
-                        Phase {feature.phase}
-                      </Badge>
-                    </div>
-                    <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                      {feature.title}
-                      <Lock className="h-4 w-4" />
-                    </CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* CTA Section */}
       <section className="bg-gradient-to-br from-primary to-secondary py-20 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
@@ -243,7 +205,7 @@ const Home = () => {
           <p className="mb-8 text-lg opacity-90">
             {simulatedPhase === 2
               ? "立即開始你的第一次模擬考試"
-              : "立即開始練習學測高頻單字"}
+              : "立即開始練習多益高頻單字"}
           </p>
           <Button
             size="lg"
