@@ -8,7 +8,6 @@ import {
   Brain,
   Layers,
   Zap,
-  Lock,
   Clock,
   Target,
   Award,
@@ -72,9 +71,8 @@ const Home = () => {
     },
   ];
 
-  // Split features into available and locked based on simulated phase
+  // Filter available features based on simulated phase
   const availableFeatures = allFeatures.filter((f) => f.phase <= simulatedPhase);
-  const lockedFeatures = allFeatures.filter((f) => f.phase > simulatedPhase);
 
   // Dynamic hero content based on phase
   const heroContent = {
@@ -199,42 +197,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* Coming Soon Section - only show if there are locked features */}
-      {lockedFeatures.length > 0 && (
-        <section className="py-20 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <div className="mb-12 text-center">
-              <h2 className="mb-4 text-2xl sm:text-3xl font-bold text-muted-foreground">
-                即將推出
-              </h2>
-              <p className="text-muted-foreground">更多學習功能開發中</p>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              {lockedFeatures.map((feature, index) => (
-                <Card key={index} className="border-2 border-dashed opacity-60">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                        <feature.icon className="h-6 w-6" />
-                      </div>
-                      <Badge variant="outline" className="text-muted-foreground">
-                        Phase {feature.phase}
-                      </Badge>
-                    </div>
-                    <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                      {feature.title}
-                      <Lock className="h-4 w-4" />
-                    </CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* CTA Section */}
       <section className="bg-gradient-to-br from-primary to-secondary py-20 text-primary-foreground">
