@@ -16,6 +16,40 @@ import {
   PenTool,
 } from "lucide-react";
 import { DevPhaseSwitcher, useSimulatedPhase } from "@/components/dev/DevPhaseSwitcher";
+import { APP_PRODUCT, PRODUCT_CONFIG } from "@/config/product";
+
+// 產品專屬文案
+const PRODUCT_COPY = {
+  GSAT: {
+    examName: '學測',
+    wordCount: '7000',
+    vocabDescription: '7000 個學測高頻單字，SRS 智慧複習、閃卡、測驗',
+    examDescription: '完整還原學測考試時間與流程',
+    heroSubtitle: '7000 個學測高頻單字，Level 1-5 分級字庫，免費開放練習',
+    examSubtitle: '真實模擬、精準分析、有效提升 — 你的學測英文得分夥伴',
+    ctaText: '立即開始練習學測高頻單字',
+  },
+  TOEIC: {
+    examName: '多益',
+    wordCount: '5543',
+    vocabDescription: '5543 個多益高頻單字，SRS 智慧複習、閃卡、測驗',
+    examDescription: '完整還原多益考試時間與流程',
+    heroSubtitle: '5543 個多益高頻單字，Level 2-6 分級字庫，免費開放練習',
+    examSubtitle: '真實模擬、精準分析、有效提升 — 你的多益英文得分夥伴',
+    ctaText: '立即開始練習多益高頻單字',
+  },
+  KIDS: {
+    examName: '兒童',
+    wordCount: '2000',
+    vocabDescription: '2000 個基礎單字，遊戲化學習、閃卡、測驗',
+    examDescription: '有趣的英語閱讀練習',
+    heroSubtitle: '2000 個基礎單字，Level 1-3 分級字庫，免費開放練習',
+    examSubtitle: '快樂學習、輕鬆進步 — 孩子的英語學習好夥伴',
+    ctaText: '立即開始練習基礎單字',
+  },
+};
+
+const copy = PRODUCT_COPY[APP_PRODUCT];
 
 // Feature definition with phase requirements
 interface Feature {
@@ -36,7 +70,7 @@ const Home = () => {
     {
       icon: Layers,
       title: "單字複習中心",
-      description: "5543 個多益高頻單字，SRS 智慧複習、閃卡、測驗",
+      description: copy.vocabDescription,
       path: "/practice/vocabulary",
       phase: 0,
     },
@@ -51,7 +85,7 @@ const Home = () => {
     {
       icon: Clock,
       title: "真實模擬考",
-      description: "完整還原多益考試時間與流程",
+      description: copy.examDescription,
       path: "/exams",
       phase: 2,
     },
@@ -78,7 +112,7 @@ const Home = () => {
   const heroContent = {
     0: {
       highlight: "單字練習",
-      subtitle: "5543 個多益高頻單字，Level 2-6 分級字庫，免費開放練習",
+      subtitle: copy.heroSubtitle,
       cta: "開始練習單字",
       ctaPath: "/practice/vocabulary",
     },
@@ -90,7 +124,7 @@ const Home = () => {
     },
     2: {
       highlight: "模擬考系統",
-      subtitle: "真實模擬、精準分析、有效提升 — 你的多益英文得分夥伴",
+      subtitle: copy.examSubtitle,
       cta: "選擇試題",
       ctaPath: "/exams",
     },
@@ -119,7 +153,7 @@ const Home = () => {
             )}
 
             <h1 className="mb-6 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
-              多益英文
+              {copy.examName}英文
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 {" "}{heroContent.highlight}
               </span>
@@ -205,7 +239,7 @@ const Home = () => {
           <p className="mb-8 text-lg opacity-90">
             {simulatedPhase === 2
               ? "立即開始你的第一次模擬考試"
-              : "立即開始練習多益高頻單字"}
+              : copy.ctaText}
           </p>
           <Button
             size="lg"

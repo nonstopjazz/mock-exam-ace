@@ -11,6 +11,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { RequireAdmin } from "./components/auth/RequireAdmin";
 import { AuthProvider } from "./contexts/AuthContext";
 import { IS_PRODUCTION } from "./config/features";
+import { useDocumentHead } from "./hooks/useDocumentHead";
 
 // Admin pages
 import PacksAdmin from "./pages/admin/PacksAdmin";
@@ -69,13 +70,20 @@ import VocabularyPackList from "./pages/practice/VocabularyPackList";
 
 const queryClient = new QueryClient();
 
+// 用於設定動態 document head 的組件
+function DocumentHead({ children }: { children: React.ReactNode }) {
+  useDocumentHead();
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
+    <DocumentHead>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
           <Routes>
             {/* Main app routes */}
             <Route path="/" element={<Home />} />
@@ -190,9 +198,10 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </DocumentHead>
   </QueryClientProvider>
 );
 
