@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { VocabularyWord } from '@/data/vocabulary/types';
 import { fetchLevelWords } from '@/lib/levelWords';
+import { fetchAllWordProgress, syncWordProgress } from '@/lib/wordProgressSync';
 
 // SRS intervals in milliseconds
 const SRS_INTERVALS = {
@@ -87,6 +88,7 @@ interface VocabularyState {
 
   // Actions - Data Loading
   loadWords: () => Promise<void>;
+  loadProgress: () => Promise<void>;
 
   // Actions - Progress
   initWordProgress: (wordId: string) => void;
@@ -228,6 +230,28 @@ export const useVocabularyStore = create<VocabularyState>()(
         }
       },
 
+      loadProgress: async () => {
+        try {
+          const progress = await fetchAllWordProgress();
+          if (Object.keys(progress).length > 0) {
+            // Calculate aggregate stats from loaded progress
+            let totalWordsLearned = 0;
+            let totalReviewCount = 0;
+            Object.values(progress).forEach(p => {
+              if (p.masteryLevel > 0) totalWordsLearned++;
+              totalReviewCount += p.reviewCount;
+            });
+            set({
+              wordProgress: progress,
+              totalWordsLearned,
+              totalReviewCount,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to load word progress from Supabase:', error);
+        }
+      },
+
       initWordProgress: (wordId: string) => {
         const state = get();
         if (!state.wordProgress[wordId]) {
@@ -279,21 +303,28 @@ export const useVocabularyStore = create<VocabularyState>()(
         const wasNew = existing.masteryLevel === 0 && existing.reviewCount === 0;
         const isNowLearned = newMasteryLevel > 0;
 
+        const updatedProgress: WordProgress = {
+          wordId,
+          masteryLevel: newMasteryLevel,
+          nextReviewTime,
+          reviewCount: existing.reviewCount + 1,
+          correctCount: isCorrect ? existing.correctCount + 1 : existing.correctCount,
+          lastReviewTime: Date.now(),
+        };
+
         set({
           wordProgress: {
             ...state.wordProgress,
-            [wordId]: {
-              wordId,
-              masteryLevel: newMasteryLevel,
-              nextReviewTime,
-              reviewCount: existing.reviewCount + 1,
-              correctCount: isCorrect ? existing.correctCount + 1 : existing.correctCount,
-              lastReviewTime: Date.now(),
-            },
+            [wordId]: updatedProgress,
           },
           totalReviewCount: state.totalReviewCount + 1,
           totalWordsLearned: wasNew && isNowLearned ? state.totalWordsLearned + 1 : state.totalWordsLearned,
         });
+
+        // Sync to Supabase (fire and forget, don't block UI)
+        syncWordProgress(updatedProgress).catch(err =>
+          console.error('Background sync failed for word:', wordId, err)
+        );
 
         // Update streak
         get().updateStreak();
