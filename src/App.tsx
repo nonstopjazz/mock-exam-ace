@@ -179,15 +179,15 @@ const App = () => (
           <Route path="/course-management" element={<Navigate to="/" replace />} />
           <Route path="/course-management/:courseId/edit" element={<Navigate to="/" replace />} />
 
-          {/* Phase 0: Practice pages without sidebar */}
-          <Route path="/practice" element={<><Navbar /><Phase0Index /></>} />
-          <Route path="/practice/vocabulary" element={<><Navbar /><VocabularyHub /></>} />
-          <Route path="/practice/vocabulary/srs" element={<><Navbar /><SRSReview /></>} />
-          <Route path="/practice/vocabulary/flashcards" element={<><Navbar /><Flashcards /></>} />
-          <Route path="/practice/vocabulary/quiz" element={<><Navbar /><QuickQuiz /></>} />
-          <Route path="/practice/vocabulary/collections" element={<><Navbar /><VocabularyCollections /></>} />
-          <Route path="/practice/vocabulary/pack/:packId" element={<><Navbar /><VocabularyPackDetail /></>} />
-          <Route path="/practice/vocabulary/weak-words" element={<><Navbar /><WeakWords /></>} />
+          {/* Phase 0: Practice pages (require login for progress sync) */}
+          <Route path="/practice" element={<ProtectedRoute><Navbar /><Phase0Index /></ProtectedRoute>} />
+          <Route path="/practice/vocabulary" element={<ProtectedRoute><Navbar /><VocabularyHub /></ProtectedRoute>} />
+          <Route path="/practice/vocabulary/srs" element={<ProtectedRoute><Navbar /><SRSReview /></ProtectedRoute>} />
+          <Route path="/practice/vocabulary/flashcards" element={<ProtectedRoute><Navbar /><Flashcards /></ProtectedRoute>} />
+          <Route path="/practice/vocabulary/quiz" element={<ProtectedRoute><Navbar /><QuickQuiz /></ProtectedRoute>} />
+          <Route path="/practice/vocabulary/collections" element={<ProtectedRoute><Navbar /><VocabularyCollections /></ProtectedRoute>} />
+          <Route path="/practice/vocabulary/pack/:packId" element={<ProtectedRoute><Navbar /><VocabularyPackDetail /></ProtectedRoute>} />
+          <Route path="/practice/vocabulary/weak-words" element={<ProtectedRoute><Navbar /><WeakWords /></ProtectedRoute>} />
 
           {/* Phase 2: Locked game features */}
           <Route path="/practice/quest/:lessonId" element={<LockedPage title="任務關卡" description="任務地圖功能即將推出，敬請期待！" />} />

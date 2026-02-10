@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { VocabularyWord, VOCABULARY_LEVELS } from '@/data/vocabulary';
+import type { VocabularyWord } from '@/data/vocabulary/types';
+import { fetchLevelWords } from '@/lib/levelWords';
+import { fetchAllWordProgress, syncWordProgress } from '@/lib/wordProgressSync';
 
 // SRS intervals in milliseconds
 const SRS_INTERVALS = {
@@ -63,6 +65,9 @@ export const PARTS_OF_SPEECH: Record<string, { label: string; matches: string[] 
 export const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 interface VocabularyState {
+  // Data loading state
+  wordsLoaded: boolean;
+
   // User progress for each word
   wordProgress: Record<string, WordProgress>;
 
@@ -81,6 +86,10 @@ interface VocabularyState {
   streakDays: number;
   lastStudyDate: string | null;
 
+  // Actions - Data Loading
+  loadWords: () => Promise<void>;
+  loadProgress: () => Promise<void>;
+
   // Actions - Progress
   initWordProgress: (wordId: string) => void;
   updateWordProgress: (wordId: string, isCorrect: boolean, response?: 'forgot' | 'hard' | 'easy') => void;
@@ -97,6 +106,7 @@ interface VocabularyState {
   clearAllFilters: () => void;
 
   // Actions - Get Words
+  getAllWords: () => VocabularyWord[];
   getWordsForSRS: (limit?: number) => VocabularyWord[];
   getDueWords: (limit?: number) => VocabularyWord[];
   getWordsForFlashcards: () => VocabularyWord[];
@@ -112,21 +122,8 @@ interface VocabularyState {
   resetProgress: () => void;
 }
 
-// Import vocabulary data lazily to avoid circular dependencies
-let vocabularyData: VocabularyWord[] | null = null;
-const getVocabularyData = async (): Promise<VocabularyWord[]> => {
-  if (!vocabularyData) {
-    const { getAllWords } = await import('@/data/vocabulary');
-    vocabularyData = getAllWords();
-  }
-  return vocabularyData;
-};
-
-// Synchronous version for store actions
+// Module-level cache for vocabulary data (not persisted to localStorage)
 let vocabularyDataSync: VocabularyWord[] = [];
-import('@/data/vocabulary').then(({ getAllWords }) => {
-  vocabularyDataSync = getAllWords();
-});
 
 // Helper function to filter words based on all criteria
 const filterWords = (
@@ -202,6 +199,7 @@ const filterWords = (
 export const useVocabularyStore = create<VocabularyState>()(
   persist(
     (set, get) => ({
+      wordsLoaded: false,
       wordProgress: {},
       selectedLevels: [2, 3, 4, 5, 6], // Default to all levels
       selectedTags: [],
@@ -214,6 +212,45 @@ export const useVocabularyStore = create<VocabularyState>()(
       totalReviewCount: 0,
       streakDays: 0,
       lastStudyDate: null,
+
+      loadWords: async () => {
+        if (vocabularyDataSync.length > 0) {
+          set({ wordsLoaded: true });
+          return;
+        }
+        try {
+          vocabularyDataSync = await fetchLevelWords();
+          set({ wordsLoaded: true });
+        } catch (error) {
+          console.error('Failed to load vocabulary from Supabase, falling back to static data:', error);
+          // Fallback to static data if Supabase fails
+          const { getAllWords } = await import('@/data/vocabulary');
+          vocabularyDataSync = getAllWords();
+          set({ wordsLoaded: true });
+        }
+      },
+
+      loadProgress: async () => {
+        try {
+          const progress = await fetchAllWordProgress();
+          if (Object.keys(progress).length > 0) {
+            // Calculate aggregate stats from loaded progress
+            let totalWordsLearned = 0;
+            let totalReviewCount = 0;
+            Object.values(progress).forEach(p => {
+              if (p.masteryLevel > 0) totalWordsLearned++;
+              totalReviewCount += p.reviewCount;
+            });
+            set({
+              wordProgress: progress,
+              totalWordsLearned,
+              totalReviewCount,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to load word progress from Supabase:', error);
+        }
+      },
 
       initWordProgress: (wordId: string) => {
         const state = get();
@@ -266,21 +303,28 @@ export const useVocabularyStore = create<VocabularyState>()(
         const wasNew = existing.masteryLevel === 0 && existing.reviewCount === 0;
         const isNowLearned = newMasteryLevel > 0;
 
+        const updatedProgress: WordProgress = {
+          wordId,
+          masteryLevel: newMasteryLevel,
+          nextReviewTime,
+          reviewCount: existing.reviewCount + 1,
+          correctCount: isCorrect ? existing.correctCount + 1 : existing.correctCount,
+          lastReviewTime: Date.now(),
+        };
+
         set({
           wordProgress: {
             ...state.wordProgress,
-            [wordId]: {
-              wordId,
-              masteryLevel: newMasteryLevel,
-              nextReviewTime,
-              reviewCount: existing.reviewCount + 1,
-              correctCount: isCorrect ? existing.correctCount + 1 : existing.correctCount,
-              lastReviewTime: Date.now(),
-            },
+            [wordId]: updatedProgress,
           },
           totalReviewCount: state.totalReviewCount + 1,
           totalWordsLearned: wasNew && isNowLearned ? state.totalWordsLearned + 1 : state.totalWordsLearned,
         });
+
+        // Sync to Supabase (fire and forget, don't block UI)
+        syncWordProgress(updatedProgress).catch(err =>
+          console.error('Background sync failed for word:', wordId, err)
+        );
 
         // Update streak
         get().updateStreak();
@@ -335,6 +379,10 @@ export const useVocabularyStore = create<VocabularyState>()(
           selectedCategories: [],
           selectedLearningStatus: [],
         });
+      },
+
+      getAllWords: () => {
+        return vocabularyDataSync;
       },
 
       getWordsForSRS: (limit = 20) => {
@@ -497,11 +545,14 @@ export const useVocabularyStore = create<VocabularyState>()(
     }),
     {
       name: 'vocabulary-storage',
+      partialize: (state) => {
+        // Exclude wordsLoaded from persistence (runtime state only)
+        const { wordsLoaded, ...rest } = state;
+        return rest;
+      },
     }
   )
 );
 
-// Initialize vocabulary data when store is created
-import('@/data/vocabulary').then(({ getAllWords }) => {
-  vocabularyDataSync = getAllWords();
-});
+// Initialize vocabulary data from Supabase when store is created
+useVocabularyStore.getState().loadWords();

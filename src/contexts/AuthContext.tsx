@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { useVocabularyStore } from '@/store/vocabularyStore';
 
 interface AuthContextType {
   user: User | null;
@@ -36,6 +37,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Load word progress if already logged in
+      if (session?.user) {
+        useVocabularyStore.getState().loadProgress();
+      }
     });
 
     // Listen for auth changes
@@ -45,6 +51,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Load word progress from Supabase when user logs in
+      if (session?.user) {
+        useVocabularyStore.getState().loadProgress();
+      }
     });
 
     return () => subscription.unsubscribe();
