@@ -20,6 +20,7 @@ import {
   FolderOpen,
   GraduationCap,
   RotateCcw,
+  Loader2,
 } from "lucide-react";
 import { useVocabularyStore, TOPIC_CATEGORIES, PARTS_OF_SPEECH, ALPHABET, LearningStatus } from "@/store/vocabularyStore";
 import { VOCABULARY_LEVELS } from "@/data/vocabulary";
@@ -46,6 +47,7 @@ export const VocabularySelector = ({
   description,
 }: VocabularySelectorProps) => {
   const {
+    wordsLoaded,
     selectedLevels,
     selectedTags,
     selectedLetters,
@@ -69,11 +71,11 @@ export const VocabularySelector = ({
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [wordCount, setWordCount] = useState(0);
 
-  // Calculate word count based on selection
+  // Calculate word count based on selection (re-run when wordsLoaded changes)
   useEffect(() => {
     const count = getFilteredWordCount();
     setWordCount(count);
-  }, [selectedLevels, selectedTags, selectedLetters, selectedPartsOfSpeech, selectedCategories, selectedLearningStatus, getFilteredWordCount]);
+  }, [wordsLoaded, selectedLevels, selectedTags, selectedLetters, selectedPartsOfSpeech, selectedCategories, selectedLearningStatus, getFilteredWordCount]);
 
   const toggleLevel = (level: number) => {
     if (selectedLevels.includes(level)) {
@@ -451,11 +453,20 @@ export const VocabularySelector = ({
           <Button
             size="lg"
             className="w-full md:w-auto gap-2"
-            disabled={wordCount === 0}
+            disabled={wordCount === 0 || !wordsLoaded}
             onClick={onStart}
           >
-            <Play className="h-5 w-5" />
-            開始 ({wordCount})
+            {!wordsLoaded ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                載入中...
+              </>
+            ) : (
+              <>
+                <Play className="h-5 w-5" />
+                開始 ({wordCount})
+              </>
+            )}
           </Button>
         </div>
       </div>
