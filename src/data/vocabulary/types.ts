@@ -14,6 +14,8 @@ export interface VocabularyWord {
   category: string;
   tags: string[];
   extraNotes: string;
+  audioUrl?: string | null;
+  exampleAudioUrl?: string | null;
 }
 
 export interface VocabularyLevel {

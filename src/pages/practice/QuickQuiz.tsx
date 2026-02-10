@@ -21,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useConfetti } from "@/hooks/galaxy/useConfetti";
 import { useVocabularyStore } from "@/store/vocabularyStore";
-import { VocabularyWord, getAllWords } from "@/data/vocabulary";
+import type { VocabularyWord } from "@/data/vocabulary/types";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
 import { usePackItems, PackItem } from "@/hooks/useUserPacks";
@@ -55,9 +55,8 @@ interface QuizQuestion {
 }
 
 // Generate quiz questions from vocabulary data
-const generateQuestions = (words: VocabularyWord[], count: number, alternativeWordPool?: VocabularyWord[]): QuizQuestion[] => {
-  // Use alternative word pool for wrong answers if provided, otherwise use getAllWords()
-  const allWords = alternativeWordPool || getAllWords();
+const generateQuestions = (words: VocabularyWord[], count: number, allWordsPool: VocabularyWord[]): QuizQuestion[] => {
+  const allWords = allWordsPool;
   const shuffledWords = [...words].sort(() => Math.random() - 0.5).slice(0, count);
 
   return shuffledWords.map((word) => {
@@ -88,6 +87,7 @@ const QuickQuiz = () => {
   const navigate = useNavigate();
   const { celebrate } = useConfetti();
   const {
+    getAllWords: storeGetAllWords,
     getWordsForQuiz,
     updateWordProgress,
     getFilteredWordCount,
@@ -163,7 +163,7 @@ const QuickQuiz = () => {
       words = getWordsForQuiz(questionCount * 2); // Get more words to have variety
     }
 
-    const generatedQuestions = generateQuestions(words, questionCount, wordPool);
+    const generatedQuestions = generateQuestions(words, questionCount, wordPool || storeGetAllWords());
     setQuestions(generatedQuestions);
     setCurrentQuestionIndex(0);
     setSelectedAnswer(null);

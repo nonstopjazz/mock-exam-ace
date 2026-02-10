@@ -17,7 +17,7 @@ import {
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useVocabularyStore, WordProgress } from "@/store/vocabularyStore";
-import { getAllWords, VocabularyWord } from "@/data/vocabulary";
+import type { VocabularyWord } from "@/data/vocabulary/types";
 import { useUserPacks } from "@/hooks/useUserPacks";
 import { useWeakWords, WeakWord } from "@/hooks/usePackItemProgress";
 
@@ -29,7 +29,7 @@ interface LocalWeakWord {
 
 const WeakWords = () => {
   const navigate = useNavigate();
-  const { wordProgress, setSelectedLearningStatus } = useVocabularyStore();
+  const { wordProgress, setSelectedLearningStatus, getAllWords } = useVocabularyStore();
   const { packs } = useUserPacks();
 
   // Selected pack for viewing weak words
@@ -42,6 +42,7 @@ const WeakWords = () => {
   const localWeakWords = useMemo(() => {
     const allWords = getAllWords();
     const weakWords: LocalWeakWord[] = [];
+
 
     allWords.forEach(word => {
       const progress = wordProgress[word.id];
@@ -66,7 +67,7 @@ const WeakWords = () => {
     });
 
     return weakWords;
-  }, [wordProgress]);
+  }, [wordProgress, getAllWords]);
 
   // Calculate overall stats
   const localStats = useMemo(() => {
