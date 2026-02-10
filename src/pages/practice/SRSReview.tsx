@@ -17,6 +17,7 @@ import {
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useVocabularyStore } from "@/store/vocabularyStore";
 import { VocabularyWord } from "@/data/vocabulary";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
@@ -85,6 +86,7 @@ const SRSReview = () => {
 
   // User stats for syncing streak and review counts
   const { recordReview } = useUserStats();
+  const { play, isPlaying } = useAudioPlayer();
 
   // Phase: 'selection' or 'review'
   const [phase, setPhase] = useState<'selection' | 'review'>('selection');
@@ -436,8 +438,14 @@ const SRSReview = () => {
                   <Badge className={getLevelColor(getMasteryLevel(currentCard.id))}>
                     {getLevelLabel(getMasteryLevel(currentCard.id))}
                   </Badge>
-                  <Button variant="ghost" size="sm" className="gap-1">
-                    <Volume2 className="h-4 w-4" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1"
+                    disabled={!currentCard.audioUrl}
+                    onClick={() => play(currentCard.audioUrl)}
+                  >
+                    <Volume2 className={`h-4 w-4 ${isPlaying(currentCard.audioUrl) ? 'text-primary animate-pulse' : ''}`} />
                   </Button>
                 </div>
               </div>
@@ -477,7 +485,19 @@ const SRSReview = () => {
 
                 {/* Example */}
                 <div className="p-4 rounded-lg bg-muted/50">
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">Example</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold text-muted-foreground">Example</h3>
+                    {currentCard.exampleAudioUrl && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => play(currentCard.exampleAudioUrl)}
+                      >
+                        <Volume2 className={`h-3.5 w-3.5 ${isPlaying(currentCard.exampleAudioUrl) ? 'text-primary animate-pulse' : 'text-muted-foreground'}`} />
+                      </Button>
+                    )}
+                  </div>
                   <p className="text-lg text-foreground mb-2">{currentCard.example}</p>
                   <p className="text-base text-muted-foreground">{currentCard.exampleTranslation}</p>
                 </div>

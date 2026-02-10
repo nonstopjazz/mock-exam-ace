@@ -19,6 +19,7 @@ import {
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useVocabularyStore } from "@/store/vocabularyStore";
 import { VocabularyWord } from "@/data/vocabulary";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
@@ -51,6 +52,7 @@ const Flashcards = () => {
     updateWordProgress,
     getWordProgress,
   } = useVocabularyStore();
+  const { play, isPlaying } = useAudioPlayer();
 
   // Source selection state
   const [selectedSource, setSelectedSource] = useState<VocabularySource>('local');
@@ -387,9 +389,18 @@ const Flashcards = () => {
                 </div>
 
                 <div className="text-center space-y-4">
-                  <Button variant="ghost" size="sm" className="gap-1 mb-4">
-                    <Volume2 className="h-4 w-4" />
-                    Pronounce
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 mb-4"
+                    disabled={!currentCard.audioUrl}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      play(currentCard.audioUrl);
+                    }}
+                  >
+                    <Volume2 className={`h-4 w-4 ${isPlaying(currentCard.audioUrl) ? 'text-primary animate-pulse' : ''}`} />
+                    發音
                   </Button>
 
                   <h2 className="text-6xl font-bold text-foreground mb-4">
@@ -434,7 +445,22 @@ const Flashcards = () => {
 
                   {/* Example */}
                   <div className="p-4 rounded-lg bg-muted/50">
-                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Example</h3>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold text-muted-foreground">Example</h3>
+                      {currentCard.exampleAudioUrl && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            play(currentCard.exampleAudioUrl);
+                          }}
+                        >
+                          <Volume2 className={`h-3.5 w-3.5 ${isPlaying(currentCard.exampleAudioUrl) ? 'text-primary animate-pulse' : 'text-muted-foreground'}`} />
+                        </Button>
+                      )}
+                    </div>
                     <p className="text-base text-foreground mb-2">{currentCard.example}</p>
                     <p className="text-sm text-muted-foreground">{currentCard.exampleTranslation}</p>
                   </div>

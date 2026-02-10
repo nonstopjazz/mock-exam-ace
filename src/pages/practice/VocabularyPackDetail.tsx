@@ -348,8 +348,8 @@ const VocabularyPackDetail = () => {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="text-2xl font-bold text-foreground">{item.word}</h3>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      <Volume2 className="h-4 w-4 text-primary" />
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" disabled>
+                      <Volume2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </div>
                   {item.phonetic && (
