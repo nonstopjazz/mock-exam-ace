@@ -51,23 +51,37 @@ let cachedWords: VocabularyWord[] | null = null;
 
 /**
  * 從 Supabase 取得所有 level 單字
+ * Supabase 預設每次最多回傳 1000 筆，所以用分頁撈取全部
  * 有快取機制，只會請求一次
  */
 export async function fetchLevelWords(): Promise<VocabularyWord[]> {
   if (cachedWords) return cachedWords;
 
-  const { data, error } = await supabase
-    .from('level_words')
-    .select('*')
-    .order('level', { ascending: true })
-    .order('word', { ascending: true });
+  const PAGE_SIZE = 1000;
+  let allRows: LevelWordRow[] = [];
+  let from = 0;
 
-  if (error) {
-    console.error('Failed to fetch level words from Supabase:', error);
-    throw error;
+  while (true) {
+    const { data, error } = await supabase
+      .from('level_words')
+      .select('*')
+      .order('level', { ascending: true })
+      .order('word', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) {
+      console.error('Failed to fetch level words from Supabase:', error);
+      throw error;
+    }
+
+    allRows = allRows.concat(data as LevelWordRow[]);
+
+    // 如果回傳不足 PAGE_SIZE 筆，代表已經撈完
+    if (!data || data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
   }
 
-  cachedWords = (data as LevelWordRow[]).map(mapRowToWord);
+  cachedWords = allRows.map(mapRowToWord);
   return cachedWords;
 }
 
