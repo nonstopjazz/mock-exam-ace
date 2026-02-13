@@ -257,9 +257,13 @@ export default function PackItemsAdmin() {
         throw new Error(res.status === 504 ? '處理超時，請嘗試較小的單字包或稍後重試' : `伺服器錯誤 (${res.status})`);
       }
       if (!res.ok) throw new Error(data.error || '生成失敗');
+      const wg = data.wordGenerated ?? 0;
+      const ws = data.wordSkipped ?? 0;
+      const eg = data.exampleGenerated ?? 0;
+      const es = data.exampleSkipped ?? 0;
       toast({
         title: '發音生成完成',
-        description: `單字發音：生成 ${data.wordGenerated} 個、跳過 ${data.wordSkipped} 個｜例句發音：生成 ${data.exampleGenerated} 個、跳過 ${data.exampleSkipped} 個（共 ${data.total} 個單字）`,
+        description: `單字發音：生成 ${wg} 個、跳過 ${ws} 個｜例句發音：生成 ${eg} 個、跳過 ${es} 個（共 ${data.total ?? 0} 個單字）`,
       });
       fetchItems();
     } catch (err: any) {
