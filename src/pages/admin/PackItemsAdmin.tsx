@@ -249,7 +249,13 @@ export default function PackItemsAdmin() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pack_id: packId }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(res.status === 504 ? '處理超時，請嘗試較小的單字包或稍後重試' : `伺服器錯誤 (${res.status})`);
+      }
       if (!res.ok) throw new Error(data.error || '生成失敗');
       toast({
         title: '發音生成完成',
