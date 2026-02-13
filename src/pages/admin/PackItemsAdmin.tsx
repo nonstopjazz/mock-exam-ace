@@ -253,7 +253,7 @@ export default function PackItemsAdmin() {
       if (!res.ok) throw new Error(data.error || '生成失敗');
       toast({
         title: '發音生成完成',
-        description: `已生成 ${data.generated} 個，跳過 ${data.skipped} 個（共 ${data.total} 個單字）`,
+        description: `單字發音：生成 ${data.wordGenerated} 個、跳過 ${data.wordSkipped} 個｜例句發音：生成 ${data.exampleGenerated} 個、跳過 ${data.exampleSkipped} 個（共 ${data.total} 個單字）`,
       });
       fetchItems();
     } catch (err: any) {

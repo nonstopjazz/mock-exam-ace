@@ -76,8 +76,10 @@ export default async function handler(req: any, res: any) {
       return res.json({ success: true, generated: 0, skipped: 0, total: 0 });
     }
 
-    let generated = 0;
-    let skipped = 0;
+    let wordGenerated = 0;
+    let wordSkipped = 0;
+    let exampleGenerated = 0;
+    let exampleSkipped = 0;
 
     for (const item of items as PackItem[]) {
       // --- 單字發音 ---
@@ -99,34 +101,46 @@ export default async function handler(req: any, res: any) {
               .eq('id', item.id);
           }
         }
-        generated++;
+        wordGenerated++;
       } else {
-        skipped++;
+        wordSkipped++;
       }
 
       // --- 例句發音 ---
-      if (item.example_sentence && (!item.example_audio_url || force)) {
-        const audio = await generateTTS(item.example_sentence, GOOGLE_TTS_API_KEY);
-        if (audio) {
-          const path = `${pack_id}/${item.id}_example.mp3`;
-          const { error: upErr } = await supabase.storage
-            .from('pack-audio')
-            .upload(path, audio, { contentType: 'audio/mpeg', upsert: true });
-
-          if (!upErr) {
-            const { data: urlData } = supabase.storage
+      if (item.example_sentence) {
+        if (!item.example_audio_url || force) {
+          const audio = await generateTTS(item.example_sentence, GOOGLE_TTS_API_KEY);
+          if (audio) {
+            const path = `${pack_id}/${item.id}_example.mp3`;
+            const { error: upErr } = await supabase.storage
               .from('pack-audio')
-              .getPublicUrl(path);
-            await supabase
-              .from('pack_items')
-              .update({ example_audio_url: urlData.publicUrl })
-              .eq('id', item.id);
+              .upload(path, audio, { contentType: 'audio/mpeg', upsert: true });
+
+            if (!upErr) {
+              const { data: urlData } = supabase.storage
+                .from('pack-audio')
+                .getPublicUrl(path);
+              await supabase
+                .from('pack_items')
+                .update({ example_audio_url: urlData.publicUrl })
+                .eq('id', item.id);
+            }
           }
+          exampleGenerated++;
+        } else {
+          exampleSkipped++;
         }
       }
     }
 
-    return res.json({ success: true, generated, skipped, total: items.length });
+    return res.json({
+      success: true,
+      total: items.length,
+      wordGenerated,
+      wordSkipped,
+      exampleGenerated,
+      exampleSkipped,
+    });
   } catch (err: any) {
     console.error('API error:', err);
     return res.status(500).json({ error: err.message });
