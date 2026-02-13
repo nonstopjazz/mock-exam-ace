@@ -12,6 +12,8 @@ export interface PackItem {
   example_sentence: string | null;
   phonetic: string | null;
   sort_order: number;
+  audio_url: string | null;
+  example_audio_url: string | null;
 }
 
 export interface UserPack {

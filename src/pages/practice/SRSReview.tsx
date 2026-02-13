@@ -47,6 +47,8 @@ const convertPackItemToVocabularyWord = (item: PackItem): ExtendedVocabularyWord
   difficulty: 'medium',
   category: '',
   extraNotes: '',
+  audioUrl: item.audio_url,
+  exampleAudioUrl: item.example_audio_url,
   pack_id: item.pack_id,
 });
 

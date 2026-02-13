@@ -32,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 
 interface PackItem {
   id: string;
@@ -41,6 +42,8 @@ interface PackItem {
   example_sentence: string | null;
   phonetic: string | null;
   sort_order: number;
+  audio_url: string | null;
+  example_audio_url: string | null;
 }
 
 interface PackImage {
@@ -63,6 +66,7 @@ const VocabularyPackDetail = () => {
   const { packId } = useParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { play, isPlaying } = useAudioPlayer();
 
   const [pack, setPack] = useState<Pack | null>(null);
   const [items, setItems] = useState<PackItem[]>([]);
@@ -107,7 +111,7 @@ const VocabularyPackDetail = () => {
     // Fetch pack items
     const { data: itemsData, error: itemsError } = await supabase
       .from('pack_items')
-      .select('id, word, definition, part_of_speech, example_sentence, phonetic, sort_order')
+      .select('id, word, definition, part_of_speech, example_sentence, phonetic, sort_order, audio_url, example_audio_url')
       .eq('pack_id', packId)
       .order('sort_order', { ascending: true });
 
@@ -348,8 +352,14 @@ const VocabularyPackDetail = () => {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="text-2xl font-bold text-foreground">{item.word}</h3>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" disabled>
-                      <Volume2 className="h-4 w-4 text-muted-foreground" />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      disabled={!item.audio_url}
+                      onClick={() => play(item.audio_url)}
+                    >
+                      <Volume2 className={`h-4 w-4 ${isPlaying(item.audio_url) ? 'text-primary animate-pulse' : item.audio_url ? 'text-primary' : 'text-muted-foreground'}`} />
                     </Button>
                   </div>
                   {item.phonetic && (

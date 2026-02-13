@@ -43,6 +43,8 @@ const convertPackItemToVocabularyWord = (item: PackItem, index: number): Vocabul
   difficulty: 'medium',
   category: '',
   extraNotes: '',
+  audioUrl: item.audio_url,
+  exampleAudioUrl: item.example_audio_url,
 });
 
 const Flashcards = () => {

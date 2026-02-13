@@ -31,7 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Plus, Pencil, Trash2, ArrowLeft, GripVertical, Upload } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, ArrowLeft, GripVertical, Upload, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BatchUploadDialog } from '@/components/admin/BatchUploadDialog';
 
@@ -82,6 +82,7 @@ export default function PackItemsAdmin() {
   const [formData, setFormData] = useState<ItemFormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
   const [batchUploadOpen, setBatchUploadOpen] = useState(false);
+  const [generatingAudio, setGeneratingAudio] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -239,6 +240,30 @@ export default function PackItemsAdmin() {
     setItemToDelete(null);
   }
 
+  async function handleGenerateAudio() {
+    if (!packId) return;
+    setGeneratingAudio(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-pack-audio', {
+        body: { pack_id: packId },
+      });
+      if (error) throw error;
+      toast({
+        title: '發音生成完成',
+        description: `已生成 ${data.generated} 個，跳過 ${data.skipped} 個（共 ${data.total} 個單字）`,
+      });
+      fetchItems();
+    } catch (err: any) {
+      toast({
+        title: '發音生成失敗',
+        description: err.message || '請確認 Edge Function 已部署且 API Key 已設定',
+        variant: 'destructive',
+      });
+    } finally {
+      setGeneratingAudio(false);
+    }
+  }
+
   return (
     <div className="container mx-auto py-6 px-4 max-w-6xl">
       <div className="flex items-center gap-4 mb-6">
@@ -256,6 +281,18 @@ export default function PackItemsAdmin() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleGenerateAudio}
+            disabled={generatingAudio || items.length === 0}
+          >
+            {generatingAudio ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Volume2 className="h-4 w-4 mr-2" />
+            )}
+            {generatingAudio ? '生成中...' : '生成發音'}
+          </Button>
           <Button variant="outline" onClick={() => setBatchUploadOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
             批次上傳
