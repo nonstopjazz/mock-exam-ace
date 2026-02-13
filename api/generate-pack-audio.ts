@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 export const config = {
-  maxDuration: 60, // Pro plan: 最多 60 秒
+  maxDuration: 60,
 };
 
 interface PackItem {
@@ -38,8 +38,19 @@ async function generateTTS(text: string, apiKey: string): Promise<Buffer | null>
   }
 }
 
+// 並行處理，限制同時最多 CONCURRENCY 個請求
+async function processInBatches<T>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<void>
+) {
+  for (let i = 0; i < items.length; i += concurrency) {
+    const batch = items.slice(i, i + concurrency);
+    await Promise.all(batch.map(fn));
+  }
+}
+
 export default async function handler(req: any, res: any) {
-  // 只接受 POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -64,7 +75,6 @@ export default async function handler(req: any, res: any) {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
-    // 取得該包的所有單字
     const { data: items, error: fetchErr } = await supabase
       .from('pack_items')
       .select('id, word, example_sentence, audio_url, example_audio_url')
@@ -73,7 +83,7 @@ export default async function handler(req: any, res: any) {
 
     if (fetchErr) throw fetchErr;
     if (!items || items.length === 0) {
-      return res.json({ success: true, generated: 0, skipped: 0, total: 0 });
+      return res.json({ success: true, total: 0, wordGenerated: 0, wordSkipped: 0, exampleGenerated: 0, exampleSkipped: 0 });
     }
 
     let wordGenerated = 0;
@@ -81,57 +91,58 @@ export default async function handler(req: any, res: any) {
     let exampleGenerated = 0;
     let exampleSkipped = 0;
 
-    for (const item of items as PackItem[]) {
-      // --- 單字發音 ---
-      if (!item.audio_url || force) {
-        const audio = await generateTTS(item.word, GOOGLE_TTS_API_KEY);
-        if (audio) {
-          const path = `${pack_id}/${item.id}_word.mp3`;
-          const { error: upErr } = await supabase.storage
-            .from('pack-audio')
-            .upload(path, audio, { contentType: 'audio/mpeg', upsert: true });
+    // 建立所有需要處理的任務
+    interface Task {
+      item: PackItem;
+      type: 'word' | 'example';
+      text: string;
+    }
+    const tasks: Task[] = [];
 
-          if (!upErr) {
-            const { data: urlData } = supabase.storage
-              .from('pack-audio')
-              .getPublicUrl(path);
-            await supabase
-              .from('pack_items')
-              .update({ audio_url: urlData.publicUrl })
-              .eq('id', item.id);
-          }
-        }
-        wordGenerated++;
+    for (const item of items as PackItem[]) {
+      if (!item.audio_url || force) {
+        tasks.push({ item, type: 'word', text: item.word });
       } else {
         wordSkipped++;
       }
-
-      // --- 例句發音 ---
       if (item.example_sentence) {
         if (!item.example_audio_url || force) {
-          const audio = await generateTTS(item.example_sentence, GOOGLE_TTS_API_KEY);
-          if (audio) {
-            const path = `${pack_id}/${item.id}_example.mp3`;
-            const { error: upErr } = await supabase.storage
-              .from('pack-audio')
-              .upload(path, audio, { contentType: 'audio/mpeg', upsert: true });
-
-            if (!upErr) {
-              const { data: urlData } = supabase.storage
-                .from('pack-audio')
-                .getPublicUrl(path);
-              await supabase
-                .from('pack_items')
-                .update({ example_audio_url: urlData.publicUrl })
-                .eq('id', item.id);
-            }
-          }
-          exampleGenerated++;
+          tasks.push({ item, type: 'example', text: item.example_sentence });
         } else {
           exampleSkipped++;
         }
       }
     }
+
+    // 5 個並行處理，大幅加速
+    await processInBatches(tasks, 5, async (task) => {
+      const audio = await generateTTS(task.text, GOOGLE_TTS_API_KEY);
+      if (!audio) {
+        if (task.type === 'word') wordGenerated++;
+        else exampleGenerated++;
+        return;
+      }
+
+      const suffix = task.type === 'word' ? '_word.mp3' : '_example.mp3';
+      const path = `${pack_id}/${task.item.id}${suffix}`;
+      const { error: upErr } = await supabase.storage
+        .from('pack-audio')
+        .upload(path, audio, { contentType: 'audio/mpeg', upsert: true });
+
+      if (!upErr) {
+        const { data: urlData } = supabase.storage
+          .from('pack-audio')
+          .getPublicUrl(path);
+        const field = task.type === 'word' ? 'audio_url' : 'example_audio_url';
+        await supabase
+          .from('pack_items')
+          .update({ [field]: urlData.publicUrl })
+          .eq('id', task.item.id);
+      }
+
+      if (task.type === 'word') wordGenerated++;
+      else exampleGenerated++;
+    });
 
     return res.json({
       success: true,
