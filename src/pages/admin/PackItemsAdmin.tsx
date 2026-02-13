@@ -244,10 +244,13 @@ export default function PackItemsAdmin() {
     if (!packId) return;
     setGeneratingAudio(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-pack-audio', {
-        body: { pack_id: packId },
+      const res = await fetch('/api/generate-pack-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pack_id: packId }),
       });
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '生成失敗');
       toast({
         title: '發音生成完成',
         description: `已生成 ${data.generated} 個，跳過 ${data.skipped} 個（共 ${data.total} 個單字）`,
@@ -256,7 +259,7 @@ export default function PackItemsAdmin() {
     } catch (err: any) {
       toast({
         title: '發音生成失敗',
-        description: err.message || '請確認 Edge Function 已部署且 API Key 已設定',
+        description: err.message || '請確認環境變數已設定',
         variant: 'destructive',
       });
     } finally {
