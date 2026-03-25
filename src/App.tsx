@@ -7,9 +7,11 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/galaxy/AppSidebar";
 import { Navbar } from "./components/layout/Navbar";
 import { LockedPage } from "./components/gates/LockedPage";
+import { PhaseGate } from "./components/gates/PhaseGate";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { RequireAdmin } from "./components/auth/RequireAdmin";
 import { AuthProvider } from "./contexts/AuthContext";
+import { PhaseProvider } from "./contexts/PhaseContext";
 import { IS_PRODUCTION } from "./config/features";
 import { useDocumentHead } from "./hooks/useDocumentHead";
 
@@ -84,6 +86,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+          <PhaseProvider>
           <Routes>
             {/* Main app routes */}
             <Route path="/" element={<Home />} />
@@ -99,14 +102,14 @@ const App = () => (
             {/* Claim pack route */}
             <Route path="/claim/:token" element={<ClaimPack />} />
 
-          {/* Phase 2: Locked - Exam routes */}
-          <Route path="/exams" element={<LockedPage title="學測模考" description="模考功能即將推出，敬請期待！" />} />
-          <Route path="/exam" element={<LockedPage title="學測模考" description="模考功能即將推出，敬請期待！" />} />
-          <Route path="/exam/result/:attemptId" element={<LockedPage title="模考結果" description="模考功能即將推出，敬請期待！" />} />
-          <Route path="/exam/explanation/:attemptId" element={<LockedPage title="題目解析" description="模考功能即將推出，敬請期待！" />} />
-          <Route path="/dashboard" element={<LockedPage title="學習儀表板" description="儀表板功能即將推出，敬請期待！" />} />
+          {/* Phase 2: Exam routes (gated by backend phase) */}
+          <Route path="/exams" element={<PhaseGate requiredPhase={2} title="學測模考" description="模考功能即將推出，敬請期待！"><Navbar /><ExamList /></PhaseGate>} />
+          <Route path="/exam" element={<PhaseGate requiredPhase={2} title="學測模考" description="模考功能即將推出，敬請期待！"><Navbar /><ExamNew /></PhaseGate>} />
+          <Route path="/exam/result/:attemptId" element={<PhaseGate requiredPhase={2} title="模考結果" description="模考功能即將推出，敬請期待！"><Navbar /><ExamResult /></PhaseGate>} />
+          <Route path="/exam/explanation/:attemptId" element={<PhaseGate requiredPhase={2} title="題目解析" description="模考功能即將推出，敬請期待！"><Navbar /><ExamExplanation /></PhaseGate>} />
+          <Route path="/dashboard" element={<PhaseGate requiredPhase={2} title="學習儀表板" description="儀表板功能即將推出，敬請期待！"><Navbar /><Dashboard /></PhaseGate>} />
           <Route path="/dashboard/result-summary" element={<ExamResultSummary />} />
-          <Route path="/essay" element={<LockedPage title="AI 作文批改" description="作文批改功能即將推出，敬請期待！" />} />
+          <Route path="/essay" element={<PhaseGate requiredPhase={2} title="AI 作文批改" description="作文批改功能即將推出，敬請期待！"><Navbar /><Essay /></PhaseGate>} />
 
           {/* Admin routes - protected by RequireAdmin (production-ready) */}
           <Route path="/admin/packs" element={
@@ -172,10 +175,10 @@ const App = () => (
             </>
           )}
 
-          {/* Video Courses - hidden/locked for now */}
-          <Route path="/courses" element={<LockedPage title="影片課程" description="課程功能即將推出，敬請期待！" />} />
-          <Route path="/course/:courseId" element={<LockedPage title="影片課程" description="課程功能即將推出，敬請期待！" />} />
-          <Route path="/drip-course/:courseId" element={<LockedPage title="影片課程" description="課程功能即將推出，敬請期待！" />} />
+          {/* Video Courses (Phase 2) */}
+          <Route path="/courses" element={<PhaseGate requiredPhase={2} title="影片課程" description="課程功能即將推出，敬請期待！"><Navbar /><VideoCourses /></PhaseGate>} />
+          <Route path="/course/:courseId" element={<PhaseGate requiredPhase={2} title="影片課程" description="課程功能即將推出，敬請期待！"><Navbar /><CourseDetail /></PhaseGate>} />
+          <Route path="/drip-course/:courseId" element={<PhaseGate requiredPhase={2} title="影片課程" description="課程功能即將推出，敬請期待！"><Navbar /><DripCourse /></PhaseGate>} />
           <Route path="/course-management" element={<Navigate to="/" replace />} />
           <Route path="/course-management/:courseId/edit" element={<Navigate to="/" replace />} />
 
@@ -189,15 +192,16 @@ const App = () => (
           <Route path="/practice/vocabulary/pack/:packId" element={<ProtectedRoute><Navbar /><VocabularyPackDetail /></ProtectedRoute>} />
           <Route path="/practice/vocabulary/weak-words" element={<ProtectedRoute><Navbar /><WeakWords /></ProtectedRoute>} />
 
-          {/* Phase 2: Locked game features */}
-          <Route path="/practice/quest/:lessonId" element={<LockedPage title="任務關卡" description="任務地圖功能即將推出，敬請期待！" />} />
-          <Route path="/practice/quests" element={<LockedPage title="任務地圖" description="任務地圖功能即將推出，敬請期待！" />} />
-          <Route path="/practice/achievements" element={<LockedPage title="成就系統" description="成就系統功能即將推出，敬請期待！" />} />
-          <Route path="/practice/shop" element={<LockedPage title="寶石商店" description="寶石商店功能即將推出，敬請期待！" />} />
-          <Route path="/practice/profile" element={<LockedPage title="個人檔案" description="個人檔案功能即將推出，敬請期待！" />} />
+          {/* Phase 1: Game features (gated by backend phase) */}
+          <Route path="/practice/quest/:lessonId" element={<PhaseGate requiredPhase={1} title="任務關卡" description="任務地圖功能即將推出，敬請期待！"><ProtectedRoute><Navbar /><PracticeQuest /></ProtectedRoute></PhaseGate>} />
+          <Route path="/practice/quests" element={<PhaseGate requiredPhase={1} title="任務地圖" description="任務地圖功能即將推出，敬請期待！"><ProtectedRoute><Navbar /><PracticeQuests /></ProtectedRoute></PhaseGate>} />
+          <Route path="/practice/achievements" element={<PhaseGate requiredPhase={1} title="成就系統" description="成就系統功能即將推出，敬請期待！"><ProtectedRoute><Navbar /><PracticeAchievements /></ProtectedRoute></PhaseGate>} />
+          <Route path="/practice/shop" element={<PhaseGate requiredPhase={1} title="寶石商店" description="寶石商店功能即將推出，敬請期待！"><ProtectedRoute><Navbar /><PracticeShop /></ProtectedRoute></PhaseGate>} />
+          <Route path="/practice/profile" element={<PhaseGate requiredPhase={1} title="個人檔案" description="個人檔案功能即將推出，敬請期待！"><ProtectedRoute><Navbar /><PracticeProfile /></ProtectedRoute></PhaseGate>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </PhaseProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

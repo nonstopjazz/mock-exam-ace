@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getSiteId, type SiteId } from '@/hooks/useSiteIdentifier';
 
 export interface NavigationTab {
   enabled: boolean;
@@ -9,9 +10,12 @@ export interface NavigationTab {
   icon?: string;
 }
 
+export type Phase = 0 | 1 | 2;
+
 export interface SiteSettings {
   id: string;
   navigationTabs: Record<string, NavigationTab>;
+  currentPhase: Phase;
   updatedAt: string;
   updatedBy: string | null;
 }
@@ -26,10 +30,13 @@ const DEFAULT_NAVIGATION_TABS: Record<string, NavigationTab> = {
   courses: { enabled: false, label: '影片課程', path: '/courses', order: 6 },
 };
 
-export function useSiteSettings() {
+export function useSiteSettings(overrideSiteId?: SiteId) {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Use override or auto-detect from hostname
+  const siteId = overrideSiteId || getSiteId();
 
   // Fetch settings
   const fetchSettings = useCallback(async () => {
@@ -40,15 +47,16 @@ export function useSiteSettings() {
       const { data, error: fetchError } = await supabase
         .from('site_settings')
         .select('*')
-        .eq('id', 'main')
+        .eq('id', siteId)
         .single();
 
       if (fetchError) {
         // If no settings found, use defaults
         if (fetchError.code === 'PGRST116') {
           setSettings({
-            id: 'main',
+            id: siteId,
             navigationTabs: DEFAULT_NAVIGATION_TABS,
+            currentPhase: 0,
             updatedAt: new Date().toISOString(),
             updatedBy: null,
           });
@@ -59,6 +67,7 @@ export function useSiteSettings() {
         setSettings({
           id: data.id,
           navigationTabs: data.navigation_tabs || DEFAULT_NAVIGATION_TABS,
+          currentPhase: (data.current_phase ?? 0) as Phase,
           updatedAt: data.updated_at,
           updatedBy: data.updated_by,
         });
@@ -67,15 +76,16 @@ export function useSiteSettings() {
       setError(err.message);
       // Still provide defaults on error
       setSettings({
-        id: 'main',
+        id: siteId,
         navigationTabs: DEFAULT_NAVIGATION_TABS,
+        currentPhase: 0,
         updatedAt: new Date().toISOString(),
         updatedBy: null,
       });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [siteId]);
 
   useEffect(() => {
     fetchSettings();
@@ -95,7 +105,7 @@ export function useSiteSettings() {
           updated_at: new Date().toISOString(),
           updated_by: user?.id || null,
         })
-        .eq('id', 'main');
+        .eq('id', siteId);
 
       if (updateError) throw updateError;
 
@@ -103,6 +113,39 @@ export function useSiteSettings() {
       setSettings(prev => prev ? {
         ...prev,
         navigationTabs: tabs,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user?.id || null,
+      } : null);
+
+      return true;
+    } catch (err: any) {
+      setError(err.message);
+      return false;
+    }
+  }, []);
+
+  // Update current phase
+  const updatePhase = useCallback(async (phase: Phase) => {
+    setError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error: updateError } = await supabase
+        .from('site_settings')
+        .update({
+          current_phase: phase,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id || null,
+        })
+        .eq('id', siteId);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setSettings(prev => prev ? {
+        ...prev,
+        currentPhase: phase,
         updatedAt: new Date().toISOString(),
         updatedBy: user?.id || null,
       } : null);
@@ -129,6 +172,7 @@ export function useSiteSettings() {
     loading,
     error,
     updateNavigationTabs,
+    updatePhase,
     getEnabledTabs,
     refetch: fetchSettings,
   };

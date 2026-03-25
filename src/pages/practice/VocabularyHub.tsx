@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { useVocabularyStore, WordProgress } from "@/store/vocabularyStore";
 import { VOCABULARY_LEVELS, TOTAL_WORDS } from "@/data/vocabulary";
 import { isFeatureEnabled } from "@/config/features";
+import { usePhase } from "@/contexts/PhaseContext";
 import { useUserPacks } from "@/hooks/useUserPacks";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -69,6 +70,7 @@ const calculateErrorStats = (wordProgress: Record<string, WordProgress>) => {
 
 const VocabularyHub = () => {
   const navigate = useNavigate();
+  const currentPhase = usePhase();
   const {
     getOverallProgress,
     getLevelProgress,
@@ -544,7 +546,7 @@ const VocabularyHub = () => {
         </div>
 
         {/* Recommended Packs - hidden until feature is enabled */}
-        {isFeatureEnabled('recommended_packs') && (
+        {isFeatureEnabled('recommended_packs', currentPhase) && (
           <div className="mt-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
