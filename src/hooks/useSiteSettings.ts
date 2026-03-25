@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getSiteId, type SiteId } from '@/hooks/useSiteIdentifier';
 
 export interface NavigationTab {
   enabled: boolean;
@@ -29,10 +30,13 @@ const DEFAULT_NAVIGATION_TABS: Record<string, NavigationTab> = {
   courses: { enabled: false, label: '影片課程', path: '/courses', order: 6 },
 };
 
-export function useSiteSettings() {
+export function useSiteSettings(overrideSiteId?: SiteId) {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Use override or auto-detect from hostname
+  const siteId = overrideSiteId || getSiteId();
 
   // Fetch settings
   const fetchSettings = useCallback(async () => {
@@ -43,14 +47,14 @@ export function useSiteSettings() {
       const { data, error: fetchError } = await supabase
         .from('site_settings')
         .select('*')
-        .eq('id', 'main')
+        .eq('id', siteId)
         .single();
 
       if (fetchError) {
         // If no settings found, use defaults
         if (fetchError.code === 'PGRST116') {
           setSettings({
-            id: 'main',
+            id: siteId,
             navigationTabs: DEFAULT_NAVIGATION_TABS,
             currentPhase: 0,
             updatedAt: new Date().toISOString(),
@@ -72,7 +76,7 @@ export function useSiteSettings() {
       setError(err.message);
       // Still provide defaults on error
       setSettings({
-        id: 'main',
+        id: siteId,
         navigationTabs: DEFAULT_NAVIGATION_TABS,
         currentPhase: 0,
         updatedAt: new Date().toISOString(),
@@ -81,7 +85,7 @@ export function useSiteSettings() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [siteId]);
 
   useEffect(() => {
     fetchSettings();
@@ -101,7 +105,7 @@ export function useSiteSettings() {
           updated_at: new Date().toISOString(),
           updated_by: user?.id || null,
         })
-        .eq('id', 'main');
+        .eq('id', siteId);
 
       if (updateError) throw updateError;
 
@@ -134,7 +138,7 @@ export function useSiteSettings() {
           updated_at: new Date().toISOString(),
           updated_by: user?.id || null,
         })
-        .eq('id', 'main');
+        .eq('id', siteId);
 
       if (updateError) throw updateError;
 

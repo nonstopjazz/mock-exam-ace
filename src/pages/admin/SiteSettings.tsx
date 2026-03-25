@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useSiteSettings, NavigationTab, type Phase } from '@/hooks/useSiteSettings';
+import { supabase } from '@/lib/supabase';
+import type { SiteId } from '@/hooks/useSiteIdentifier';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -14,7 +16,7 @@ const PHASE_OPTIONS: { value: Phase; label: string; description: string; icon: t
   {
     value: 0,
     label: 'Phase 0 — Public MVP',
-    description: '僅開放單字練習功能（無需登入）',
+    description: '僅開放單字練習功能',
     icon: Rocket,
     color: 'bg-emerald-500',
     features: ['單字中心', 'SRS 智慧複習', '翻轉卡片', '快速測驗'],
@@ -37,14 +39,71 @@ const PHASE_OPTIONS: { value: Phase; label: string; description: string; icon: t
   },
 ];
 
+const SITE_LABELS: Record<SiteId, { name: string; domain: string; color: string }> = {
+  gsat: { name: '學測英文', domain: 'gsat.ilearn.blog', color: 'text-blue-600' },
+  toeic: { name: '多益英文', domain: 'toeic.ilearn.blog', color: 'text-green-600' },
+  kids: { name: '兒童英文', domain: 'kides.ilearn.blog', color: 'text-orange-600' },
+};
+
+const ALL_SITES: SiteId[] = ['gsat', 'toeic', 'kids'];
+
+// Hook to fetch all sites' phases
+function useAllSitePhases() {
+  const [phases, setPhases] = useState<Record<SiteId, Phase>>({ gsat: 0, toeic: 0, kids: 0 });
+  const [loading, setLoading] = useState(true);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await supabase
+        .from('site_settings')
+        .select('id, current_phase')
+        .in('id', ALL_SITES);
+
+      if (data) {
+        const map: Record<string, Phase> = { gsat: 0, toeic: 0, kids: 0 };
+        data.forEach((row: any) => {
+          map[row.id] = (row.current_phase ?? 0) as Phase;
+        });
+        setPhases(map as Record<SiteId, Phase>);
+      }
+    } catch {
+      // keep defaults
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const updateSitePhase = useCallback(async (siteId: SiteId, phase: Phase) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from('site_settings')
+      .update({
+        current_phase: phase,
+        updated_at: new Date().toISOString(),
+        updated_by: user?.id || null,
+      })
+      .eq('id', siteId);
+
+    if (!error) {
+      setPhases(prev => ({ ...prev, [siteId]: phase }));
+    }
+    return !error;
+  }, []);
+
+  return { phases, loading, updateSitePhase, refetch: fetchAll };
+}
+
 export default function SiteSettings() {
   const { settings, loading, error, updateNavigationTabs, updatePhase } = useSiteSettings();
+  const allSites = useAllSitePhases();
   const [tabs, setTabs] = useState<Record<string, NavigationTab>>({});
-  const [selectedPhase, setSelectedPhase] = useState<Phase>(0);
+  const [selectedPhases, setSelectedPhases] = useState<Record<SiteId, Phase>>({ gsat: 0, toeic: 0, kids: 0 });
   const [saving, setSaving] = useState(false);
-  const [savingPhase, setSavingPhase] = useState(false);
+  const [savingPhase, setSavingPhase] = useState<SiteId | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const [hasPhaseChange, setHasPhaseChange] = useState(false);
   const { toast } = useToast();
 
   // Initialize local state from settings
@@ -52,10 +111,12 @@ export default function SiteSettings() {
     if (settings?.navigationTabs) {
       setTabs(settings.navigationTabs);
     }
-    if (settings?.currentPhase !== undefined) {
-      setSelectedPhase(settings.currentPhase);
-    }
   }, [settings]);
+
+  // Sync all sites' phases
+  useEffect(() => {
+    setSelectedPhases(allSites.phases);
+  }, [allSites.phases]);
 
   // Check for changes
   useEffect(() => {
@@ -63,13 +124,6 @@ export default function SiteSettings() {
       setHasChanges(JSON.stringify(tabs) !== JSON.stringify(settings.navigationTabs));
     }
   }, [tabs, settings]);
-
-  // Check for phase changes
-  useEffect(() => {
-    if (settings?.currentPhase !== undefined) {
-      setHasPhaseChange(selectedPhase !== settings.currentPhase);
-    }
-  }, [selectedPhase, settings]);
 
   const handleToggle = (key: string, enabled: boolean) => {
     setTabs(prev => ({
@@ -112,21 +166,20 @@ export default function SiteSettings() {
     }
   };
 
-  const handleSavePhase = async () => {
-    setSavingPhase(true);
-    const success = await updatePhase(selectedPhase);
-    setSavingPhase(false);
+  const handleSavePhase = async (siteId: SiteId) => {
+    setSavingPhase(siteId);
+    const success = await allSites.updateSitePhase(siteId, selectedPhases[siteId]);
+    setSavingPhase(null);
 
     if (success) {
       toast({
         title: '階段已更新',
-        description: `已切換至 Phase ${selectedPhase}，前台功能已即時更新`,
+        description: `${SITE_LABELS[siteId].name} 已切換至 Phase ${selectedPhases[siteId]}，前台功能已即時更新`,
       });
-      setHasPhaseChange(false);
     } else {
       toast({
         title: '儲存失敗',
-        description: error || '請稍後再試',
+        description: '請稍後再試',
         variant: 'destructive',
       });
     }
@@ -176,78 +229,81 @@ export default function SiteSettings() {
         </div>
       )}
 
-      {/* Phase Selector Card */}
+      {/* Phase Selector Card — Per-Site */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Rocket className="h-5 w-5" />
-                功能開放階段
-              </CardTitle>
-              <CardDescription>
-                控制前台目前開放到哪個階段的功能。切換後前台會即時反映。
-              </CardDescription>
-            </div>
-            <Button onClick={handleSavePhase} disabled={savingPhase || !hasPhaseChange} size="sm">
-              {savingPhase ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              儲存階段
-            </Button>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Rocket className="h-5 w-5" />
+            各站功能開放階段
+          </CardTitle>
+          <CardDescription>
+            獨立控制每個網站目前開放到哪個階段的功能。切換後前台會即時反映。
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {PHASE_OPTIONS.map((option) => {
-              const Icon = option.icon;
-              const isSelected = selectedPhase === option.value;
-              const isCurrent = settings?.currentPhase === option.value;
-              return (
-                <button
-                  key={option.value}
-                  onClick={() => setSelectedPhase(option.value)}
-                  className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                    isSelected
-                      ? 'border-primary bg-primary/5 shadow-sm'
-                      : 'border-border hover:border-muted-foreground/30 hover:bg-muted/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${option.color}`} />
-                    <Icon className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-semibold">{option.label}</span>
-                    {isCurrent && (
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        目前使用中
-                      </Badge>
-                    )}
-                    {isSelected && !isCurrent && (
-                      <Badge className="ml-auto text-xs">
-                        即將切換
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1 ml-11">
-                    {option.description}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-2 ml-11">
-                    {option.features.map((f) => (
-                      <span key={f} className="text-xs bg-muted px-2 py-0.5 rounded-full">
-                        {f}
-                      </span>
-                    ))}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+        <CardContent className="space-y-6">
+          {ALL_SITES.map((siteId) => {
+            const siteInfo = SITE_LABELS[siteId];
+            const currentPhase = allSites.phases[siteId];
+            const selected = selectedPhases[siteId];
+            const hasChange = selected !== currentPhase;
+            const isSaving = savingPhase === siteId;
 
-          <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+            return (
+              <div key={siteId} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className={`font-bold text-lg ${siteInfo.color}`}>{siteInfo.name}</h3>
+                    <p className="text-xs text-muted-foreground">{siteInfo.domain}</p>
+                  </div>
+                  <Button
+                    onClick={() => handleSavePhase(siteId)}
+                    disabled={isSaving || !hasChange}
+                    size="sm"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    儲存
+                  </Button>
+                </div>
+
+                <div className="flex gap-2">
+                  {PHASE_OPTIONS.map((option) => {
+                    const isSelected = selected === option.value;
+                    const isCurrent = currentPhase === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        onClick={() => setSelectedPhases(prev => ({ ...prev, [siteId]: option.value }))}
+                        className={`flex-1 text-left p-3 rounded-lg border-2 transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary/5 shadow-sm'
+                            : 'border-border hover:border-muted-foreground/30 hover:bg-muted/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className={`w-2.5 h-2.5 rounded-full ${option.color}`} />
+                          <span className="font-semibold text-sm">Phase {option.value}</span>
+                          {isCurrent && !hasChange && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                              目前
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{option.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              <strong>注意：</strong>切換階段會立即影響前台使用者可見的功能。階段是累進的 — Phase 2 包含 Phase 0 和 Phase 1 的所有功能。
+              <strong>注意：</strong>每個網站的階段獨立控制。切換階段會立即影響該站前台使用者可見的功能。階段是累進的 — Phase 2 包含 Phase 0 和 Phase 1 的所有功能。
             </p>
           </div>
         </CardContent>

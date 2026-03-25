@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getSiteId } from '@/hooks/useSiteIdentifier';
 
 export type Phase = 0 | 1 | 2;
 
@@ -16,13 +17,14 @@ export function PhaseProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    const siteId = getSiteId();
 
     async function fetchPhase() {
       try {
         const { data, error } = await supabase
           .from('site_settings')
           .select('current_phase')
-          .eq('id', 'main')
+          .eq('id', siteId)
           .single();
 
         if (!cancelled && !error && data) {
