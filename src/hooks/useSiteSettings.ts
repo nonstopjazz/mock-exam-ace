@@ -9,9 +9,12 @@ export interface NavigationTab {
   icon?: string;
 }
 
+export type Phase = 0 | 1 | 2;
+
 export interface SiteSettings {
   id: string;
   navigationTabs: Record<string, NavigationTab>;
+  currentPhase: Phase;
   updatedAt: string;
   updatedBy: string | null;
 }
@@ -49,6 +52,7 @@ export function useSiteSettings() {
           setSettings({
             id: 'main',
             navigationTabs: DEFAULT_NAVIGATION_TABS,
+            currentPhase: 0,
             updatedAt: new Date().toISOString(),
             updatedBy: null,
           });
@@ -59,6 +63,7 @@ export function useSiteSettings() {
         setSettings({
           id: data.id,
           navigationTabs: data.navigation_tabs || DEFAULT_NAVIGATION_TABS,
+          currentPhase: (data.current_phase ?? 0) as Phase,
           updatedAt: data.updated_at,
           updatedBy: data.updated_by,
         });
@@ -69,6 +74,7 @@ export function useSiteSettings() {
       setSettings({
         id: 'main',
         navigationTabs: DEFAULT_NAVIGATION_TABS,
+        currentPhase: 0,
         updatedAt: new Date().toISOString(),
         updatedBy: null,
       });
@@ -114,6 +120,39 @@ export function useSiteSettings() {
     }
   }, []);
 
+  // Update current phase
+  const updatePhase = useCallback(async (phase: Phase) => {
+    setError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error: updateError } = await supabase
+        .from('site_settings')
+        .update({
+          current_phase: phase,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id || null,
+        })
+        .eq('id', 'main');
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setSettings(prev => prev ? {
+        ...prev,
+        currentPhase: phase,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user?.id || null,
+      } : null);
+
+      return true;
+    } catch (err: any) {
+      setError(err.message);
+      return false;
+    }
+  }, []);
+
   // Get enabled navigation tabs sorted by order
   const getEnabledTabs = useCallback(() => {
     if (!settings?.navigationTabs) return [];
@@ -129,6 +168,7 @@ export function useSiteSettings() {
     loading,
     error,
     updateNavigationTabs,
+    updatePhase,
     getEnabledTabs,
     refetch: fetchSettings,
   };

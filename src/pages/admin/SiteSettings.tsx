@@ -1,25 +1,59 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useSiteSettings, NavigationTab } from '@/hooks/useSiteSettings';
+import { useSiteSettings, NavigationTab, type Phase } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Save, Loader2, GripVertical, Settings } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Save, Loader2, GripVertical, Settings, Rocket, Users, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+const PHASE_OPTIONS: { value: Phase; label: string; description: string; icon: typeof Rocket; color: string; features: string[] }[] = [
+  {
+    value: 0,
+    label: 'Phase 0 — Public MVP',
+    description: '僅開放單字練習功能（無需登入）',
+    icon: Rocket,
+    color: 'bg-emerald-500',
+    features: ['單字中心', 'SRS 智慧複習', '翻轉卡片', '快速測驗'],
+  },
+  {
+    value: 1,
+    label: 'Phase 1 — Free Member',
+    description: '開放登入、收藏、成就等功能',
+    icon: Users,
+    color: 'bg-blue-500',
+    features: ['Phase 0 所有功能', '詞彙收藏', '成就系統', '個人檔案', '任務地圖'],
+  },
+  {
+    value: 2,
+    label: 'Phase 2 — Premium',
+    description: '開放模考、儀表板、AI 作文批改等完整功能',
+    icon: Crown,
+    color: 'bg-purple-500',
+    features: ['Phase 0+1 所有功能', '學測模考', '學習儀表板', 'AI 作文批改'],
+  },
+];
+
 export default function SiteSettings() {
-  const { settings, loading, error, updateNavigationTabs } = useSiteSettings();
+  const { settings, loading, error, updateNavigationTabs, updatePhase } = useSiteSettings();
   const [tabs, setTabs] = useState<Record<string, NavigationTab>>({});
+  const [selectedPhase, setSelectedPhase] = useState<Phase>(0);
   const [saving, setSaving] = useState(false);
+  const [savingPhase, setSavingPhase] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [hasPhaseChange, setHasPhaseChange] = useState(false);
   const { toast } = useToast();
 
   // Initialize local state from settings
   useEffect(() => {
     if (settings?.navigationTabs) {
       setTabs(settings.navigationTabs);
+    }
+    if (settings?.currentPhase !== undefined) {
+      setSelectedPhase(settings.currentPhase);
     }
   }, [settings]);
 
@@ -29,6 +63,13 @@ export default function SiteSettings() {
       setHasChanges(JSON.stringify(tabs) !== JSON.stringify(settings.navigationTabs));
     }
   }, [tabs, settings]);
+
+  // Check for phase changes
+  useEffect(() => {
+    if (settings?.currentPhase !== undefined) {
+      setHasPhaseChange(selectedPhase !== settings.currentPhase);
+    }
+  }, [selectedPhase, settings]);
 
   const handleToggle = (key: string, enabled: boolean) => {
     setTabs(prev => ({
@@ -62,6 +103,26 @@ export default function SiteSettings() {
         description: '導航設定已更新，重新整理頁面後生效',
       });
       setHasChanges(false);
+    } else {
+      toast({
+        title: '儲存失敗',
+        description: error || '請稍後再試',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSavePhase = async () => {
+    setSavingPhase(true);
+    const success = await updatePhase(selectedPhase);
+    setSavingPhase(false);
+
+    if (success) {
+      toast({
+        title: '階段已更新',
+        description: `已切換至 Phase ${selectedPhase}，前台功能已即時更新`,
+      });
+      setHasPhaseChange(false);
     } else {
       toast({
         title: '儲存失敗',
@@ -114,6 +175,83 @@ export default function SiteSettings() {
           {error}
         </div>
       )}
+
+      {/* Phase Selector Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Rocket className="h-5 w-5" />
+                功能開放階段
+              </CardTitle>
+              <CardDescription>
+                控制前台目前開放到哪個階段的功能。切換後前台會即時反映。
+              </CardDescription>
+            </div>
+            <Button onClick={handleSavePhase} disabled={savingPhase || !hasPhaseChange} size="sm">
+              {savingPhase ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              儲存階段
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {PHASE_OPTIONS.map((option) => {
+              const Icon = option.icon;
+              const isSelected = selectedPhase === option.value;
+              const isCurrent = settings?.currentPhase === option.value;
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => setSelectedPhase(option.value)}
+                  className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-border hover:border-muted-foreground/30 hover:bg-muted/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${option.color}`} />
+                    <Icon className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-semibold">{option.label}</span>
+                    {isCurrent && (
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        目前使用中
+                      </Badge>
+                    )}
+                    {isSelected && !isCurrent && (
+                      <Badge className="ml-auto text-xs">
+                        即將切換
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1 ml-11">
+                    {option.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-2 ml-11">
+                    {option.features.map((f) => (
+                      <span key={f} className="text-xs bg-muted px-2 py-0.5 rounded-full">
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              <strong>注意：</strong>切換階段會立即影響前台使用者可見的功能。階段是累進的 — Phase 2 包含 Phase 0 和 Phase 1 的所有功能。
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

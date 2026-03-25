@@ -15,7 +15,8 @@ import {
   BarChart3,
   PenTool,
 } from "lucide-react";
-import { DevPhaseSwitcher, useSimulatedPhase } from "@/components/dev/DevPhaseSwitcher";
+import { usePhase } from "@/contexts/PhaseContext";
+import { DevPhaseSwitcher } from "@/components/dev/DevPhaseSwitcher";
 import { APP_PRODUCT, PRODUCT_CONFIG } from "@/config/product";
 
 // 產品專屬文案
@@ -62,7 +63,7 @@ interface Feature {
 
 const Home = () => {
   const navigate = useNavigate();
-  const [simulatedPhase] = useSimulatedPhase();
+  const currentPhase = usePhase();
 
   // All features with their required phase
   const allFeatures: Feature[] = [
@@ -106,7 +107,7 @@ const Home = () => {
   ];
 
   // Filter available features based on simulated phase
-  const availableFeatures = allFeatures.filter((f) => f.phase <= simulatedPhase);
+  const availableFeatures = allFeatures.filter((f) => f.phase <= currentPhase);
 
   // Dynamic hero content based on phase
   const heroContent = {
@@ -128,7 +129,7 @@ const Home = () => {
       cta: "選擇試題",
       ctaPath: "/exams",
     },
-  }[simulatedPhase];
+  }[currentPhase];
 
   const handleFeatureClick = (feature: Feature) => {
     if (feature.path) {
@@ -145,13 +146,6 @@ const Home = () => {
       <section className="bg-gradient-to-br from-primary/5 via-secondary/5 to-background">
         <div className="container mx-auto px-4 py-20">
           <div className="mx-auto max-w-3xl text-center">
-            {/* Dev mode indicator */}
-            {import.meta.env.DEV && (
-              <Badge variant="outline" className="mb-4 border-orange-500 text-orange-500">
-                DEV: 模擬 Phase {simulatedPhase}
-              </Badge>
-            )}
-
             <h1 className="mb-6 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
               {copy.examName}英文
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -173,7 +167,7 @@ const Home = () => {
               </Button>
 
               {/* Show dashboard button only in Phase 2 */}
-              {simulatedPhase >= 2 && (
+              {currentPhase >= 2 && (
                 <Button
                   size="lg"
                   variant="outline"
@@ -194,12 +188,12 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-2xl sm:text-3xl font-bold">
-              {simulatedPhase === 0 ? "免費功能" : simulatedPhase === 1 ? "會員功能" : "完整功能"}
+              {currentPhase === 0 ? "免費功能" : currentPhase === 1 ? "會員功能" : "完整功能"}
             </h2>
             <p className="text-muted-foreground">
-              {simulatedPhase === 0
+              {currentPhase === 0
                 ? "立即可用的單字學習工具"
-                : simulatedPhase === 1
+                : currentPhase === 1
                   ? "免費會員專屬學習功能"
                   : "Premium 會員完整解鎖"}
             </p>
@@ -237,7 +231,7 @@ const Home = () => {
         <div className="container mx-auto px-4 text-center">
           <h2 className="mb-4 text-3xl font-bold">準備好開始了嗎？</h2>
           <p className="mb-8 text-lg opacity-90">
-            {simulatedPhase === 2
+            {currentPhase === 2
               ? "立即開始你的第一次模擬考試"
               : copy.ctaText}
           </p>

@@ -16,8 +16,8 @@ export interface FeatureConfig {
   description?: string;
 }
 
-// Current active phase - change this to unlock features
-export const CURRENT_PHASE: Phase = 0;
+// Default phase fallback (used before database loads)
+export const DEFAULT_PHASE: Phase = 0;
 
 // Environment check for admin routes
 export const IS_PRODUCTION = import.meta.env.PROD;
@@ -124,20 +124,30 @@ export const FEATURES: Record<string, FeatureConfig> = {
   },
 };
 
-// Helper functions
-export function isFeatureEnabled(featureId: string): boolean {
+// Helper functions - now phase-aware
+// When currentPhase is provided, features are unlocked dynamically based on phase
+export function isFeatureEnabled(featureId: string, currentPhase?: Phase): boolean {
   const feature = FEATURES[featureId];
-  return feature?.status === 'enabled';
+  if (!feature) return false;
+  if (currentPhase !== undefined) {
+    return feature.phase <= currentPhase && feature.status !== 'hidden';
+  }
+  return feature.status === 'enabled';
 }
 
-export function isFeatureLocked(featureId: string): boolean {
+export function isFeatureLocked(featureId: string, currentPhase?: Phase): boolean {
   const feature = FEATURES[featureId];
-  return feature?.status === 'locked' || feature?.status === 'coming_soon';
+  if (!feature) return false;
+  if (currentPhase !== undefined) {
+    return feature.phase > currentPhase && feature.status !== 'hidden';
+  }
+  return feature.status === 'locked' || feature.status === 'coming_soon';
 }
 
-export function isFeatureHidden(featureId: string): boolean {
+export function isFeatureHidden(featureId: string, currentPhase?: Phase): boolean {
   const feature = FEATURES[featureId];
-  return feature?.status === 'hidden';
+  if (!feature) return true;
+  return feature.status === 'hidden';
 }
 
 export function getFeature(featureId: string): FeatureConfig | undefined {
