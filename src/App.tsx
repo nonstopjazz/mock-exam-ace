@@ -103,13 +103,13 @@ const App = () => (
             <Route path="/claim/:token" element={<ClaimPack />} />
 
           {/* Phase 2: Exam routes (gated by backend phase) */}
-          <Route path="/exams" element={<PhaseGate requiredPhase={2} title="學測模考" description="模考功能即將推出，敬請期待！"><Navbar /><ExamList /></PhaseGate>} />
-          <Route path="/exam" element={<PhaseGate requiredPhase={2} title="學測模考" description="模考功能即將推出，敬請期待！"><Navbar /><ExamNew /></PhaseGate>} />
-          <Route path="/exam/result/:attemptId" element={<PhaseGate requiredPhase={2} title="模考結果" description="模考功能即將推出，敬請期待！"><Navbar /><ExamResult /></PhaseGate>} />
-          <Route path="/exam/explanation/:attemptId" element={<PhaseGate requiredPhase={2} title="題目解析" description="模考功能即將推出，敬請期待！"><Navbar /><ExamExplanation /></PhaseGate>} />
-          <Route path="/dashboard" element={<PhaseGate requiredPhase={2} title="學習儀表板" description="儀表板功能即將推出，敬請期待！"><Navbar /><Dashboard /></PhaseGate>} />
+          <Route path="/exams" element={<PhaseGate requiredPhase={2} title="學測模考" description="模考功能即將推出，敬請期待！"><ExamList /></PhaseGate>} />
+          <Route path="/exam" element={<PhaseGate requiredPhase={2} title="學測模考" description="模考功能即將推出，敬請期待！"><ExamNew /></PhaseGate>} />
+          <Route path="/exam/result/:attemptId" element={<PhaseGate requiredPhase={2} title="模考結果" description="模考功能即將推出，敬請期待！"><ExamResult /></PhaseGate>} />
+          <Route path="/exam/explanation/:attemptId" element={<PhaseGate requiredPhase={2} title="題目解析" description="模考功能即將推出，敬請期待！"><ExamExplanation /></PhaseGate>} />
+          <Route path="/dashboard" element={<PhaseGate requiredPhase={2} title="學習儀表板" description="儀表板功能即將推出，敬請期待！"><Dashboard /></PhaseGate>} />
           <Route path="/dashboard/result-summary" element={<ExamResultSummary />} />
-          <Route path="/essay" element={<PhaseGate requiredPhase={2} title="AI 作文批改" description="作文批改功能即將推出，敬請期待！"><Navbar /><Essay /></PhaseGate>} />
+          <Route path="/essay" element={<PhaseGate requiredPhase={2} title="AI 作文批改" description="作文批改功能即將推出，敬請期待！"><Essay /></PhaseGate>} />
 
           {/* Admin routes - protected by RequireAdmin (production-ready) */}
           <Route path="/admin/packs" element={
