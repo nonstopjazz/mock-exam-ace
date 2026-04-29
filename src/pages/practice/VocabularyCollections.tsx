@@ -36,6 +36,7 @@ interface PublicPack {
   theme: string | null;
   skill_type: string | null;
   difficulty: string | null;
+  is_premium: boolean;
   cover_image?: { image_url: string } | null;
 }
 
@@ -203,11 +204,12 @@ const VocabularyCollections = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {publicPacks.map((pack) => (
                   <Card key={pack.id} className="overflow-hidden hover:shadow-lg transition-shadow relative">
-                    {/* Demo Badge */}
-                    <div className="absolute top-2 right-2 z-10">
-                      <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50/90 backdrop-blur-sm text-xs">
-                        示意
-                      </Badge>
+                    <div className="absolute top-2 right-2 z-10 flex gap-1">
+                      {pack.is_premium && (
+                        <Badge className="bg-amber-500 text-white text-xs gap-1">
+                          精華
+                        </Badge>
+                      )}
                     </div>
                     {/* Cover Image */}
                     {pack.cover_image?.image_url ? (
