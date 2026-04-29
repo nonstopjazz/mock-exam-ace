@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Card,
@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -26,6 +27,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Users,
   ArrowLeft,
   Download,
@@ -36,9 +45,24 @@ import {
   TrendingUp,
   Loader2,
   ShieldAlert,
+  Crown,
+  XCircle,
 } from 'lucide-react';
 import { useAdminUsers, GRADE_OPTIONS } from '@/hooks/useUserProfile';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+
+interface PremiumMembership {
+  id: string;
+  user_id: string;
+  granted_at: string;
+  expires_at: string | null;
+  is_active: boolean;
+  notes: string | null;
+}
+
+// Premium status cache per user
+type PremiumCache = Record<string, PremiumMembership | null>;
 
 export default function UsersAdmin() {
   const {
@@ -58,6 +82,90 @@ export default function UsersAdmin() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 50;
+
+  // Premium management
+  const [premiumCache, setPremiumCache] = useState<PremiumCache>({});
+  const [premiumDialogOpen, setPremiumDialogOpen] = useState(false);
+  const [premiumTargetUser, setPremiumTargetUser] = useState<{ id: string; email: string } | null>(null);
+  const [premiumDuration, setPremiumDuration] = useState<string>('1year');
+  const [premiumNotes, setPremiumNotes] = useState('');
+  const [premiumSubmitting, setPremiumSubmitting] = useState(false);
+
+  // Fetch premium status for all visible users
+  const fetchPremiumStatuses = useCallback(async (userIds: string[]) => {
+    if (userIds.length === 0) return;
+    const { data } = await supabase
+      .from('premium_memberships')
+      .select('*')
+      .in('user_id', userIds)
+      .eq('is_active', true)
+      .or('expires_at.is.null,expires_at.gt.now()');
+
+    const cache: PremiumCache = {};
+    userIds.forEach(id => { cache[id] = null; });
+    data?.forEach((m: PremiumMembership) => {
+      if (!cache[m.user_id] || new Date(m.granted_at) > new Date(cache[m.user_id]!.granted_at)) {
+        cache[m.user_id] = m;
+      }
+    });
+    setPremiumCache(prev => ({ ...prev, ...cache }));
+  }, []);
+
+  useEffect(() => {
+    if (users.length > 0) {
+      fetchPremiumStatuses(users.map(u => u.id));
+    }
+  }, [users, fetchPremiumStatuses]);
+
+  const openPremiumDialog = (userId: string, email: string) => {
+    setPremiumTargetUser({ id: userId, email });
+    setPremiumDuration('1year');
+    setPremiumNotes('');
+    setPremiumDialogOpen(true);
+  };
+
+  const handleGrantPremium = async () => {
+    if (!premiumTargetUser) return;
+    setPremiumSubmitting(true);
+
+    let expiresAt: string | null = null;
+    const now = new Date();
+    switch (premiumDuration) {
+      case '3months': expiresAt = new Date(now.setMonth(now.getMonth() + 3)).toISOString(); break;
+      case '6months': expiresAt = new Date(now.setMonth(now.getMonth() + 6)).toISOString(); break;
+      case '1year': expiresAt = new Date(now.setFullYear(now.getFullYear() + 1)).toISOString(); break;
+      case 'forever': expiresAt = null; break;
+    }
+
+    const { data, error: rpcError } = await supabase.rpc('admin_grant_premium', {
+      p_user_id: premiumTargetUser.id,
+      p_expires_at: expiresAt,
+      p_notes: premiumNotes || null,
+    });
+
+    setPremiumSubmitting(false);
+
+    if (rpcError) {
+      toast.error('授權失敗: ' + rpcError.message);
+    } else {
+      toast.success(`已授予 ${premiumTargetUser.email} Premium 資格`);
+      setPremiumDialogOpen(false);
+      fetchPremiumStatuses([premiumTargetUser.id]);
+    }
+  };
+
+  const handleRevokePremium = async (userId: string, membershipId: string) => {
+    const { error: rpcError } = await supabase.rpc('admin_revoke_premium', {
+      p_membership_id: membershipId,
+    });
+
+    if (rpcError) {
+      toast.error('收回失敗: ' + rpcError.message);
+    } else {
+      toast.success('已收回 Premium 資格');
+      setPremiumCache(prev => ({ ...prev, [userId]: null }));
+    }
+  };
 
   // Initial load
   useEffect(() => {
@@ -402,6 +510,7 @@ export default function UsersAdmin() {
                       <TableHead>產品</TableHead>
                       <TableHead>年級</TableHead>
                       <TableHead>學校</TableHead>
+                      <TableHead>Premium</TableHead>
                       <TableHead>註冊時間</TableHead>
                       <TableHead>最後登入</TableHead>
                     </TableRow>
@@ -424,6 +533,35 @@ export default function UsersAdmin() {
                         </TableCell>
                         <TableCell>{user.grade || '-'}</TableCell>
                         <TableCell>{user.school || '-'}</TableCell>
+                        <TableCell>
+                          {premiumCache[user.id] ? (
+                            <div className="flex items-center gap-1">
+                              <Badge className="bg-amber-500 text-white gap-1">
+                                <Crown className="h-3 w-3" />
+                                Premium
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                title="收回 Premium"
+                                onClick={() => handleRevokePremium(user.id, premiumCache[user.id]!.id)}
+                              >
+                                <XCircle className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1"
+                              onClick={() => openPremiumDialog(user.id, user.email || '')}
+                            >
+                              <Crown className="h-3 w-3" />
+                              授權
+                            </Button>
+                          )}
+                        </TableCell>
                         <TableCell className="text-muted-foreground">
                           {user.registered_at
                             ? new Date(user.registered_at).toLocaleDateString(
@@ -446,6 +584,53 @@ export default function UsersAdmin() {
             )}
           </CardContent>
         </Card>
+        {/* Premium Grant Dialog */}
+        <Dialog open={premiumDialogOpen} onOpenChange={setPremiumDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Crown className="h-5 w-5 text-amber-500" />
+                授予 Premium 資格
+              </DialogTitle>
+              <DialogDescription>
+                為 <strong>{premiumTargetUser?.email}</strong> 開通精華會員
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>有效期限</Label>
+                <Select value={premiumDuration} onValueChange={setPremiumDuration}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="3months">3 個月</SelectItem>
+                    <SelectItem value="6months">6 個月</SelectItem>
+                    <SelectItem value="1year">1 年</SelectItem>
+                    <SelectItem value="forever">永久</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>備註（選填）</Label>
+                <Input
+                  placeholder="例如：2025 暑期班"
+                  value={premiumNotes}
+                  onChange={(e) => setPremiumNotes(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPremiumDialogOpen(false)}>
+                取消
+              </Button>
+              <Button onClick={handleGrantPremium} disabled={premiumSubmitting} className="bg-amber-500 hover:bg-amber-600">
+                {premiumSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                授予 Premium
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

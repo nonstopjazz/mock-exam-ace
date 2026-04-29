@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSiteIdentifier } from '@/hooks/useSiteIdentifier';
 import { supabase } from '@/lib/supabase';
-import { Loader2, CheckCircle2, XCircle, Gift, LogIn } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Gift, LogIn, Crown } from 'lucide-react';
 
-type ClaimStatus = 'loading' | 'claiming' | 'success' | 'already_claimed' | 'error' | 'need_login';
+type ClaimStatus = 'loading' | 'claiming' | 'success' | 'already_claimed' | 'error' | 'need_login' | 'premium_required';
 
 interface ClaimResult {
   success: boolean;
@@ -24,6 +24,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   TOKEN_EXHAUSTED: '邀請碼已達使用上限',
   PACK_NOT_FOUND: '找不到對應的單字包',
   NOT_AUTHENTICATED: '請先登入',
+  PREMIUM_REQUIRED: '此為精華資源，需由管理員授權才能領取',
 };
 
 export default function ClaimPack() {
@@ -89,6 +90,10 @@ export default function ClaimPack() {
       setResult(claimResult);
 
       if (!claimResult.success) {
+        if (claimResult.error === 'PREMIUM_REQUIRED') {
+          setStatus('premium_required');
+          return;
+        }
         setStatus('error');
         setErrorMessage(ERROR_MESSAGES[claimResult.error || ''] || '領取失敗');
         return;
@@ -203,6 +208,28 @@ export default function ClaimPack() {
                 <Gift className="mr-2 h-4 w-4" />
                 查看我的收藏
               </Button>
+              <Button variant="outline" className="w-full" onClick={handleGoHome}>
+                返回首頁
+              </Button>
+            </CardContent>
+          </Card>
+        );
+
+      case 'premium_required':
+        return (
+          <Card className="max-w-md mx-auto">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
+                <Crown className="h-8 w-8 text-amber-600" />
+              </div>
+              <CardTitle className="text-amber-600">精華資源</CardTitle>
+              <CardDescription>
+                此單字包為精華資源，需由管理員授權才能領取。
+                <br />
+                請聯繫老師或管理員開通 Premium 資格。
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
               <Button variant="outline" className="w-full" onClick={handleGoHome}>
                 返回首頁
               </Button>

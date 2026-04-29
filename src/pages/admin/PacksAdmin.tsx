@@ -61,6 +61,7 @@ interface Pack {
   skill_type: string | null;
   difficulty: string | null;
   is_public: boolean;
+  is_premium: boolean;
   is_active: boolean;
   created_at: string;
   created_by: string | null;
@@ -74,6 +75,7 @@ interface PackFormData {
   skill_type: string;
   difficulty: string;
   is_public: boolean;
+  is_premium: boolean;
   is_active: boolean;
 }
 
@@ -99,6 +101,7 @@ const initialFormData: PackFormData = {
   skill_type: '',
   difficulty: '',
   is_public: false,
+  is_premium: false,
   is_active: true,
 };
 
@@ -216,6 +219,7 @@ export default function PacksAdmin() {
       skill_type: pack.skill_type || '',
       difficulty: pack.difficulty || '',
       is_public: pack.is_public,
+      is_premium: pack.is_premium,
       is_active: pack.is_active,
     });
 
@@ -429,6 +433,7 @@ export default function PacksAdmin() {
       skill_type: formData.skill_type || null,
       difficulty: formData.difficulty || null,
       is_public: formData.is_public,
+      is_premium: formData.is_premium,
       is_active: formData.is_active,
     };
 
@@ -623,6 +628,9 @@ export default function PacksAdmin() {
                       )}
                       {pack.is_public && (
                         <Badge variant="outline">公開</Badge>
+                      )}
+                      {pack.is_premium && (
+                        <Badge variant="default" className="bg-amber-500">精華</Badge>
                       )}
                     </div>
                   </TableCell>
@@ -855,6 +863,20 @@ export default function PacksAdmin() {
                   checked={formData.is_public}
                   onCheckedChange={(checked) =>
                     setFormData({ ...formData, is_public: checked })
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>精華資源</Label>
+                  <p className="text-sm text-muted-foreground">
+                    僅限 Premium 會員領取，即使有 claim 連結也需要管理員授權
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.is_premium}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, is_premium: checked })
                   }
                 />
               </div>
