@@ -23,6 +23,7 @@ import { useVocabularyStore, WordProgress } from "@/store/vocabularyStore";
 import { VOCABULARY_LEVELS, TOTAL_WORDS } from "@/data/vocabulary";
 import { isFeatureEnabled } from "@/config/features";
 import { usePhase } from "@/contexts/PhaseContext";
+import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
 import { useUserPacks } from "@/hooks/useUserPacks";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -272,6 +273,11 @@ const VocabularyHub = () => {
               <ChevronRight className="h-4 w-4 hidden md:block" />
             </Button>
           </div>
+        </div>
+
+        {/* Push Notification Prompt */}
+        <div className="mb-4">
+          <PushNotificationPrompt />
         </div>
 
         {/* Today's Stats */}
