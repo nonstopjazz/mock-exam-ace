@@ -13,9 +13,10 @@ ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'level';
 ALTER TABLE user_word_progress
 ADD COLUMN IF NOT EXISTS pack_id UUID;
 
--- 3. 更新 UNIQUE 約束（同一個字可能同時出現在 Level 和 Pack 中）
+-- 3. 更新 UNIQUE 約束（用 UNIQUE INDEX 支援 COALESCE 表達式）
 ALTER TABLE user_word_progress DROP CONSTRAINT IF EXISTS user_word_progress_user_id_word_id_key;
-ALTER TABLE user_word_progress ADD CONSTRAINT user_word_progress_user_source_key UNIQUE (user_id, word_id, source, COALESCE(pack_id, '00000000-0000-0000-0000-000000000000'::uuid));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_word_progress_user_source_key
+  ON user_word_progress (user_id, word_id, source, COALESCE(pack_id, '00000000-0000-0000-0000-000000000000'::uuid));
 
 -- 4. 新增索引
 CREATE INDEX IF NOT EXISTS idx_user_word_progress_source ON user_word_progress(user_id, source);
@@ -52,7 +53,7 @@ BEGIN
     v_user_id, p_word_id, p_mastery_level, p_next_review_time,
     p_review_count, p_correct_count, p_last_review_time, p_source, p_pack_id
   )
-  ON CONFLICT ON CONSTRAINT user_word_progress_user_source_key DO UPDATE SET
+  ON CONFLICT (user_id, word_id, source, COALESCE(pack_id, '00000000-0000-0000-0000-000000000000'::uuid)) DO UPDATE SET
     mastery_level = EXCLUDED.mastery_level,
     next_review_time = EXCLUDED.next_review_time,
     review_count = EXCLUDED.review_count,
