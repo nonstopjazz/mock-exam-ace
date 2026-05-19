@@ -19,13 +19,20 @@ export async function fetchAllWordProgress(): Promise<Record<string, WordProgres
   const progressMap: Record<string, WordProgress> = {};
 
   for (const item of data.progress) {
-    progressMap[item.word_id] = {
+    // Use composite key for pack items to avoid collision with level words
+    const key = item.source === 'pack' && item.pack_id
+      ? `pack:${item.pack_id}:${item.word_id}`
+      : item.word_id;
+
+    progressMap[key] = {
       wordId: item.word_id,
       masteryLevel: item.mastery_level,
       nextReviewTime: Number(item.next_review_time),
       reviewCount: item.review_count,
       correctCount: item.correct_count,
       lastReviewTime: item.last_review_time ? Number(item.last_review_time) : null,
+      source: item.source || 'level',
+      packId: item.pack_id || null,
     };
   }
 
@@ -43,6 +50,8 @@ export async function syncWordProgress(progress: WordProgress): Promise<boolean>
     p_review_count: progress.reviewCount,
     p_correct_count: progress.correctCount,
     p_last_review_time: progress.lastReviewTime ?? 0,
+    p_source: progress.source || 'level',
+    p_pack_id: progress.packId || null,
   });
 
   if (error) {
