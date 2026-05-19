@@ -13,6 +13,30 @@ interface PushTarget {
   last_study_date: string | null;
 }
 
+function getNotificationContent(streak: number, daysSince: number): { title: string; body: string } {
+  // Milestone celebrations
+  if (streak === 6) return { title: '即將達成一週！', body: `你已經連續學習 ${streak} 天，明天就滿一週了！堅持住！` };
+  if (streak === 29) return { title: '即將達成一個月！', body: `連續 ${streak} 天！明天就是完整的一個月了！` };
+  if (streak > 0 && streak % 30 === 0) return { title: `🔥 連續 ${streak} 天！`, body: `太厲害了！你已經連續學習 ${streak} 天，繼續保持！` };
+  if (streak > 0 && streak % 7 === 0) return { title: `連續 ${streak} 天！`, body: `又完成一週了！保持這個節奏，單字會記得越來越牢！` };
+
+  // Active streak, hasn't studied today
+  if (streak >= 14) return { title: '別讓努力白費！', body: `你已經連續學習 ${streak} 天了，今天花 5 分鐘維持紀錄吧！` };
+  if (streak >= 7) return { title: '保持好習慣！', body: `連續 ${streak} 天的努力，今天繼續複習幾個單字吧！` };
+  if (streak >= 3) return { title: '做得很好！', body: `連續 ${streak} 天學習中，今天也來複習一下吧！` };
+  if (streak > 0) return { title: '學習提醒', body: `你已經連續學習 ${streak} 天，今天還沒複習喔！` };
+
+  // Streak broken — different messages based on how long ago
+  if (daysSince === 1) return { title: '昨天忘記複習了！', body: '中斷一天沒關係，今天回來複習，記憶還來得及補救！' };
+  if (daysSince === 2) return { title: '兩天沒複習了', body: '根據遺忘曲線，現在複習效果最好，趁還記得趕快回來！' };
+  if (daysSince >= 3 && daysSince <= 5) return { title: '單字在等你回來', body: `已經 ${daysSince} 天沒複習了，花 3 分鐘快速回顧一下吧！` };
+  if (daysSince >= 6 && daysSince <= 13) return { title: '好久不見！', body: `距離上次複習已經 ${daysSince} 天了，重新開始永遠不嫌晚！` };
+  if (daysSince >= 14) return { title: '歡迎回來！', body: '不管離開多久，現在回來就是最好的時機。來複習幾個單字吧！' };
+
+  // New user or no data
+  return { title: '開始今天的學習', body: '每天花幾分鐘背單字，累積起來效果驚人！' };
+}
+
 export default async function handler(req: any, res: any) {
   // Only allow GET (Vercel Cron) or POST
   if (req.method !== 'GET' && req.method !== 'POST') {
@@ -99,14 +123,23 @@ export default async function handler(req: any, res: any) {
   let failed = 0;
   let cleaned = 0;
 
+  const today = new Date().toISOString().split('T')[0];
+
   for (const target of pushTargets) {
     const streak = target.streak_days ?? 0;
-    const body = streak > 0
-      ? `你已經連續學習 ${streak} 天，今天還沒複習喔！別中斷了！`
-      : '今天還沒開始學習，來複習一下單字吧！';
+    const lastDate = target.last_study_date;
+
+    // Calculate days since last study
+    let daysSince = 0;
+    if (lastDate) {
+      const diff = new Date(today).getTime() - new Date(lastDate).getTime();
+      daysSince = Math.floor(diff / (1000 * 60 * 60 * 24));
+    }
+
+    const { title, body } = getNotificationContent(streak, daysSince);
 
     const payload = JSON.stringify({
-      title: '學習提醒',
+      title,
       body,
       url: '/practice/vocabulary',
     });
