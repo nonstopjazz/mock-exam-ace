@@ -25,7 +25,6 @@ import type { VocabularyWord } from "@/data/vocabulary/types";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
 import { usePackItems, PackItem } from "@/hooks/useUserPacks";
-import { usePackItemProgress } from "@/hooks/usePackItemProgress";
 
 // Convert PackItem to VocabularyWord format
 const convertPackItemToVocabularyWord = (item: PackItem): VocabularyWord => ({
@@ -101,7 +100,6 @@ const QuickQuiz = () => {
   const { items: packItems, loading: packLoading, error: packError } = usePackItems(selectedPackId);
 
   // Pack item progress tracking
-  const { updateProgress: updatePackItemProgress } = usePackItemProgress();
 
   // Phase: 'selection', 'playing', or 'finished'
   const [phase, setPhase] = useState<'selection' | 'playing' | 'finished'>('selection');
@@ -193,11 +191,11 @@ const QuickQuiz = () => {
     setCombo(0);
     setAnswers(prev => [...prev, false]);
 
-    // Update progress based on source
+    // Update progress (unified tracking)
     if (selectedSource === 'pack' && selectedPackId) {
-      updatePackItemProgress(selectedPackId, currentQuestion.id, false);
+      updateWordProgress(currentQuestion.id, false, undefined, 'pack', selectedPackId);
     } else {
-      updateWordProgress(currentQuestion.id, false);
+      updateWordProgress(currentQuestion.id, false, undefined, 'level');
     }
     toast.error("Time's up!");
   };
@@ -210,11 +208,11 @@ const QuickQuiz = () => {
     const isCorrect = index === currentQuestion.correctAnswer;
     setAnswers(prev => [...prev, isCorrect]);
 
-    // Update progress based on source
+    // Update progress (unified tracking)
     if (selectedSource === 'pack' && selectedPackId) {
-      updatePackItemProgress(selectedPackId, currentQuestion.id, isCorrect);
+      updateWordProgress(currentQuestion.id, isCorrect, undefined, 'pack', selectedPackId);
     } else {
-      updateWordProgress(currentQuestion.id, isCorrect);
+      updateWordProgress(currentQuestion.id, isCorrect, undefined, 'level');
     }
 
     if (isCorrect) {

@@ -21,6 +21,8 @@ export interface WordProgress {
   reviewCount: number;
   correctCount: number;
   lastReviewTime: number | null;
+  source?: 'level' | 'pack';
+  packId?: string | null;
 }
 
 export interface StudySession {
@@ -92,7 +94,7 @@ interface VocabularyState {
 
   // Actions - Progress
   initWordProgress: (wordId: string) => void;
-  updateWordProgress: (wordId: string, isCorrect: boolean, response?: 'forgot' | 'hard' | 'easy') => void;
+  updateWordProgress: (wordId: string, isCorrect: boolean, response?: 'forgot' | 'hard' | 'easy', source?: 'level' | 'pack', packId?: string | null) => void;
   getWordProgress: (wordId: string) => WordProgress;
 
   // Actions - Study Session
@@ -271,7 +273,7 @@ export const useVocabularyStore = create<VocabularyState>()(
         }
       },
 
-      updateWordProgress: (wordId: string, isCorrect: boolean, response?: 'forgot' | 'hard' | 'easy') => {
+      updateWordProgress: (wordId: string, isCorrect: boolean, response?: 'forgot' | 'hard' | 'easy', source?: 'level' | 'pack', packId?: string | null) => {
         const state = get();
         const existing = state.wordProgress[wordId] || {
           wordId,
@@ -310,6 +312,8 @@ export const useVocabularyStore = create<VocabularyState>()(
           reviewCount: existing.reviewCount + 1,
           correctCount: isCorrect ? existing.correctCount + 1 : existing.correctCount,
           lastReviewTime: Date.now(),
+          source: source || existing.source || 'level',
+          packId: packId ?? existing.packId ?? null,
         };
 
         set({

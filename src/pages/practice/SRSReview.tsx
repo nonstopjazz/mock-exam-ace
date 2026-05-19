@@ -23,7 +23,6 @@ import { VocabularyWord } from "@/data/vocabulary";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
 import { useMultiPackItems, PackItem } from "@/hooks/useUserPacks";
-import { usePackItemProgress } from "@/hooks/usePackItemProgress";
 import { useUserStats } from "@/hooks/useUserStats";
 
 // Extended VocabularyWord with pack_id for tracking
@@ -84,7 +83,6 @@ const SRSReview = () => {
   const { items: packItems, loading: packLoading, error: packError } = useMultiPackItems(selectedPackIds);
 
   // Pack item progress tracking
-  const { updateProgress: updatePackItemProgress } = usePackItemProgress();
 
   // User stats for syncing streak and review counts
   const { recordReview } = useUserStats();
@@ -188,11 +186,11 @@ const SRSReview = () => {
 
     const result = responseMap[response];
 
-    // Update progress based on source
+    // Update progress (unified tracking)
     if (selectedSource === 'pack' && currentCard.pack_id) {
-      updatePackItemProgress(currentCard.pack_id, currentCard.id, result.isCorrect, response);
+      updateWordProgress(currentCard.id, result.isCorrect, response, 'pack', currentCard.pack_id);
     } else {
-      updateWordProgress(currentCard.id, result.isCorrect, response);
+      updateWordProgress(currentCard.id, result.isCorrect, response, 'level');
     }
 
     toast.success(`Marked: ${result.label}`, {
