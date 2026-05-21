@@ -136,9 +136,13 @@ export default async function handler(req: any, res: any) {
     }
 
     // Validate streak: DB stores stale streak_days (never auto-resets).
-    // Streak is only valid if last_study_date is today or yesterday.
+    // At notification time (evening), if last_study_date is today, user already
+    // studied — they shouldn't even receive this notification (filtered above).
+    // If last_study_date is yesterday, streak was valid yesterday but not today
+    // (they haven't studied today yet). So streak is only "active" for
+    // notification purposes if last_study_date is yesterday (still recoverable).
     const rawStreak = target.streak_days ?? 0;
-    const streak = daysSince <= 1 ? rawStreak : 0;
+    const streak = daysSince === 1 ? rawStreak : 0;
 
     const { title, body } = getNotificationContent(streak, daysSince);
 
