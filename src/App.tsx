@@ -53,6 +53,10 @@ import VocabularyHub from "./pages/practice/VocabularyHub";
 import SRSReview from "./pages/practice/SRSReview";
 import Flashcards from "./pages/practice/Flashcards";
 import QuickQuiz from "./pages/practice/QuickQuiz";
+import SpellingPractice from "./pages/practice/SpellingPractice";
+import FillBlank from "./pages/practice/FillBlank";
+import MatchGame from "./pages/practice/MatchGame";
+import SynonymAntonym from "./pages/practice/SynonymAntonym";
 import VocabularyCollections from "./pages/practice/VocabularyCollections";
 import VideoCourses from "./pages/practice/VideoCourses";
 import CourseDetail from "./pages/practice/CourseDetail";
@@ -188,6 +192,10 @@ const App = () => (
           <Route path="/practice/vocabulary/srs" element={<ProtectedRoute><Navbar /><SRSReview /></ProtectedRoute>} />
           <Route path="/practice/vocabulary/flashcards" element={<ProtectedRoute><Navbar /><Flashcards /></ProtectedRoute>} />
           <Route path="/practice/vocabulary/quiz" element={<ProtectedRoute><Navbar /><QuickQuiz /></ProtectedRoute>} />
+          <Route path="/practice/vocabulary/spelling" element={<ProtectedRoute><Navbar /><SpellingPractice /></ProtectedRoute>} />
+          <Route path="/practice/vocabulary/fill-blank" element={<ProtectedRoute><Navbar /><FillBlank /></ProtectedRoute>} />
+          <Route path="/practice/vocabulary/match" element={<ProtectedRoute><Navbar /><MatchGame /></ProtectedRoute>} />
+          <Route path="/practice/vocabulary/synonym-antonym" element={<ProtectedRoute><Navbar /><SynonymAntonym /></ProtectedRoute>} />
           <Route path="/practice/vocabulary/collections" element={<ProtectedRoute><Navbar /><VocabularyCollections /></ProtectedRoute>} />
           <Route path="/practice/vocabulary/pack/:packId" element={<ProtectedRoute><Navbar /><VocabularyPackDetail /></ProtectedRoute>} />
           <Route path="/practice/vocabulary/weak-words" element={<ProtectedRoute><Navbar /><WeakWords /></ProtectedRoute>} />

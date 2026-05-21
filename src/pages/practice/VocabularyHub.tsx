@@ -16,6 +16,10 @@ import {
   Layers,
   GraduationCap,
   Package,
+  Keyboard,
+  PenLine,
+  Puzzle,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -199,6 +203,58 @@ const VocabularyHub = () => {
       count: 10,
       countLabel: "題 / 回合",
       path: "/practice/vocabulary/quiz"
+    },
+    {
+      id: "spelling",
+      title: "拼字練習",
+      description: "看中文翻譯，拖放字母拼出正確英文單字",
+      icon: Keyboard,
+      color: "from-emerald-500/20 to-green-500/20",
+      iconColor: "text-emerald-600",
+      badge: "新",
+      badgeVariant: "outline" as const,
+      count: 10,
+      countLabel: "題 / 回合",
+      path: "/practice/vocabulary/spelling"
+    },
+    {
+      id: "fill-blank",
+      title: "填空練習",
+      description: "閱讀例句，選出正確的單字填入空格",
+      icon: PenLine,
+      color: "from-violet-500/20 to-purple-500/20",
+      iconColor: "text-violet-600",
+      badge: "新",
+      badgeVariant: "outline" as const,
+      count: 10,
+      countLabel: "題 / 回合",
+      path: "/practice/vocabulary/fill-blank"
+    },
+    {
+      id: "match",
+      title: "配對遊戲",
+      description: "限時英中配對，訓練反應速度",
+      icon: Puzzle,
+      color: "from-amber-500/20 to-orange-500/20",
+      iconColor: "text-amber-600",
+      badge: "新",
+      badgeVariant: "outline" as const,
+      count: 6,
+      countLabel: "組 / 回合",
+      path: "/practice/vocabulary/match"
+    },
+    {
+      id: "synonym-antonym",
+      title: "同義 / 反義詞",
+      description: "選出正確的同義詞或反義詞，擴充詞彙網絡",
+      icon: ArrowLeftRight,
+      color: "from-sky-500/20 to-blue-500/20",
+      iconColor: "text-sky-600",
+      badge: "新",
+      badgeVariant: "outline" as const,
+      count: 10,
+      countLabel: "題 / 回合",
+      path: "/practice/vocabulary/synonym-antonym"
     }
   ];
 
