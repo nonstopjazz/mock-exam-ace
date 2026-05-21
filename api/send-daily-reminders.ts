@@ -126,7 +126,6 @@ export default async function handler(req: any, res: any) {
   const today = new Date().toISOString().split('T')[0];
 
   for (const target of pushTargets) {
-    const streak = target.streak_days ?? 0;
     const lastDate = target.last_study_date;
 
     // Calculate days since last study
@@ -135,6 +134,15 @@ export default async function handler(req: any, res: any) {
       const diff = new Date(today).getTime() - new Date(lastDate).getTime();
       daysSince = Math.floor(diff / (1000 * 60 * 60 * 24));
     }
+
+    // Validate streak: DB stores stale streak_days (never auto-resets).
+    // At notification time (evening), if last_study_date is today, user already
+    // studied — they shouldn't even receive this notification (filtered above).
+    // If last_study_date is yesterday, streak was valid yesterday but not today
+    // (they haven't studied today yet). So streak is only "active" for
+    // notification purposes if last_study_date is yesterday (still recoverable).
+    const rawStreak = target.streak_days ?? 0;
+    const streak = daysSince === 1 ? rawStreak : 0;
 
     const { title, body } = getNotificationContent(streak, daysSince);
 
