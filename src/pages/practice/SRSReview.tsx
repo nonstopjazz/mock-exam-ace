@@ -18,7 +18,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
-import { useVocabularyStore } from "@/store/vocabularyStore";
+import { useVocabularyStore, DAILY_REVIEW_LIMIT } from "@/store/vocabularyStore";
 import { VocabularyWord } from "@/data/vocabulary";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
@@ -69,7 +69,7 @@ const SRSReview = () => {
   const urlMode = searchParams.get('mode');
 
   // Get due words count
-  const { reviewDue } = getOverallProgress();
+  const { reviewDue, dailyReviewDue } = getOverallProgress();
 
   // Source selection state - default to 'pack' if URL has pack parameter or source=pack
   const [selectedSource, setSelectedSource] = useState<VocabularySource>(
@@ -101,7 +101,7 @@ const SRSReview = () => {
 
   // Start reviewing due words only
   const startDueWordsReview = () => {
-    const dueWords = getDueWords(100);
+    const dueWords = getDueWords(DAILY_REVIEW_LIMIT);
     if (dueWords.length === 0) {
       toast.error("沒有待複習的單字", {
         description: "所有單字都還沒到複習時間"
@@ -117,7 +117,7 @@ const SRSReview = () => {
 
   // Auto-start if mode=due
   useEffect(() => {
-    if (urlMode === 'due' && reviewDue > 0) {
+    if (urlMode === 'due' && dailyReviewDue > 0) {
       startDueWordsReview();
     }
   }, [urlMode]);
@@ -259,15 +259,17 @@ const SRSReview = () => {
           </div>
 
           {/* Due Words Quick Start */}
-          {reviewDue > 0 && (
+          {dailyReviewDue > 0 && (
             <Card className="mb-4 p-6 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="text-center sm:text-left">
                   <h3 className="text-lg font-semibold text-foreground">
-                    有 {reviewDue} 個單字待複習
+                    今日建議複習 {dailyReviewDue} 個單字
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    這些單字已經到了複習時間，建議立即複習
+                    {reviewDue > dailyReviewDue
+                      ? `共 ${reviewDue} 個待複習，每日建議 ${dailyReviewDue} 個`
+                      : '這些單字已經到了複習時間，建議立即複習'}
                   </p>
                 </div>
                 <Button
@@ -276,7 +278,7 @@ const SRSReview = () => {
                   onClick={startDueWordsReview}
                 >
                   <Brain className="h-5 w-5" />
-                  複習到期單字 ({reviewDue})
+                  開始複習 ({dailyReviewDue})
                 </Button>
               </div>
             </Card>
