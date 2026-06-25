@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useVocabularyStore, WordProgress } from "@/store/vocabularyStore";
+import { useVocabularyStore, WordProgress, DAILY_REVIEW_LIMIT } from "@/store/vocabularyStore";
 import { VOCABULARY_LEVELS, TOTAL_WORDS } from "@/data/vocabulary";
 import { isFeatureEnabled } from "@/config/features";
 import { usePhase } from "@/contexts/PhaseContext";
@@ -148,7 +148,7 @@ const VocabularyHub = () => {
   useEffect(() => {
     const progress = getOverallProgress();
     setStats({
-      reviewDue: progress.reviewDue || 0,
+      reviewDue: progress.dailyReviewDue || 0,
       learned: progress.learned,
       mastered: progress.mastered,
       total: progress.total || TOTAL_WORDS,
@@ -175,7 +175,7 @@ const VocabularyHub = () => {
       badge: "推薦",
       badgeVariant: "default" as const,
       count: hasReviewDue ? stats.reviewDue : suggestedNewWords,
-      countLabel: hasReviewDue ? "待複習" : "建議學習",
+      countLabel: hasReviewDue ? "今日建議" : "建議學習",
       path: "/practice/vocabulary/srs"
     },
     {
@@ -343,11 +343,11 @@ const VocabularyHub = () => {
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
                 <h3 className="font-semibold text-foreground">
-                  {hasReviewDue ? "待複習單字" : "建議學習"}
+                  {hasReviewDue ? "今日建議複習" : "建議學習"}
                 </h3>
               </div>
               <Badge variant={hasReviewDue ? "default" : "secondary"}>
-                {hasReviewDue ? "待複習" : "新單字"}
+                {hasReviewDue ? "今日目標" : "新單字"}
               </Badge>
             </div>
             <div className="space-y-2">
@@ -356,7 +356,7 @@ const VocabularyHub = () => {
                   {hasReviewDue ? stats.reviewDue : suggestedNewWords}
                 </span>
                 <span className="text-muted-foreground">
-                  {hasReviewDue ? "個單字待複習" : "個新單字"}
+                  {hasReviewDue ? "個單字" : "個新單字"}
                 </span>
               </div>
               <ProgressBar current={stats.learned} max={stats.total} showValues={false} />

@@ -12,11 +12,15 @@ const SRS_INTERVALS = {
   3: 3 * 24 * 60 * 60 * 1000,   // 3 days
   4: 7 * 24 * 60 * 60 * 1000,   // 1 week
   5: 14 * 24 * 60 * 60 * 1000,  // 2 weeks
+  6: 30 * 24 * 60 * 60 * 1000,  // 30 days (mastered)
 };
+
+// Daily review limit
+export const DAILY_REVIEW_LIMIT = 20;
 
 export interface WordProgress {
   wordId: string;
-  masteryLevel: number; // 0-5, 0=new, 5=mastered
+  masteryLevel: number; // 0-6, 0=new, 5=familiar, 6=mastered (30-day cycle)
   nextReviewTime: number; // Unix timestamp
   reviewCount: number;
   correctCount: number;
@@ -293,8 +297,8 @@ export const useVocabularyStore = create<VocabularyState>()(
           // Stay at same level or go down slightly
           newMasteryLevel = Math.max(0, existing.masteryLevel - 1);
         } else if (response === 'easy' || isCorrect) {
-          // Move up one level
-          newMasteryLevel = Math.min(5, existing.masteryLevel + 1);
+          // Move up one level (cap at 6 = mastered)
+          newMasteryLevel = Math.min(6, existing.masteryLevel + 1);
         } else {
           // Wrong answer - go down
           newMasteryLevel = Math.max(0, existing.masteryLevel - 1);
@@ -476,7 +480,7 @@ export const useVocabularyStore = create<VocabularyState>()(
           const progress = state.wordProgress[word.id];
           if (progress && progress.masteryLevel > 0) {
             learned++;
-            if (progress.masteryLevel >= 4) {
+            if (progress.masteryLevel >= 5) {
               mastered++;
             }
           }
@@ -500,16 +504,19 @@ export const useVocabularyStore = create<VocabularyState>()(
             if (progress.masteryLevel > 0) {
               learned++;
             }
-            if (progress.masteryLevel >= 4) {
+            if (progress.masteryLevel >= 5) {
               mastered++;
             }
-            if (progress.nextReviewTime <= now) {
+            if (progress.reviewCount > 0 && progress.nextReviewTime <= now) {
               reviewDue++;
             }
           }
         });
 
-        return { total, learned, mastered, reviewDue };
+        // Cap daily suggestion at DAILY_REVIEW_LIMIT
+        const dailyReviewDue = Math.min(reviewDue, DAILY_REVIEW_LIMIT);
+
+        return { total, learned, mastered, reviewDue, dailyReviewDue };
       },
 
       updateStreak: () => {
