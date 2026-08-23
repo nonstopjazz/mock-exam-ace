@@ -4,7 +4,8 @@
 > **Scope**: Production Supabase discovery for `nonstopjazz/mock-exam-ace`
 > **Branch**: `claude/gsat-platform-audit-wiz5rt`
 > **Predecessor**: `docs/PLATFORM_AUDIT.md` (Phase 0, repository-only)
-> **Evidence**: Round 1 — Q07, Q10, Q15, Q19, Q29 · Round 2 — Q08, Q18, Q20, Q24, Q27, Q28
+> **Evidence**: Round 1 — Q07, Q10, Q15, Q19, Q29 · Round 2 — Q08, Q18, Q20, Q24, Q27, Q28 ·
+> **Phase 0.5B-A0 — R14, R15 (complete)**
 >
 > **Guardrails honoured**: no application code modified, no schema modified, no migration created or
 > applied, no RLS altered, no function/trigger altered, no storage policy altered, no table created or
@@ -57,6 +58,22 @@ invalidates the previously planned Phase 1 approach**.
 | 10 | 6 functions lack pinned `search_path` | 🟡 MEDIUM — CONFIRMED |
 | 11 | `site_settings` globally writable | 🟢 **REFUTED** — admin-gated |
 | 12 | GSAT exam-domain RLS unsafe | 🟢 **REFUTED** — correct and acceptable |
+
+### 1.2b ✅ Phase 0.5B-A0 COMPLETE — no evidence of exploitation
+
+Both read-only checks are back. **Neither attempted privilege escalation; neither mutated metadata.**
+
+| Check | Result | Conclusion |
+|-------|--------|------------|
+| **R14** — premium grant history | 5 rows. **All five have a non-NULL `granted_by`, and all five share the same grantor** (`0aea72e3…`). One row is self-granted — the **earliest** of the five, followed within 7 seconds by grants to other users. | ✅ **No anonymous grants. No evidence §9.3 has been exploited.** The self-grant pattern is consistent with an administrator testing the feature on themselves, then using it. ❓ **Please confirm `0aea72e3-26d5-409e-9992-a59936fd3abd` is your own admin account** — if it is not, this becomes an incident. |
+| **R15** — admin metadata-role | **22 users, zero role claims of any kind.** | ✅ **Mechanism 4 is currently inert** — nobody can satisfy `raw_user_meta_data ->> 'role' = 'admin'`, so the two policies using it grant nothing today. It remains a latent trapdoor (§9.6). |
+
+**A0 also surfaced a new confirmed defect that only live data could reveal: premium revocation does
+not reliably revoke (§9.15).** One user currently holds two active memberships.
+
+**Useful scale context:** `auth.users` holds **22 users**. This is a small production system, which
+makes remediation materially more tractable — and makes the 11 exposed LMS tables a smaller blast
+radius than feared, though no less wrong.
 
 ### 1.3 Writing model — recommendation changed
 
@@ -450,6 +467,18 @@ Anonymous grants land with `granted_by = NULL`, which is the audit signature (R1
 ✅ **Safe to fix in Phase 0.5B-A1** — `premium_memberships` is GSAT-owned (both FKs point at
 `auth.users`, and it is written only by these two functions). No LMS dependency.
 
+**✅ A0 exploitation audit (R14): no evidence of abuse.** All 5 grants carry a non-NULL `granted_by`
+and share a single grantor. The one self-granted row is the earliest, followed 7 seconds later by a
+grant to a different user — a testing-then-using pattern, not an exploit signature. ❓ Confirm the
+grantor uuid is your admin account to close this out.
+
+**The vulnerability remains CRITICAL and must still be fixed.** "Not yet exploited" is a statement
+about the past. The function is callable by `anon` today, and the audit trail only records
+`granted_by` — an anonymous caller would leave `NULL`, which is detectable, but a caller
+authenticated as any ordinary user would leave *their own* uuid and look unremarkable. Absence of
+evidence here is genuinely reassuring for anonymous abuse and only weakly reassuring for
+authenticated abuse.
+
 ### 9.4 `invite_tokens` / `tokens` enumerable by anon — **HIGH** ✅ CONFIRMED
 Deferred to **0.5B-B** — possible cross-application callers (§4.2).
 
@@ -461,6 +490,20 @@ enough that a data correction is tractable once the function is canonicalised.
 ### 9.6 Four (now five) parallel admin authorization mechanisms — **HIGH** ✅ CONFIRMED
 §3.5. Mechanism 5 (`public.users.is_admin`) is newly confirmed and is world-writable (§9.1).
 Convergence is a Phase 1 task, blocked on the identity reconciliation decision (§3.4).
+
+**✅ A0 update (R15) — mechanism 4 is currently INERT.** Of 22 users, **zero** carry any
+`raw_user_meta_data ->> 'role'` claim. So `admin_course_reminders` (whose only policy is an `ALL`
+policy gated on that claim) and the admin branch of `reminder_logs` currently admit **nobody**.
+
+Two consequences, pulling in opposite directions:
+
+- ⬇️ **Downgrade the urgency.** This is not an active escalation path today, and testing its
+  self-assignability is no longer a priority. `admin_course_reminders` (5 rows) is effectively
+  unreadable through RLS, which suggests it is either dormant or accessed via `service_role`.
+- ⚠️ **Do not delete the finding.** It is a latent trapdoor: the moment anyone sets that claim —
+  through the Admin API, or a sign-up flow that forwards a client-supplied `data` payload — they
+  gain access with no further review. It should be removed during Phase 1 convergence rather than
+  left as a dormant grant path.
 
 ### 9.7 Six `SECURITY DEFINER` functions lack a pinned `search_path` — **MEDIUM** ✅ CONFIRMED
 Scope corrected in round 1: Production is partially hardened (12 of 18 pinned). The six unpinned are
@@ -483,6 +526,19 @@ Defer to Phase 3.
 ### 9.12 Cron endpoint open when `CRON_SECRET` unset — **HIGH** 📁 repository-confirmed
 ✅ **Safe to fix in 0.5B-A1**, provided the secret is configured *before* switching to fail-closed.
 
+### 9.15 🆕 Premium revocation does not reliably revoke — **HIGH** ✅ CONFIRMED (live data)
+
+Surfaced by the A0 audit. This is an authorization defect, not a data-quality nit.
+
+| Field | Detail |
+|-------|--------|
+| **Repository expectation** | 📁 `admin_revoke_premium(p_membership_id)` revokes "a membership". `UsersAdmin.tsx` calls it with one id. Nothing in the repository suggests a user could hold several. |
+| **Production reality** | ✅ **CONFIRMED (R14).** `admin_grant_premium` performs an unconditional `INSERT` with no duplicate check, so one user can accumulate several active memberships. **User `36258aeb-f26d-406e-a8ed-25595a736614` currently holds two active rows with no expiry**, granted 11 seconds apart (02:41:46 and 02:41:57). |
+| **The defect** | The two functions disagree about cardinality:<br>• `admin_revoke_premium` deactivates **one row** — `UPDATE … WHERE id = p_membership_id`<br>• `is_premium_member` tests **any row** — `EXISTS(… user_id = p_user_id AND is_active …)`<br>So revoking one membership of a user who holds two leaves them premium. |
+| **Impact** | **Revocation silently fails.** `UsersAdmin.fetchPremiumStatuses` collapses to the *most recent* active membership per user (`src/pages/admin/UsersAdmin.tsx:106-110`) and `handleRevokePremium` passes that single id. So an administrator revoking this user's premium gets a success toast, while `is_premium_member()` keeps returning `true` and the badge stays lit. Paid access cannot be reliably withdrawn — which matters for refunds, expiries, and abuse response. At 22 users this is contained, but it is live now and affects a real account. |
+| **Affected objects** | `public.admin_grant_premium`, `public.admin_revoke_premium`, `public.is_premium_member`, `public.premium_memberships`, `src/pages/admin/UsersAdmin.tsx:95-112,157-160` |
+| **Recommended remediation** | ⚠️ **Behaviour-changing — needs your decision, so it is proposed as optional A1-6 (§13.2), not folded in silently.** Two options:<br>**(a) Minimal** — make `admin_grant_premium` idempotent: skip the INSERT when an active, unexpired membership already exists. Prevents new duplicates; does not fix the existing one.<br>**(b) Complete** — add a revoke-by-user path (`UPDATE … WHERE user_id = p_user_id AND is_active`) alongside the by-id one, and deactivate the stale duplicate. Changes the admin UI contract.<br>Recommend **(b)**, because (a) leaves a user whose premium cannot be revoked. Either way, treat the existing duplicate as a one-row data correction requiring explicit approval. |
+
 ### 9.13 Lower-severity (unchanged)
 `/dashboard/result-summary` ungated (MEDIUM); `Math.random()` tokens (MEDIUM); unauthenticated blog
 analytics inserts (LOW); dev panel via `?devmode=true` (LOW); legacy admin routes (LOW); `.gitignore`
@@ -499,19 +555,28 @@ omits `.env`, though no secret was ever committed (INFORMATIONAL).
 | 3 | §9.3 — premium grant/revoke ungated, EXECUTE to PUBLIC/anon | 🔴 CRITICAL | **0.5B-A1** | ✅ No |
 | 4 | §9.11 — TTS endpoints, `service_role`, no auth | 🔴 CRITICAL | **0.5B-A1** | ✅ No |
 | 5 | §9.12 — cron endpoint open if secret unset | 🟠 HIGH | **0.5B-A1** | ✅ No |
-| 6 | §3.2 — fragmented identity model | 🟠 HIGH | **Pre-Phase-1** | ⚠️ Yes (decision) |
-| 7 | §9.4 — `invite_tokens`/`tokens` enumerable | 🟠 HIGH | **0.5B-B** | ⚠️ Possibly |
-| 8 | §9.5 — `claim_pack_with_token` ignores `p_site` | 🟠 HIGH | **0.5B-B** | ⚠️ Possibly |
-| 9 | §9.6 — four/five admin mechanisms | 🟠 HIGH | Phase 1 | ⚠️ Yes |
-| 10 | §9.7 — six functions unpinned `search_path` | 🟡 MEDIUM | **0.5B-A2** | ✅ No |
-| 11 | §9.8 — `notifications` INSERT open | 🟡 MEDIUM | 0.5B-B | ⚠️ Possibly |
-| 12 | §9.9 — broken `upsert_word_progress` overload | 🟡 MEDIUM | 0.5B-A2 (optional) | ✅ No |
-| 13 | §9.10 — divergent SRS semantics | 🟡 MEDIUM | Phase 3 | ✅ No |
-| 14 | §9.13 — assorted | 🟡/🟢 | 0.5B-A1 tail | ✅ No |
+| 6 | **§9.15 🆕 — premium revocation silently fails (duplicate active grants)** | 🟠 **HIGH** | **0.5B-A1 (optional A1-6)** | ✅ No |
+| 7 | §3.2 — fragmented identity model | 🟠 HIGH | **Pre-Phase-1** | ⚠️ Yes (decision) |
+| 8 | §9.4 — `invite_tokens`/`tokens` enumerable | 🟠 HIGH | **0.5B-B** | ⚠️ Possibly |
+| 9 | §9.5 — `claim_pack_with_token` ignores `p_site` | 🟠 HIGH | **0.5B-B** | ⚠️ Possibly |
+| 10 | §9.6 — four/five admin mechanisms *(mechanism 4 confirmed inert)* | 🟠 HIGH | Phase 1 | ⚠️ Yes |
+| 11 | §9.7 — six functions unpinned `search_path` | 🟡 MEDIUM | **0.5B-A2** | ✅ No |
+| 12 | §9.8 — `notifications` INSERT open | 🟡 MEDIUM | 0.5B-B | ⚠️ Possibly |
+| 13 | §9.9 — broken `upsert_word_progress` overload | 🟡 MEDIUM | 0.5B-A2 (optional) | ✅ No |
+| 14 | §9.10 — divergent SRS semantics | 🟡 MEDIUM | Phase 3 | ✅ No |
+| 15 | §9.13 — assorted | 🟡/🟢 | 0.5B-A1 tail | ✅ No |
 
-**The two highest-severity findings are both in the deferred bucket.** That is uncomfortable but
+**Two changes from the A0 results:**
+
+- **§9.15 enters at HIGH** — newly confirmed, GSAT-owned, and therefore fixable in A1 without
+  touching the other application.
+- **§9.6's mechanism 4 is confirmed inert** (zero role claims among 22 users). The finding keeps its
+  HIGH rank because the *fragmentation* is what makes it HIGH, not that one dormant branch.
+
+**The two highest-severity findings remain in the deferred bucket.** That is uncomfortable but
 correct: acting on them without caller analysis risks taking down a live application serving real
-students.
+students. The A0 result does not change this — it only confirms that the *premium* vulnerability has
+not been abused, which says nothing about the eleven exposed tables or the public buckets.
 
 ---
 
@@ -565,21 +630,20 @@ students.
 Restructured per your instruction into **A0 / A1 / A2** (safe, GSAT-owned) and **B** (shared,
 deferred).
 
-### 13.1 Phase 0.5B-A0 — Read-only final verification
+### 13.1 Phase 0.5B-A0 — Read-only final verification ✅ **COMPLETE**
 
-**No writes. No privilege escalation. No metadata mutation.** Exactly two checks:
+**No writes. No privilege escalation. No metadata mutation.** Both checks executed and reviewed.
 
-| Item | Purpose | Query |
-|------|---------|-------|
-| **B9 / R14** | Audit premium grant history for grants that look anonymous (`granted_by IS NULL`) or self-granted — i.e. whether §9.3 has already been exploited | §15 below |
-| **B11 / R15** | Inspect the admin metadata-role situation: how many accounts carry `raw_user_meta_data->>'role'`, and what values | §15 below |
+| Item | Result | Severity outcome |
+|------|--------|------------------|
+| **B9 / R14** — premium grant history | 5 rows, all with non-NULL `granted_by`, all from one grantor. One self-grant, the earliest, followed 7s later by grants to others. | §9.3 stays **CRITICAL** (vulnerability live) but **no evidence of exploitation**. ❓ One open item: confirm the grantor uuid is your admin account. |
+| **B11 / R15** — admin metadata-role | 22 users, **zero** role claims. | §9.6 mechanism 4 confirmed **inert**; self-assignability testing de-prioritised. Finding retained as a latent trapdoor. |
 
-⚠️ **R15 is an observation, not a test.** It counts role claims. It does **not** attempt to set one,
-and no metadata may be mutated to probe self-assignability. If the counts look wrong (e.g. an
-`'admin'` claim on an account that should not have one), escalate that as a finding for the owner to
-investigate through their own account records — do not attempt to reproduce it.
+**Bonus finding.** R14's live data exposed §9.15 — duplicate active grants make revocation silently
+fail. This was invisible from schema alone and is exactly the kind of defect A0 exists to catch.
 
-**Exit criterion:** both result sets reviewed; §9.3 and §9.6 severities finalised.
+**Exit criteria met:** §9.3 and §9.6 severities finalised; one new HIGH finding raised and routed to
+A1. **A0 is closed. A1 may proceed** once the grantor identity is confirmed.
 
 ### 13.2 Phase 0.5B-A1 — Safe critical hotfixes
 
@@ -592,6 +656,15 @@ Scope limited to fixes whose compatibility does **not** depend on the LMS/Writin
 | **A1-3** | **Secure the privileged TTS endpoints** — require a caller JWT, assert admin, rate-limit per pack, drop wildcard CORS, and consolidate the two duplicate implementations | §9.11 | Pure GSAT application code (`api/generate-pack-audio.ts`, `supabase/functions/generate-pack-audio/`) |
 | **A1-4** | **Secure the cron endpoint** — **configure `CRON_SECRET` first**, verify the scheduled run still succeeds, and only then switch the guard to fail-closed and reject `GET` | §9.12 | Pure GSAT application code |
 | **A1-5** | *(tail)* `crypto.getRandomValues()` for tokens; add `.env` to `.gitignore`; gate the dev panel on `import.meta.env.DEV` | §9.13 | Local app code |
+| **A1-6** | ⚠️ *(optional — needs your decision)* **Fix premium revocation** so it cannot silently fail | §9.15 | Same GSAT-owned objects as A1-1/A1-2 |
+
+**On A1-6.** Since A1-1 and A1-2 already rewrite both premium functions, fixing §9.15 in the same
+pass is efficient — but it **changes behaviour**, so I am not folding it in without your say-so.
+Recommended shape: keep `admin_revoke_premium(p_membership_id)` working as-is for compatibility, add
+a `user_id`-scoped revoke path, and make `admin_grant_premium` skip the INSERT when an active
+unexpired membership already exists. The one existing duplicate row is a separate data correction
+needing explicit approval. **If you prefer to keep A1 strictly to the four items you scoped, §9.15
+moves to Phase 1 — it is a real defect either way and should not be dropped.**
 
 **On "minimum required role(s)" for A1-1/A1-2.** `src/pages/admin/UsersAdmin.tsx` calls both RPCs
 from the browser with the signed-in user's JWT, i.e. as `authenticated`. So the minimum that
@@ -737,6 +810,7 @@ this** — the closest any workstream is to ready.
 | # | Blocker | Clears when |
 |---|---------|-------------|
 | ~~BL-1~~ | ~~No Production access~~ | ✅ **CLEARED** |
+| ~~BL-0~~ | ~~A0 read-only verification outstanding~~ | ✅ **CLEARED** — R14/R15 complete, no exploitation found |
 | **BL-2** | Four CRITICAL findings live (§9.1, §9.2, §9.3, §9.11) | A1 clears two; B clears two |
 | **BL-3** | Ownership of the 22 unaccounted tables unknown | Conversation with the maintainer |
 | **BL-4** | 🆕 **Identity reconciliation decision not made** (§3.4) | Product + ownership decision |
@@ -756,8 +830,8 @@ already has four too many.
 **Path to readiness:**
 
 ```
-1. 0.5B-A0        R14 + R15 — read-only, finalises two severities
-2. 0.5B-A1        premium functions, TTS, cron; create staging
+1. 0.5B-A0        ✅ DONE — R14 + R15; no exploitation found; §9.15 raised
+2. 0.5B-A1        premium functions, TTS, cron; create staging   ← next
 3. 0.5B-A2        pin search_path on the six functions
 4. Conversation   who owns the 22 tables? how are essays read?
                   which student_id root is canonical?
@@ -772,10 +846,14 @@ unblocks more than any query.**
 
 ---
 
-## 15. Exact R14 and R15 Queries to Run Next (Phase 0.5B-A0)
+## 15. R14 and R15 — the Phase 0.5B-A0 Queries ✅ **EXECUTED**
 
 Both are **read-only**. Neither mutates data or metadata. Neither attempts privilege escalation.
 Also present in `docs/discovery/production_discovery_round2.sql`.
+
+**Both have now been run; results and conclusions are in §1.2b, §9.3, §9.6 and §9.15.** They are
+retained here as the canonical text, and are worth re-running after any change to
+`admin_grant_premium` / `admin_revoke_premium` as a regression check.
 
 ```sql
 -- ===== [R14] / B9 — audit premium grant history for signs of exploitation =====
