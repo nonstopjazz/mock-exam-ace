@@ -1,0 +1,34 @@
+diff --git a/src/pages/admin/PackItemsAdmin.tsx b/src/pages/admin/PackItemsAdmin.tsx
+index 7d92832..71711fd 100644
+--- a/src/pages/admin/PackItemsAdmin.tsx
++++ b/src/pages/admin/PackItemsAdmin.tsx
+@@ -244,9 +244,18 @@ export default function PackItemsAdmin() {
+     if (!packId) return;
+     setGeneratingAudio(true);
+     try {
++      // A1-3: the endpoint now requires an authenticated admin caller.
++      const { data: { session } } = await supabase.auth.getSession();
++      if (!session) {
++        throw new Error('登入狀態已失效，請重新登入後再試');
++      }
++
+       const res = await fetch('/api/generate-pack-audio', {
+         method: 'POST',
+-        headers: { 'Content-Type': 'application/json' },
++        headers: {
++          'Content-Type': 'application/json',
++          Authorization: `Bearer ${session.access_token}`,
++        },
+         body: JSON.stringify({ pack_id: packId }),
+       });
+       const text = await res.text();
+@@ -256,6 +265,9 @@ export default function PackItemsAdmin() {
+       } catch {
+         throw new Error(res.status === 504 ? '處理超時，請嘗試較小的單字包或稍後重試' : `伺服器錯誤 (${res.status})`);
+       }
++      if (res.status === 401) throw new Error('登入狀態已失效，請重新登入後再試');
++      if (res.status === 403) throw new Error('權限不足：只有管理員可以生成發音');
++      if (res.status === 413) throw new Error(data.message || '單字包過大，請分批處理');
+       if (!res.ok) throw new Error(data.error || '生成失敗');
+       const wg = data.wordGenerated ?? 0;
+       const ws = data.wordSkipped ?? 0;

@@ -3,7 +3,18 @@
 --  Clean up the one pre-existing duplicate active premium membership
 -- =====================================================================
 --
---  🛑 DO NOT RUN THIS WITHOUT EXPLICIT APPROVAL.
+--  ✅ APPROVED 2026-08-23 — but as a SEPARATE deployment, explicitly NOT
+--     bundled with the A1 migration.
+--
+--     Required order (owner's instruction):
+--       1. Deploy the A1 premium function fix
+--       2. Verify grant / extend / revoke / unauthorized behaviour
+--       3. Confirm Production is healthy
+--       4. THEN run this targeted cleanup on its own
+--       5. Verify is_premium_member() and the active row count
+--
+--     No data is deleted. is_active is a soft flag, so the row and all
+--     its metadata survive and the rollback is a single UPDATE.
 --
 --  This is the ONLY artefact in Phase 0.5B-A1 that changes production
 --  DATA. It is deliberately kept out of A1-premium-functions.sql so that

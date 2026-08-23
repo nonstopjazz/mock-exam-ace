@@ -1,0 +1,272 @@
+# Minimum Viable Staging — hard gate for any A1 Production deployment
+
+> **No staging environment exists today.** Every A1 item is blocked on this.
+> **Constraint honoured: no real student PII is copied.** Schema + synthetic fixtures only.
+
+---
+
+## 1. What staging must be able to prove
+
+Exactly four things — the four A1 surfaces. Anything beyond this is out of scope.
+
+| # | Capability | Gates |
+|---|-----------|-------|
+| **S1** | Supabase **RPC behaviour + EXECUTE grants** | A1-1, A1-2, A1-6 |
+| **S2** | **`authenticated` vs `anon`** behaviour differences | A1-1, A1-2, A1-3 |
+| **S3** | **TTS caller path** end-to-end (browser → JWT → endpoint → admin check) | A1-3 |
+| **S4** | **Cron secret path** (scheduler header → guard → notification) | A1-4 |
+
+**Not required:** production data volume, the 22 LMS tables, the writing application, real student
+records, real push devices, real Google TTS spend.
+
+---
+
+## 2. Shape: a second Supabase project + a Vercel Preview deployment
+
+```
+┌──────────────────────────────────┐     ┌────────────────────────────────┐
+│ Supabase project  gsat-staging   │     │ Vercel — Preview deployment    │
+│  (free tier is sufficient)       │     │  branch: claude/gsat-…-wiz5rt  │
+│                                  │◄────┤                                │
+│  • GSAT schema subset (§3)       │     │  VITE_SUPABASE_URL   → staging │
+│  • synthetic users (§4)          │     │  SUPABASE_*          → staging │
+│  • is_admin() → staging admin    │     │  CRON_SECRET         → test    │
+│  • NO student PII                │     │  GOOGLE_TTS_API_KEY  → capped  │
+└──────────────────────────────────┘     └────────────────────────────────┘
+```
+
+**Why a separate Supabase project rather than a schema inside Production:** A1 changes function
+definitions and `EXECUTE` grants. Doing that inside the production database — even in another schema
+— risks touching the shared LMS/Writing application. A separate project has zero blast radius.
+
+**Free tier is enough.** The fixtures below are a handful of rows.
+
+---
+
+## 3. Schema: which objects to create
+
+**Only what the four capabilities need.** Do not restore a full production dump.
+
+### 3.1 Required
+
+| Object | Source | Why |
+|--------|--------|-----|
+| `auth.users` | created by Supabase | identity root |
+| `premium_memberships` | `supabase/migrations/add_premium_memberships.sql` (table + RLS only) | S1, S2 |
+| `app_admins` | ⚠️ **no DDL in the repo** — recreate from Q07/Q18: `user_id uuid PK REFERENCES auth.users(id) ON DELETE CASCADE`, RLS on, policy `SELECT USING (auth.uid() = user_id)` | S1, S2 |
+| `packs`, `pack_items` | `supabase/schema.sql` (+ `add_audio_to_pack_items.sql`, `add_skill_type_to_packs.sql`) | S3 |
+| `push_subscriptions` | `create_push_subscriptions_table.sql` | S4 |
+| `user_stats` | `create_user_stats_table.sql` | S4 |
+| `is_admin()`, `is_premium_member()` | `add_premium_memberships.sql` / `create_user_profiles_table.sql` | S1, S2, S3 |
+| `admin_grant_premium`, `admin_revoke_premium` | **current production bodies** — copy verbatim from `A1-premium-functions.rollback.sql` | ⚠️ **Critical: staging must start from the CURRENT state so the A1 change is what gets tested** |
+| `user_profiles` | `create_user_profiles_table.sql` | `is_admin()` migration file also defines it |
+| Storage bucket `pack-audio` | create in Dashboard | S3 |
+
+### 3.2 Explicitly NOT created
+
+`exams` and the GSAT exam domain · `level_words` and its 2.1 MB seed · all `blog_*` tables · the 22
+LMS/Writing tables · `essay_submissions` · the `essays` / `Essays` buckets.
+
+None are touched by A1, and several are the other application's.
+
+### 3.3 `is_admin()` on staging
+
+Production's `is_admin()` hard-codes `nonstopjazz@gmail.com`. On staging, point it at the synthetic
+admin instead — **this is a staging-only edit and must never be copied back**:
+
+```sql
+-- STAGING ONLY
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $$
+DECLARE v_user_email TEXT;
+BEGIN
+  SELECT email INTO v_user_email FROM auth.users WHERE id = auth.uid();
+  RETURN v_user_email = 'staging-admin@example.test';   -- ← staging identity
+END;
+$$;
+```
+
+⚠️ Because the shape is identical, a real admin email must never appear here.
+
+---
+
+## 4. Fixtures: synthetic only
+
+Create through the Supabase Dashboard (Authentication → Add user) so real `auth.users` rows exist
+with working passwords:
+
+| Handle | Email | Role | Purpose |
+|--------|-------|------|---------|
+| **ADMIN** | `staging-admin@example.test` | admin via §3.3 | positive tests |
+| **USER_A** | `staging-user-a@example.test` | ordinary | 403/UNAUTHORIZED tests, premium target |
+| **USER_B** | `staging-user-b@example.test` | ordinary | duplicate-membership reproduction |
+
+```sql
+-- Fill in the ids from Authentication → Users. Synthetic data only.
+INSERT INTO public.app_admins (user_id) VALUES ('<ADMIN_UUID>');
+
+-- One small pack for the TTS path: 3 items keeps Google TTS spend negligible.
+INSERT INTO public.packs (id, title, description, is_public, is_active, created_by)
+VALUES ('aaaaaaaa-0000-0000-0000-000000000001', 'Staging TTS Pack', 'synthetic', false, true, '<ADMIN_UUID>');
+
+INSERT INTO public.pack_items (pack_id, word, definition, example_sentence, sort_order) VALUES
+  ('aaaaaaaa-0000-0000-0000-000000000001', 'apple',  '蘋果', 'I ate an apple.',      1),
+  ('aaaaaaaa-0000-0000-0000-000000000001', 'banana', '香蕉', 'She likes bananas.',   2),
+  ('aaaaaaaa-0000-0000-0000-000000000001', 'cherry', '櫻桃', 'Cherries are sweet.',  3);
+
+-- Reproduce finding 9.15: two simultaneously-active memberships for USER_B.
+INSERT INTO public.premium_memberships (user_id, expires_at, granted_by, is_active) VALUES
+  ('<USER_B_UUID>', NULL, '<ADMIN_UUID>', true),
+  ('<USER_B_UUID>', NULL, '<ADMIN_UUID>', true);
+
+-- One push subscription for the cron path. The endpoint/keys are fake, so
+-- webpush will fail to deliver — that is fine and expected (§6, S4-3).
+INSERT INTO public.push_subscriptions (user_id, endpoint, p256dh, auth) VALUES
+  ('<USER_A_UUID>', 'https://example.test/push/synthetic-endpoint', 'synthetic-p256dh', 'synthetic-auth');
+
+INSERT INTO public.user_stats (user_id, streak_days, last_study_date, total_review_count, total_words_learned)
+VALUES ('<USER_A_UUID>', 3, CURRENT_DATE - 1, 42, 10);
+```
+
+### 4.1 PII rule
+
+**No production row is copied.** Every email is `@example.test` (an RFC 2606 reserved TLD, so it can
+never receive mail). No real names, schools, essays, or student records.
+
+If a future phase genuinely needs production-shaped data, that is a separate decision requiring
+pseudonymisation — not something to slip in here.
+
+---
+
+## 5. Vercel Preview configuration
+
+Vercel → Project → Settings → Environment Variables, scoped to **Preview**:
+
+| Variable | Value |
+|----------|-------|
+| `VITE_SUPABASE_URL` | staging project URL |
+| `VITE_SUPABASE_ANON_KEY` | staging anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | **staging** service-role key |
+| `SUPABASE_ANON_KEY` | staging anon key *(new — required by A1-3)* |
+| `CRON_SECRET` | `openssl rand -hex 32` — **different from Production** |
+| `GOOGLE_TTS_API_KEY` | a key restricted to a **capped** GCP project |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_EMAIL` | a staging VAPID pair |
+
+> 🛑 **Triple-check `SUPABASE_SERVICE_ROLE_KEY` is the staging one.** A production service-role key in
+> a preview environment would let staging tests write to Production with RLS bypassed — the single
+> worst mistake available in this whole plan.
+
+**Google TTS cost containment:** use a separate GCP project with a **quota cap** on the
+Text-to-Speech API, not just a budget alert. The 3-item fixture pack costs a fraction of a cent, but
+a cap makes a mistake impossible rather than merely visible.
+
+---
+
+## 6. Acceptance criteria
+
+Staging is ready when all of these pass. Each maps to a capability from §1.
+
+### S1 — RPC behaviour and grants
+
+| # | Check | Expect |
+|---|-------|--------|
+| S1-1 | `A1-verification.sql` Section A (V01–V03) | admin check present; `anon` EXECUTE false; `authenticated` true |
+| S1-2 | Section C tests T1–T4b as ADMIN | `granted` → `already_active` → `extended` → `extended` → `already_active`, **exactly 1 active row** |
+| S1-3 | Section C test T5 against USER_B's duplicate | `revoked_count: 2`, active rows 0, `is_premium_member` false |
+| S1-4 | T7 unknown id | `MEMBERSHIP_NOT_FOUND` |
+
+### S2 — authenticated vs anon
+
+| # | Check | Expect |
+|---|-------|--------|
+| S2-1 | `rpc('admin_grant_premium')` **as anon** | permission denied at the grant layer |
+| S2-2 | same **as USER_A** (authenticated, non-admin) | `{"success":false,"error":"UNAUTHORIZED"}` |
+| S2-3 | same **as ADMIN** | `{"success":true,…}` |
+| S2-4 | Repeat S2-1..3 for `admin_revoke_premium` | same pattern |
+
+> S2-1 and S2-2 fail *differently* on purpose: S2-1 is blocked by the `REVOKE` (transport layer),
+> S2-2 by `is_admin()` (application layer). **Both must be verified** — they are independent defences,
+> and testing only one hides a hole in the other.
+
+Run these from a browser console on the preview deployment, signed in as each user, via
+`supabase.rpc(...)` — that exercises the real PostgREST path rather than a psql superuser session.
+
+### S3 — TTS caller path
+
+| # | Check | Expect |
+|---|-------|--------|
+| S3-1 | `A1-3-TTS.md` §6.1 U1–U5 (unauthorized) | 401/401/401/**403**/405 |
+| S3-2 | `pack_items.audio_url` unchanged after U1–U5 | identical counts before/after |
+| S3-3 | §6.2 A1 as ADMIN on the 3-item pack | 200, three `audio_url` values populated |
+| S3-4 | §6.2 A2 / A3 (force gating) | 400 then 200 |
+| S3-5 | Vercel log shows `[generate-pack-audio] admin=<uuid> …` | present on every 200 |
+| S3-6 | UI: ADMIN clicks 「生成發音」 | success toast, audio plays |
+
+### S4 — cron secret path
+
+| # | Check | Expect |
+|---|-------|--------|
+| S4-1 | `A1-4-CRON.md` §7.1 M1–M3, M5 | 401 / 401 / 401 / 405 |
+| S4-2 | M4 with the correct staging secret | 200 with a `sent`/`failed` count |
+| S4-3 | M4 against the synthetic subscription | `failed: 1` (or `cleaned: 1`) — **expected**: the fake endpoint cannot receive. Proves the guard passed and the send path ran. |
+| S4-4 | Temporarily unset `CRON_SECRET` on Preview, redeploy, run M1 | **503**, and the log line `CRON_SECRET is not configured` |
+| S4-5 | Restore `CRON_SECRET`, redeploy, re-run M4 | back to 200 |
+
+S4-4 is the one that proves fail-closed actually fails *closed*. Do not skip it — it is the entire
+point of the A1-4 patch.
+
+---
+
+## 7. Setup checklist
+
+- [ ] Create Supabase project `gsat-staging` (free tier)
+- [ ] Apply §3.1 schema objects
+- [ ] Install **current production** `admin_grant_premium` / `admin_revoke_premium` from the rollback file
+- [ ] Apply the staging-only `is_admin()` (§3.3)
+- [ ] Create ADMIN / USER_A / USER_B in Authentication
+- [ ] Insert §4 fixtures (ids substituted)
+- [ ] Create the `pack-audio` bucket
+- [ ] Set Preview env vars (§5) — **verify the service-role key is staging's**
+- [ ] Deploy the branch to Vercel Preview
+- [ ] **Baseline run:** confirm S1-3 and S3-1/U1 **FAIL** on the unpatched code — i.e. reproduce both
+      bugs on staging before fixing them
+- [ ] Apply A1 SQL + the four patches to staging
+- [ ] Run S1–S4 in full
+- [ ] Record results in `docs/phase-0.5b/STAGING_RESULTS.md`
+
+> **The baseline run is not ceremony.** If staging cannot reproduce the bug, staging is not
+> faithfully modelling Production, and a green test run afterwards would prove nothing.
+
+---
+
+## 8. Effort and lifetime
+
+| Item | Estimate |
+|------|----------|
+| Supabase project + schema | ~1 h |
+| Fixtures + users | ~30 min |
+| Vercel Preview env | ~20 min |
+| Baseline + full S1–S4 | ~2 h |
+| **Total** | **~4 h** |
+
+Keep the project for Phase 0.5B-B and Phase 1 — the shared-LMS work in B will need a far more
+careful staging story, and this becomes its foundation.
+
+**Cost:** Supabase free tier + Vercel preview (included) + a few cents of TTS.
+
+---
+
+## 9. What this staging deliberately cannot prove
+
+Stating the limits, so a green run is not over-read:
+
+- **Production data volume** — the 400-item TTS cap is not exercised by a 3-item pack. Test S3's 413
+  path by lowering `MAX_TTS_CALLS_PER_REQUEST` on staging instead.
+- **Real push delivery** — the synthetic subscription cannot receive. Only a real device on
+  Production closes that loop.
+- **Vercel's cron scheduler attaching the header** — preview deployments do not run cron jobs. This
+  is why A1-4 step 4 (§4 of `A1-4-CRON.md`) verifies a **real scheduled run on Production** after
+  setting the secret but **before** deploying fail-closed.
+- **Interaction with the LMS/Writing application** — absent from staging by design. Nothing in A1
+  touches it; every item that does is deferred to Phase 0.5B-B.

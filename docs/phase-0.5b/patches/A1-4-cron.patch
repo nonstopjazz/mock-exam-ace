@@ -1,0 +1,61 @@
+diff --git a/api/send-daily-reminders.ts b/api/send-daily-reminders.ts
+index bb4d49c..8a39646 100644
+--- a/api/send-daily-reminders.ts
++++ b/api/send-daily-reminders.ts
+@@ -1,5 +1,6 @@
+ import { createClient } from '@supabase/supabase-js';
+ import webpush from 'web-push';
++import { timingSafeEqual } from 'node:crypto';
+ 
+ export const config = {
+   maxDuration: 30,
+@@ -37,15 +38,46 @@ function getNotificationContent(streak: number, daysSince: number): { title: str
+   return { title: '開始今天的學習', body: '每天花幾分鐘背單字，累積起來效果驚人！' };
+ }
+ 
++/**
++ * A1-4: constant-time comparison so the secret cannot be recovered by
++ * timing the response.
++ */
++function secretMatches(provided: string, expected: string): boolean {
++  const a = Buffer.from(provided);
++  const b = Buffer.from(expected);
++  if (a.length !== b.length) return false;
++  return timingSafeEqual(a, b);
++}
++
+ export default async function handler(req: any, res: any) {
+-  // Only allow GET (Vercel Cron) or POST
++  // Vercel Cron invokes this path with GET, so GET must stay allowed.
+   if (req.method !== 'GET' && req.method !== 'POST') {
+     return res.status(405).json({ error: 'Method not allowed' });
+   }
+ 
+-  // Verify cron secret in production
++  // ===================================================================
++  // A1-4 (audit finding 9.12) — FAIL CLOSED.
++  //
++  // Previously: `if (cronSecret && ...)`. When CRON_SECRET was unset the
++  // check was skipped entirely and anyone could trigger a push broadcast
++  // to every subscriber, using service_role to read push_subscriptions
++  // and user_stats with RLS bypassed.
++  //
++  // Now a missing CRON_SECRET is a misconfiguration, not an open door.
++  // Vercel automatically sends `Authorization: Bearer $CRON_SECRET` on
++  // scheduled invocations when the variable is set on the project, so
++  // configuring it is all the scheduler needs.
++  // ===================================================================
+   const cronSecret = process.env.CRON_SECRET;
+-  if (cronSecret && req.headers['authorization'] !== `Bearer ${cronSecret}`) {
++  if (!cronSecret) {
++    console.error('[send-daily-reminders] CRON_SECRET is not configured; refusing to run.');
++    return res.status(503).json({ error: 'CRON_SECRET_NOT_CONFIGURED' });
++  }
++
++  const authHeader: string = req.headers?.authorization || req.headers?.Authorization || '';
++  const providedSecret = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
++
++  if (!providedSecret || !secretMatches(providedSecret, cronSecret)) {
+     return res.status(401).json({ error: 'Unauthorized' });
+   }
+ 

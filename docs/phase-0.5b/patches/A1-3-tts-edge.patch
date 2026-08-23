@@ -1,0 +1,107 @@
+diff --git a/supabase/functions/generate-pack-audio/index.ts b/supabase/functions/generate-pack-audio/index.ts
+index bd72a8c..ec0fc36 100644
+--- a/supabase/functions/generate-pack-audio/index.ts
++++ b/supabase/functions/generate-pack-audio/index.ts
+@@ -1,10 +1,24 @@
+ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+ 
+-const corsHeaders = {
+-  "Access-Control-Allow-Origin": "*",
+-  "Access-Control-Allow-Headers":
+-    "authorization, x-client-info, apikey, content-type",
+-};
++// A1-3: the wildcard origin is replaced by an explicit allow-list.
++// Set ALLOWED_ORIGINS as a comma-separated list, e.g.
++//   https://gsat.ilearn.blog,https://toeic.ilearn.blog,https://kids.ilearn.blog
++const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
++  .split(",")
++  .map((o) => o.trim())
++  .filter(Boolean);
++
++function corsHeadersFor(req: Request): Record<string, string> {
++  const origin = req.headers.get("origin") ?? "";
++  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : "";
++  return {
++    ...(allowed ? { "Access-Control-Allow-Origin": allowed } : {}),
++    "Vary": "Origin",
++    "Access-Control-Allow-Headers":
++      "authorization, x-client-info, apikey, content-type",
++    "Access-Control-Allow-Methods": "POST, OPTIONS",
++  };
++}
+ 
+ interface PackItem {
+   id: string;
+@@ -48,13 +62,71 @@ async function generateTTS(
+ }
+ 
+ Deno.serve(async (req) => {
++  const corsHeaders = corsHeadersFor(req);
++
+   // CORS preflight
+   if (req.method === "OPTIONS") {
+     return new Response("ok", { headers: corsHeaders });
+   }
+ 
+   try {
+-    const { pack_id, force = false } = await req.json();
++    // ===============================================================
++    // A1-3 (audit finding 9.11) — authenticate and authorize.
++    //
++    // This function runs with service_role. Previously it performed no
++    // authorization check at all. Note that Supabase's verify_jwt only
++    // proves SOME valid JWT was presented; it does not prove the caller
++    // is an admin. The is_admin() check below is what actually gates it.
++    // ===============================================================
++    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
++    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
++
++    const authHeader = req.headers.get("Authorization") ?? "";
++    const token = authHeader.startsWith("Bearer ")
++      ? authHeader.slice(7).trim()
++      : "";
++
++    if (!token) {
++      return new Response(
++        JSON.stringify({ error: "UNAUTHENTICATED" }),
++        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
++      );
++    }
++
++    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
++      global: { headers: { Authorization: `Bearer ${token}` } },
++      auth: { persistSession: false, autoRefreshToken: false },
++    });
++
++    const { data: userData, error: userError } = await userClient.auth.getUser();
++    if (userError || !userData?.user) {
++      return new Response(
++        JSON.stringify({ error: "UNAUTHENTICATED" }),
++        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
++      );
++    }
++
++    const { data: isAdmin, error: adminError } = await userClient.rpc("is_admin");
++    if (adminError || isAdmin !== true) {
++      return new Response(
++        JSON.stringify({ error: "FORBIDDEN" }),
++        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
++      );
++    }
++
++    const { pack_id, force = false, confirm_force = false } = await req.json();
++
++    // force=true re-synthesises every item; require explicit confirmation.
++    if (force && !confirm_force) {
++      return new Response(
++        JSON.stringify({ error: "FORCE_REQUIRES_CONFIRMATION" }),
++        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
++      );
++    }
++
++    console.log(
++      `[generate-pack-audio] admin=${userData.user.id} pack=${pack_id} force=${force}`
++    );
+ 
+     if (!pack_id) {
+       return new Response(

@@ -1,0 +1,102 @@
+diff --git a/api/generate-pack-audio.ts b/api/generate-pack-audio.ts
+index 304c117..8f75702 100644
+--- a/api/generate-pack-audio.ts
++++ b/api/generate-pack-audio.ts
+@@ -50,12 +50,16 @@ async function processInBatches<T>(
+   }
+ }
+ 
++// A1-3: the maximum number of TTS syntheses a single invocation may perform.
++// Bounds the cost of any one request; see docs/phase-0.5b/A1-3-TTS.md.
++const MAX_TTS_CALLS_PER_REQUEST = 400;
++
+ export default async function handler(req: any, res: any) {
+   if (req.method !== 'POST') {
+     return res.status(405).json({ error: 'Method not allowed' });
+   }
+ 
+-  const { pack_id, force = false } = req.body || {};
++  const { pack_id, force = false, confirm_force = false } = req.body || {};
+ 
+   if (!pack_id) {
+     return res.status(400).json({ error: 'pack_id is required' });
+@@ -63,15 +67,61 @@ export default async function handler(req: any, res: any) {
+ 
+   const GOOGLE_TTS_API_KEY = process.env.GOOGLE_TTS_API_KEY;
+   const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
++  const SUPABASE_ANON_KEY =
++    process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+ 
+   if (!GOOGLE_TTS_API_KEY) {
+     return res.status(500).json({ error: 'GOOGLE_TTS_API_KEY not configured' });
+   }
+-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
++  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
+     return res.status(500).json({ error: 'Supabase credentials not configured' });
+   }
+ 
++  // ===================================================================
++  // A1-3 (audit finding 9.11) — authenticate and authorize the caller.
++  //
++  // Previously this handler ran with service_role and NO auth check of
++  // any kind, so an unauthenticated POST could burn unbounded Google TTS
++  // quota, overwrite Storage objects and update pack_items with RLS
++  // bypassed.
++  //
++  // The caller's JWT is validated against Supabase, then is_admin() is
++  // evaluated AS THAT USER so this endpoint reuses the same authoritative
++  // admin gate as the rest of the schema rather than inventing a new one.
++  // ===================================================================
++  const authHeader: string = req.headers?.authorization || req.headers?.Authorization || '';
++  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
++
++  if (!token) {
++    return res.status(401).json({ error: 'UNAUTHENTICATED' });
++  }
++
++  const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
++    global: { headers: { Authorization: `Bearer ${token}` } },
++    auth: { persistSession: false, autoRefreshToken: false },
++  });
++
++  const { data: userData, error: userError } = await userClient.auth.getUser();
++  if (userError || !userData?.user) {
++    return res.status(401).json({ error: 'UNAUTHENTICATED' });
++  }
++
++  const { data: isAdmin, error: adminError } = await userClient.rpc('is_admin');
++  if (adminError || isAdmin !== true) {
++    return res.status(403).json({ error: 'FORBIDDEN' });
++  }
++
++  // force=true re-synthesises EVERY item, which is the expensive path.
++  // Require a second explicit flag so a stray retry cannot trigger it.
++  if (force && !confirm_force) {
++    return res.status(400).json({ error: 'FORCE_REQUIRES_CONFIRMATION' });
++  }
++
++  console.log(
++    `[generate-pack-audio] admin=${userData.user.id} pack=${pack_id} force=${force}`
++  );
++
+   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+ 
+   try {
+@@ -114,6 +164,16 @@ export default async function handler(req: any, res: any) {
+       }
+     }
+ 
++    // A1-3: bound the cost of a single invocation.
++    if (tasks.length > MAX_TTS_CALLS_PER_REQUEST) {
++      return res.status(413).json({
++        error: 'TOO_MANY_ITEMS',
++        message: `This pack needs ${tasks.length} syntheses, above the per-request limit of ${MAX_TTS_CALLS_PER_REQUEST}.`,
++        required: tasks.length,
++        limit: MAX_TTS_CALLS_PER_REQUEST,
++      });
++    }
++
+     // 5 個並行處理，大幅加速
+     await processInBatches(tasks, 5, async (task) => {
+       const audio = await generateTTS(task.text, GOOGLE_TTS_API_KEY);
