@@ -164,3 +164,61 @@ Q15 correctly detects both `claim_pack_with_token` overloads and reports their
 `search_path` status, and that Q29 correctly isolates the unaccounted writing table while
 ignoring known GSAT tables. The test instance was destroyed afterwards; it never touched
 Production.
+
+---
+
+# Round 2 — `production_discovery_round2.sql`
+
+Round 1 (Q15, Q07, Q10, Q19, Q29) has been run and analysed. Its findings are written up in
+`docs/PRODUCTION_SCHEMA_AUDIT.md`. Round 2 targets **only what is still blocking Phase 1**.
+
+## What round 1 settled
+
+- `claim_pack_with_token` — the premium-checking version is live, and it **ignores `p_site` entirely**
+- `admin_grant_premium` / `admin_revoke_premium` — no authorization check, `EXECUTE` granted to PUBLIC
+- `invite_tokens` — anon-enumerable, confirmed
+- `site_settings` — UPDATE **is** admin-gated (the earlier HIGH finding was refuted)
+- The writing application is **`essay_submissions` (86 rows) + the `essays` storage bucket**
+- 🔴 **11 tables run with RLS disabled and full anon grants**
+
+## What round 2 asks
+
+| Query | Answers | Why it matters |
+|-------|---------|----------------|
+| **R01** | RLS state + policy count for **every** `public` table | Round 1 only covered non-GSAT tables. A policy on an RLS-disabled table is inert, so we cannot yet claim any GSAT table is protected. |
+| **R02** | Full columns of `essay_submissions` + `essay_questions` | Decides whether Phase 5 can reuse the writing table additively. Look for `student_id` type, essay body, AI feedback, rubric, teacher fields. |
+| **R03** | Full columns of the 22 unaccounted tables | Identifies the owning application and whether Domain B can reuse the existing assignment/course system instead of duplicating it. |
+| **R04** | Storage bucket `public` flags | If `essays` is a public bucket, object policies are bypassed for reads and the bucket flag itself must change. |
+| **R05** | Every foreign key in `public` | The real relational graph — including what `public.users` is linked to. |
+| **R06** | Row counts: `auth.users` / `public.users` / `user_profiles` / `app_admins` | Sizes the Phase 1 profile backfill. No PII. |
+| **R07** | All triggers in `public` / `auth` / `storage` | Is there already an `auth.users` → `user_profiles` trigger? Phase 1 C1 depends on it. |
+| **R08** | Can `authenticated` / `anon` `CREATE` in schema `public`? | Sets the true severity of finding 9.7 (mutable `search_path`). |
+| **R09** | All indexes | Confirms the `COALESCE` UNIQUE INDEX; shows keys on unaccounted tables. |
+| **R10** | Views / matviews | Do `exam_statistics` and `blog_post_stats` exist at all? |
+| **R11** | Storage object counts + path conventions | The `essays` path convention determines how to write the ownership predicate in the 9.2 fix. |
+| **R12** | Supabase CLI migration tracking | Whether an authoritative migration order exists. |
+| **R13** | Exact row counts for exposed and disputed tables | Sizes the blast radius of finding 9.1. |
+| **R14** | Premium grants with `granted_by IS NULL` or self-granted | Audits whether finding 9.3 has already been exploited. Ids and timestamps only. |
+| **R15** | Count of users carrying a `role` claim in metadata | Finding 9.6 mechanism 4 trusts `raw_user_meta_data->>'role'`. No PII — counts only. |
+| **R16** | All `SECURITY DEFINER` functions with PUBLIC `EXECUTE` | Gives B2b the full revoke list, not just the two premium functions. |
+
+## The four that unblock the most
+
+**R01, R02, R03, R04.** R01 tells us what is actually protected; R02 decides the entire Phase 5
+integration; R03 decides whether we reuse or duplicate the assignment system; R04 determines whether
+the `essays` fix is a policy change or a bucket change.
+
+## One thing a query cannot answer
+
+**Who owns the 22 unaccounted tables?** `assignments`, `assignment_submissions`, `student_tasks`,
+`courses`, `user_course_access`, `learning_progress_stats`, `vocabulary_sessions` and `public.users`
+all hold live data and are written by something that is not this repository. That is a conversation
+with the writing application's maintainer, and it unblocks more design work than any SQL.
+
+## Validation
+
+Round 2 was executed against a throwaway local PostgreSQL 16.13 instance seeded with a
+Supabase-shaped fixture. One real bug was caught and fixed during validation: R15's `GROUP BY 1`
+grouped by the literal `qid` column rather than the role claim. After the fix, **all 16 queries run
+with zero errors** and R15 groups correctly. The test instance was destroyed; it never touched
+Production.

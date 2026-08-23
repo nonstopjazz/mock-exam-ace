@@ -3,431 +3,482 @@
 > **Audit date**: 2026-08-23
 > **Scope**: Production Supabase discovery for `nonstopjazz/mock-exam-ace`
 > **Branch**: `claude/gsat-platform-audit-wiz5rt`
-> **Predecessor**: `docs/PLATFORM_AUDIT.md` (Phase 0, repository-only audit)
+> **Predecessor**: `docs/PLATFORM_AUDIT.md` (Phase 0, repository-only)
+> **Evidence round 1**: Q15 (functions), Q07 (RLS policies), Q10 (grants), Q19 + Q29 (unaccounted tables) — supplied 2026-08-23
 >
-> **Guardrails honoured**: no application code modified, no schema modified, no migration
-> created or applied, no RLS altered, no function/trigger altered, no storage policy
-> altered, no table created or deleted, no Production data changed, `/exam` untouched, no
-> Teacher/Student/Parent UI built, no Learning Activity or Writing tables created.
-> **This phase was READ-ONLY. In fact, no Production object was even read — see §0.**
-
----
-
-## 0. ⛔ BLOCKER: Production Access Is Unavailable
-
-**This is the single most important statement in this document.**
-
-Phase 0.5A cannot be completed as specified, because this session has **no access of any
-kind to the Production Supabase project**. Per your instruction — *"If direct read-only
-Production access is unavailable, do NOT guess"* — **nothing in this report is presented
-as confirmed Production state.**
-
-### 0.1 What was checked, and what was found
-
-| Access path | Result | How verified |
-|-------------|--------|--------------|
-| `.env` / `.env.local` file | ❌ Does not exist | `ls -la .env*` → only `.env.example` |
-| `VITE_SUPABASE_URL` env var | ❌ Not set | `env \| grep -i supabase` → empty |
-| `SUPABASE_SERVICE_ROLE_KEY` env var | ❌ Not set | same |
-| Postgres connection string | ❌ Not set | same |
-| Supabase **project ref** (even the bare id) | ❌ Not discoverable anywhere | `grep -rn "supabase.co"` across whole tree → only `'https://placeholder.supabase.co'` in `src/lib/supabase.ts:13` |
-| Project ref in git history | ❌ Not present | `git log --all -S"supabase.co"` → 3 commits, all touching only `.env.example` placeholders (`your-project-id.supabase.co`) |
-| Supabase MCP server | ❌ Not connected | `ToolSearch` for supabase/postgres/sql tools → no match |
-| Supabase CLI | ❌ Not installed | `command -v supabase` → not found |
-| CLI project link | ❌ Absent | no `~/.supabase`, no `supabase/config.toml` |
-| `psql` client | ✅ **Available** (PostgreSQL 16.13) | ready to use the moment a connection string exists |
-
-### 0.2 One genuinely good finding falls out of this
-
-**`.env` has never been committed.** Across all 113 commits, the only env-shaped file
-ever added is `.env.example`, and it contains placeholders only. No Supabase key, no
-service-role key, no VAPID key, and no Google TTS key appears anywhere in the repository
-or its history.
-
-📁 *ONLY OBSERVED IN REPOSITORY* — but for a secrets-leak check, the repository **is** the
-authoritative source, so this one is effectively settled. It downgrades finding **S10**
-from Phase 0 (`.gitignore` missing `.env`) to a purely preventative hygiene item.
-
-### 0.3 What was delivered instead
-
-Rather than guess, this phase delivers:
-
-1. **`docs/discovery/production_discovery.sql`** — a 31-query, strictly read-only
-   discovery script covering Tasks 1–7 in full.
-2. **`docs/discovery/README.md`** — how to run it and how to return the output.
-3. **This document** — every section pre-structured to receive that output, with each
-   placeholder naming the exact query (`Q01`…`Q33`) that fills it.
-4. **Task 8 completed in full** — server-side security configuration is a *repository*
-   inspection, so it required no Production access and is finished below (§9.8, §10).
-
-The discovery script was **executed end-to-end against a throwaway local PostgreSQL
-16.13 instance** seeded with a Supabase-shaped fixture (`auth.users`, `auth.identities`,
-`storage.buckets`, `storage.objects`, the `anon`/`authenticated`/`service_role` roles,
-RLS policies, deliberately overloaded functions, and a decoy writing table). **All 31
-active queries ran with zero errors**, Q15 correctly detected both
-`claim_pack_with_token` overloads, and Q29 correctly isolated the unaccounted writing
-table. The test instance was destroyed; it never touched Production. This means the
-script will not waste a round-trip on syntax errors.
-
-### 0.4 Evidence classification used throughout
-
-Every factual claim in this document carries one of three markers. **No inference is
-ever presented as confirmed Production state.**
-
-| Marker | Meaning |
-|--------|---------|
-| ✅ **CONFIRMED IN PRODUCTION** | Verified against live Production metadata. **Currently used ZERO times in this document** — no Production access was available. |
-| 📁 **ONLY OBSERVED IN REPOSITORY** | Verified in repository files. Says nothing about whether Production matches. |
-| ❓ **INFERRED / NOT YET CONFIRMED** | A hypothesis derived from repository evidence. Requires the named query to confirm or refute. |
+> **Guardrails honoured**: no application code modified, no schema modified, no migration created or
+> applied, no RLS altered, no function/trigger altered, no storage policy altered, no table created or
+> deleted, no Production data changed, `/exam` untouched, no Teacher/Student/Parent UI built, no
+> Learning Activity or Writing tables created. **All Production interaction was READ-ONLY metadata
+> inspection.**
 
 ---
 
 ## 1. Executive Summary
 
-**Phase 0.5A is BLOCKED and Phase 1 must NOT begin.**
+Four Q-queries came back and they change the picture substantially. **Phase 0.5A is now partially
+complete**: the security questions are answered, the writing application is located, and three
+predictions are settled — one confirmed, two refuted.
 
-| Question | Answer |
-|----------|--------|
-| Was Production inventoried? | ❌ No — no access (§0) |
-| Was any Production object modified? | ❌ **No.** None was even read. |
-| Was any non-documentation file changed? | ❌ No |
-| Is the Production schema sufficiently understood to design Teacher/Student/Parent/Class? | ❌ **No** (§14) |
-| Is the Writing schema sufficiently understood to design integration? | ❌ **No** — zero information exists (§7, §14) |
-| Is it safe to begin Phase 1? | ❌ **No** (§14) |
+### 1.1 The headline
 
-**What this phase did establish:**
+> 🔴 **ELEVEN tables in `public` have Row Level Security DISABLED while `anon` and `authenticated`
+> hold full `SELECT, INSERT, UPDATE, DELETE, TRUNCATE` grants.** They include `public.users`,
+> `student_tasks` (32 rows), `assignments`, and `assignment_submissions`.
+>
+> ✅ CONFIRMED IN PRODUCTION (Q29 `rls_enabled=false` + Q10 grants + Q07 shows zero policies).
+>
+> **Anyone holding the public anon key — which ships in the browser bundle of every deployed site —
+> can read, modify, and delete every row in these tables.** No login required.
 
-1. **Access is the blocker, and it is a small one to clear.** One connection string (or
-   one Dashboard paste session) converts this entire document from template to finding.
-   `psql` is already installed here.
-2. **A validated, safe discovery script now exists** and is proven to run clean.
-3. **Task 8 is complete.** Repository-side server security was fully inspected, and it
-   confirms all three Phase 0 findings plus surfaces one new one.
-4. **NEW FINDING — 19 `SECURITY DEFINER` functions, zero with `SET search_path`.** Not
-   present in the Phase 0 audit. This is Supabase's own
-   `function_search_path_mutable` lint, and on `SECURITY DEFINER` functions it is a
-   recognised privilege-escalation vector. Details in §9.7.
-5. **The domain separation you asked for is recorded and respected** (§8). The GSAT mock
-   exam domain is labelled RESERVED / DO NOT MODIFY, and no learning-activity or writing
-   objects were designed, let alone created.
+This is more severe than anything in the previous two audits and it displaces `admin_grant_premium`
+as the top priority.
 
-**The single highest-value action right now** is to run three queries — **Q15, Q07+Q10,
-and Q29**. They resolve the CRITICAL security ambiguity, the real access-control picture,
-and the writing-app discovery respectively. See `docs/discovery/README.md`.
+### 1.2 What else landed
+
+| # | Finding | Status |
+|---|---------|--------|
+| 1 | 11 tables: RLS off + full anon grants (incl. `public.users`) | 🔴 **CRITICAL — CONFIRMED** |
+| 2 | `essays` storage bucket: world-readable; any authenticated user can overwrite/delete any file | 🔴 **CRITICAL — CONFIRMED** |
+| 3 | `admin_grant_premium` / `admin_revoke_premium`: no authorization check, `EXECUTE` granted to **PUBLIC (incl. anon)** | 🔴 **CRITICAL — CONFIRMED** (worse than predicted) |
+| 4 | `invite_tokens` enumerable by anon | 🟠 **HIGH — CONFIRMED** |
+| 5 | **The writing application is `essay_submissions` (86 rows, 560 kB) + the `essays` bucket** | ✅ **LOCATED** |
+| 6 | **An assignment / course / student-task system already exists in this database** | ✅ **LOCATED — supersedes Phase 0** |
+| 7 | `claim_pack_with_token`: premium-checking version is live; **`site` is never written** | ✅ **RESOLVED** |
+| 8 | **FOUR** parallel admin authorization mechanisms, not three | 🟠 **HIGH — CONFIRMED, worse** |
+| 9 | `site_settings` UPDATE **is** admin-restricted | 🟢 **REFUTED — good news** |
+| 10 | `search_path`: Production is **partially hardened** — 6 functions lack it, not 19 | 🟡 **MY EARLIER SCOPE WAS WRONG — corrected in §9.7** |
+
+### 1.3 Corrections to my own prior work
+
+Three statements in earlier documents need correcting, and two matter for planning:
+
+1. **`docs/PLATFORM_AUDIT.md` §7 said assignment management, class, and teacher concepts "do not
+   exist."** That was repository-scoped and is now **superseded**: `assignments`,
+   `assignment_submissions`, `student_tasks`, `courses`, `course_lessons`, `user_course_access`,
+   `user_lesson_progress`, and `learning_progress_stats` all exist in this database. Phase 4 planning
+   must start from these, not from a blank sheet.
+2. **`PRODUCTION_SCHEMA_AUDIT.md` §9.7 (previous revision) claimed all 19 `SECURITY DEFINER`
+   functions lack `SET search_path`.** True of the repository; **false of Production**, which has been
+   hardened out-of-band for most functions. Only 6 remain unhardened. Scope corrected in §9.7.
+3. **§9.4 predicted `site_settings` might be globally writable.** Production restricts UPDATE to
+   `app_admins`. Downgraded to LOW.
+
+### 1.4 Readiness
+
+**Phase 1 still must not begin** — but the blocker has shifted. It is no longer "we don't know";
+it is now **"there is confirmed critical exposure that must be closed first"**, plus a materially
+larger design surface than assumed (§14).
 
 ---
 
 ## 2. Production Database Inventory
 
-> **Status: NOT COLLECTED — Production access unavailable (§0).**
-> Fill from **Q01** (tables/RLS/size/rows), **Q02** (columns), **Q03** (constraints),
-> **Q04** (indexes), **Q05** (views), **Q06** (enums), **Q31** (extensions).
+**Round 1 gave us the table list via Q29 + Q10 + Q07. Q01/Q02/Q03/Q04 were not supplied**, so
+columns, constraints and indexes remain unknown. What follows is confirmed *existence* and, where
+Q29 reported it, *RLS state and row estimates*.
 
-### 2.1 Expected inventory, from repository evidence only
+### 2.1 ✅ CONFIRMED: tables that exist in Production
 
-📁 *ONLY OBSERVED IN REPOSITORY.* The Phase 0 audit derived the table list below. **Each
-row is a hypothesis about Production, not a statement about it.**
+**GSAT-repo tables (confirmed present via Q07 policies and/or Q10 grants):**
+`packs`, `pack_items`, `pack_images`, `pack_item_progress`, `invite_tokens`, `user_pack_claims`,
+`user_profiles`, `user_stats`, `user_word_progress`, `level_words`, `premium_memberships`,
+`push_subscriptions`, **`app_admins` (exists — Q07/Q10)**, `site_settings`, `exams`,
+`vocabulary_questions`, `question_groups`, `group_questions`, `translation_questions`,
+`essay_questions`, `exam_attempts`, `exam_user_answers`, `blog_posts`, `blog_categories`,
+`blog_likes`, `blog_bookmarks`, `blog_shares`, `blog_page_views`
 
-| # | Table | Repository evidence | Production status |
-|---|-------|---------------------|-------------------|
-| 1 | `packs` | Full DDL in `supabase/schema.sql` (+2 ALTERs) | ❓ NOT YET CONFIRMED — Q01 |
-| 2 | `pack_items` | Full DDL + `add_audio_to_pack_items.sql` | ❓ NOT YET CONFIRMED — Q01 |
-| 3 | `invite_tokens` | Full DDL in `schema.sql` | ❓ NOT YET CONFIRMED — Q01 |
-| 4 | `user_pack_claims` | Full DDL + `add_site_to_user_pack_claims.sql` | ❓ NOT YET CONFIRMED — Q01 |
-| 5 | `user_profiles` | `create_user_profiles_table.sql` | ❓ NOT YET CONFIRMED — Q01 |
-| 6 | `user_stats` | `create_user_stats_table.sql` | ❓ NOT YET CONFIRMED — Q01 |
-| 7 | `user_word_progress` | `create_user_word_progress_table.sql` + `unify_…` | ❓ NOT YET CONFIRMED — Q01 |
-| 8 | `level_words` | `create_level_words_table.sql` + ~2.1 MB seed | ❓ NOT YET CONFIRMED — Q01 |
-| 9 | `premium_memberships` | `add_premium_memberships.sql` | ❓ NOT YET CONFIRMED — Q01 |
-| 10 | `push_subscriptions` | `create_push_subscriptions_table.sql` | ❓ NOT YET CONFIRMED — Q01 |
-| 11 | `app_admins` | **No DDL.** Queried at `src/hooks/useAdmin.ts:78` | ❓ May not exist — **Q21** |
-| 12 | `site_settings` | **No DDL** (only ALTERs) | ❓ NOT YET CONFIRMED — Q01 |
-| 13 | `pack_images` | **No DDL.** Queried in `useUserPacks.ts`, `PacksAdmin.tsx` | ❓ NOT YET CONFIRMED — Q01 |
-| 14 | `pack_item_progress` | **No DDL.** Queried in `usePackItemProgress.ts` | ❓ NOT YET CONFIRMED — Q01 |
-| 15 | `exams` | **No DDL.** `useExam.ts` | ❓ NOT YET CONFIRMED — Q01 |
-| 16 | `vocabulary_questions` | **No DDL.** `useExam.ts` | ❓ NOT YET CONFIRMED — Q01 |
-| 17 | `question_groups` | **No DDL.** `useExam.ts` | ❓ NOT YET CONFIRMED — Q01 |
-| 18 | `group_questions` | **No DDL.** `useExam.ts` | ❓ NOT YET CONFIRMED — Q01 |
-| 19 | `translation_questions` | **No DDL.** `useExam.ts` | ❓ NOT YET CONFIRMED — Q01 |
-| 20 | `essay_questions` | **No DDL.** `useExam.ts` | ❓ NOT YET CONFIRMED — Q01 |
-| 21 | `exam_attempts` | **No DDL.** `useExam.ts` (dead code path) | ❓ Predicted EMPTY — **Q32** |
-| 22 | `exam_user_answers` | **No DDL.** `useExam.ts` (dead code path) | ❓ Predicted EMPTY — **Q32** |
-| 23 | `exam_statistics` | **No DDL.** Likely a VIEW | ❓ Table or view? — **Q05** |
-| 24–30 | `blog_posts`, `blog_categories`, `blog_likes`, `blog_bookmarks`, `blog_shares`, `blog_page_views`, `blog_post_stats` | **No DDL.** `useBlog.ts` | ❓ NOT YET CONFIRMED — Q01 |
+### 2.2 🔴 CONFIRMED: 22 tables in Production that the GSAT repository never references
 
-**20 of 30 tables have no DDL in the repository at all.** Their columns, constraints,
-indexes and RLS are entirely unknown. This is the core reason Phase 0.5A exists.
+Q29. **This is roughly 40% of the database that no repository in scope describes.**
 
-### 2.2 Things Q01–Q06 will reveal that the repository cannot
+| Table | RLS | Approx rows | Size | Has any RLS policy? (Q07) |
+|-------|-----|-------------|------|---------------------------|
+| **`users`** | ❌ **false** | — | 80 kB | ❌ none |
+| **`assignments`** | ❌ **false** | — | 40 kB | ❌ none |
+| **`assignment_submissions`** | ❌ **false** | — | 32 kB | ❌ none |
+| **`student_tasks`** | ❌ **false** | **32** | 96 kB | ❌ none |
+| **`courses`** | ❌ **false** | — | 32 kB | ❌ none |
+| **`course_lessons`** | ❌ **false** | — | 64 kB | ❌ none |
+| **`user_course_access`** | ❌ **false** | — | 48 kB | ❌ none |
+| **`learning_progress_stats`** | ❌ **false** | — | 32 kB | ❌ none |
+| **`vocabulary_sessions`** | ❌ **false** | — | 96 kB | ❌ none |
+| **`exam_records`** | ❌ **false** | — | 48 kB | ❌ none |
+| **`exam_types`** | ❌ **false** | **9** | 64 kB | ❌ none |
+| `essay_submissions` | ✅ true | **86** | **560 kB** | ✅ 3 policies |
+| `course_requests` | ✅ true | 17 | 112 kB | ✅ 2 policies |
+| `notifications` | ✅ true | 35 | 112 kB | ✅ 3 policies |
+| `user_lesson_progress` | ✅ true | 21 | 112 kB | ✅ 2 policies |
+| `admin_course_reminders` | ✅ true | 5 | 96 kB | ✅ 1 policy |
+| `user_reminder_preferences` | ✅ true | 5 | 80 kB | ✅ 1 policy |
+| `tokens` | ✅ true | 3 | 72 kB | ✅ 1 policy |
+| `blog_comments` | ✅ true | 0 | 24 kB | ✅ 4 policies |
+| `file_download_logs` | ✅ true | 0 | 48 kB | ✅ 2 policies |
+| `grammar_tags` | ✅ true | 0 | 32 kB | ✅ 1 policy |
+| `reminder_logs` | ✅ true | 0 | 40 kB | ✅ 2 policies |
 
-- ❓ Tables that exist in Production but appear **nowhere** in this repository — including
-  the entire writing application (see §7).
-- ❓ Columns added by hand via the Dashboard and never written into a migration file.
-- ❓ Whether the `COALESCE`-based **UNIQUE INDEX** from `unify_word_progress_tracking.sql`
-  actually exists. It is an index, not a constraint, so it appears **only in Q04**.
-- ❓ Actual row counts — which prove or disprove the Phase 0 prediction that
-  `exam_attempts` / `exam_user_answers` are dead (Q32).
-- ❓ Whether `exam_statistics` and `blog_post_stats` are views, matviews, or tables (Q05).
+**The first eleven rows are the CRITICAL finding (§9.1).**
+
+### 2.3 ❓ Still unknown after round 1
+
+- Columns, data types, nullability, defaults for **every** table (Q02)
+- Primary keys, foreign keys, unique and check constraints (Q03)
+- Indexes — including whether the `COALESCE` UNIQUE INDEX exists (Q04)
+- **RLS enabled/disabled state for the GSAT tables** (Q01/Q08) — ⚠️ Q07 shows policies exist, but
+  **a policy on a table with RLS disabled is inert**. Until Q08 runs, we cannot assert that any GSAT
+  table is actually protected.
+- Views vs tables for `exam_statistics` / `blog_post_stats` (Q05)
+- Triggers, including on `auth.users` (Q17)
+- FKs to `auth.users` (Q18)
+- Storage buckets and their public flags (Q24)
+- Exact row counts (Q32)
 
 ---
 
 ## 3. Auth / Identity Model
 
-> **Status: NOT COLLECTED.** Fill from **Q18** (FKs to `auth.users` — the identity graph),
-> **Q19**/**Q20** (any pre-existing role/class/teacher concept), **Q21** (`app_admins`),
-> **Q22** (volumes, no PII), **Q23** (providers), **Q17** (triggers on `auth.users`).
+### 3.1 ✅ CONFIRMED
 
-### 3.1 Repository-derived model
+- **`app_admins` exists**, with exactly one policy: `SELECT USING (auth.uid() = user_id)` — a user can
+  read only their own row. This is why `site_settings`'s admin check works: the `EXISTS` subquery runs
+  under the caller's RLS, so it functions as a self-check.
+- **`is_admin()` is a hard-coded email comparison** against `nonstopjazz@gmail.com`, with
+  `SET search_path TO 'public'`.
+- **A `public.users` table exists** — separate from `auth.users`, with **RLS disabled** and full anon
+  grants. Its relationship to `auth.users` is unknown (Q18 needed). It is not referenced by the GSAT
+  repository.
 
-📁 *ONLY OBSERVED IN REPOSITORY:*
+### 3.2 🔴 CONFIRMED: FOUR parallel admin authorization mechanisms
 
-- `auth.users` is the single identity root. Three sign-in paths in
-  `src/contexts/AuthContext.tsx`: Google OAuth, email+password, password reset.
-- `user_profiles` is linked **1:1 by `user_id` with a UNIQUE constraint**, and is created
-  **lazily** via `upsert_user_profile()` — there is **no `on auth.users` trigger** in any
-  repository file.
-- Tables with an FK to `auth.users(id)` per repository DDL: `packs.created_by`,
-  `invite_tokens.created_by`, `user_pack_claims.user_id`, `user_profiles.user_id`,
-  `user_stats.user_id`, `user_word_progress.user_id`, `premium_memberships.user_id`,
-  `premium_memberships.granted_by`, `push_subscriptions.user_id`.
+My earlier audits said three. Production has four:
 
-### 3.2 Open questions only Production can answer
+| # | Mechanism | Where used | Evidence |
+|---|-----------|------------|----------|
+| 1 | `is_admin()` → hard-coded email | `packs`, `pack_items`, `pack_images`, `user_pack_claims`, `invite_tokens`, `premium_memberships`, storage `pack-images` | Q07, Q15 |
+| 2 | `app_admins` table membership | **`site_settings` UPDATE only** | Q07 |
+| 3 | `auth.jwt() ->> 'email' = 'nonstopjazz@gmail.com'` (inline JWT claim) | `blog_posts`, `blog_categories`, storage `blog-images` | Q07 |
+| 4 | **`auth.users.raw_user_meta_data ->> 'role' = 'admin'`** 🆕 | `admin_course_reminders`, `reminder_logs` | Q07 |
 
-| Question | Query | Why it matters for Phase 1 |
-|----------|-------|----------------------------|
-| Is there **any** trigger on `auth.users`? | **Q17** | If one already auto-creates profiles, Phase 1 item C1 is already done — or would conflict. |
-| How many `auth.users` lack a `user_profiles` row? | Q22 + Q32 | Sizes the backfill. |
-| Do `teacher` / `class` / `parent` / `role` tables already exist? | **Q19**, **Q20** | The writing app may already have introduced a role concept we must reuse, not duplicate. |
-| Does `app_admins` actually exist? | **Q21** | `useAdmin.ts` queries it. If absent, **every admin UI check currently fails closed** and only the hard-coded email path works. |
-| Which auth providers are really in use? | Q23 | Affects Parent onboarding design. |
+**Mechanism 4 is new information** and it is the most concerning of the four: it reads a role claim
+from user metadata. `raw_user_meta_data` is populated from the `data` field at sign-up and is
+**user-supplied on some Supabase auth paths**. ❓ Whether a user can set `role: admin` on themselves in
+this project's configuration is **NOT YET CONFIRMED** and needs targeted testing — but it is a
+recognised Supabase anti-pattern and should be treated as suspect until proven otherwise.
 
-> ❓ **INFERRED / NOT YET CONFIRMED:** Phase 0 concluded that Teacher / Class / Parent
-> concepts do not exist. That conclusion was drawn from *repository* grep only. Because
-> the writing application shares this database and is **not** in this repository, it may
-> already have introduced role-like structures. **Q19/Q20 must confirm this before any
-> Phase 1 schema is designed.** This is a real risk of designing a duplicate role system.
+**Consequence for Phase 1:** the plan to converge everything onto `is_admin()` (reading `user_roles`)
+now has **four** call-sites families to absorb, not one. The good news is unchanged: because
+`is_admin()`'s signature stays fixed, mechanism 1 converges for free.
+
+### 3.3 ❓ Still unknown
+
+`auth.users` triggers (Q17), FKs to `auth.users` (Q18), the role of `public.users`, `auth.users`
+counts (Q22), providers (Q23), and how many users lack a `user_profiles` row.
 
 ---
 
 ## 4. RLS Audit
 
-> **Status: NOT COLLECTED.** Fill from **Q07** (all policies), **Q08** (RLS disabled),
-> **Q09** (RLS on, no policies), **Q10** (grants), **Q11**, **Q12**.
+### 4.1 🔴 CRITICAL — RLS disabled with full public grants
 
-### 4.1 Method note — why Q07 alone is not enough
+Q10 shows that **every** table in `public` grants `DELETE, INSERT, REFERENCES, SELECT, TRIGGER,
+TRUNCATE, UPDATE` to both `anon` and `authenticated`. That is the Supabase default and is normally
+harmless **because RLS is the gate**. For these eleven tables there is no gate:
 
-**A policy is only half of the access-control picture.** In Supabase, PostgREST connects
-as `anon` or `authenticated`. If that role holds **no `GRANT`** on a table, the table is
-unreachable regardless of policy. If it holds a `GRANT` and RLS is **disabled**, every row
-is readable regardless of intent.
+```
+users, assignments, assignment_submissions, student_tasks, courses,
+course_lessons, user_course_access, learning_progress_stats,
+vocabulary_sessions, exam_records, exam_types
+```
 
-**Therefore §4 must be completed by reading Q07 and Q10 *together*.** Any analysis that
-quotes policies without grants is incomplete. Q08 and Q09 catch the two dangerous
-edge cases.
+`rls_enabled = false` (Q29) + full anon grant (Q10) + zero policies (Q07) = **unrestricted public
+read and write**. See §9.1.
 
-### 4.2 Policies to scrutinise, and what to look for
+### 4.2 🟠 CONFIRMED — `invite_tokens` is enumerable
 
-📁 *ONLY OBSERVED IN REPOSITORY* — the following are repository policy texts. Q07 must
-confirm whether Production matches.
+Two overlapping `SELECT` policies exist, both `PERMISSIVE` (therefore OR'd):
 
-| Table | Repository policy | What to check in Q07/Q10 |
-|-------|-------------------|--------------------------|
-| **`invite_tokens`** | `"Anyone can validate tokens" FOR SELECT USING (is_active = true)` | ⚠️ If this exists in Production **and** `anon`/`authenticated` hold SELECT (Q10), **every active invite code is enumerable by anyone**. |
-| **`site_settings`** | **No DDL at all** | ⚠️ Unknown. If UPDATE is not admin-restricted, any user can change `current_phase` and unlock every gated feature globally. |
-| **`app_admins`** | **No DDL at all** | ⚠️ If readable by `authenticated`, the admin roster is public. If not readable, `useAdmin.ts` fails closed. |
-| **`level_words`** | SELECT `USING (true)`; INSERT/UPDATE/DELETE gated by **hard-coded email** | Broad `true` read is likely intentional (public content). Confirm write gating. |
-| `premium_memberships` | SELECT own + `USING (is_admin())`. **No INSERT/UPDATE policy** | Writes happen only via `SECURITY DEFINER` functions — which is exactly why §9.1/§9.2 matter. |
-| `packs` | INSERT `WITH CHECK (auth.uid() = created_by)` | Any authenticated user can create packs. Confirm this is intended. |
-| `user_profiles` | SELECT/INSERT/UPDATE own. **No DELETE policy** | Confirm; affects data-deletion rights. |
-| `user_word_progress`, `user_stats`, `push_subscriptions`, `user_pack_claims` | own-row `auth.uid() = user_id` | Standard. Confirm no drift. |
-| **All exam tables** | **No DDL at all** | ⚠️ Completely unknown. `exam_attempts` holds per-student scores — if RLS is missing, students could read each other's results the moment §8's mock exam flow is connected. |
-| **All blog tables** | **No DDL at all** | Unknown. |
+| Policy | USING |
+|--------|-------|
+| `Anyone can validate tokens` | `(is_active = true)` |
+| `Logged in users can lookup active tokens` | `(auth.uid() IS NOT NULL) AND is_active AND not-expired AND not-exhausted` |
 
-### 4.3 Flag criteria to apply to Q07 output
+The first requires no authentication. With `anon` holding `SELECT` (Q10), **any visitor can list every
+active invite token**, including codes for `is_premium` packs. The second policy is redundant — it can
+never grant access the first doesn't already grant. See §9.4.
 
-When the output arrives, flag any policy that:
-- grants `anon` access unexpectedly;
-- lets `authenticated` see rows belonging to other users (missing `auth.uid() = user_id`);
-- lets a non-admin modify admin or premium state;
-- lets a non-admin modify global configuration (`site_settings`);
-- uses a bare `true` in `USING` or `WITH CHECK` on non-public data;
-- is `PERMISSIVE` where `RESTRICTIVE` was intended (a permissive policy **widens** access
-  — multiple permissive policies are OR'd together).
+**The same pattern exists on the separate `tokens` table**: `Anyone can read active tokens
+USING (is_active = true)`, 3 rows.
+
+### 4.3 🟢 REFUTED — `site_settings` is adequately protected
+
+```
+Anyone can read site settings   SELECT  USING (true)
+Admins can update site settings UPDATE  USING (EXISTS(SELECT 1 FROM app_admins WHERE user_id = auth.uid()))
+```
+
+My earlier HIGH finding predicted possible global-config tampering. **Production restricts UPDATE to
+`app_admins` membership.** Public SELECT is correct — `PhaseContext` reads phase before login.
+
+Two residual notes: there is **no INSERT and no DELETE policy** (deny-by-default *if* RLS is enabled —
+⚠️ **needs Q08 to confirm**), and this is the sole consumer of mechanism 2 in §3.2.
+
+### 4.4 ✅ Confirmed-sound policies
+
+`user_profiles`, `user_stats`, `user_word_progress`, `pack_item_progress`, `push_subscriptions`,
+`user_pack_claims`, `blog_bookmarks`, `blog_likes`, `course_requests`, `notifications`,
+`user_lesson_progress`, `user_reminder_preferences` all correctly scope to `auth.uid() = user_id`.
+
+The GSAT exam tables are correctly gated on publication status:
+`exams` → `status = 'published'`; `vocabulary_questions` / `question_groups` / `group_questions` /
+`translation_questions` / `essay_questions` → `EXISTS(... exams.status = 'published')`.
+`exam_attempts` and `exam_user_answers` correctly scope to the owning user, with
+`exam_user_answers` chaining through `exam_attempts`. **This is a good design** — it means §8's
+reserved domain is safe to connect later without an RLS rewrite. ⚠️ Subject to Q08 confirming RLS is on.
+
+### 4.5 ⚠️ Observations worth noting
+
+- `blog_page_views` and `blog_shares` allow `INSERT WITH CHECK (true)` from anyone — acceptable for
+  analytics beacons, but unbounded (spam/inflation vector, LOW).
+- `notifications` has `Service role can insert notifications INSERT WITH CHECK (true)` applying to
+  role `{public}` — **the policy name says service-role but the policy applies to everyone**. Any user
+  can insert arbitrary notifications for any user. MEDIUM (§9.8).
+- `user_lesson_progress` has an `ALL` policy plus a redundant `SELECT` policy.
+- Every policy in the database applies to `{public}` rather than `{authenticated}`, except the four
+  `essays` storage policies. Not a vulnerability by itself (the `auth.uid()` test does the work), but
+  it means `anon` evaluates every policy, so any policy lacking an `auth.uid()` test is anon-exposed.
 
 ---
 
 ## 5. PostgreSQL Functions / RPC Audit
 
-> **Status: NOT COLLECTED.** Fill from **Q13** (signatures/security/search_path/ACL),
-> **Q14** (full source), **Q15** (targeted five), **Q16** (EXECUTE grants).
+### 5.1 ✅ RESOLVED — `claim_pack_with_token`: which version is live
 
-### 5.1 `claim_pack_with_token` — the decisive question
+**Both overloads exist in Production** (Q15), confirming the C2 ambiguity is real.
 
-**Q15 settles this definitively.** Repository state, per Phase 0:
+| Signature | `search_path` | Premium check | Writes `site`? |
+|-----------|---------------|---------------|----------------|
+| `(p_token text)` | `public` | ❌ No | ❌ No |
+| `(p_token text, p_site text DEFAULT NULL)` | ❌ **none** | ✅ **Yes** — `is_premium_member()` | ❌ **No** |
 
-📁 *ONLY OBSERVED IN REPOSITORY* — **two conflicting definitions of the same 2-argument
-signature exist:**
+**Answering Task 3's four required questions definitively:**
 
-| Source file | Checks premium? | Writes `site`? | Checks `site` on duplicate? |
-|-------------|-----------------|----------------|-----------------------------|
-| `add_site_to_user_pack_claims.sql` | ❌ No | ✅ Yes | ✅ Yes |
-| `add_premium_memberships.sql` | ✅ Yes (`is_premium_member`) | ❌ **No** | ❌ No |
+1. **Which behaviour does Production have?** The **`add_premium_memberships.sql` version won.**
+2. **Does it check premium eligibility?** ✅ **Yes** — `IF v_pack_record.is_premium AND NOT
+   is_premium_member(v_user_id) THEN RETURN 'PREMIUM_REQUIRED'`.
+3. **Does it write `site`?** ❌ **No.** The INSERT is
+   `insert into user_pack_claims (user_id, pack_id, claimed_via_token)` — `site` is absent, and the
+   duplicate check is `WHERE user_id AND pack_id` with **no site predicate**. The `p_site` parameter
+   is **accepted and then never referenced anywhere in the body.**
+4. **Can repository migration history reproduce the live function?** ✅ **Yes** — the live 2-arg body
+   matches `add_premium_memberships.sql` verbatim. So `add_premium_memberships.sql` was applied
+   *after* `add_site_to_user_pack_claims.sql`, consistent with alphabetical filename ordering.
 
-Both are `CREATE OR REPLACE FUNCTION claim_pack_with_token(text, text)`. **The later one
-wins, and repository filenames carry no timestamps, so the repository literally cannot
-tell you which.**
+**Live consequence — this is the confirmed defect (my hypothesis (b)):**
+`user_pack_claims.site` always falls back to its column `DEFAULT 'gsat'` regardless of which site the
+user claimed from. Because `useUserPacks.ts` filters with `.eq('site', currentSite)`, **a pack claimed
+from the TOEIC or Kids site is written as `'gsat'` and then becomes invisible to the very site the
+user claimed it on.** Multi-site pack claiming is broken in Production today.
 
-Additionally, a **1-argument** overload exists (`schema.sql`,
-`update_claim_pack_function.sql`). If both arities are live, calling with only `p_token`
-raises `function is not unique`. The client always passes both arguments
-(`ClaimPack.tsx:64-67`), so this is latent rather than active.
+### 5.2 🔴 CONFIRMED — the two premium functions are worse than predicted
 
-**When Q15 output is available, state explicitly:**
+```sql
+CREATE OR REPLACE FUNCTION public.admin_grant_premium(p_user_id uuid, p_expires_at ..., p_notes ...)
+ RETURNS json LANGUAGE plpgsql SECURITY DEFINER      -- ← no SET search_path
+AS $function$
+DECLARE v_admin_id uuid;
+BEGIN
+  v_admin_id := auth.uid();                          -- ← recorded only, never checked
+  INSERT INTO premium_memberships (user_id, expires_at, granted_by, notes)
+  VALUES (p_user_id, p_expires_at, v_admin_id, p_notes);
+  RETURN json_build_object('success', true);
+END; $function$
+```
 
-1. Which behaviour Production currently has → *pending*
-2. Whether it checks premium eligibility → *pending* (`body_mentions_premium_check`)
-3. Whether it writes `site` → *pending* (`body_mentions_site` + full definition)
-4. Whether repository migration history can reproduce the live function → *pending*
-   (compare `full_definition` byte-for-byte against both repo variants; **Q30** tells you
-   whether an authoritative migration order ever existed)
+`admin_revoke_premium` is worse still — it does not even call `auth.uid()`:
 
-**Consequence either way:** if the site version is live, the premium paywall on claiming
-is silently absent. If the premium version is live, `site` is never written on INSERT and
-multi-site claiming is broken. ❓ *INFERRED / NOT YET CONFIRMED* — one of these two
-defects is almost certainly live, but **which one is unknown.**
+```sql
+BEGIN
+  UPDATE premium_memberships SET is_active = false WHERE id = p_membership_id;
+  RETURN json_build_object('success', true);
+END;
+```
 
-### 5.2 Functions to inventory
+**And the `execute_acl` for both is:**
+```
+{=X/postgres, postgres=X/postgres, anon=X/postgres, authenticated=X/postgres, service_role=X/postgres}
+```
 
-📁 *ONLY OBSERVED IN REPOSITORY* — 19 `SECURITY DEFINER` declarations across 8 files.
-Repository-side authorization posture:
+The leading `=X/postgres` grants `EXECUTE` to **PUBLIC**. Combined with an explicit `anon=X`, this
+means **an unauthenticated caller can invoke both functions.** For `admin_grant_premium` called
+anonymously, `auth.uid()` returns NULL, so the row is inserted with `granted_by = NULL` — the grant
+still succeeds. See §9.3.
 
-| Function | Internal authorization check (repo) | Production |
-|----------|------------------------------------|------------|
-| `admin_grant_premium` | ❌ **NONE** | ❓ Q15 |
-| `admin_revoke_premium` | ❌ **NONE** | ❓ Q15 |
-| `is_admin` | Hard-coded email comparison | ❓ Q15 |
-| `admin_get_all_users` | ✅ calls `is_admin()` | ❓ Q15 |
-| `admin_get_user_stats` | ✅ calls `is_admin()` | ❓ Q15 |
-| `claim_pack_with_token` | `auth.uid()` null-check only | ❓ Q15 |
-| `is_premium_member` | n/a (pure query) | ❓ Q15 |
-| `upsert_user_profile`, `get_user_profile`, `update_user_streak`, `get_user_stats`, `upsert_word_progress`, `get_all_word_progress` | `auth.uid()` null-check | ❓ Q15 |
-| `generate_short_token` | INVOKER; unused by client | ❓ Q15 |
-| **`update_pack_item_progress`**, **`get_pack_statistics`**, **`get_weak_words`** | **No DDL in repo — body entirely unknown** | ❓ **Q14** |
+### 5.3 ✅ CONFIRMED — the three previously-unknown RPCs
 
-Three RPCs are called by the client but have **no definition anywhere in the repository**.
-Q14 is the only way to see them.
+All three exist, all `SECURITY DEFINER` with `SET search_path TO 'public'`:
 
-### 5.3 `search_path` — new finding
+- **`update_pack_item_progress`** — server-side SRS. Intervals `[0, 10, 1440, 4320, 10080, 20160]`
+  minutes, mastery capped at **`LEAST(5, …)`**.
+- **`get_pack_statistics`** — "mastered" defined as **`mastery_level >= 4`**.
+- **`get_weak_words`** — weak = `mastery_level IS NULL OR < 3 OR accuracy < 0.6`.
 
-📁 *ONLY OBSERVED IN REPOSITORY, verified:* `grep -rn "search_path" supabase/` returns
-**zero matches**. All 19 `SECURITY DEFINER` declarations lack `SET search_path`.
-See §9.7 for the full finding. **Q13's `proconfig_search_path` column confirms whether
-Production matches.**
+🔴 **This confirms and sharpens Phase 0 finding C3 (two divergent SRS systems):**
+
+| | Level words (`user_word_progress`) | Pack items (`pack_item_progress`) |
+|---|---|---|
+| Where SRS is computed | **Client** (`vocabularyStore.ts`) | **Server** (`update_pack_item_progress`) |
+| Mastery cap | **6** | **5** |
+| "Mastered" threshold | 4 *or* 5 (inconsistent in client) | **4** |
+| Time column | `next_review_time BIGINT` (Unix ms) | `next_review_at TIMESTAMPTZ` |
+
+Both systems track pack items. The numbers do not line up, so pack progress reads differently
+depending on which path wrote it.
+
+### 5.4 🔴 NEW — `upsert_word_progress` has a broken 6-arg overload
+
+Both overloads exist:
+
+- **6-arg** (`p_word_id … p_last_review_time`) — `ON CONFLICT (user_id, word_id)`
+- **8-arg** (`… p_source, p_pack_id`) — `ON CONFLICT (user_id, word_id, source, COALESCE(pack_id, …))`
+
+`unify_word_progress_tracking.sql` **dropped** the `user_id, word_id` unique constraint and replaced it
+with the `COALESCE` expression index. **The 6-arg overload's conflict target therefore no longer
+exists**, so any call to it fails at runtime with *"there is no unique or exclusion constraint matching
+the ON CONFLICT specification"*.
+
+`wordProgressSync.ts` always passes 8 arguments, so the live path is safe. But the broken overload is
+a live landmine: any future 6-argument call — or a `p_source`/`p_pack_id` omission — errors out. See
+§9.9.
+
+### 5.5 ✅ Function `search_path` status — my earlier scope was wrong
+
+Production is **partially hardened**, contradicting the repository. Of the 18 function rows returned:
+
+**Hardened (`SET search_path TO 'public'`) — 12:** `admin_get_all_users`, `admin_get_user_stats`,
+`claim_pack_with_token(text)`, `generate_short_token`, `get_pack_statistics`, `get_user_profile`,
+`get_user_stats`, `get_weak_words`, `is_admin`, `update_pack_item_progress`, `update_user_streak`,
+`upsert_user_profile`, `upsert_word_progress(6-arg)`
+
+**NOT hardened — 6:**
+`admin_grant_premium`, `admin_revoke_premium`, `claim_pack_with_token(text,text)`,
+`get_all_word_progress`, `is_premium_member`, `upsert_word_progress(8-arg)`
+
+Note the unhappy overlap: **the two ungated admin functions and the live 2-arg claim function are all
+in the unhardened set.** Corrected finding in §9.7.
 
 ---
 
 ## 6. Storage Audit
 
-> **Status: NOT COLLECTED.** Fill from **Q24** (buckets), **Q25** (`storage.objects`
-> policies), **Q26** (object counts + path conventions).
+**Q24/Q25/Q26 were not supplied, but Q07 returned the `storage.objects` policies** — which is the part
+that matters most, and it contains a critical finding.
 
-📁 *ONLY OBSERVED IN REPOSITORY* — four buckets are referenced in code:
+### 6.1 🔴 CONFIRMED — the `essays` bucket is effectively public and mutable by anyone logged in
 
-| Bucket | Purpose (inferred) | Written by | Path convention (from code) |
-|--------|--------------------|-----------|------------------------------|
-| `pack-images` | Vocabulary pack covers | `PacksAdmin.tsx` — **browser, anon key** | `<pack_id>/<filename>` |
-| `pack-audio` | TTS word + example mp3 | `api/generate-pack-audio.ts` + Edge Function — **`service_role`** | `<pack_id>/<item_id>_word.mp3`, `…_example.mp3` |
-| `blog-images` | Blog post images | `useBlog.ts` — **browser, anon key** | *(see `useBlog.ts:395`)* |
-| `exam-images` | Question/passage images | `ExamQuestionsEditor.tsx` — **browser, anon key** | *(see `ExamQuestionsEditor.tsx:55`)* |
+| Policy | Role | Command | Expression |
+|--------|------|---------|------------|
+| `essays_select_policy` | **`{public}`** | SELECT | `bucket_id = 'essays'` |
+| `essays_insert_policy` | `{authenticated}` | INSERT | `bucket_id = 'essays'` |
+| `essays_update_policy` | `{authenticated}` | UPDATE | `bucket_id = 'essays'` |
+| `essays_delete_policy` | `{authenticated}` | DELETE | `bucket_id = 'essays'` |
 
-**Open questions (Q24/Q25/Q26):**
+**There is no owner predicate on any of them.** Not `owner = auth.uid()`, not a
+`storage.foldername(name)[1] = auth.uid()::text` path check — nothing but the bucket name.
 
-- ❓ Is each bucket **public or private**? Three are written from the browser with the anon
-  key, so their `storage.objects` policies are the only write control.
-- ❓ Are there buckets **not referenced by this repository** — e.g. for essay image
-  uploads or student submissions belonging to the writing app? **Q24 is the only way to
-  find out**, and it directly feeds §7.
-- ❓ Are there `file_size_limit` / `allowed_mime_types` constraints? Unbounded
-  browser-side upload to a public bucket is a cost and abuse vector.
-- ❓ Do any policies allow `anon` INSERT/DELETE?
+Consequences, all confirmed:
+- **Any visitor, logged in or not, can list and download every file in `essays`.**
+- **Any authenticated user can overwrite or delete any other student's essay file.**
 
-> **Task 5 specifically asks about writing uploads, essay images, audio, student
-> submissions and avatars.** Of these, only `pack-audio` is accounted for.
-> 📁 Note: avatars are **not** in Storage at all — `useAvatar.ts` serves static files from
-> `public/avatars/*.webp` and stores the chosen id in `localStorage`. Essay images and
-> student submissions have **no repository-side storage path whatsoever** — if they
-> exist, they belong to the writing app and will surface in Q24.
+Given `essay_submissions` holds 86 rows / 560 kB of real student work (§7), this is student-work
+exposure and a destructive-write path. See §9.2.
+
+Contrast with the correctly-written pack-image policies in the same table, which do carry a predicate:
+`(bucket_id = 'pack-images') AND is_admin()`.
+
+### 6.2 ✅ Confirmed buckets (from policy evidence)
+
+`blog-images` (public read; admin write via mechanism 3), `pack-images` (authenticated read; admin
+write via `is_admin()`), **`essays`** (§6.1).
+
+❓ **`pack-audio` and `exam-images` have NO policies in Q07.** Either they are public buckets (bypassing
+`storage.objects` RLS for reads) or they are write-only via `service_role`. **Q24 is required** to
+determine their `public` flag.
 
 ---
 
 ## 7. Existing Writing Application Discovery
 
-> **Status: NOT COLLECTED — and this is the most consequential gap in the audit.**
-> Fill from **Q27** (writing-shaped table names), **Q28** (writing-shaped columns),
-> **Q29** (tables not referenced by the GSAT repo), plus **Q24** (buckets) and **Q14**
-> (functions).
+### 7.1 ✅ LOCATED
 
-### 7.1 Current knowledge: effectively zero
+| Object | Evidence | Detail |
+|--------|----------|--------|
+| **`essay_submissions`** | Q29, Q07 | **86 rows, 560 kB**, RLS enabled, 3 policies |
+| **`essays` storage bucket** | Q07 | 4 policies, all missing owner checks (§6.1) |
 
-The writing application **shares this Postgres database but has no presence in this
-repository**. Consequently:
+**RLS policies on `essay_submissions`:**
 
-> ❓ **INFERRED / NOT YET CONFIRMED.** This audit currently knows **nothing** about the
-> writing application's schema. Not one table name, column, function, policy, trigger or
-> bucket is confirmed. Any statement to the contrary would be fabrication.
+```
+Students can view own essays    SELECT  USING      ((auth.uid())::text = (student_id)::text)
+Students can insert own essays  INSERT  WITH CHECK ((auth.uid())::text = (student_id)::text)
+Students can update own essays  UPDATE  USING/CHECK((auth.uid())::text = (student_id)::text)
+```
 
-### 7.2 What the GSAT side *does* have (for contrast)
+**Three things this tells us:**
 
-📁 *ONLY OBSERVED IN REPOSITORY:*
+1. **`student_id` is cast to `text` on both sides** — strongly suggesting the column is `TEXT` or
+   `VARCHAR`, **not `UUID`**. ❓ Needs Q02. If so, there is no FK to `auth.users` and referential
+   integrity is absent — which matters a lot for Phase 5 integration.
+2. **There is no DELETE policy** — students cannot delete submissions (deny-by-default). Possibly
+   deliberate.
+3. 🔴 **There is no teacher/admin read policy.** Nobody except the authoring student can read an essay
+   through RLS today. **Any teacher-facing or AI-grading read path must therefore be running through
+   `service_role`** (an Edge Function or server), or reading files directly from the world-readable
+   `essays` bucket (§6.1). This is a central open question for Phase 5.
 
-| Concept | GSAT-side status |
-|---------|------------------|
-| Writing prompts | ✅ `essay_questions` table exists (prompt, `essay_type`, `word_count_requirement`, `scoring_criteria`, `sample_essay`, `writing_tips`, `error_type_tags[]`, `topic_tags[]`, `score`) |
-| Student essay text | ❌ **No table anywhere** |
-| Uploaded essay images | ❌ None (only `prompt_image` on the *question*) |
-| AI grading | ❌ Mock only — `Essay.tsx` `setTimeout(2000)` → `MOCK_GRADING_RESPONSE` |
-| Rubric scores | 🟡 **Type shape exists** in `src/data/mock-essay.ts`: `overall_score`, `level`, `summary`, `rubric{TaskResponse, Coherence, LexicalResource, Grammar, Creativity}`, `strengths[]`, `weaknesses[]`, `highlights[{start,end,type,severity,note,suggestion}]`, `suggestions{sentence_fixes[], paragraph_comments[], top_advice[]}` — but **never persisted** |
-| Teacher feedback | ❌ None |
-| Revisions | ❌ None |
-| Writing history | ❌ None |
+### 7.2 Concept coverage — updated
 
-**So the GSAT side has the题目 and the presentation shape, and none of the persistence.**
-That is the ideal position for reuse — but only once Q27–Q29 reveal what already exists.
+| Concept | Found? | Where | Notes |
+|---------|--------|-------|-------|
+| writing submissions | ✅ **Yes** | `essay_submissions` (86 rows) | Column shape unknown |
+| essay text | ❓ Probable | `essay_submissions` | Needs Q02 |
+| uploaded essay images | ✅ **Yes** | `essays` bucket | 🔴 world-readable |
+| AI grading | ❓ Unknown | possibly a column on `essay_submissions` | Needs Q02/Q28 |
+| rubric scores | ❓ Unknown | " | Needs Q02/Q28 |
+| AI feedback | ❓ Unknown | " | Needs Q02/Q28 |
+| teacher feedback | ❓ Unknown — **no teacher read policy exists** | — | Needs Q02 |
+| revisions | ❓ Unknown | — | Needs Q02 |
+| writing prompts | ❓ **Unresolved** | `essay_questions` (GSAT) vs something else | Needs Q02/Q03 |
+| writing history | ❓ Unknown | — | Needs Q02 |
 
-### 7.3 Triage template — complete once Q27/Q28/Q29 return
+### 7.3 Reuse triage
 
-For **each** discovered writing-related object, answer the four questions Task 6 requires:
+| Object | 1. What it does | 2. Can GSAT reuse it? | 3. Missing info | 4. Would a later source/activity reference suffice? |
+|--------|-----------------|-----------------------|-----------------|------------------------------------------------------|
+| `essay_submissions` | Stores student essay submissions | **Very likely yes — this is exactly the table Phase 0 said was missing** | Columns (Q02); is `student_id` text or uuid; where AI feedback lives; whether it FKs `essay_questions` | ✅ **Probably.** Adding nullable `source`, `class_id`, `assignment_id`, `teacher_feedback` looks viable — **pending Q02** |
+| `essays` bucket | Essay image/file uploads | Yes, once §9.2 is fixed | Public flag, path convention, size limits (Q24/Q26) | ✅ Yes — path convention can encode ownership |
 
-| Object | 1. What it appears to do | 2. Can GSAT reuse it? | 3. Missing info before deciding | 4. Would adding a source/activity reference later suffice? |
-|--------|--------------------------|-----------------------|----------------------------------|------------------------------------------------------------|
-| *(pending Q27/Q28/Q29)* | | | | |
+**Standing constraint upheld: no replacement writing tables are proposed.** `essay_submissions` is the
+reuse target. The remaining decision rests entirely on Q02/Q28.
 
-**Concept-coverage checklist to fill in:**
+### 7.4 🆕 A second unaccounted system: assignments / courses / student tasks
 
-| Concept | Equivalent found in Production? | Object name | Reuse verdict |
-|---------|--------------------------------|-------------|---------------|
-| writing submissions | ❓ pending | | |
-| essay text | ❓ pending | | |
-| uploaded essay images | ❓ pending (also **Q24**) | | |
-| AI grading | ❓ pending | | |
-| rubric scores | ❓ pending | | |
-| AI feedback | ❓ pending | | |
-| teacher feedback | ❓ pending | | |
-| revisions | ❓ pending | | |
-| writing prompts | ❓ pending — does it use `essay_questions`, or its own? | | |
-| writing history | ❓ pending | | |
+Q19 and Q29 surfaced a coherent cluster that is **not** the writing app and **not** the GSAT repo:
 
-**Critical question for Q28:** does the writing app's user column reference the **same
-`auth.users`**? Q18 answers this. If yes, integration is mostly additive. If it maintains
-a separate identity table, integration is materially harder and Phase 5 grows.
+```
+users · assignments · assignment_submissions · student_tasks (32 rows)
+courses · course_lessons · user_course_access · user_lesson_progress (21 rows)
+learning_progress_stats · vocabulary_sessions · exam_records · exam_types (9 rows)
+course_requests (17) · admin_course_reminders (5) · user_reminder_preferences (5)
+reminder_logs · notifications (35) · file_download_logs · grammar_tags · tokens (3)
+```
 
-### 7.4 Standing constraint
+This is **an assignment-and-course delivery system that already exists**, with live data. It directly
+overlaps the Domain B feature list (assignment management, completion tracking, course progress,
+vocabulary sessions, learning analytics).
 
-**No replacement tables are to be created.** Per your guardrails and the Phase 0
-principle *prefer reuse over replacement*, the working assumption remains: extend the
-writing app's existing schema with **nullable, additive** references (e.g. a
-`source`/`activity` reference, `class_id`, `assignment_id`) rather than build a parallel
-essay store. ❓ Whether that is sufficient **cannot be judged until Q27–Q29 return.**
+> ❓ **NOT YET CONFIRMED:** whether this belongs to the writing app, an earlier version of this
+> product, or a third application. **This must be answered before any Phase 1 or Phase 4 schema is
+> designed** — otherwise we will build a second assignment system alongside a live one.
 
 ---
 
@@ -435,330 +486,238 @@ essay store. ❓ Whether that is sufficient **cannot be judged until Q27–Q29 r
 
 # ⚠️ RESERVED / DO NOT MODIFY DURING LEARNING PLATFORM DEVELOPMENT
 
-This domain is an **incomplete but reserved** full GSAT mock-examination system. It is
-explicitly **out of scope** for the Learning Platform work and must not be refactored,
-repurposed, or extended to carry general learning activities.
+Unchanged from the previous revision. Reserved objects: `exams`, `vocabulary_questions`,
+`question_groups`, `group_questions`, `translation_questions`, `essay_questions`, `exam_attempts`,
+`exam_user_answers`, `exam_statistics`, `exam-images`, and all `/exam*` routes and code.
 
-### 8.1 Objects belonging to this reserved domain
+### 8.1 ✅ Good news confirmed in round 1
 
-📁 *ONLY OBSERVED IN REPOSITORY:*
+The reserved domain's RLS is **well designed**: publication-gated reads on question tables, owner-scoped
+`exam_attempts`, and `exam_user_answers` correctly chained through `exam_attempts`. **Rule 4 of §8.3 —
+the opt-in RLS repair — is no longer needed.** ⚠️ Conditional on Q08 confirming RLS is enabled.
 
-**Database objects — RESERVED:**
-`exams`, `vocabulary_questions`, `question_groups`, `group_questions`,
-`translation_questions`, `essay_questions`, `exam_attempts`, `exam_user_answers`,
-`exam_statistics`
+### 8.2 ⚠️ Boundary clarification made necessary by §7.4
 
-**Storage — RESERVED:** `exam-images`
-
-**Routes — RESERVED:** `/exams`, `/exam`, `/exam/result/:attemptId`,
-`/exam/explanation/:attemptId`, `/dashboard/result-summary`,
-`/admin/exams`, `/admin/exams/:examId/questions`
-
-**Code — RESERVED:** `src/hooks/useExam.ts`, `src/store/examStore.ts`,
-`src/types/exam.ts`, `src/data/mock-exam.ts`, `src/data/mock-exam-list.ts`,
-`src/pages/Exam*.tsx`, `src/components/exam/**`,
-`src/pages/admin/ExamAdmin.tsx`, `src/pages/admin/ExamQuestionsEditor.tsx`
-
-### 8.2 Known state of this domain (from Phase 0)
-
-📁 The admin authoring side writes real Supabase tables. The student-facing side runs
-entirely on `MOCK_EXAM_PAPER` + `localStorage`. `useExamAttempt()` and
-`useUserExamHistory()` — the only code that touches `exam_attempts` /
-`exam_user_answers` — are imported by **no page**.
-
-❓ *INFERRED / NOT YET CONFIRMED:* `exam_attempts` and `exam_user_answers` are therefore
-predicted to be **empty**. **Q32 confirms.** This matters because it determines whether
-this reserved domain holds real student data that needs protecting today, or none at all.
-
-### 8.3 Boundary rules going forward
-
-1. ❌ Do **not** put general learning activities (daily vocabulary, listening, reading,
-   speaking, writing practice) into `exams` / `exam_attempts` / `exam_user_answers`.
-2. ✅ Daily learning activity belongs to the future `/learn` domain with its **own**
-   tables, per your Domain B definition.
-3. ❌ Do **not** refactor `/exam`, `useExam.ts`, `examStore.ts`, or mock exam behaviour.
-4. ⚠️ **One exception requiring your decision:** if Q07 shows `exam_attempts` has missing
-   or unsafe RLS, that is a *security* fix to a reserved domain. It changes no behaviour
-   and creates no tables. It is proposed in §13 as **opt-in only** — it will not be
-   actioned without your explicit approval, precisely because this domain is reserved.
-5. 🔗 `essay_questions` sits at the **boundary** between Domain A and the future writing
-   integration. Treat it as reserved until §7 discovery says otherwise.
+`exam_records` and `exam_types` are **NOT** part of this reserved domain — they belong to the
+unaccounted cluster and have **RLS disabled** (§9.1). Do not confuse them with `exams` /
+`exam_attempts`. The naming collision is a real hazard for anyone working in this database.
 
 ---
 
 ## 9. Confirmed Security Findings
 
-> ⚠️ **NAMING CAVEAT:** this section is titled "Confirmed" per the required report
-> structure, but **no finding here is confirmed in Production.** Every entry is
-> 📁 repository-verified with a ❓ Production status pending. Severities are
-> **provisional** and assume the repository reflects Production.
-
-Format per Task 9: repository expectation → production reality → impact → affected
-objects → recommended remediation.
+Findings are now genuinely **CONFIRMED IN PRODUCTION** unless marked otherwise.
 
 ---
 
-### 9.1 `admin_grant_premium` has no authorization check — **CRITICAL (provisional)**
+### 9.1 Eleven tables: RLS disabled with full public read/write — **CRITICAL** ✅ CONFIRMED
 
 | Field | Detail |
 |-------|--------|
-| **Repository expectation** | 📁 `add_premium_memberships.sql` defines `admin_grant_premium(p_user_id uuid, p_expires_at timestamptz, p_notes text)` as `SECURITY DEFINER`. Its body reads `auth.uid()` **only to record `granted_by`** — it never calls `is_admin()` or any other check. Verified: the function body contains no authorization branch. |
-| **Production reality** | ❓ **NOT YET CONFIRMED — Q15** (`body_mentions_is_admin`) and **Q16** (is `EXECUTE` granted to `authenticated`?) |
-| **Impact** | If Production matches, **any authenticated user can grant themselves permanent Premium** with a single `supabase.rpc('admin_grant_premium', { p_user_id: <own uid> })`. `premium_memberships` has no INSERT policy, so this function is the only gate — and it has none. Direct revenue loss; paywalled "精華" packs bypassed. |
-| **Affected objects** | `public.admin_grant_premium`, `public.premium_memberships`, `public.claim_pack_with_token` (premium branch), `src/pages/admin/UsersAdmin.tsx:140` |
-| **Recommended remediation** | `CREATE OR REPLACE` with an `IF NOT is_admin() THEN RETURN json_build_object('success',false,'error','UNAUTHORIZED'); END IF;` guard — **signature unchanged**, so no caller breaks. Then `REVOKE EXECUTE … FROM anon, authenticated` and grant only to `service_role` if the admin UI can route through it. Audit existing rows via **Q33** for self-grants (`granted_by = user_id` or `granted_by IS NULL`). **Phase 0.5B — do not action now.** |
+| **Repository expectation** | 📁 None of these tables appear in the repository at all. No expectation existed. |
+| **Production reality** | ✅ **CONFIRMED.** Q29: `rls_enabled = false` for `users`, `assignments`, `assignment_submissions`, `student_tasks`, `courses`, `course_lessons`, `user_course_access`, `learning_progress_stats`, `vocabulary_sessions`, `exam_records`, `exam_types`. Q10: `anon` and `authenticated` both hold `DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE`. Q07: **zero policies** on any of them. |
+| **Impact** | **Unauthenticated total compromise of these tables.** The anon key ships in the browser bundle of every deployed site. Anyone can `SELECT *` from `public.users` (identity data), `student_tasks` (32 rows of live student work), `assignments`, `assignment_submissions`, and `learning_progress_stats` — and can equally `UPDATE`, `DELETE` or `TRUNCATE` them. If any of these hold student PII, this is a reportable personal-data exposure, and minors are plausibly involved. |
+| **Affected objects** | The 11 tables above; `anon` and `authenticated` roles |
+| **Recommended remediation** | ⚠️ **Do not simply `ENABLE ROW LEVEL SECURITY`** — with zero policies that switches the tables to deny-all and will break whichever application owns them. Correct order: **(1)** identify the owning application (§7.4); **(2)** with its maintainer, author policies mirroring the ownership model already used on `essay_submissions`/`user_lesson_progress`; **(3)** enable RLS and policies together in one transaction; **(4)** verify the owning app still works. If ownership cannot be established quickly, an emergency stop-gap is `REVOKE ALL ON <table> FROM anon;` — this closes anonymous access while leaving `authenticated` paths intact, and is far less likely to break a logged-in application. **Phase 0.5B item B0 — highest priority.** |
 
 ---
 
-### 9.2 `admin_revoke_premium` has no authorization check — **CRITICAL (provisional)**
+### 9.2 `essays` storage bucket — world-readable, any-user-writable — **CRITICAL** ✅ CONFIRMED
 
 | Field | Detail |
 |-------|--------|
-| **Repository expectation** | 📁 Same file. `admin_revoke_premium(p_membership_id uuid)` is `SECURITY DEFINER` and its body is an unconditional `UPDATE premium_memberships SET is_active = false WHERE id = p_membership_id`. It does not even read `auth.uid()`. |
-| **Production reality** | ❓ **NOT YET CONFIRMED — Q15, Q16** |
-| **Impact** | If Production matches, **any authenticated user can revoke any other user's Premium** by guessing/enumerating a membership id. Denial of paid service against arbitrary customers. Note `premium_memberships` SELECT is own-row + admin, which limits *discovery* of ids — but the write itself is ungated. |
-| **Affected objects** | `public.admin_revoke_premium`, `public.premium_memberships`, `src/pages/admin/UsersAdmin.tsx:158` |
-| **Recommended remediation** | Identical pattern to §9.1. **Phase 0.5B.** |
+| **Repository expectation** | 📁 The repository does not know this bucket exists. |
+| **Production reality** | ✅ **CONFIRMED (Q07, `storage.objects`).** `essays_select_policy` applies to `{public}` with `USING (bucket_id = 'essays')`. The insert/update/delete policies apply to `{authenticated}` with the same bucket-only predicate. **No policy contains an owner or path-ownership check.** |
+| **Impact** | Any visitor can enumerate and download **every** essay file. Any authenticated user can overwrite or delete **any** other student's file. Paired with `essay_submissions` (86 real submissions), this is student-work exposure plus a destructive-write path. It may also be how teacher/AI read access is currently achieved (§7.1), so a naive fix could break grading. |
+| **Affected objects** | `storage.objects` policies `essays_select_policy`, `essays_insert_policy`, `essays_update_policy`, `essays_delete_policy`; `essays` bucket; `public.essay_submissions` |
+| **Recommended remediation** | Add an ownership predicate — conventionally `(storage.foldername(name))[1] = auth.uid()::text` — to insert/update/delete, and restrict select to owner plus an explicit teacher/admin path. **Before changing anything, confirm how the grading pipeline reads these files** (Q24 for the bucket's `public` flag, plus the writing app's server code). If the bucket itself is marked public, object policies are bypassed for reads and the bucket flag must change too. **Phase 0.5B — coordinate with the writing app's maintainer.** |
 
 ---
 
-### 9.3 `invite_tokens` may be world-enumerable — **HIGH (provisional)**
+### 9.3 `admin_grant_premium` / `admin_revoke_premium` — no authorization, `EXECUTE` to PUBLIC — **CRITICAL** ✅ CONFIRMED
 
 | Field | Detail |
 |-------|--------|
-| **Repository expectation** | 📁 `supabase/schema.sql`: `CREATE POLICY "Anyone can validate tokens" ON invite_tokens FOR SELECT USING (is_active = true);` — no `auth.uid()` restriction, no single-row constraint. |
-| **Production reality** | ❓ **NOT YET CONFIRMED — Q07** (does the policy exist?) **plus Q10** (do `anon`/`authenticated` hold SELECT?). **Both are required** — the policy is inert without the grant. |
-| **Impact** | If both hold, anyone with the public anon key — including logged-out visitors — can `SELECT *` every active invite token, including codes for premium packs. Complete bypass of the invite-distribution model. |
-| **Affected objects** | `public.invite_tokens`, `src/pages/ClaimPack.tsx`, `src/pages/admin/TokensAdmin.tsx` |
-| **Recommended remediation** | Drop the blanket-read policy; keep an owner-scoped SELECT for `TokensAdmin`. Token validation already runs through the `SECURITY DEFINER` `claim_pack_with_token`, so no client needs blanket read. ⚠️ Verify in Q07/Q10 that no other application (**the writing app shares this DB**) depends on it. **Phase 0.5B.** |
+| **Repository expectation** | 📁 Predicted: `SECURITY DEFINER` with no `is_admin()` check; assumed reachable by authenticated users. |
+| **Production reality** | ✅ **CONFIRMED, and worse than predicted.** Q15 full bodies contain no authorization branch — `admin_grant_premium` reads `auth.uid()` only to populate `granted_by`; `admin_revoke_premium` does not call it at all. `execute_acl` is `{=X/postgres, …, anon=X/postgres, authenticated=X/postgres, …}` — the leading `=X` grants EXECUTE to **PUBLIC**, and `anon` is granted explicitly. Neither function sets `search_path`. |
+| **Impact** | **Any user — including an unauthenticated one — can grant permanent Premium to any user id**, or revoke any membership by id. Anonymous grants land with `granted_by = NULL`, which is also the audit signature to hunt for. Direct revenue loss and denial of paid service. |
+| **Affected objects** | `public.admin_grant_premium`, `public.admin_revoke_premium`, `public.premium_memberships`, `public.claim_pack_with_token(text,text)` (premium branch), `src/pages/admin/UsersAdmin.tsx:140,158` |
+| **Recommended remediation** | `CREATE OR REPLACE` both with an `IF NOT is_admin() THEN RETURN … 'UNAUTHORIZED'` guard **and** `SET search_path = public, pg_temp` — signatures unchanged, so `UsersAdmin.tsx` keeps working. Then `REVOKE EXECUTE ON FUNCTION … FROM PUBLIC, anon;`. Finally audit `premium_memberships` for `granted_by IS NULL` or `granted_by = user_id` (optional query Q33). **Phase 0.5B — B1/B2.** |
 
 ---
 
-### 9.4 `site_settings` write access unknown — **HIGH (provisional)**
+### 9.4 `invite_tokens` (and `tokens`) enumerable by anon — **HIGH** ✅ CONFIRMED
 
 | Field | Detail |
 |-------|--------|
-| **Repository expectation** | 📁 **No DDL exists for this table** — only `ALTER TABLE` statements in `add_current_phase_to_site_settings.sql`. Its RLS is entirely unknown. `src/hooks/useSiteSettings.ts` performs a direct client-side `UPDATE site_settings SET current_phase = …` with the anon key. |
-| **Production reality** | ❓ **NOT YET CONFIRMED — Q07 + Q10 + Q08** (is RLS even enabled?) |
-| **Impact** | If UPDATE is not admin-restricted, **any authenticated user can change the site's `current_phase` globally**, unlocking every `PhaseGate`-protected feature (exams, dashboard, essay) for **all users** — or setting phase to 0 and disabling the product for everyone. It also controls `navigation_tabs` for the whole site. This is global-configuration tampering. |
-| **Affected objects** | `public.site_settings`, `src/contexts/PhaseContext.tsx`, `src/hooks/useSiteSettings.ts`, `src/pages/admin/SiteSettings.tsx`, every `PhaseGate` route |
-| **Recommended remediation** | Confirm first. If unrestricted: keep public SELECT (`PhaseContext` needs it pre-auth) and restrict INSERT/UPDATE/DELETE to `is_admin()`. **Phase 0.5B.** |
+| **Repository expectation** | 📁 `schema.sql` policy `"Anyone can validate tokens" USING (is_active = true)`. |
+| **Production reality** | ✅ **CONFIRMED (Q07 + Q10).** The policy exists verbatim, applies to `{public}`, and `anon` holds `SELECT`. A second, redundant policy (`Logged in users can lookup active tokens`) is also PERMISSIVE and therefore cannot narrow it. The separate `tokens` table (3 rows) carries the identical pattern. |
+| **Impact** | Any visitor can list every active invite token, including codes gating `is_premium` packs — bypassing the invite distribution model entirely. |
+| **Affected objects** | `public.invite_tokens`, `public.tokens`, `src/pages/ClaimPack.tsx`, `src/pages/admin/TokensAdmin.tsx` |
+| **Recommended remediation** | Drop `Anyone can validate tokens` and the redundant logged-in policy. Retain `Users can view own tokens` (owner) and `Admin full access` for `TokensAdmin`. Token validation already runs entirely inside the `SECURITY DEFINER` `claim_pack_with_token`, so no client needs blanket read. ⚠️ Confirm the writing app does not read `invite_tokens`/`tokens`. **Phase 0.5B — B6.** |
 
 ---
 
-### 9.5 `claim_pack_with_token` — conflicting definitions, live version unknown — **HIGH (provisional)**
+### 9.5 `claim_pack_with_token` silently ignores `p_site` — **HIGH** ✅ CONFIRMED (functional defect)
 
 | Field | Detail |
 |-------|--------|
-| **Repository expectation** | 📁 Two different bodies share the signature `(text, text)`; a third 1-arg overload also exists. Full analysis in §5.1. |
-| **Production reality** | ❓ **NOT YET CONFIRMED — Q15** (which body is live, and are both arities present?) and **Q30** (does an authoritative migration order exist?) |
-| **Impact** | Exactly one of two defects is live: **(a)** premium paywall silently absent on pack claiming, or **(b)** `site` never written, breaking multi-site claims and the `UNIQUE(user_id, pack_id, site)` semantics. Additionally, if both arities exist, a future 1-arg call raises `function is not unique`. |
-| **Affected objects** | `public.claim_pack_with_token` (both arities), `public.user_pack_claims`, `public.premium_memberships`, `src/pages/ClaimPack.tsx:64` |
-| **Recommended remediation** | Determine live version via Q15, then `CREATE OR REPLACE` a single reconciled 2-arg body containing **both** the premium check and the site logic; consider dropping the 1-arg overload **only after** confirming the writing app does not call it. **Phase 0.5B.** |
+| **Repository expectation** | 📁 Two conflicting definitions; the live one unknown. |
+| **Production reality** | ✅ **RESOLVED (Q15).** The premium-checking version is live. `p_site` is accepted and **never referenced**; the INSERT omits `site`; the duplicate check omits `site`. Both the 1-arg and 2-arg overloads exist. |
+| **Impact** | Every claim writes `site` as the column default `'gsat'`. `useUserPacks.ts` filters `.eq('site', currentSite)`, so **a pack claimed on the TOEIC or Kids site immediately disappears from that site's UI**. Multi-site claiming is broken in Production now. The `UNIQUE(user_id, pack_id, site)` constraint is also never exercised as designed. Latent second issue: with both overloads present, a future 1-argument call raises `function is not unique`. |
+| **Affected objects** | `public.claim_pack_with_token` (both arities), `public.user_pack_claims`, `src/pages/ClaimPack.tsx:64`, `src/hooks/useUserPacks.ts` |
+| **Recommended remediation** | `CREATE OR REPLACE` the 2-arg version merging **both** guarantees: keep the premium check, restore `AND site = p_site` in the duplicate check, and add `site` to the INSERT. Add `SET search_path`. Consider dropping the 1-arg overload **only after** confirming no cross-application caller. ⚠️ Note this is a **behaviour change** — existing rows are already mis-tagged `'gsat'` and would need a separate, deliberate data-correction decision. **Phase 0.5B — B8.** |
 
 ---
 
-### 9.6 Three divergent admin authorization systems — **HIGH (provisional)**
+### 9.6 Four parallel admin authorization systems — **HIGH** ✅ CONFIRMED
 
 | Field | Detail |
 |-------|--------|
-| **Repository expectation** | 📁 Three independent mechanisms: **(1)** `app_admins` table — queried by `src/hooks/useAdmin.ts:78`, **no DDL in repo**; **(2)** `is_admin()` — hard-coded `email = 'nonstopjazz@gmail.com'`; **(3)** inline hard-coded email in three `level_words` RLS policies. |
-| **Production reality** | ❓ **NOT YET CONFIRMED — Q21** (does `app_admins` exist?), **Q15** (`is_admin` body), **Q07** (`level_words` policies) |
-| **Impact** | These are **genuinely different authorization systems**, and Task 7F asks precisely this. Adding a user to `app_admins` unlocks only the frontend UI — it grants **no** SQL-layer authority. Conversely the hard-coded email holds full SQL authority regardless of `app_admins`. Consequences: (a) no real second administrator can exist; (b) if `app_admins` does not exist in Production, `useAdmin` fails closed and **all** admin UI is inaccessible except by that email; (c) single point of failure tied to one personal Google account; (d) an operator who "removes" an admin from `app_admins` has not actually revoked anything. |
-| **Affected objects** | `public.app_admins`, `public.is_admin`, `public.level_words` policies, `public.admin_get_all_users`, `public.admin_get_user_stats`, `premium_memberships` admin policy, `src/hooks/useAdmin.ts`, `src/components/auth/RequireAdmin.tsx` |
-| **Recommended remediation** | Phase 1 C3–C7: single `user_roles` source; `CREATE OR REPLACE FUNCTION is_admin()` reading it with **signature unchanged** so all 8 call sites and RLS policies inherit it for free; migrate `app_admins` rows in; replace inline email policies with `is_admin()`. **Design in Phase 1, after 0.5B.** |
+| **Repository expectation** | 📁 Three mechanisms predicted. |
+| **Production reality** | ✅ **CONFIRMED — there are four** (§3.2). The fourth, `raw_user_meta_data ->> 'role' = 'admin'` on `admin_course_reminders` and `reminder_logs`, was not visible from the repository. |
+| **Impact** | Adding a user to `app_admins` grants **only** `site_settings` UPDATE — nothing else. `is_admin()` remains a single hard-coded personal email, so no genuine second administrator can exist. Revoking admin requires touching four unrelated places, and it is easy to believe access was removed when it was not. **Additionally, mechanism 4 derives authority from user metadata**, which on some Supabase sign-up paths is user-influenced. ❓ Whether a user can self-assign `role: admin` in this project is **NOT YET CONFIRMED** and warrants targeted testing — if it is possible, mechanism 4 becomes CRITICAL. |
+| **Affected objects** | `public.is_admin`, `public.app_admins`, `level_words` policies, `blog_posts`/`blog_categories` policies, `admin_course_reminders`/`reminder_logs` policies, `storage.objects` blog-image policies, `src/hooks/useAdmin.ts` |
+| **Recommended remediation** | Phase 1: single `user_roles` source; `CREATE OR REPLACE FUNCTION is_admin()` reading it with **signature unchanged**, which converges mechanism 1 for free; then migrate mechanisms 2–4 onto `is_admin()`. **Test mechanism 4's self-assignability during Phase 0.5B.** |
 
 ---
 
-### 9.7 🆕 All `SECURITY DEFINER` functions lack `SET search_path` — **HIGH (provisional)**
-
-**This finding is new in Phase 0.5A and does not appear in `PLATFORM_AUDIT.md`.**
+### 9.7 Six `SECURITY DEFINER` functions lack `SET search_path` — **MEDIUM** ✅ CONFIRMED *(scope corrected)*
 
 | Field | Detail |
 |-------|--------|
-| **Repository expectation** | 📁 **Verified:** `grep -rn "search_path" supabase/` returns **zero matches** across all migrations and `schema.sql`. Meanwhile 19 `SECURITY DEFINER` declarations exist across 8 files (`add_premium_memberships.sql` ×5, `create_user_profiles_table.sql` ×5, `create_user_stats_table.sql` ×2, `create_user_word_progress_table.sql` ×2, `unify_word_progress_tracking.sql` ×2, `add_site_to_user_pack_claims.sql` ×1, `update_claim_pack_function.sql` ×1, `schema.sql` ×1). |
-| **Production reality** | ❓ **NOT YET CONFIRMED — Q13** `proconfig_search_path` column (`(none)` = unhardened). |
-| **Impact** | A `SECURITY DEFINER` function executes with the **owner's** privileges (typically `postgres`). With a mutable `search_path`, unqualified references inside the body (`user_pack_claims`, `packs`, `auth.users`, and operators) resolve against the **caller's** `search_path`. A user who can create objects in a schema that precedes the intended one can shadow a table or operator and have it executed with owner privileges. This is the classic `SECURITY DEFINER` escalation pattern, and Supabase's own linter flags it as `function_search_path_mutable`. Exploitability depends on whether `authenticated` can create objects in any schema on the `search_path` — ❓ **Q12** and the `public` schema `CREATE` grant determine this, so severity may drop to MEDIUM once confirmed. |
-| **Affected objects** | All 19 `SECURITY DEFINER` functions, notably `is_admin`, `admin_grant_premium`, `admin_revoke_premium`, `claim_pack_with_token`, `upsert_user_profile`, `upsert_word_progress` |
-| **Recommended remediation** | Append `SET search_path = public, pg_temp` to each `SECURITY DEFINER` function via `CREATE OR REPLACE` (or `ALTER FUNCTION … SET search_path`). **Signatures unchanged; behaviour unchanged; zero callers affected** — this is one of the cheapest high-value hardening steps available. Also verify `REVOKE CREATE ON SCHEMA public FROM PUBLIC`. **Phase 0.5B.** |
+| **Repository expectation** | 📁 I previously reported **19 functions, zero hardened**, based on `grep -rn "search_path" supabase/` returning nothing. |
+| **Production reality** | ✅ **CONFIRMED but narrower — my repository-derived scope was wrong.** Production has been hardened out-of-band: 12 of 18 functions carry `SET search_path TO 'public'`. **Six do not**: `admin_grant_premium`, `admin_revoke_premium`, `claim_pack_with_token(text,text)`, `get_all_word_progress`, `is_premium_member`, `upsert_word_progress(8-arg)`. |
+| **Impact** | Classic `SECURITY DEFINER` escalation: unqualified identifiers resolve against the caller's `search_path`, so an attacker able to create objects in an earlier schema could shadow a table or operator and have it run with the owner's privileges. Exploitability depends on whether `authenticated` can create objects in any schema on the path — ❓ needs Q12 and the `public` schema `CREATE` grant, which is why this sits at MEDIUM rather than HIGH. The unhappy detail: the unhardened set contains precisely the two ungated admin functions and the live claim function. |
+| **Affected objects** | The six functions above |
+| **Recommended remediation** | `ALTER FUNCTION … SET search_path = public, pg_temp` on all six — behaviour-identical, no caller affected, and it folds naturally into the B1/B2/B8 rewrites. Also verify `REVOKE CREATE ON SCHEMA public FROM PUBLIC`. **Phase 0.5B — B5.** |
 
 ---
 
-### 9.8 TTS endpoints execute with `service_role` and no authentication — **CRITICAL (repository-confirmed)**
+### 9.8 `notifications` insert policy applies to everyone — **MEDIUM** ✅ CONFIRMED
 
-**Task 8. This is repository-side configuration and required no Production access — the
-repository *is* authoritative for deployed application code.**
-
-| Field | Detail |
-|-------|--------|
-| **Repository expectation** | 📁 **Verified in full.** Two independent implementations of the same feature: <br>**(a)** `api/generate-pack-audio.ts` (Vercel Function) — reads `SUPABASE_SERVICE_ROLE_KEY`, creates a service-role client, and the handler's only gate is `if (req.method !== 'POST')`. **No JWT check, no session check, no admin check, no shared secret.** <br>**(b)** `supabase/functions/generate-pack-audio/index.ts` (Edge Function) — same logic, `service_role` client, `Access-Control-Allow-Origin: *`, and **no authorization check whatsoever**. There is **no `supabase/config.toml`**, so its deployed `verify_jwt` setting is unknown. ⚠️ Even if `verify_jwt = true`, that only requires *some* valid JWT — **any logged-in user still passes**, because the function performs no admin check of its own. |
-| **Production reality** | ❓ Deployment state NOT CONFIRMED (is the Vercel route live? is the Edge Function deployed? what is its `verify_jwt`?). The **code** is confirmed. |
-| **Impact** | An unauthenticated `POST {pack_id, force: true}` can: (1) burn unbounded **Google Cloud TTS** quota — a direct, uncapped billing attack, amplified by `force: true` which re-synthesises every item and by the Vercel version's 5-way concurrency; (2) overwrite arbitrary objects in the `pack-audio` bucket (`upsert: true`); (3) issue `service_role` `UPDATE`s against `pack_items`, **bypassing RLS entirely**. |
-| **Affected objects** | `api/generate-pack-audio.ts`, `supabase/functions/generate-pack-audio/index.ts`, `pack-audio` bucket, `public.pack_items`, Google Cloud TTS billing |
-| **Recommended remediation** | Require a caller JWT, resolve it to a user, and assert `is_admin()` before any work. Add per-pack rate limiting and drop the wildcard CORS on the Edge Function. Then **delete one of the two implementations** — maintaining two divergent copies of a privileged endpoint is itself a risk. **Phase 0.5B.** |
+Q07: `Service role can insert notifications` — `roles = {public}`, `INSERT WITH CHECK (true)`. The name
+claims service-role scope; the policy grants it to all, `anon` included. Any user can insert arbitrary
+notifications addressed to any user. Read and update are correctly owner-scoped.
+**Remediation:** restrict to `{service_role}`, or add `WITH CHECK (auth.uid() = user_id)`.
 
 ---
 
-### 9.9 Daily-reminder cron endpoint is unauthenticated when `CRON_SECRET` is unset — **HIGH (repository-confirmed)**
+### 9.9 Broken `upsert_word_progress` 6-arg overload — **MEDIUM** ✅ CONFIRMED
 
-| Field | Detail |
-|-------|--------|
-| **Repository expectation** | 📁 **Verified.** `api/send-daily-reminders.ts`: <br>`const cronSecret = process.env.CRON_SECRET;`<br>`if (cronSecret && req.headers['authorization'] !== \`Bearer ${cronSecret}\`) { return 401 }`<br>The guard is conditional on the secret existing. **If `CRON_SECRET` is unset, verification is skipped entirely** and the endpoint is fully open. It also accepts **both `GET` and `POST`**, so a plain browser request triggers it. The handler then uses `SUPABASE_SERVICE_ROLE_KEY`. |
-| **Production reality** | ❓ Is `CRON_SECRET` actually set in the Vercel project? **NOT CONFIRMED** — cannot read Vercel env from here. |
-| **Impact** | If unset: anyone can repeatedly trigger a **push notification broadcast to every subscribed user**, at will. Notification spam, user churn, and possible push-provider throttling. The handler also reads `push_subscriptions` and `user_stats` with `service_role`, bypassing RLS, and deletes subscription rows on 410/404. |
-| **Affected objects** | `api/send-daily-reminders.ts`, `vercel.json` cron (`0 12 * * *`), `public.push_subscriptions`, `public.user_stats` |
-| **Recommended remediation** | Fail closed: `if (!cronSecret \|\| req.headers.authorization !== …) return 401`. Restrict to Vercel's cron invocation. Verify `CRON_SECRET` is set in Production. **Phase 0.5B.** |
+Q15 shows both overloads. The 6-arg body's `ON CONFLICT (user_id, word_id)` targets a constraint that
+`unify_word_progress_tracking.sql` dropped, so **any call to it fails at runtime**. The client always
+passes 8 arguments, so the live path is unaffected — but it is a landmine for future callers and a
+source of confusing errors. **Remediation:** `DROP FUNCTION public.upsert_word_progress(text, integer, bigint, integer, integer, bigint)`
+after confirming no cross-application caller.
 
 ---
 
-### 9.10 Unprotected result-summary route — **MEDIUM (repository-confirmed)**
+### 9.10 Divergent SRS semantics between the two progress systems — **MEDIUM** ✅ CONFIRMED
 
-📁 `src/App.tsx` registers `/dashboard/result-summary` with **no** `ProtectedRoute`,
-`RequireAdmin`, or `PhaseGate` — the only internal page with no gate. Today it renders
-inline mock data, so present impact is low. It becomes a data-leak the moment it is
-connected to real results. **Remediation:** wrap in `ProtectedRoute` + `PhaseGate(2)`.
-Note: this route is in the **reserved** Domain A (§8), so treat as opt-in.
+§5.3. Mastery caps (5 vs 6), "mastered" thresholds (4 vs 4-or-5), and time representations
+(`TIMESTAMPTZ` vs Unix-ms `BIGINT`) all differ, while both systems track pack items.
+**Remediation:** not a Phase 0.5B item — defer to Phase 3, where analytics forces the question.
 
 ---
 
-### 9.11 Invite tokens generated with `Math.random()` — **MEDIUM (repository-confirmed)**
+### 9.11 TTS endpoints: `service_role`, no authentication — **CRITICAL** 📁 repository-confirmed
 
-📁 `src/pages/admin/TokensAdmin.tsx:91` builds tokens with `Math.random()`, which is not
-cryptographically secure and is predictable given enough samples. The SQL helper
-`generate_short_token()` exists but is unused — and its parameter is named `length`,
-shadowing the built-in `length()` it calls internally (❓ whether that actually errors is
-unconfirmed; **Q14** shows the live body). Combined with §9.3, predictable *and*
-enumerable tokens compound. **Remediation:** use `crypto.getRandomValues()`, or a
-server-side generator with a fixed `search_path`.
-
----
-
-### 9.12 Dev-mode panel reachable in Production — **LOW (repository-confirmed)**
-
-📁 `src/components/dev/DevPhaseSwitcher.tsx` documents itself as *"completely removed in
-production builds"*, but `isDevModeEnabled()` explicitly supports `?devmode=true`, which
-persists `dev_mode_enabled` to `localStorage`. Impact is limited — it only simulates phase
-visually and does not alter routing or server authorization. **Remediation:** guard on
-`import.meta.env.DEV` alone.
+Unchanged from the previous revision. `api/generate-pack-audio.ts` and
+`supabase/functions/generate-pack-audio/index.ts` both instantiate a `service_role` client with no
+auth guard whatsoever; the Edge Function additionally sets `Access-Control-Allow-Origin: *`. Even if
+`verify_jwt` is on, it only requires *some* valid JWT — no admin check exists in either body.
+❓ Deployment state (is the route live? is the function deployed?) remains unconfirmed.
+**Remediation:** require a caller JWT, assert `is_admin()`, rate-limit per pack, drop wildcard CORS,
+and delete one of the two duplicate implementations. **Phase 0.5B — B3.**
 
 ---
 
-### 9.13 Nine legacy admin routes gated only by `!IS_PRODUCTION` — **LOW / INFORMATIONAL**
+### 9.12 Cron endpoint open when `CRON_SECRET` is unset — **HIGH** 📁 repository-confirmed
 
-📁 `src/App.tsx` renders 9 legacy `/admin/*` routes without `RequireAdmin`, relying solely
-on the build-time `IS_PRODUCTION` flag. Correct in production builds; a hazard in any
-preview/staging deploy built with `build:dev`. **Remediation:** wrap in `RequireAdmin`
-regardless of build mode.
-
----
-
-### 9.14 `.gitignore` omits `.env` — **INFORMATIONAL (downgraded)**
-
-📁 `.gitignore` covers `*.local` but not `.env`. **However, verification confirms no
-`.env` has ever been committed** (§0.2) and no secret appears anywhere in history. Purely
-preventative. **Remediation:** add `.env` and `.env*.local`.
+Unchanged. `api/send-daily-reminders.ts` guards with `if (cronSecret && …)`, so an unset secret skips
+verification entirely; it also accepts `GET`. ❓ Whether `CRON_SECRET` is set in Vercel is unconfirmed.
+**Remediation:** fail closed (`if (!cronSecret || …) return 401`), reject `GET`. **Phase 0.5B — B4.**
 
 ---
 
-### 9.15 Findings summary
+### 9.13 Lower-severity items (unchanged)
 
-| # | Finding | Provisional severity | Evidence basis | Confirming query |
-|---|---------|---------------------|----------------|------------------|
-| 9.1 | `admin_grant_premium` unauthenticated | **CRITICAL** | 📁 repo | Q15, Q16 |
-| 9.2 | `admin_revoke_premium` unauthenticated | **CRITICAL** | 📁 repo | Q15, Q16 |
-| 9.8 | TTS endpoints: `service_role`, no auth | **CRITICAL** | 📁 repo (confirmed) | deployment check |
-| 9.3 | `invite_tokens` enumerable | **HIGH** | 📁 repo | Q07 + Q10 |
-| 9.4 | `site_settings` global config writable | **HIGH** | ❓ unknown DDL | Q07 + Q10 + Q08 |
-| 9.5 | `claim_pack_with_token` ambiguous | **HIGH** | 📁 repo conflict | Q15, Q30 |
-| 9.6 | Three admin authorization systems | **HIGH** | 📁 repo | Q21, Q15, Q07 |
-| 9.7 | 🆕 No `SET search_path` on 19 DEFINER fns | **HIGH** | 📁 repo (confirmed) | Q13, Q12 |
-| 9.9 | Cron endpoint open if secret unset | **HIGH** | 📁 repo (confirmed) | Vercel env check |
-| 9.10 | Unprotected result-summary route | MEDIUM | 📁 repo (confirmed) | — |
-| 9.11 | `Math.random()` tokens | MEDIUM | 📁 repo (confirmed) | Q14 |
-| 9.12 | Dev panel in Production | LOW | 📁 repo (confirmed) | — |
-| 9.13 | Legacy admin routes | LOW | 📁 repo (confirmed) | — |
-| 9.14 | `.gitignore` omits `.env` | INFORMATIONAL | 📁 repo (confirmed) | — |
+| # | Finding | Severity | Basis |
+|---|---------|----------|-------|
+| a | `/dashboard/result-summary` has no route gate | MEDIUM | 📁 repo |
+| b | Invite tokens generated with `Math.random()` | MEDIUM | 📁 repo |
+| c | `blog_page_views` / `blog_shares` accept unauthenticated inserts | LOW | ✅ Q07 |
+| d | Dev-mode panel reachable in Production via `?devmode=true` | LOW | 📁 repo |
+| e | Nine legacy admin routes gated only by `!IS_PRODUCTION` | LOW | 📁 repo |
+| f | `.gitignore` omits `.env` (no secret ever committed) | INFORMATIONAL | 📁 repo |
+| g | `site_settings` has no INSERT/DELETE policy | INFORMATIONAL | ✅ Q07 |
 
-**Three CRITICAL and six HIGH findings are outstanding.** Six are fully confirmed from the
-repository; the rest await Production confirmation.
+---
+
+### 9.14 Findings summary
+
+| # | Finding | Severity | Evidence |
+|---|---------|----------|----------|
+| 9.1 | 11 tables: RLS off + full anon grants | 🔴 **CRITICAL** | ✅ CONFIRMED |
+| 9.2 | `essays` bucket world-readable / any-user-writable | 🔴 **CRITICAL** | ✅ CONFIRMED |
+| 9.3 | Premium grant/revoke ungated, EXECUTE to PUBLIC | 🔴 **CRITICAL** | ✅ CONFIRMED |
+| 9.11 | TTS endpoints `service_role`, no auth | 🔴 **CRITICAL** | 📁 repo |
+| 9.4 | `invite_tokens` / `tokens` enumerable by anon | 🟠 HIGH | ✅ CONFIRMED |
+| 9.5 | `claim_pack_with_token` ignores `p_site` | 🟠 HIGH | ✅ CONFIRMED |
+| 9.6 | Four admin authorization systems | 🟠 HIGH | ✅ CONFIRMED |
+| 9.12 | Cron endpoint open if secret unset | 🟠 HIGH | 📁 repo |
+| 9.7 | 6 functions lack `search_path` | 🟡 MEDIUM | ✅ CONFIRMED |
+| 9.8 | `notifications` insert open to all | 🟡 MEDIUM | ✅ CONFIRMED |
+| 9.9 | Broken `upsert_word_progress` overload | 🟡 MEDIUM | ✅ CONFIRMED |
+| 9.10 | Divergent SRS semantics | 🟡 MEDIUM | ✅ CONFIRMED |
+| 9.13a–b | Route gate, weak token RNG | 🟡 MEDIUM | 📁 repo |
+| 9.13c–g | Assorted | 🟢 LOW / INFO | mixed |
+
+**Four CRITICAL and four HIGH findings outstanding.**
 
 ---
 
 ## 10. Repository vs Production Discrepancies
 
-> **Status: NOT COMPARABLE — no Production side to compare against.**
-
-The comparison table below lists **every discrepancy the discovery output must be checked
-for.** It is the primary work item when Q01–Q31 output arrives.
-
-| # | Repository state | Discrepancy to test | Query |
-|---|------------------|---------------------|-------|
-| 1 | 20 tables referenced in code with **no DDL** | Do they exist? Same columns? RLS? | Q01, Q02, Q07 |
-| 2 | 3 RPCs called with **no DDL** (`update_pack_item_progress`, `get_pack_statistics`, `get_weak_words`) | Do they exist? What do they do? Are they `SECURITY DEFINER`? | Q14, Q13 |
-| 3 | `claim_pack_with_token`: 2 conflicting bodies + 2 arities | Which is live? Both arities present? | **Q15**, Q30 |
-| 4 | `app_admins` queried but no DDL | Does it exist at all? | **Q21** |
-| 5 | Migration files have **no timestamps** | Did CLI migration tracking ever exist? | **Q30** |
-| 6 | Zero `SET search_path` in repo | Does Production match, or was it hardened out-of-band? | **Q13** |
-| 7 | `unify_word_progress_tracking.sql` creates a `COALESCE` UNIQUE **INDEX** | Does it exist? (constraints view will miss it) | **Q04** |
-| 8 | `exam_statistics`, `blog_post_stats` assumed views | Views, matviews, or tables? | Q05 |
-| 9 | No `auth.users` trigger anywhere | Does one exist in Production? | **Q17** |
-| 10 | 4 storage buckets referenced | Do more exist (writing/essay/submissions)? Public? | **Q24**, Q25 |
-| 11 | Writing app entirely absent from repo | What does it actually own? | **Q27, Q28, Q29** |
-| 12 | No teacher/class/parent/role concepts | Has the writing app already added any? | **Q19, Q20** |
-| 13 | Phase 0 predicts `exam_attempts` is empty | Confirm | Q32 |
-| 14 | RLS policy texts for 10 tables | Do Production policies match the repo verbatim? | **Q07** |
-| 15 | Grants never specified anywhere in repo | What do `anon`/`authenticated` actually hold? | **Q10** |
-
-> ⚠️ **Item 15 deserves emphasis:** the repository contains **no `GRANT` statement at
-> all**. Every table's real exposure to `anon` therefore depends on Supabase defaults and
-> out-of-band Dashboard changes that are **completely invisible from this repository**.
-> Q10 is not optional.
+| # | Repository | Production | Verdict |
+|---|-----------|------------|---------|
+| 1 | 30 tables known | **~52 tables** — 22 unaccounted | 🔴 Repo describes ~60% of the database |
+| 2 | `app_admins` unverifiable | ✅ Exists, one self-read SELECT policy | Resolved |
+| 3 | `claim_pack_with_token` ambiguous | ✅ Premium version live; `p_site` ignored | Resolved (§9.5) |
+| 4 | 3 RPCs undefined | ✅ All exist, all hardened | Resolved (§5.3) |
+| 5 | Zero `search_path` anywhere | 12 of 18 hardened | **Production ahead of repo** |
+| 6 | `site_settings` RLS unknown | ✅ UPDATE gated on `app_admins` | **Better than feared** |
+| 7 | 3 admin mechanisms | **4** | Worse |
+| 8 | No `GRANT` statements | Full CRUD to `anon`+`authenticated` on every `public` table | Confirmed — RLS is the only gate |
+| 9 | 1 `upsert_word_progress` | **2 overloads**, one broken | New (§9.9) |
+| 10 | No teacher/class/assignment concepts | **`assignments`, `assignment_submissions`, `student_tasks`, `courses`… exist with live data** | 🔴 **Phase 0 §7 superseded** |
+| 11 | Writing app unknown | ✅ `essay_submissions` (86 rows) + `essays` bucket | Located (§7) |
+| 12 | 4 storage buckets | ≥3 confirmed by policy; `essays` is new; `pack-audio`/`exam-images` have no policies | Partially resolved |
 
 ---
 
 ## 11. Objects Safe to Reuse
 
-> **Status: PROVISIONAL — cannot be finalised without Production confirmation.**
+**Unchanged for frontend assets** (48 shadcn components, `AuthContext`, `RequireAdmin` pattern,
+`PhaseGate`, `useAudioPlayer`, chart integration, `BatchUploadDialog`, push infrastructure,
+`BlockNoteEditor`).
 
-Phase 0 identified reusable assets. Re-classified here by **confirmation risk**:
+**Now confirmed reusable at the database layer:**
 
-### 11.1 Safe to reuse now — frontend only, no Production dependency
+| Asset | Status |
+|-------|--------|
+| `essay_submissions` | ✅ **The Phase 5 reuse target.** Fix §9.2 first; then Q02 decides whether nullable additive columns suffice |
+| GSAT exam-domain RLS | ✅ Well-designed — reserved, but a good pattern to imitate |
+| Owner-scoped policies on `user_*`, `pack_item_progress`, `push_subscriptions` | ✅ Correct; use as the template for new tables |
+| `invite_tokens` **pattern** (issue → claim → bind) | ✅ Still the right model for class invite codes — build a **new** table, don't overload the existing one |
+| `premium_memberships` **pattern** (grant/expiry/revoke/notes) | ✅ Good template for teacher licensing |
 
-📁 These live entirely in the repository, so repository evidence is sufficient:
-
-| Asset | Reuse for |
-|-------|-----------|
-| `src/components/ui/*` (48 shadcn components) | All three role dashboards |
-| `AuthContext`, `ProtectedRoute`, `useAuthAction`, `Login.tsx` | Shared login across roles |
-| `RequireAdmin` pattern | Template for `RequireRole` |
-| `PhaseGate` / `LockedPage` / `features.ts` | Gradual rollout of `/learn` |
-| `useSiteIdentifier`, `config/product.ts` | Per-site role enablement |
-| `useAudioPlayer` | Listening activities |
-| `chart.js` + `react-chartjs-2` integration | Dashboard charts |
-| `BatchUploadDialog.tsx` + `generate-exam-template.ts` | Class roster / student import |
-| `usePushSubscription` + `sw.js` | Assignment-due reminders |
-| `BlockNoteEditor.tsx` | Teacher feedback authoring |
-
-### 11.2 Conditionally reusable — pending Production confirmation
-
-| Asset | Condition | Query |
-|-------|-----------|-------|
-| `level_words` (~2.1 MB corpus) | Exists with expected shape | Q01, Q02 |
-| `user_word_progress` (vocabulary analytics fact source) | Schema + RLS confirmed | Q01, Q07 |
-| `invite_tokens` **pattern** (issue → claim → bind) — ideal model for **class invite codes** | Reuse the *pattern* in a new table; do **not** overload the existing one | Q07 |
-| `premium_memberships` **pattern** (grant/expiry/revoke/notes) | Template for teacher licensing | — |
-| `site_settings` (per-site JSONB + phase) | RLS confirmed safe first (§9.4) | Q07, Q10 |
-| `packs` / `pack_items` / `user_pack_claims` | Confirmed | Q01–Q03 |
-
-### 11.3 Reserved — do NOT reuse for the Learning Platform
-
-Per §8: `exams`, `vocabulary_questions`, `question_groups`, `group_questions`,
-`translation_questions`, `essay_questions`, `exam_attempts`, `exam_user_answers`,
-`exam_statistics`, `exam-images`. Daily learning activity gets its own `/learn` tables.
-
-### 11.4 Cannot be assessed at all
-
-**Everything belonging to the writing application.** Zero information (§7).
+**Must NOT be reused until ownership is established (§7.4):** `assignments`,
+`assignment_submissions`, `student_tasks`, `courses`, `course_lessons`, `user_course_access`,
+`user_lesson_progress`, `learning_progress_stats`, `vocabulary_sessions`, `users`.
+They may be exactly what Domain B needs — or a dead prototype. **Do not build on them, and do not
+duplicate them, until we know.**
 
 ---
 
@@ -766,82 +725,64 @@ Per §8: `exams`, `vocabulary_questions`, `question_groups`, `group_questions`,
 
 | Priority | Object | Unknown | Blocks |
 |----------|--------|---------|--------|
-| 🔴 P0 | **Writing app schema (all objects)** | Everything | Phase 5; Phase 1 table naming |
-| 🔴 P0 | `claim_pack_with_token` | Which body is live | §9.5 remediation |
-| 🔴 P0 | `admin_grant_premium` / `admin_revoke_premium` | Live authorization state | §9.1/§9.2 |
-| 🔴 P0 | Grants to `anon` / `authenticated` (all tables) | Never specified in repo | Entire RLS assessment |
-| 🔴 P0 | `site_settings` RLS | No DDL exists | §9.4 |
-| 🟠 P1 | `app_admins` | Existence, shape, RLS | §9.6; Phase 1 role design |
-| 🟠 P1 | `exam_attempts` / `exam_user_answers` RLS | No DDL | §8.3 rule 4 |
-| 🟠 P1 | `update_pack_item_progress`, `get_pack_statistics`, `get_weak_words` | Bodies unknown | SRS unification (Phase 3) |
-| 🟠 P1 | Storage bucket public flags + policies | Unknown | §9 completeness; writing uploads |
-| 🟠 P1 | `auth.users` triggers | Existence | Phase 1 C1 |
-| 🟠 P1 | Role/class/teacher tables from writing app | Existence | Phase 1 — duplicate-design risk |
-| 🟡 P2 | `exam_statistics`, `blog_post_stats` | View or table | Analytics design |
-| 🟡 P2 | Blog tables RLS | No DDL | Ongoing exposure |
-| 🟡 P2 | `CRON_SECRET` in Vercel | Set or not | §9.9 |
-| 🟡 P2 | Edge Function `verify_jwt` + deployment | Unknown | §9.8 |
-| 🟡 P2 | Actual row counts | Unknown | Dead-table confirmation |
+| 🔴 P0 | **Owner of the 22 unaccounted tables** | Which app writes them | §9.1 remediation; all of Phase 1/4 |
+| 🔴 P0 | `essay_submissions` **columns** | AI feedback, rubric, teacher fields, `student_id` type | Phase 5 |
+| 🔴 P0 | **RLS enabled/disabled for GSAT tables** | Q08 not yet run | Whether §4.4's "sound" policies are actually enforced |
+| 🔴 P0 | How teachers/AI currently read essays | No teacher RLS policy exists | §9.2 fix could break grading |
+| 🟠 P1 | Can a user self-assign `raw_user_meta_data.role = 'admin'`? | Untested | §9.6 severity |
+| 🟠 P1 | `public.users` ↔ `auth.users` relationship | Q18 | Identity design |
+| 🟠 P1 | `essays` / `pack-audio` / `exam-images` bucket public flags | Q24 | §9.2 fix correctness |
+| 🟠 P1 | `auth.users` triggers | Q17 | Phase 1 profile auto-creation |
+| 🟡 P2 | All columns/constraints/indexes | Q02/Q03/Q04 | Detailed design |
+| 🟡 P2 | `CRON_SECRET`, Edge Function `verify_jwt` | Vercel/Supabase config | §9.11, §9.12 |
 
 ---
 
 ## 13. Phase 0.5B — Security Stabilization Proposal
 
 > **PROPOSED ONLY — NOT EXECUTED.** No item below has been actioned.
-> **Every item is gated on Phase 0.5A discovery output first.**
 
-### 13.1 Sequencing
+### 13.1 Revised priority
 
-```
-Phase 0.5A (this)  →  run discovery  →  complete this document
-                              ↓
-                      Phase 0.5B  (security stabilization)
-                              ↓
-                      Phase 1    (identity & roles)
-```
+The ordering has changed. **B0 is new and outranks everything.**
 
-**Phase 0.5B must not start before the discovery output is analysed**, because three of
-its items (B3, B4, B5) depend on facts only Production can supply.
+| # | Item | Finding | Gate | Risk |
+|---|------|---------|------|------|
+| **B0** | **Close the 11 RLS-disabled tables.** Establish ownership first; if that stalls, emergency `REVOKE ALL … FROM anon` | 9.1 | Ownership, or accept the revoke | 🔴 Enabling RLS blind **will** break the owning app — revoke-from-anon is the safer first move |
+| **B0b** | **Fix `essays` bucket policies** — add ownership predicate | 9.2 | Confirm grading read path first | 🔴 Could break AI/teacher grading |
+| **B1** | `is_admin()` guard + `search_path` on `admin_grant_premium` | 9.3 | none — confirmed | 🟢 None |
+| **B2** | Same for `admin_revoke_premium` | 9.3 | none | 🟢 None |
+| **B2b** | `REVOKE EXECUTE … FROM PUBLIC, anon` on both | 9.3 | none | 🟢 None |
+| **B3** | Admin JWT verification on both TTS endpoints | 9.11 | none | 🟡 Blocks anonymous callers (intended) |
+| **B4** | Fail-closed `CRON_SECRET`; reject `GET` | 9.12 | **Set the secret first** | 🟡 Cron breaks if unset |
+| **B5** | `SET search_path` on the 6 unhardened functions | 9.7 | none | 🟢 None |
+| **B6** | Restrict `invite_tokens` + `tokens` SELECT to owner/admin | 9.4 | Confirm no cross-app reader | 🟠 Could break an unknown consumer |
+| **B7** | Restrict `notifications` INSERT | 9.8 | none | 🟢 Low |
+| **B8** | Reconcile `claim_pack_with_token` (premium **+** site) | 9.5 | Decide on back-fixing mis-tagged rows | 🟠 Behaviour change |
+| **B9** | Audit `premium_memberships` for `granted_by IS NULL` | 9.3 | none | 🟢 Read-only |
+| **B10** | Drop broken 6-arg `upsert_word_progress` | 9.9 | Confirm no caller | 🟢 Low |
+| **B11** | Test whether `raw_user_meta_data.role` is self-assignable | 9.6 | none | 🟢 Read-only test |
+| **B12** | `crypto.getRandomValues()` tokens; `.gitignore` `.env`; dev-panel gate | 9.13 | none | 🟢 None |
+| **B13** | *(opt-in)* Gate `/dashboard/result-summary`, legacy admin routes | 9.13a/e | ⚠️ reserved domain — needs approval | 🟢 None |
+| ~~B14~~ | ~~Add RLS to `exam_attempts`~~ | — | **No longer needed** — already correct (§8.1) | — |
 
-### 13.2 Proposed work items
+### 13.2 Suggested execution order
 
-| # | Item | Finding | Type | Gate | Risk |
-|---|------|---------|------|------|------|
-| **B1** | Add `is_admin()` guard to `admin_grant_premium` | §9.1 | `CREATE OR REPLACE`, signature unchanged | Q15 confirms | 🟢 None — no caller breaks |
-| **B2** | Add `is_admin()` guard to `admin_revoke_premium` | §9.2 | same | Q15 confirms | 🟢 None |
-| **B3** | Add admin JWT verification to both TTS endpoints | §9.8 | App code | none — confirmed | 🟡 Anonymous callers blocked (intended) |
-| **B4** | Fail-closed `CRON_SECRET`; reject GET | §9.9 | App code | verify env set first | 🟡 Cron breaks if secret unset — **set it first** |
-| **B5** | `SET search_path = public, pg_temp` on all 19 DEFINER functions | §9.7 | `ALTER FUNCTION` | Q13 confirms | 🟢 None — behaviour identical |
-| **B6** | Restrict `invite_tokens` SELECT to owner | §9.3 | Policy replace | Q07+Q10; **confirm writing app unaffected** | 🟠 Could break an unknown consumer |
-| **B7** | Restrict `site_settings` writes to `is_admin()` | §9.4 | Policy add | Q07+Q10 | 🟠 Could break admin UI if it relies on anon write |
-| **B8** | Reconcile `claim_pack_with_token` into one body | §9.5 | `CREATE OR REPLACE` | **Q15 mandatory** | 🟠 Behaviour change — restores whichever guarantee is currently missing |
-| **B9** | Audit `premium_memberships` for self-grants | §9.1 | Read-only query (Q33) | — | 🟢 None |
-| **B10** | `crypto.getRandomValues()` for tokens | §9.11 | App code | — | 🟢 None |
-| **B11** | Add `.env` to `.gitignore` | §9.14 | Config | — | 🟢 None |
-| **B12** | Gate dev panel on `import.meta.env.DEV` only | §9.12 | App code | — | 🟢 None |
-| **B13** | *(opt-in)* Wrap `/dashboard/result-summary`; wrap 9 legacy admin routes | §9.10, §9.13 | App code | ⚠️ **Touches reserved Domain A — needs your approval** | 🟢 None |
-| **B14** | *(opt-in)* Add RLS to `exam_attempts` / `exam_user_answers` if missing | §8.3 r4 | Policy add | Q07; ⚠️ **reserved domain — needs approval** | 🟢 None if tables empty (Q32) |
+1. **B11, B9** — read-only intelligence, zero risk, informs B0 and §9.6 severity.
+2. **B0 emergency revoke** — if ownership can't be established within a day, `REVOKE ALL … FROM anon`
+   on the 11 tables. Closes anonymous access immediately with minimal breakage risk.
+3. **B1, B2, B2b, B5** — the premium-function fixes and `search_path`. Confirmed, no gates, no callers
+   affected.
+4. **B3, B4, B12** — app-code only. Set `CRON_SECRET` before B4.
+5. **B0 proper + B0b** — once ownership and the grading read path are known.
+6. **B6, B7, B8, B10** — policy and function reconciliation.
+7. **B13** — only with explicit approval (reserved domain).
 
-### 13.3 Suggested order
+### 13.3 Guardrails
 
-1. **B11, B12, B10, B9** — zero-risk, no gate.
-2. **B5** — highest value-to-risk ratio in the entire list; behaviour-identical hardening.
-3. **B1, B2** — CRITICAL; needs only Q15.
-4. **B3, B4** — CRITICAL/HIGH; app-code only, already confirmed. Set `CRON_SECRET` before B4.
-5. **B8** — needs Q15 and a deliberate decision on which guarantee to restore.
-6. **B6, B7** — needs Q07+Q10 **and** confirmation the writing app is unaffected.
-7. **B13, B14** — only with your explicit approval (reserved domain).
-
-### 13.4 Phase 0.5B guardrails
-
-- No new tables. No new columns. No data migration.
-- No `DROP` except the possible redundant `claim_pack_with_token` overload — **only** after
-  confirming no cross-application caller.
-- **No function signature changes** — that is what keeps every existing caller and RLS
-  policy working.
-- Every change verified in a staging project first. ⚠️ **No staging project currently
-  exists** — creating one should be part of 0.5B.
-- No `/exam` refactor. No mock exam behaviour change. No Teacher/Student/Parent UI.
+No new tables, no new columns, no data migration. No signature changes. Staging first —
+⚠️ **no staging project exists**; creating one is part of 0.5B. No `/exam` refactor, no mock-exam
+behaviour change, no Teacher/Student/Parent UI.
 
 ---
 
@@ -849,98 +790,94 @@ its items (B3, B4, B5) depend on facts only Production can supply.
 
 ### Q1 — Is the Production schema sufficiently understood to design Teacher / Student / Parent / Class?
 
-# ❌ NO
+# ❌ NO — but the gap is now specific rather than total
 
-**Reasons:**
-1. **No Production object has been inspected.** The entire model is repository inference.
-2. **20 of ~30 tables have no DDL** in the repository — columns, constraints and RLS unknown.
-3. **The grant layer is completely unknown.** No `GRANT` appears anywhere in the repo, so
-   real exposure to `anon`/`authenticated` is unmeasured (Q10).
-4. **`app_admins` may not exist.** Phase 1 plans to migrate it into `user_roles` — you
-   cannot migrate a table you cannot confirm.
-5. 🔴 **Duplicate-design risk:** the writing app shares this database and **may already
-   have introduced role/class/teacher structures**. Designing `user_roles` before running
-   Q19/Q20 risks building a second, conflicting role system — the exact opposite of
-   *prefer reuse over replacement*.
+Round 1 resolved the security and function questions. What blocks design is narrower and sharper:
+
+1. 🔴 **An assignment / course / student-task system already exists** with live data (§7.4) and we do
+   not know who owns it. Designing `classes` / `assignments` now risks building a **second** system
+   beside a running one — the precise outcome "prefer reuse over replacement" exists to prevent.
+2. 🔴 **`public.users` exists with RLS disabled** and its relationship to `auth.users` is unknown.
+   Any identity design must account for it.
+3. ❓ **Q19 found no `classes`, `teachers`, `parents` or `guardians` table** — so those genuinely do not
+   exist and Phase 1 can design them freshly. `assignments` and `student_tasks` are the collision risk,
+   not the class model.
+4. ❓ Columns and FKs remain unknown across the board (Q02/Q03).
 
 ### Q2 — Is the Writing schema sufficiently understood to design integration?
 
-# ❌ NO — ZERO INFORMATION
+# ❌ NO — but it is located, which is the hard part
 
-Not one writing-app table, column, function, policy, trigger or bucket is known.
-§7 is an empty template. Any Phase 5 design today would be pure fabrication.
+`essay_submissions` (86 rows) and the `essays` bucket are found. Missing: the column list, whether
+`student_id` is text or uuid, where AI feedback and rubric scores live, and **how teachers or the AI
+grader read essays given that no teacher RLS policy exists**. **Q02 and Q28 on `essay_submissions`
+would likely close this in a single query.**
 
 ### Q3 — Are there unresolved blockers?
 
-# ✅ YES — SIX
+# ✅ YES — FIVE (one cleared, two new)
 
 | # | Blocker | Clears when |
 |---|---------|-------------|
-| **BL-1** | **No Production access** (§0) | Connection string or Dashboard output supplied |
-| **BL-2** | Writing app schema entirely unknown (§7) | Q27, Q28, Q29 |
-| **BL-3** | Three CRITICAL security findings unremediated (§9.1, §9.2, §9.8) | Phase 0.5B |
-| **BL-4** | `claim_pack_with_token` live version unknown (§9.5) | Q15 |
-| **BL-5** | Grant + RLS layer unmeasured (§4, §10 item 15) | Q07 + Q10 |
-| **BL-6** | **No staging environment exists** | Created in Phase 0.5B |
-
-**BL-1 is the root blocker — clearing it unblocks BL-2, BL-4 and BL-5 immediately.**
+| ~~BL-1~~ | ~~No Production access~~ | ✅ **CLEARED** |
+| **BL-2** | **Four CRITICAL findings live in Production** (§9.1, §9.2, §9.3, §9.11) | Phase 0.5B |
+| **BL-3** | 🆕 **Ownership of the 22 unaccounted tables unknown** | Ask the writing-app maintainer |
+| **BL-4** | `essay_submissions` column shape unknown | Q02 / Q28 |
+| **BL-5** | RLS enabled-state for GSAT tables unverified | Q08 |
+| **BL-6** | No staging environment | Phase 0.5B |
 
 ### Q4 — Is it safe to begin Phase 1?
 
 # ❌ NO — DO NOT BEGIN PHASE 1
 
-**Rationale:**
+The reasoning has changed shape. It is no longer "we're working blind." It is:
 
-1. **Correctness** — Phase 1's central move is rewriting `is_admin()` to read `user_roles`.
-   Doing that against an unverified schema, unverified grants, and an unconfirmed
-   `app_admins` risks locking every administrator out of a live system.
-2. **Security ordering** — introducing a role system on top of three unremediated CRITICAL
-   findings means building authorization on a foundation that currently lets any
-   authenticated user grant themselves Premium.
-3. **Shared-database blast radius** — this database serves another production application.
-   Schema work without a Production inventory can break an app we cannot even see.
-4. **Reuse principle** — you asked to prefer reuse over replacement. Honouring that
-   *requires* knowing what exists. Right now we do not.
+1. **There is confirmed, live, unauthenticated read/write exposure** on eleven tables and one storage
+   bucket, including student work. Building new features on top of that is the wrong order of
+   operations.
+2. **A live assignment system may already exist.** Phase 1 and Phase 4 designs could duplicate it.
+   One conversation with the writing-app maintainer likely resolves this.
+3. **The `is_admin()` convergence plan still holds and is now better understood** — but it must absorb
+   four mechanisms, one of which (`raw_user_meta_data.role`) may itself be a privilege-escalation path
+   that needs testing first.
 
-**The path to readiness is short and well-defined:**
+**Revised path to readiness:**
 
 ```
-1. Supply Production access            ← unblocks everything (one connection string)
-2. Run docs/discovery/production_discovery.sql   (validated; ~5 min)
-3. Complete this document from the output        (fills §2–§7, §10)
-4. Execute Phase 0.5B security stabilization     (§13)
-5. Create a staging project
-6. → Phase 1 becomes safe to begin
+1. B11 + B9              read-only tests: metadata-role self-assignment, premium grant audit
+2. B0 emergency revoke   close anonymous access to the 11 exposed tables
+3. Ask the writing-app maintainer: who owns the 22 tables? how are essays read?
+4. Run round 2 discovery (Q01, Q02, Q03, Q08, Q17, Q18, Q24, Q27, Q28, Q30)
+5. Complete Phase 0.5B
+6. Create a staging project
+7. → Phase 1 becomes safe to begin
 ```
 
-Steps 1–3 are likely a single working session. **Do not skip step 4.**
+Steps 1–2 are hours, not days, and materially reduce live risk. **Step 3 is a conversation, not an
+engineering task, and it unblocks more design work than any query.**
 
 ---
 
 ## Appendix A — Deliverables
 
-| File | Purpose | Status |
-|------|---------|--------|
-| `docs/PRODUCTION_SCHEMA_AUDIT.md` | This report | ✅ Created (template pending Production data) |
-| `docs/discovery/production_discovery.sql` | 31-query read-only discovery script | ✅ Created, **validated against local PostgreSQL 16.13, zero errors** |
-| `docs/discovery/README.md` | Runbook: how to run and return output | ✅ Created |
-| `docs/PLATFORM_AUDIT.md` | Phase 0 repository audit | Unchanged |
+| File | Status |
+|------|--------|
+| `docs/PRODUCTION_SCHEMA_AUDIT.md` | ✅ Updated with round-1 confirmed findings |
+| `docs/discovery/production_discovery.sql` | ✅ Round 1 (validated) |
+| `docs/discovery/production_discovery_round2.sql` | ✅ **New** — targeted follow-up for the remaining gaps |
+| `docs/discovery/README.md` | ✅ Updated |
+| `docs/PLATFORM_AUDIT.md` | Unchanged — see §1.3 for superseded claims |
 
 ## Appendix B — Guardrail Compliance
 
 | Guardrail | Status |
 |-----------|--------|
 | DO NOT modify application code | ✅ Zero source files touched |
-| DO NOT modify Supabase schema | ✅ No connection was ever made |
-| DO NOT create migrations | ✅ `supabase/migrations/` untouched; the SQL script lives in `docs/discovery/` and contains only `SELECT`s |
-| DO NOT apply migrations | ✅ None applied |
-| DO NOT alter RLS / functions / triggers / storage policies | ✅ None altered |
-| DO NOT create or delete tables | ✅ None (the local fixture was a throwaway container-local Postgres, since destroyed) |
-| DO NOT change production data | ✅ No Production connection was made |
-| DO NOT refactor `/exam` / modify mock exam behaviour | ✅ Untouched; formally reserved in §8 |
-| DO NOT build Teacher / Student / Parent UI | ✅ None built |
-| DO NOT create Learning Activity tables | ✅ None |
-| DO NOT create Writing tables | ✅ None |
-| READ-ONLY discovery only | ✅ Enforced |
-| SQL not placed in migration directory | ✅ `docs/discovery/` |
-| Only documentation files added/modified | ✅ 3 files, all under `docs/` |
+| DO NOT modify Supabase schema / RLS / functions / triggers / storage policies | ✅ Read-only metadata inspection only |
+| DO NOT create or apply migrations | ✅ `supabase/migrations/` untouched; discovery SQL lives in `docs/discovery/` and is `SELECT`-only |
+| DO NOT create or delete tables | ✅ None |
+| DO NOT change production data | ✅ None |
+| DO NOT refactor `/exam` / change mock exam behaviour | ✅ Untouched; reserved in §8 |
+| DO NOT build Teacher / Student / Parent UI | ✅ None |
+| DO NOT create Learning Activity or Writing tables | ✅ None |
+| Only documentation files added/modified | ✅ All under `docs/` |
