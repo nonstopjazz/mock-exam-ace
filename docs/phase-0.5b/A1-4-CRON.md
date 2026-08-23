@@ -70,8 +70,15 @@ The guard is **conditional on the secret existing**. With `CRON_SECRET` unset, `
 allowed, a plain browser visit to `https://<host>/api/send-daily-reminders` triggers a push
 broadcast to every subscribed user.
 
-❓ **Whether `CRON_SECRET` is actually set in Vercel is NOT CONFIRMED** — I cannot read your Vercel
-project configuration. **Check this first; it determines whether you are currently exposed.**
+✅ **RESOLVED — `CRON_SECRET` is now set in Vercel Production and the deployment has been
+re-deployed** (owner, 2026-08-23). Because the existing guard is `if (cronSecret && …)`, setting the
+variable **activated it**: unauthenticated callers now receive 401.
+
+> **The §9.12 exposure is CLOSED in Production as of that redeploy** — before any code change.
+> The patch below is now purely defense in depth against the variable being removed, rotated badly,
+> or missing on a future environment.
+
+**Do not change the secret again.** Rotating it now would only add risk for no gain.
 
 ### 1.2 Impact if unset
 
@@ -83,7 +90,11 @@ project configuration. **Check this first; it determines whether you are current
 
 ---
 
-## 2. Where `CRON_SECRET` must be set
+## 2. Where `CRON_SECRET` must be set — ✅ **DONE, do not repeat**
+
+> **This section is now historical.** The owner has set `CRON_SECRET` in Vercel Production and
+> redeployed. **Do not create, rotate or delete it as part of A1.** Retained for reference and for
+> configuring the Preview environment.
 
 **Vercel → Project → Settings → Environment Variables**
 
@@ -151,27 +162,34 @@ not change a running function; a redeploy is required.
 
 ---
 
-## 4. Deployment order
+## 4. Deployment order — steps 1–3 ✅ already done
 
-**This order matters more than in any other A1 item, because getting it wrong silently kills the
-daily reminder.**
+| # | Step | Status |
+|---|------|--------|
+| ~~1~~ | ~~Generate the secret~~ | ✅ **Done** |
+| ~~2~~ | ~~Set `CRON_SECRET` in Vercel → Production~~ | ✅ **Done** |
+| ~~3~~ | ~~Redeploy~~ | ✅ **Done — exposure closed here** |
+| **4** | **Verify the next real Vercel Cron invocation succeeds** | 🛑 **REMAINING HARD GATE** |
+| **4b** | **Verify the daily flashcard reminder workflow still functions** | 🛑 **REMAINING** |
+| **4c** | **Verify a real device receives the reminder** (where applicable) | 🛑 **REMAINING** |
+| 5 | Deploy the fail-closed patch | Only after 4 / 4b / 4c pass |
+| 6 | Verify again — one more scheduled run, plus the unauthorized cases | — |
 
-| # | Step | Why this position |
-|---|------|-------------------|
-| 1 | Generate the secret (`openssl rand -hex 32`) | — |
-| 2 | Set `CRON_SECRET` in Vercel → Production | — |
-| 3 | **Redeploy** (any deploy; env changes need one) | Activates the *existing* guard → **exposure closed here** |
-| 4 | **Verify the scheduled run still succeeds** — wait for the next 12:00 UTC firing, or trigger manually per §7.1 | ✅ **HARD GATE.** Proves Vercel is attaching the header before you make a missing header fatal. |
-| 5 | Deploy the fail-closed patch | Safe now: step 4 proved the happy path works |
-| 6 | Verify again — one more scheduled run, plus the unauthorized cases | Confirms the patch changed nothing for the scheduler |
+### 4.1 The remaining gate, precisely
 
-> 🛑 **Never do step 5 before step 4.** If Vercel is not attaching the header for any reason, the
-> patched endpoint returns 401 and **the daily reminder stops firing — silently**, because nobody is
-> watching a cron that simply does nothing.
+Steps 4 / 4b / 4c are your three stated conditions, and they are **not** the same check:
 
-**Rollback trigger:** a scheduled run returns 401 or 503 after step 5.
+| Gate | Question | Where |
+|------|----------|-------|
+| **4** | Did the scheduler authenticate? | Vercel → Cron Jobs → last run = `200` (§7.2 Step A) |
+| **4b** | Did the flashcard reminder workflow actually run and target the right students? | §7.2 Steps B + C |
+| **4c** | Did a real device receive it, and does tapping it open the flashcard flow? | §7.2 Step D |
 
----
+> 🛑 **Do not deploy the fail-closed patch until all three pass.** A 200 alone proves only that the
+> guard let the scheduler in. If the reminder workflow is broken for an unrelated reason, deploying
+> a stricter guard on top makes diagnosis harder, not easier.
+
+**Rollback trigger after step 5:** a scheduled run returns 401 or 503.
 
 ## 5. Code diff
 
@@ -358,14 +376,24 @@ WHERE uwp.review_count > 0
   AND uwp.next_review_time <= (extract(epoch FROM now()) * 1000)::bigint;
 ```
 
-> ℹ️ **Worth knowing:** the current handler targets on `user_stats.last_study_date` only — it does
-> **not** consult `user_word_progress` to check whether the student has words actually due. So a
-> student who is fully caught up still receives a "come back and review" nudge.
+> ### 📌 DEFERRED PRODUCT IMPROVEMENT — not an A1 item
 >
-> That is a **product-behaviour observation, not a security finding**, and it is **out of A1 scope** —
-> A1 changes only the authorization guard. Raising it here because C1/C2 will make the gap visible
-> and I would rather you meet it in a document than in a support message. Worth revisiting when the
-> flashcard analytics work lands.
+> **Observation:** the handler targets purely on `user_stats.last_study_date != today`. It **never
+> consults `user_word_progress`**, so it cannot tell whether a student actually has vocabulary due.
+>
+> **Effect:** a student who is fully caught up — nothing due — still receives a
+> 「回來複習」 nudge. Conversely the copy in `getNotificationContent()` talks about streaks and
+> days-away, never about *how many words are waiting*, which is the thing most likely to bring a
+> student back.
+>
+> **Status (owner-confirmed):** documented as a **later product / analytics improvement**.
+> **Explicitly NOT fixed in A1** — A1 changes only the authorization guard, and altering the
+> targeting query would change who receives notifications, which is a product decision needing its
+> own verification.
+>
+> **Natural home:** the flashcard/vocabulary analytics work, where `user_word_progress` due-counts
+> become first-class. A plausible shape is targeting on *"has words due"* rather than
+> *"hasn't studied today"*, and including the due count in the message.
 
 #### Step D — end-to-end delivery
 
@@ -391,15 +419,19 @@ ORDER BY us.last_study_date DESC NULLS LAST
 LIMIT 10;
 ```
 
-### 7.3 Pre-deployment check — is the exposure live right now?
+### 7.3 Pre-deployment check — ✅ **no longer applicable**
 
-Run **M1 against Production before changing anything.**
+This section previously told you to probe Production with an unauthenticated `GET` to find out
+whether `CRON_SECRET` was set — and warned that a 200 would mean the probe itself had triggered a
+real broadcast.
 
-| Result | Meaning |
-|--------|---------|
-| **200** + a `sent` count | 🔴 `CRON_SECRET` is unset. **You are exposed now, and you just sent a broadcast.** Do step 2+3 today. |
-| **401** | ✅ The secret is already set; the guard is already active. The patch is then purely defense-in-depth and can move at a normal pace. |
+**That question is answered: the secret is set and the deployment is live.** An unauthenticated `GET`
+should now return **401**, which is a safe check and a reasonable one-off confirmation:
 
-⚠️ A 200 here means the probe itself triggered a real broadcast. If you would rather not send one to
-find out, check the Vercel Environment Variables page instead — same answer, no side effect.
-**That is the better first move.**
+```bash
+curl -s -o /dev/null -w "unauth GET -> %{http_code}\n" "$BASE/api/send-daily-reminders"
+# EXPECT 401   (a 200 here would mean the redeploy did not pick up the variable)
+```
+
+If this returns 200, the variable did not take effect — **re-check the Vercel environment scope
+(Production vs Preview) and redeploy** before doing anything else.

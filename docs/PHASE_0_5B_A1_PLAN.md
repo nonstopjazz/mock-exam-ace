@@ -21,10 +21,11 @@
 |------|---------|----------|----------|
 | **A1-1** | §9.3 — `admin_grant_premium` has no authorization; `EXECUTE` granted to PUBLIC + anon | 🔴 CRITICAL | `phase-0.5b/A1-premium-functions.sql` |
 | **A1-2** | §9.3 — same for `admin_revoke_premium` | 🔴 CRITICAL | same file |
-| **A1-3** | §9.11 — TTS endpoints run as `service_role` with no auth | 🔴 CRITICAL | `phase-0.5b/A1-3-TTS.md` + 3 patches |
-| **A1-4** | §9.12 — cron endpoint open when `CRON_SECRET` unset | 🟠 HIGH | `phase-0.5b/A1-4-CRON.md` + 1 patch |
+| **A1-3a** | §9.11 — TTS endpoint runs as `service_role` with no auth | 🔴 CRITICAL | `phase-0.5b/A1-3-TTS.md` §3 + 2 patches |
+| **A1-3b** | pre-existing large-pack timeout (214-item pack ≈ 1.7× over budget) | 🟠 HIGH | `phase-0.5b/A1-3-TTS.md` §4 + 2 patches |
+| **A1-4** | §9.12 — cron endpoint open when `CRON_SECRET` unset | ✅ **exposure CLOSED** — secret set + redeployed; patch is defense-in-depth | `phase-0.5b/A1-4-CRON.md` + 1 patch |
 | **A1-6** | §9.15 — premium revocation silently fails | 🟠 HIGH | `phase-0.5b/A1-premium-functions.sql` |
-| **A1-5** | §9.13 — token RNG, `.gitignore`, dev panel | 🟢 LOW | ⏸️ **scope proposal only** — `phase-0.5b/A1-5-SCOPE-PROPOSAL.md`; awaiting your approval, nothing prepared |
+| **A1-5** | §9.13 — token RNG, `.gitignore`, dev tools | 🟢 LOW | ✅ **all three approved & prepared** — `phase-0.5b/A1-5-SCOPE-PROPOSAL.md` + 3 patches |
 | **Data** | §9.15 — the one existing duplicate membership | — | `phase-0.5b/DATA-REMEDIATION-duplicate-membership.sql` ✅ approved, **separate deployment** |
 
 **Explicitly OUT of scope this round** (your instruction, and correct — every one of these can break
@@ -58,10 +59,15 @@ docs/
     ├── A1-5-SCOPE-PROPOSAL.md                     ⏸️ scope only — NOT approved, NOT prepared
     ├── STAGING_PLAN.md                          ★ minimum viable staging (hard gate)
     └── patches/
-        ├── A1-3-tts-api.patch                   api/generate-pack-audio.ts
-        ├── A1-3-tts-ui.patch                    src/pages/admin/PackItemsAdmin.tsx
-        ├── A1-3-tts-edge.patch                  supabase/functions/generate-pack-audio/index.ts
-        └── A1-4-cron.patch                      api/send-daily-reminders.ts
+        ├── A1-3a-security-api.patch             api/generate-pack-audio.ts      (auth)
+        ├── A1-3a-security-ui.patch              PackItemsAdmin.tsx              (token)
+        ├── A1-3b-reliability-api.patch          api/generate-pack-audio.ts      (chunking)
+        ├── A1-3b-reliability-ui.patch           PackItemsAdmin.tsx              (cursor loop)
+        ├── A1-4-cron.patch                      api/send-daily-reminders.ts
+        ├── A1-5a-secure-token-rng.patch         TokensAdmin.tsx
+        ├── A1-5b-gitignore-env.patch            .gitignore
+        ├── A1-5c-devtools-env-gate.patch        DevPhaseSwitcher.tsx
+        └── OPTIONAL-A1-3-edge-repo-only.patch   repo hygiene — NOT an A1 deliverable
 ```
 
 ### 2.1 Why the code changes are patches, not edits
@@ -77,13 +83,31 @@ Two reasons, and the second is the important one:
 Apply them when you are ready:
 
 ```bash
-git apply docs/phase-0.5b/patches/A1-3-tts-api.patch
-git apply docs/phase-0.5b/patches/A1-3-tts-ui.patch
-git apply docs/phase-0.5b/patches/A1-3-tts-edge.patch
+# A1-3a — security, independently deployable
+git apply docs/phase-0.5b/patches/A1-3a-security-api.patch
+git apply docs/phase-0.5b/patches/A1-3a-security-ui.patch
+
+# A1-3b — reliability, applies on top of 3a
+git apply docs/phase-0.5b/patches/A1-3b-reliability-api.patch
+git apply docs/phase-0.5b/patches/A1-3b-reliability-ui.patch
+
+# A1-4 and A1-5 — each independent
 git apply docs/phase-0.5b/patches/A1-4-cron.patch
+git apply docs/phase-0.5b/patches/A1-5a-secure-token-rng.patch
+git apply docs/phase-0.5b/patches/A1-5b-gitignore-env.patch
+git apply docs/phase-0.5b/patches/A1-5c-devtools-env-gate.patch
 ```
 
-All four are **dry-run verified** — `git apply --check` passes against the current tree.
+**Verified separability (the property you required):**
+
+| Check | Result |
+|-------|--------|
+| A1-3a alone applies to a clean tree | ✅ |
+| A1-3b applies on top of A1-3a | ✅ |
+| **A1-3b reverses cleanly, leaving A1-3a applied** | ✅ **security stays fixed** |
+| A1-4, A1-5a/b/c each apply independently | ✅ |
+
+All patched TypeScript parse-checks to the **same error-code set** as the originals.
 
 ---
 
@@ -129,77 +153,70 @@ shortening) · T6 (idempotent revoke) · T7 (`MEMBERSHIP_NOT_FOUND`) · `anon` E
 
 ---
 
-## 4. A1-3 — TTS · summary
+## 4. A1-3 — TTS · **split into 3a Security + 3b Reliability**
 
 Full detail in `phase-0.5b/A1-3-TTS.md`.
 
-**Product semantics (confirmed):** TTS is an **admin content-authoring tool** for generating
-pronunciation audio for vocabulary packs and flashcards. `PackItemsAdmin` is the expected caller.
-**Ordinary students do not need TTS generation rights**, so admin-only authorization is the correct
-product semantics — not merely a tightening.
+Per your instruction the authorization fix and the API/workflow redesign are **two independently
+reviewable, deployable and reversible patches**, with separate rollback and verification paths.
 
-**Current flow:** `PackItemsAdmin` → `fetch('/api/generate-pack-audio')` with **no `Authorization`
-header** → handler whose only gate is `req.method !== 'POST'` → `service_role` client → Google TTS →
-Storage upsert → `pack_items` UPDATE. An unauthenticated `POST` today burns unbounded TTS quota,
-overwrites `pack-audio`, and writes `pack_items` with RLS bypassed.
+### 4.1 A1-3a — Security 🔴
 
-**Design:** validate the caller's JWT, then evaluate **`is_admin()` as that user** — reusing the
-schema's authoritative gate rather than adding a fifth admin mechanism. Students hit `403`. Requires
-`SUPABASE_ANON_KEY` server-side (the publishable key — not a new secret).
+**Product semantics (confirmed):** TTS is an **admin content-authoring tool**, not a student-facing
+service. `PackItemsAdmin` is the only expected caller and **students do not need TTS rights** — so
+admin-only authorization is the correct product semantics, not merely a tightening.
 
-### 4.1 Batch size — redesigned as chunking, not a cap
+Today the caller sends **no `Authorization` header** and the handler's only gate is the HTTP-method
+check, while it runs as `service_role`. Design: validate the caller's JWT, then evaluate
+**`is_admin()` as that user** — reusing the schema's authoritative gate rather than adding a fifth
+admin mechanism. Students get `403`. Needs `SUPABASE_ANON_KEY` server-side (publishable key, not a
+new secret).
 
-Your pushback on the 400 figure was right, and investigating it showed the cap was **solving the
-wrong problem**:
+**Response shape unchanged** — that is what makes 3a independently deployable.
 
-- `maxDuration: 60`, and each item costs up to **two** syntheses.
-- At 5-way concurrency, ~**250 syntheses** is the realistic single-invocation ceiling — **below 400**,
-  so the cap would never have fired; the function times out first.
-- The UI **already** ships a 504 handler saying 「處理超時，請嘗試較小的單字包或稍後重試」.
-  **Large packs already fail in Production today.**
+### 4.2 A1-3b — Reliability 🟠
 
-> A security cap that fires *after* the real failure point protects nothing and breaks workflow.
+Your 214-item figure settles the design question:
 
-**So the patch chunks instead.** The endpoint processes one slice and returns a cursor
-(`next_offset` / `has_more`); the UI loops with progress toasts. Result:
+```
+Largest Production pack           214 items
+Worst case (all have examples)    214 × 2 = 428 syntheses
+Realistic 60s capacity            ~250 syntheses
+```
+
+**Roughly 1.7× over budget — that pack almost certainly times out today**, which is why the UI
+already ships a 504 「請嘗試較小的單字包」 handler. This is a **pre-existing production defect**, not a
+consequence of the security fix, and it deserves its own patch.
+
+**Approved: `TTS_MAX_ITEMS_PER_REQUEST = 100`** → 214 items completes in **3 chunks**, each ≤ 200
+syntheses. The endpoint returns a cursor (`next_offset` / `has_more`); the UI loops with progress
+toasts. A caller may request a **smaller** limit, never a larger one.
 
 | Property | Effect |
 |----------|--------|
-| No pack is too large | A 1000-item pack completes in 10 requests instead of one impossible one |
+| No pack is too large | 214 items → 3 requests instead of one that fails |
 | Admin workflow unbroken | One click still does the whole pack |
-| Cost bounded per request | At most `limit × 2` syntheses |
 | Partial progress survives | A failed chunk keeps every earlier slice |
-| **Configurable server-side** | `TTS_MAX_ITEMS_PER_REQUEST`, default **100**; a caller may lower it, never raise it |
 
-**This also fixes a pre-existing production bug** — the large-pack timeout — as a side effect.
+⚠️ **3b deployment ordering differs from 3a.** For 3b, deploy **API and UI together**:
+API-patched/UI-unpatched silently processes only the first 100 items and **looks like success**.
+(3a is safe either way round.)
 
-**Setting the limit from data:** run `phase-0.5b/A1-3-pack-size-survey.sql` (read-only). P02 gives
-the headline numbers; **P03 lists packs that already exceed one invocation's budget today**. Send me
-P02 and I will recommend a value. Rule of thumb: `limit ≈ 200 / (1 + fraction_with_examples)`.
+### 4.3 Edge Function — REPOSITORY-ONLY / NOT CONFIRMED DEPLOYED
 
-**Remaining cost controls:** `force` requires `confirm_force`; structured logging of
-`admin_id`/`pack_id`/`offset`. A true rate limiter needs shared state that serverless lacks — a
-`tts_jobs` table or Upstash, both out of hotfix scope. The highest-value residual control is a **GCP
-quota cap** on the Text-to-Speech API.
+Your Dashboard check found **no deployed Edge Functions**. `GOOGLE_TTS_API_KEY` exists under Edge
+Function Secrets, but a secret with no function to run it is inert.
 
-### 4.2 Edge Function — OBSOLETE-PENDING-CONFIRMATION
+| Decision | Status |
+|----------|--------|
+| Production patch required for A1? | ❌ **No** — nothing deployed to patch |
+| Delete the function? | ❌ Not yet |
+| Rotate/delete the secret? | ❌ **No** — unchanged in A1 |
+| Active TTS path | ✅ The **Vercel API** route from `PackItemsAdmin` |
 
-Per your decision it is **not deleted**. The patch adds a status header and the **same admin gate**,
-so it cannot remain an unauthenticated `service_role` surface while you check the Dashboard.
-
-| Your finding | Action |
-|--------------|--------|
-| Not deployed | Mark obsolete; remove in a later cleanup |
-| Deployed, no traffic | Apply the patch, schedule removal |
-| Deployed, with traffic | Apply the patch, identify the caller before removing |
-
-⚠️ **If it is deployed, it is currently an unauthenticated `service_role` endpoint reachable from any
-origin** (`Access-Control-Allow-Origin: *`) — in that case its patch is **as urgent as the Vercel
-one**. `verify_jwt` does not help: it proves only that *some* JWT was presented, so any logged-in
-student would pass.
-
-**Ordering:** UI-patched/API-unpatched degrades safely to today's behaviour; API-patched/UI-unpatched
-breaks the admin UI with 403. Deploy UI first or together; roll back API first.
+`OPTIONAL-A1-3-edge-repo-only.patch` is retained as **repository hygiene, not an A1 deliverable** —
+its value is that **if anyone ever deploys this function as-is it would go live unauthenticated with
+`Access-Control-Allow-Origin: *`**. Apply whenever convenient.
 
 ## 5. A1-4 — Cron · summary
 
@@ -270,17 +287,32 @@ code — because a 200 only proves the guard let the scheduler in:
 > fully caught up still gets a "come back and review" nudge. **Out of A1 scope** — A1 changes only
 > the authorization guard — but worth knowing before the flashcard analytics work.
 
-### 5.1 Check this first
+### 5.1 ✅ Exposure already closed
 
-Look at Vercel → Environment Variables and see whether `CRON_SECRET` exists.
+**`CRON_SECRET` is set in Vercel Production and the deployment has been redeployed.** Because the
+existing guard is `if (cronSecret && …)`, setting the variable **activated it** — so **§9.12 is
+closed in Production as of that redeploy, before any code change**. Do not change the secret again.
 
-| Finding | Meaning |
-|---------|---------|
-| Not set | 🔴 You are exposed right now. Steps 2–3 today. |
-| Set | ✅ Already protected; the patch is defense-in-depth and can move at a normal pace. |
+**Remaining gates before deploying the fail-closed patch** — your three stated conditions, which are
+genuinely different checks:
 
-*(There is a curl probe for this in `A1-4-CRON.md` §7.3, but it triggers a real broadcast if you are
-exposed. Reading the settings page is strictly better.)*
+| Gate | Question | Where |
+|------|----------|-------|
+| **4** | Did the scheduler authenticate? | Vercel → Cron Jobs → last run `200` |
+| **4b** | Did the flashcard reminder workflow run and target the right students? | `A1-4-CRON.md` §7.2 Steps B + C |
+| **4c** | Did a real device receive it, and does tapping it open the flashcard flow? | §7.2 Step D |
+
+🛑 **All three must pass before step 5.** A 200 alone proves only that the guard let the scheduler
+in.
+
+### 5.3 📌 Deferred product improvement (not A1)
+
+The handler targets purely on `user_stats.last_study_date != today` and **never consults
+`user_word_progress`**, so a student who is fully caught up still receives a 「回來複習」 nudge, and
+the copy never mentions how many words are actually waiting. **Documented as a later product /
+analytics improvement; explicitly not fixed in A1** — changing the targeting query changes who gets
+notified, which is a product decision needing its own verification. Natural home: the flashcard /
+vocabulary analytics work.
 
 ---
 

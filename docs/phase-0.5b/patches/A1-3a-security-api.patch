@@ -1,0 +1,80 @@
+diff --git a/api/generate-pack-audio.ts b/api/generate-pack-audio.ts
+index 304c117..ce99a30 100644
+--- a/api/generate-pack-audio.ts
++++ b/api/generate-pack-audio.ts
+@@ -55,7 +55,7 @@ export default async function handler(req: any, res: any) {
+     return res.status(405).json({ error: 'Method not allowed' });
+   }
+ 
+-  const { pack_id, force = false } = req.body || {};
++  const { pack_id, force = false, confirm_force = false } = req.body || {};
+ 
+   if (!pack_id) {
+     return res.status(400).json({ error: 'pack_id is required' });
+@@ -63,15 +63,65 @@ export default async function handler(req: any, res: any) {
+ 
+   const GOOGLE_TTS_API_KEY = process.env.GOOGLE_TTS_API_KEY;
+   const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
++  const SUPABASE_ANON_KEY =
++    process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+ 
+   if (!GOOGLE_TTS_API_KEY) {
+     return res.status(500).json({ error: 'GOOGLE_TTS_API_KEY not configured' });
+   }
+-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
++  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
+     return res.status(500).json({ error: 'Supabase credentials not configured' });
+   }
+ 
++  // ===================================================================
++  // A1-3a (audit finding 9.11) — authenticate and authorize the caller.
++  //
++  // Product semantics: TTS generation is an ADMIN CONTENT-AUTHORING tool
++  // used from PackItemsAdmin to produce pronunciation audio for
++  // vocabulary packs and flashcards. It is NOT a text-to-speech service
++  // for students, so ordinary authenticated students must not reach it.
++  //
++  // Previously this ran with service_role and NO auth check of any kind,
++  // so an unauthenticated POST could burn unbounded Google TTS quota,
++  // overwrite Storage objects and update pack_items with RLS bypassed.
++  //
++  // The caller's JWT is validated, then is_admin() is evaluated AS THAT
++  // USER so this endpoint reuses the schema's authoritative admin gate
++  // rather than inventing a new one.
++  // ===================================================================
++  const authHeader: string = req.headers?.authorization || req.headers?.Authorization || '';
++  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
++
++  if (!token) {
++    return res.status(401).json({ error: 'UNAUTHENTICATED' });
++  }
++
++  const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
++    global: { headers: { Authorization: `Bearer ${token}` } },
++    auth: { persistSession: false, autoRefreshToken: false },
++  });
++
++  const { data: userData, error: userError } = await userClient.auth.getUser();
++  if (userError || !userData?.user) {
++    return res.status(401).json({ error: 'UNAUTHENTICATED' });
++  }
++
++  const { data: isAdmin, error: adminError } = await userClient.rpc('is_admin');
++  if (adminError || isAdmin !== true) {
++    return res.status(403).json({ error: 'FORBIDDEN' });
++  }
++
++  // force=true re-synthesises everything, the expensive path. Require a
++  // second explicit flag so a stray retry cannot trigger it.
++  if (force && !confirm_force) {
++    return res.status(400).json({ error: 'FORCE_REQUIRES_CONFIRMATION' });
++  }
++
++  console.log(
++    `[generate-pack-audio] admin=${userData.user.id} pack=${pack_id} force=${force}`
++  );
++
+   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+ 
+   try {

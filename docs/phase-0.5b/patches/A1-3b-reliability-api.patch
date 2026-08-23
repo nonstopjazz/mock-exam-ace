@@ -1,0 +1,120 @@
+diff --git a/api/generate-pack-audio.ts b/api/generate-pack-audio.ts
+index ce99a30..86999b2 100644
+--- a/api/generate-pack-audio.ts
++++ b/api/generate-pack-audio.ts
+@@ -50,17 +50,54 @@ async function processInBatches<T>(
+   }
+ }
+ 
++/**
++ * A1-3b: how many pack_items one invocation may process.
++ *
++ * This is a TIMEOUT bound, not a security cap. `maxDuration` above is 60s
++ * and each item costs up to two Google TTS syntheses, so a large pack has
++ * always exceeded the budget — which is why the admin UI already carries
++ * a 504 "try a smaller pack" message. Chunking removes that failure mode
++ * instead of merely reporting it.
++ *
++ * The largest Production pack is 214 items, i.e. up to 428 syntheses —
++ * comfortably beyond what one 60s invocation can do. At the default of
++ * 100 it completes in 3 chunks.
++ *
++ * Override per environment with TTS_MAX_ITEMS_PER_REQUEST. Raise it only
++ * if a real pack demonstrably completes well within maxDuration.
++ */
++const DEFAULT_MAX_ITEMS_PER_REQUEST = 100;
++const MAX_ITEMS_PER_REQUEST = Math.max(
++  1,
++  parseInt(process.env.TTS_MAX_ITEMS_PER_REQUEST || '', 10) || DEFAULT_MAX_ITEMS_PER_REQUEST
++);
++
+ export default async function handler(req: any, res: any) {
+   if (req.method !== 'POST') {
+     return res.status(405).json({ error: 'Method not allowed' });
+   }
+ 
+-  const { pack_id, force = false, confirm_force = false } = req.body || {};
++  const {
++    pack_id,
++    force = false,
++    confirm_force = false,
++    offset: rawOffset = 0,
++    limit: rawLimit,
++  } = req.body || {};
+ 
+   if (!pack_id) {
+     return res.status(400).json({ error: 'pack_id is required' });
+   }
+ 
++  // A1-3b: the server clamps — a caller may request a SMALLER slice but
++  // can never raise the bound.
++  const offset = Math.max(0, parseInt(String(rawOffset), 10) || 0);
++  const requestedLimit = parseInt(String(rawLimit), 10);
++  const limit = Math.min(
++    MAX_ITEMS_PER_REQUEST,
++    Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : MAX_ITEMS_PER_REQUEST
++  );
++
+   const GOOGLE_TTS_API_KEY = process.env.GOOGLE_TTS_API_KEY;
+   const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+   const SUPABASE_ANON_KEY =
+@@ -119,21 +156,36 @@ export default async function handler(req: any, res: any) {
+   }
+ 
+   console.log(
+-    `[generate-pack-audio] admin=${userData.user.id} pack=${pack_id} force=${force}`
++    `[generate-pack-audio] admin=${userData.user.id} pack=${pack_id} ` +
++    `offset=${offset} limit=${limit} force=${force}`
+   );
+ 
+   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+ 
+   try {
+-    const { data: items, error: fetchErr } = await supabase
++    // A1-3b: fetch only this slice, plus the pack total so the client can
++    // drive the loop.
++    const { data: items, error: fetchErr, count: packTotal } = await supabase
+       .from('pack_items')
+-      .select('id, word, example_sentence, audio_url, example_audio_url')
++      .select('id, word, example_sentence, audio_url, example_audio_url', { count: 'exact' })
+       .eq('pack_id', pack_id)
+-      .order('sort_order', { ascending: true });
++      .order('sort_order', { ascending: true })
++      .range(offset, offset + limit - 1);
+ 
+     if (fetchErr) throw fetchErr;
++
++    const total = packTotal ?? 0;
++
+     if (!items || items.length === 0) {
+-      return res.json({ success: true, total: 0, wordGenerated: 0, wordSkipped: 0, exampleGenerated: 0, exampleSkipped: 0 });
++      return res.json({
++        success: true,
++        total,
++        processed: 0,
++        offset,
++        next_offset: null,
++        has_more: false,
++        wordGenerated: 0, wordSkipped: 0, exampleGenerated: 0, exampleSkipped: 0,
++      });
+     }
+ 
+     let wordGenerated = 0;
+@@ -194,9 +246,16 @@ export default async function handler(req: any, res: any) {
+       else exampleGenerated++;
+     });
+ 
++    const nextOffset = offset + items.length;
++    const hasMore = nextOffset < total;
++
+     return res.json({
+       success: true,
+-      total: items.length,
++      total,
++      processed: items.length,
++      offset,
++      next_offset: hasMore ? nextOffset : null,
++      has_more: hasMore,
+       wordGenerated,
+       wordSkipped,
+       exampleGenerated,

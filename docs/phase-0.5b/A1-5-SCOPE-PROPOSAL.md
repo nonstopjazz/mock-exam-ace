@@ -1,7 +1,19 @@
-# A1-5 — Scope proposal (NOT approved, NOT prepared, NOT deployed)
+# A1-5 — ✅ APPROVED and PREPARED (NOT deployed)
 
-> You asked for the exact scope, findings, objects/files and A1 justification **before** approving.
-> This document is that proposal. **No patch has been written and nothing has been changed.**
+> **Approved 2026-08-23.** All three items approved; **5c approved with a specific design** —
+> disabled in Production, retained in local development **and Vercel Preview**.
+>
+> 🛑 Patches are prepared but **not applied**. `src/` and `.gitignore` are byte-identical to
+> Production.
+
+| Item | Patch | Status |
+|------|-------|--------|
+| **5a** secure token RNG | `patches/A1-5a-secure-token-rng.patch` | ✅ approved, prepared |
+| **5b** `.gitignore` env protection | `patches/A1-5b-gitignore-env.patch` | ✅ approved, prepared |
+| **5c** dev tools env gate | `patches/A1-5c-devtools-env-gate.patch` | ✅ approved **with the Preview-preserving design** |
+
+All three **apply independently to a clean tree** (`git apply --check` verified) and touch no
+database object.
 
 ---
 
@@ -19,7 +31,7 @@ no LMS/Writing dependency**.
 
 **Total: 3 files, no schema, no migration, no Supabase change.**
 
-**My honest recommendation: approve A1-5a and A1-5b; treat A1-5c as optional.** Reasoning in §5.
+**All three approved.** 5c was approved with an amended design that preserves Preview capability — see §4.
 
 ---
 
@@ -150,51 +162,113 @@ persists via `localStorage`.
 The real cost is **information disclosure and confusion**: it advertises the internal phase model and
 lets a curious visitor toggle a panel that looks meaningful but is not.
 
-### Proposed change
-Gate on `import.meta.env.DEV` alone — delete the URL-parameter and `localStorage` activation paths,
-matching what the component's own comment already claims.
+### Approved change — Production off, local **and Preview** on
+
+You approved 5c **with an amended design**, and the amendment is the right call: my original
+proposal (gate on `import.meta.env.DEV` alone) would have removed a legitimate Preview capability to
+fix a low-severity issue. That is a bad trade.
+
+**Approved behaviour:**
+
+| Environment | Dev tools | Mechanism |
+|-------------|-----------|-----------|
+| **Local development** | ✅ available | `import.meta.env.DEV` is true |
+| **Vercel Preview** | ✅ available | `VITE_ENABLE_DEV_TOOLS === 'true'`, set on the Preview scope only |
+| **Production** | ❌ **no activation path exists** | neither condition holds |
+
+Inside the permitted environments, `?devmode=true` and the `localStorage` persistence continue to
+work **exactly as they do today** — nothing about the developer workflow changes.
+
+```ts
+function devToolsAllowedHere(): boolean {
+  if (import.meta.env.DEV) return true;                      // local
+  return import.meta.env.VITE_ENABLE_DEV_TOOLS === "true";   // Preview (explicit opt-in)
+}
+
+function isDevModeEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  if (!devToolsAllowedHere()) return false;                  // ← Production stops here
+  …existing ?devmode / localStorage logic, unchanged…
+}
+```
+
+**Why an explicit `VITE_ENABLE_DEV_TOOLS` rather than sniffing `VERCEL_ENV`:**
+
+1. Vite only exposes variables prefixed `VITE_` to client code, so `VERCEL_ENV` is not readable in
+   the browser without mapping it anyway.
+2. An explicit variable makes enabling dev tooling a **visible, intentional configuration act**
+   scoped to one environment — rather than behaviour that silently follows a platform value someone
+   could change without realising.
+3. It keeps the mechanism portable if the project ever moves off Vercel.
+
+**`clearDevMode()` is retained** — it is still useful on Preview, and my earlier proposal to delete
+it no longer applies.
 
 ### Objects touched
-`src/components/dev/DevPhaseSwitcher.tsx` — one function, plus removal of the now-unused
-`clearDevMode` escape hatch.
+`src/components/dev/DevPhaseSwitcher.tsx` — one added helper and one guard line.
+Plus one Vercel env var: `VITE_ENABLE_DEV_TOOLS=true`, **Preview scope only**.
 
 ### Risk
-🟡 **Low, with one caveat worth your attention.** If you currently use `?devmode=true` to preview
-phase behaviour on a deployed Production or Preview URL, **this removes that ability**. The
-replacement is running locally (`npm run dev`), where it still works.
+🟢 **Low, and lower than my original proposal.** Local development is untouched. Preview keeps the
+capability provided the variable is set. Only Production loses an activation path that was never
+intended to exist.
 
-**Tell me if that workflow matters to you** — if so, the better fix is to keep it but gate on a
-Preview-only env flag rather than removing it. I have not assumed either way.
+⚠️ **One operational note:** if `VITE_ENABLE_DEV_TOOLS` is *not* set on Preview, dev tools become
+unavailable there too. That is a configuration step, not a code defect — it is in the deployment
+checklist below and in `STAGING_PLAN.md`.
 
 ### Why A1
-Pure frontend, no DB, no LMS dependency. **But it is the weakest A1 fit of the three** — it is a
-hygiene item, not a security fix, and it is the only A1-5 item that could remove something you use.
-
----
+Pure frontend, no DB, no LMS dependency. With the amended design it no longer removes any capability
+you use, which was my only reservation about including it.
 
 ## 5. Recommendation
 
-| Item | Recommend | Why |
-|------|-----------|-----|
-| **A1-5a** tokens | ✅ **Approve** | Real security value; compounds a confirmed Production finding; zero-risk change |
-| **A1-5b** `.gitignore` | ✅ **Approve** | Free; protects the very credentials A1-3/A1-4 introduce |
-| **A1-5c** dev panel | 🤔 **Your call** | Genuinely low impact, and it may remove a workflow you rely on |
+| Item | Status | Notes |
+|------|--------|-------|
+| **A1-5a** tokens | ✅ **APPROVED — prepared** | `crypto.getRandomValues()` + rejection sampling; alphabet and length unchanged, so existing tokens stay valid |
+| **A1-5b** `.gitignore` | ✅ **APPROVED — prepared** | `.env`, `.env.*`, `!.env.example` |
+| **A1-5c** dev tools | ✅ **APPROVED — prepared, amended design** | Production off; local + Preview on via `VITE_ENABLE_DEV_TOOLS` |
 
 **Suggested sequencing:** A1-5 is not urgent and has no dependencies. It can ride along with the
 A1-3/A1-4 deployment as **one extra commit in the same Vercel deploy**, or land separately at any
 time. It does **not** need to gate on staging the way the SQL and endpoint changes do — though
 verifying it there costs nothing.
 
-### What I would need from you to prepare it
+### Deployment checklist
 
-1. Approve A1-5a and A1-5b (or a subset).
-2. Decide on A1-5c: **remove** the production activation path, or **keep** it behind a Preview-only
-   flag.
-3. Say whether `.env.example` should be completed with the full variable-name list.
+- [ ] Set `VITE_ENABLE_DEV_TOOLS=true` on the Vercel **Preview** environment (5c). **Do not set it on
+      Production.**
+- [ ] Apply the three patches (they are independent; any subset is valid)
+- [ ] `npm run build` succeeds
+- [ ] **5a:** issue a new invite token in `/admin/tokens` — 8 characters, same alphabet, and an
+      existing token still redeems successfully at `/claim/:token`
+- [ ] **5b:** `touch .env && git status` → `.env` is **not** listed; `git check-ignore -v .env`
+      confirms the rule; `.env.example` is still tracked
+- [ ] **5c Production:** `https://<prod>/?devmode=true` → **no panel**, and
+      `localStorage.dev_mode_enabled` has no effect
+- [ ] **5c Preview:** `https://<preview>/?devmode=true` → panel **appears** (proves the capability
+      was preserved)
+- [ ] **5c local:** `npm run dev` → panel appears as before
 
-On approval I will prepare it exactly as with A1-3/A1-4: patch files under
-`docs/phase-0.5b/patches/`, dry-run verified, with rollback and verification, **and nothing applied
-to the working tree**.
+### Rollback
+
+```bash
+git apply -R docs/phase-0.5b/patches/A1-5a-secure-token-rng.patch
+git apply -R docs/phase-0.5b/patches/A1-5b-gitignore-env.patch
+git apply -R docs/phase-0.5b/patches/A1-5c-devtools-env-gate.patch
+```
+
+Each is independent — reverting one does not affect the others. None touches a database object, so
+there is no data to restore. Tokens issued while 5a was live remain valid after a rollback; they were
+simply generated from a better source.
+
+### Still open (deliberately)
+
+`.env.example` currently documents 2 of ~11 variables actually used. **Not included** in 5b, because
+you have not asked for it. Say the word and I will add the missing names — `SUPABASE_ANON_KEY`,
+`TTS_MAX_ITEMS_PER_REQUEST`, `CRON_SECRET`, `VITE_ENABLE_DEV_TOOLS`, `VAPID_*`,
+`GOOGLE_TTS_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `VITE_SITE_ID`, `VITE_APP_PRODUCT` — **names only,
+never values**.
 
 ---
 
