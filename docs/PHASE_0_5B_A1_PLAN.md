@@ -24,7 +24,7 @@
 | **A1-3** | §9.11 — TTS endpoints run as `service_role` with no auth | 🔴 CRITICAL | `phase-0.5b/A1-3-TTS.md` + 3 patches |
 | **A1-4** | §9.12 — cron endpoint open when `CRON_SECRET` unset | 🟠 HIGH | `phase-0.5b/A1-4-CRON.md` + 1 patch |
 | **A1-6** | §9.15 — premium revocation silently fails | 🟠 HIGH | `phase-0.5b/A1-premium-functions.sql` |
-| **A1-5** | §9.13 — token RNG, `.gitignore`, dev panel | 🟢 LOW | *not drafted — say the word* |
+| **A1-5** | §9.13 — token RNG, `.gitignore`, dev panel | 🟢 LOW | ⏸️ **scope proposal only** — `phase-0.5b/A1-5-SCOPE-PROPOSAL.md`; awaiting your approval, nothing prepared |
 | **Data** | §9.15 — the one existing duplicate membership | — | `phase-0.5b/DATA-REMEDIATION-duplicate-membership.sql` ✅ approved, **separate deployment** |
 
 **Explicitly OUT of scope this round** (your instruction, and correct — every one of these can break
@@ -52,8 +52,10 @@ docs/
     ├── A1-premium-functions.rollback.sql          exact pre-change definitions
     ├── A1-verification.sql                        structural + data + behavioural checks
     ├── DATA-REMEDIATION-duplicate-membership.sql  ✅ approved, deploys separately
-    ├── A1-3-TTS.md                              ★ caller flow, auth design, rate limits, verification
-    ├── A1-4-CRON.md                             ★ scheduler flow, secret placement, order, verification
+    ├── A1-3-TTS.md                              ★ caller flow, auth design, chunking, verification
+    ├── A1-3-pack-size-survey.sql                  read-only — sets the chunk limit from real data
+    ├── A1-4-CRON.md                             ★ scheduler flow, secret placement, order, flashcard verification
+    ├── A1-5-SCOPE-PROPOSAL.md                     ⏸️ scope only — NOT approved, NOT prepared
     ├── STAGING_PLAN.md                          ★ minimum viable staging (hard gate)
     └── patches/
         ├── A1-3-tts-api.patch                   api/generate-pack-audio.ts
@@ -131,31 +133,73 @@ shortening) · T6 (idempotent revoke) · T7 (`MEMBERSHIP_NOT_FOUND`) · `anon` E
 
 Full detail in `phase-0.5b/A1-3-TTS.md`.
 
+**Product semantics (confirmed):** TTS is an **admin content-authoring tool** for generating
+pronunciation audio for vocabulary packs and flashcards. `PackItemsAdmin` is the expected caller.
+**Ordinary students do not need TTS generation rights**, so admin-only authorization is the correct
+product semantics — not merely a tightening.
+
 **Current flow:** `PackItemsAdmin` → `fetch('/api/generate-pack-audio')` with **no `Authorization`
 header** → handler whose only gate is `req.method !== 'POST'` → `service_role` client → Google TTS →
-Storage upsert → `pack_items` UPDATE.
-
-**Today an unauthenticated `POST` can** burn unbounded Google TTS quota (`force: true` re-synthesises
-everything), overwrite `pack-audio` objects, and write `pack_items` with RLS bypassed.
+Storage upsert → `pack_items` UPDATE. An unauthenticated `POST` today burns unbounded TTS quota,
+overwrites `pack-audio`, and writes `pack_items` with RLS bypassed.
 
 **Design:** validate the caller's JWT, then evaluate **`is_admin()` as that user** — reusing the
-schema's authoritative gate rather than adding a fifth admin mechanism. Requires
+schema's authoritative gate rather than adding a fifth admin mechanism. Students hit `403`. Requires
 `SUPABASE_ANON_KEY` server-side (the publishable key — not a new secret).
 
-**Rate limiting, honestly:** the admin gate closes the *abuse* vector; what remains is accidental
-cost blowup. In scope: a 400-synthesis per-request cap (413), `force` requiring `confirm_force`, and
-structured logging of `admin_id`/`pack_id`. **A real rate limiter needs shared state** — a
-`tts_jobs` table (schema change) or Upstash (new infra), both out of hotfix scope. The practical
-ceiling meanwhile is a **GCP quota cap** on the Text-to-Speech API, which is worth setting regardless.
+### 4.1 Batch size — redesigned as chunking, not a cap
 
-**Open question:** the Edge Function has **no caller in this repository**. Patch it, delete it, or
-leave it? I recommend **deleting** it if genuinely unused — one less privileged surface. The patch
-exists in case something outside this repo calls it.
+Your pushback on the 400 figure was right, and investigating it showed the cap was **solving the
+wrong problem**:
 
-**Ordering:** UI-patched/API-unpatched is safe; API-patched/UI-unpatched breaks the admin UI with
-403. Deploy UI first or together; roll back API first.
+- `maxDuration: 60`, and each item costs up to **two** syntheses.
+- At 5-way concurrency, ~**250 syntheses** is the realistic single-invocation ceiling — **below 400**,
+  so the cap would never have fired; the function times out first.
+- The UI **already** ships a 504 handler saying 「處理超時，請嘗試較小的單字包或稍後重試」.
+  **Large packs already fail in Production today.**
 
----
+> A security cap that fires *after* the real failure point protects nothing and breaks workflow.
+
+**So the patch chunks instead.** The endpoint processes one slice and returns a cursor
+(`next_offset` / `has_more`); the UI loops with progress toasts. Result:
+
+| Property | Effect |
+|----------|--------|
+| No pack is too large | A 1000-item pack completes in 10 requests instead of one impossible one |
+| Admin workflow unbroken | One click still does the whole pack |
+| Cost bounded per request | At most `limit × 2` syntheses |
+| Partial progress survives | A failed chunk keeps every earlier slice |
+| **Configurable server-side** | `TTS_MAX_ITEMS_PER_REQUEST`, default **100**; a caller may lower it, never raise it |
+
+**This also fixes a pre-existing production bug** — the large-pack timeout — as a side effect.
+
+**Setting the limit from data:** run `phase-0.5b/A1-3-pack-size-survey.sql` (read-only). P02 gives
+the headline numbers; **P03 lists packs that already exceed one invocation's budget today**. Send me
+P02 and I will recommend a value. Rule of thumb: `limit ≈ 200 / (1 + fraction_with_examples)`.
+
+**Remaining cost controls:** `force` requires `confirm_force`; structured logging of
+`admin_id`/`pack_id`/`offset`. A true rate limiter needs shared state that serverless lacks — a
+`tts_jobs` table or Upstash, both out of hotfix scope. The highest-value residual control is a **GCP
+quota cap** on the Text-to-Speech API.
+
+### 4.2 Edge Function — OBSOLETE-PENDING-CONFIRMATION
+
+Per your decision it is **not deleted**. The patch adds a status header and the **same admin gate**,
+so it cannot remain an unauthenticated `service_role` surface while you check the Dashboard.
+
+| Your finding | Action |
+|--------------|--------|
+| Not deployed | Mark obsolete; remove in a later cleanup |
+| Deployed, no traffic | Apply the patch, schedule removal |
+| Deployed, with traffic | Apply the patch, identify the caller before removing |
+
+⚠️ **If it is deployed, it is currently an unauthenticated `service_role` endpoint reachable from any
+origin** (`Access-Control-Allow-Origin: *`) — in that case its patch is **as urgent as the Vercel
+one**. `verify_jwt` does not help: it proves only that *some* JWT was presented, so any logged-in
+student would pass.
+
+**Ordering:** UI-patched/API-unpatched degrades safely to today's behaviour; API-patched/UI-unpatched
+breaks the admin UI with 403. Deploy UI first or together; roll back API first.
 
 ## 5. A1-4 — Cron · summary
 
@@ -166,9 +210,15 @@ Full detail in `phase-0.5b/A1-4-CRON.md`.
 I previously said the fix should *"fail closed and **reject GET**"*. **Vercel Cron invokes with
 `GET`** — rejecting it would have broken the daily reminder outright. The patch keeps GET.
 
+**Product purpose (confirmed):** this cron drives the **daily flashcard-review reminder**, pushing
+students with vocabulary due back into the SRS flow. It is not user-invokable, and **the only
+legitimate caller is the Vercel Cron scheduler** — so `CRON_SECRET` + the Vercel-injected
+`Authorization` header is exactly the right authorization model (machine-to-machine, no user
+identity involved).
+
 **The defect:** `if (cronSecret && authorization !== …)`. With `CRON_SECRET` unset the guard is
-skipped and anyone — including a browser visit, since GET is allowed — triggers a push broadcast to
-every subscriber using `service_role`.
+skipped and anyone — including a browser visit, since GET is allowed — triggers a flashcard-reminder
+broadcast to every subscriber using `service_role`.
 
 ### 🔑 The key insight
 
@@ -201,6 +251,24 @@ when the variable exists. No `vercel.json` change.
 
 **Safe rollback: revert the code, KEEP the secret.** Deleting the variable would restore the fully
 open behaviour.
+
+### 5.2 Verification goes beyond HTTP 200
+
+Per your instruction, `A1-4-CRON.md` §7.2 now verifies the **reminder workflow**, not just the status
+code — because a 200 only proves the guard let the scheduler in:
+
+| Step | Proves |
+|------|--------|
+| **A** Vercel Cron Jobs shows `200` | the scheduler authenticated |
+| **B** `sent` count reconciles with subscribers whose `last_study_date` is not today | targeting works — a `sent: 0` is **not** automatically a pass |
+| **C** students with words actually due (`user_word_progress.next_review_time <= now`) | the reminder population is real |
+| **D** a notification **arrives on a real device** and opens `/practice/vocabulary` | end-to-end delivery — the only check no HTTP status can give |
+| **E** message copy matches the student's streak/recency state | `getNotificationContent()` is coherent |
+
+> ℹ️ Step C surfaces a **product-behaviour observation, not a security finding**: the handler targets
+> on `user_stats.last_study_date` alone and never consults `user_word_progress`, so a student who is
+> fully caught up still gets a "come back and review" nudge. **Out of A1 scope** — A1 changes only
+> the authorization guard — but worth knowing before the flashcard analytics work.
 
 ### 5.1 Check this first
 
@@ -334,11 +402,13 @@ Print this and tick it.
 
 ## 10. Open questions
 
-1. **Edge Function** — patch, delete, or leave? (§4) I recommend deleting if unused; check the
-   Supabase Dashboard for whether it is even deployed.
+1. **Edge Function** — your Dashboard check (deployed? invocation logs?) decides patch vs. mark-obsolete
+   (§4.2). ⚠️ If it **is** deployed, its patch is as urgent as the Vercel one.
 2. **`CRON_SECRET`** — is it set? (§5.1) Determines whether A1-4 is urgent or routine.
-3. **A1-5** (token RNG, `.gitignore`, dev panel) — want it drafted this round?
-4. **`MAX_TTS_CALLS_PER_REQUEST = 400`** — tune to your largest legitimate pack. What is it?
+3. **Pack sizes** — run `phase-0.5b/A1-3-pack-size-survey.sql` and send me **P02**; I will recommend a
+   `TTS_MAX_ITEMS_PER_REQUEST`. Default 100 is safe meanwhile.
+4. **A1-5** — approve per `phase-0.5b/A1-5-SCOPE-PROPOSAL.md`? I recommend 5a + 5b; 5c is your call
+   (it removes `?devmode=true` on deployed URLs — tell me if you use that).
 5. **GCP quota cap** on the Text-to-Speech API — worth setting regardless of this work.
 
 ---

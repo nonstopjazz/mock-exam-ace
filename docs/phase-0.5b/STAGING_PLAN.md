@@ -149,6 +149,7 @@ Vercel → Project → Settings → Environment Variables, scoped to **Preview**
 | `VITE_SUPABASE_ANON_KEY` | staging anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | **staging** service-role key |
 | `SUPABASE_ANON_KEY` | staging anon key *(new — required by A1-3)* |
+| `TTS_MAX_ITEMS_PER_REQUEST` | **`2`** on staging — makes the 3-item fixture pack chunk, so S3 exercises the cursor loop |
 | `CRON_SECRET` | `openssl rand -hex 32` — **different from Production** |
 | `GOOGLE_TTS_API_KEY` | a key restricted to a **capped** GCP project |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_EMAIL` | a staging VAPID pair |
@@ -196,10 +197,12 @@ Run these from a browser console on the preview deployment, signed in as each us
 
 | # | Check | Expect |
 |---|-------|--------|
-| S3-1 | `A1-3-TTS.md` §6.1 U1–U5 (unauthorized) | 401/401/401/**403**/405 |
+| S3-1 | `A1-3-TTS.md` §8.1 U1–U5 (unauthorized) — U4 uses a **student** token | 401/401/401/**403**/405 |
 | S3-2 | `pack_items.audio_url` unchanged after U1–U5 | identical counts before/after |
-| S3-3 | §6.2 A1 as ADMIN on the 3-item pack | 200, three `audio_url` values populated |
-| S3-4 | §6.2 A2 / A3 (force gating) | 400 then 200 |
+| S3-3 | §8.2 A1 as ADMIN on the 3-item pack | 200, three `audio_url` values populated |
+| S3-4 | §8.2 A2 / A3 (force gating) | 400 then 200 |
+| S3-7 | §8.2 A4 chunking with `TTS_MAX_ITEMS_PER_REQUEST=2` | `has_more:true` → cursor advances → final call `has_more:false`; all 3 items get audio |
+| S3-8 | §8.2 A5 caller sends `limit: 100000` | `processed <= 2` — the server clamps |
 | S3-5 | Vercel log shows `[generate-pack-audio] admin=<uuid> …` | present on every 200 |
 | S3-6 | UI: ADMIN clicks 「生成發音」 | success toast, audio plays |
 
@@ -208,6 +211,7 @@ Run these from a browser console on the preview deployment, signed in as each us
 | # | Check | Expect |
 |---|-------|--------|
 | S4-1 | `A1-4-CRON.md` §7.1 M1–M3, M5 | 401 / 401 / 401 / 405 |
+| S4-6 | §7.2 Step B: `sent` reconciles with subscribers whose `last_study_date` ≠ today | counts match |
 | S4-2 | M4 with the correct staging secret | 200 with a `sent`/`failed` count |
 | S4-3 | M4 against the synthetic subscription | `failed: 1` (or `cleaned: 1`) — **expected**: the fake endpoint cannot receive. Proves the guard passed and the send path ran. |
 | S4-4 | Temporarily unset `CRON_SECRET` on Preview, redeploy, run M1 | **503**, and the log line `CRON_SECRET is not configured` |
@@ -261,8 +265,9 @@ careful staging story, and this becomes its foundation.
 
 Stating the limits, so a green run is not over-read:
 
-- **Production data volume** — the 400-item TTS cap is not exercised by a 3-item pack. Test S3's 413
-  path by lowering `MAX_TTS_CALLS_PER_REQUEST` on staging instead.
+- **Production data volume** — a 3-item fixture cannot show real timing. Set
+  `TTS_MAX_ITEMS_PER_REQUEST=2` on staging so the chunk loop is exercised, then time one chunk
+  against your **largest real pack** separately (survey §P04) before choosing the Production value.
 - **Real push delivery** — the synthetic subscription cannot receive. Only a real device on
   Production closes that loop.
 - **Vercel's cron scheduler attaching the header** — preview deployments do not run cron jobs. This

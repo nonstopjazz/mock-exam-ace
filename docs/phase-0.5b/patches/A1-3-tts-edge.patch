@@ -1,8 +1,24 @@
 diff --git a/supabase/functions/generate-pack-audio/index.ts b/supabase/functions/generate-pack-audio/index.ts
-index bd72a8c..ec0fc36 100644
+index bd72a8c..67f63a6 100644
 --- a/supabase/functions/generate-pack-audio/index.ts
 +++ b/supabase/functions/generate-pack-audio/index.ts
-@@ -1,10 +1,24 @@
+@@ -1,10 +1,40 @@
++// =====================================================================
++//  ⚠️ STATUS: OBSOLETE-PENDING-CONFIRMATION  (Phase 0.5B-A1)
++//
++//  This Edge Function duplicates api/generate-pack-audio.ts. It has NO
++//  caller anywhere in this repository — the admin UI calls the Vercel
++//  endpoint. Before it is removed, confirm in the Supabase Dashboard:
++//    1. is it deployed at all?
++//    2. do its invocation logs show any traffic?
++//    3. if there is traffic, is the caller legitimate and external?
++//
++//  Until that is answered it receives the SAME admin-auth gate as the
++//  primary endpoint, so it cannot remain an unauthenticated
++//  service_role surface while the question is open.
++//
++//  See docs/phase-0.5b/A1-3-TTS.md §7.
++// =====================================================================
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  
 -const corsHeaders = {
@@ -32,7 +48,7 @@ index bd72a8c..ec0fc36 100644
  
  interface PackItem {
    id: string;
-@@ -48,13 +62,71 @@ async function generateTTS(
+@@ -48,13 +78,70 @@ async function generateTTS(
  }
  
  Deno.serve(async (req) => {
@@ -91,7 +107,6 @@ index bd72a8c..ec0fc36 100644
 +
 +    const { pack_id, force = false, confirm_force = false } = await req.json();
 +
-+    // force=true re-synthesises every item; require explicit confirmation.
 +    if (force && !confirm_force) {
 +      return new Response(
 +        JSON.stringify({ error: "FORCE_REQUIRES_CONFIRMATION" }),

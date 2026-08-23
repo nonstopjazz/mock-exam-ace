@@ -1,5 +1,5 @@
 diff --git a/api/send-daily-reminders.ts b/api/send-daily-reminders.ts
-index bb4d49c..8a39646 100644
+index bb4d49c..443be35 100644
 --- a/api/send-daily-reminders.ts
 +++ b/api/send-daily-reminders.ts
 @@ -1,5 +1,6 @@
@@ -9,7 +9,7 @@ index bb4d49c..8a39646 100644
  
  export const config = {
    maxDuration: 30,
-@@ -37,15 +38,46 @@ function getNotificationContent(streak: number, daysSince: number): { title: str
+@@ -37,15 +38,48 @@ function getNotificationContent(streak: number, daysSince: number): { title: str
    return { title: '開始今天的學習', body: '每天花幾分鐘背單字，累積起來效果驚人！' };
  }
  
@@ -27,6 +27,8 @@ index bb4d49c..8a39646 100644
  export default async function handler(req: any, res: any) {
 -  // Only allow GET (Vercel Cron) or POST
 +  // Vercel Cron invokes this path with GET, so GET must stay allowed.
++  // The only legitimate caller is the Vercel Cron scheduler: this drives
++  // the daily flashcard-review reminder for students with words due.
    if (req.method !== 'GET' && req.method !== 'POST') {
      return res.status(405).json({ error: 'Method not allowed' });
    }
@@ -36,9 +38,9 @@ index bb4d49c..8a39646 100644
 +  // A1-4 (audit finding 9.12) — FAIL CLOSED.
 +  //
 +  // Previously: `if (cronSecret && ...)`. When CRON_SECRET was unset the
-+  // check was skipped entirely and anyone could trigger a push broadcast
-+  // to every subscriber, using service_role to read push_subscriptions
-+  // and user_stats with RLS bypassed.
++  // check was skipped entirely and anyone could trigger a flashcard
++  // reminder broadcast to every subscriber, using service_role to read
++  // push_subscriptions and user_stats with RLS bypassed.
 +  //
 +  // Now a missing CRON_SECRET is a misconfiguration, not an open door.
 +  // Vercel automatically sends `Authorization: Bearer $CRON_SECRET` on

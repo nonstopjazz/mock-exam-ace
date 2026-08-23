@@ -6,6 +6,23 @@ Addresses audit finding **§9.12 (HIGH)**.
 
 ---
 
+## 0a. Product purpose (confirmed by the owner)
+
+> **This cron drives the daily flashcard-review reminder.** It pushes students who have vocabulary
+> due back into the flashcard/SRS flow. It is **not** a feature students or teachers invoke by hand.
+>
+> **The only legitimate caller is the Vercel Cron scheduler.**
+
+Two consequences for this design:
+
+1. **`CRON_SECRET` + the Vercel-injected `Authorization` header IS the correct authorization model.**
+   There is no user identity involved and none is needed — this is machine-to-machine.
+2. **Verification cannot stop at HTTP 200.** A 200 only proves the guard let the scheduler through.
+   It does not prove students with due words actually received a flashcard reminder. §7.2 therefore
+   verifies the **reminder workflow**, not just the status code.
+
+---
+
 ## 0. ⚠️ Correction to my earlier advice
 
 In the Phase 0.5A audit I recommended the fix should *"fail closed and **reject GET**"*.
@@ -277,31 +294,101 @@ curl -s -o /dev/null -w "M5 wrong-method   -> %{http_code}\n" \
 **Confirm M1–M3 caused no sends:** the response body should be an error, not a `sent` count, and the
 Vercel function log should show no `webpush` activity.
 
-### 7.2 Scheduled verification (the one that actually matters)
+### 7.2 Scheduled verification — the flashcard reminder workflow
 
-Manual curl proves the guard works. **It does not prove Vercel's scheduler can still get in** — and
-that is the failure mode that silently breaks the product.
+Manual curl proves the guard works. **It does not prove the scheduler can still get in, and it does
+not prove a student actually got a flashcard reminder.** Both matter, and the second is the one that
+silently breaks the product.
 
-**After step 3 and again after step 5:**
+**Run this after step 3 and again after step 5.**
 
-1. **Vercel → Project → Cron Jobs** — check the last run's **status and timestamp**.
-   - ✅ `200` at ~12:00 UTC = healthy
-   - ❌ `401` = Vercel is not attaching the header → **roll back immediately** (§6)
-   - ❌ `503` = `CRON_SECRET` not set on that environment
-2. **Vercel → Deployment → Functions → `send-daily-reminders`** — the log line should show a normal
-   result. `[send-daily-reminders] CRON_SECRET is not configured` means step 2 did not take effect.
-3. **Confirm a notification actually arrived** on a device with a live subscription — the end-to-end
-   check no HTTP status can give you.
-4. **Cross-check the data:**
+#### Step A — the scheduler got in
+
+**Vercel → Project → Cron Jobs** — check the last run's status and timestamp.
+
+| Result | Meaning |
+|--------|---------|
+| ✅ `200` at ~12:00 UTC | The scheduler is authenticating correctly |
+| ❌ `401` | Vercel is not attaching the header → **roll back immediately** (§6) |
+| ❌ `503` | `CRON_SECRET` not set on that environment |
+
+#### Step B — the run had something to send
+
+A 200 with `sent: 0` is **not** a pass. It may mean the guard worked and there was genuinely nobody
+to remind — or it may mean the targeting query is broken. Distinguish them:
 
 ```sql
--- Should be non-zero, otherwise there is nobody to notify and a 200 proves little.
+-- B1. Are there any push subscriptions at all?
 SELECT count(*) AS live_subscriptions FROM public.push_subscriptions;
+-- If 0, the cron cannot demonstrate anything. Subscribe a test device first.
 
--- After a successful run, users who studied today should not have been targeted.
-SELECT count(*) FILTER (WHERE last_study_date = CURRENT_DATE) AS studied_today,
-       count(*)                                               AS total_with_stats
-FROM public.user_stats;
+-- B2. Who SHOULD have been reminded today?
+--     The handler targets subscribers whose last_study_date is not today.
+SELECT
+  count(*)                                                    AS subscribers,
+  count(*) FILTER (WHERE us.last_study_date = CURRENT_DATE)   AS studied_today_should_be_skipped,
+  count(*) FILTER (WHERE us.last_study_date IS DISTINCT FROM CURRENT_DATE)
+                                                              AS should_have_been_reminded
+FROM public.push_subscriptions ps
+LEFT JOIN public.user_stats us ON us.user_id = ps.user_id;
+```
+
+**`should_have_been_reminded` must match the `sent` count** in the response (allowing for `failed`
+and `cleaned`). A mismatch means the targeting logic is not doing what the product intends.
+
+#### Step C — the reminder is actually about flashcards
+
+The whole point is bringing students back to review due words. Confirm the population is real:
+
+```sql
+-- C1. Students who genuinely have vocabulary due right now.
+--     user_word_progress.next_review_time is Unix MILLISECONDS (BIGINT).
+SELECT
+  count(DISTINCT uwp.user_id) AS students_with_words_due,
+  count(*)                    AS words_due_total
+FROM public.user_word_progress uwp
+WHERE uwp.review_count > 0
+  AND uwp.next_review_time <= (extract(epoch FROM now()) * 1000)::bigint;
+
+-- C2. …and of those, how many can actually be reached by push?
+SELECT count(DISTINCT uwp.user_id) AS reachable_students_with_words_due
+FROM public.user_word_progress uwp
+JOIN public.push_subscriptions ps ON ps.user_id = uwp.user_id
+WHERE uwp.review_count > 0
+  AND uwp.next_review_time <= (extract(epoch FROM now()) * 1000)::bigint;
+```
+
+> ℹ️ **Worth knowing:** the current handler targets on `user_stats.last_study_date` only — it does
+> **not** consult `user_word_progress` to check whether the student has words actually due. So a
+> student who is fully caught up still receives a "come back and review" nudge.
+>
+> That is a **product-behaviour observation, not a security finding**, and it is **out of A1 scope** —
+> A1 changes only the authorization guard. Raising it here because C1/C2 will make the gap visible
+> and I would rather you meet it in a document than in a support message. Worth revisiting when the
+> flashcard analytics work lands.
+
+#### Step D — end-to-end delivery
+
+**Confirm a notification actually arrived on a real device** with a live subscription, and that
+tapping it opens the flashcard flow. The handler sends `url: '/practice/vocabulary'`.
+
+No HTTP status can give you this. It is the only check that proves the product works.
+
+#### Step E — content sanity
+
+`getNotificationContent()` varies the copy by streak and days-since-study. Confirm the received
+message is coherent for that student's state — e.g. a 3-day streak should not read
+「歡迎回來！」(the ≥14-days-away message).
+
+```sql
+-- The streak/recency inputs that decide the message text.
+SELECT us.streak_days,
+       us.last_study_date,
+       (CURRENT_DATE - us.last_study_date) AS days_since_study
+FROM public.user_stats us
+JOIN public.push_subscriptions ps ON ps.user_id = us.user_id
+ORDER BY us.last_study_date DESC NULLS LAST
+LIMIT 10;
 ```
 
 ### 7.3 Pre-deployment check — is the exposure live right now?
