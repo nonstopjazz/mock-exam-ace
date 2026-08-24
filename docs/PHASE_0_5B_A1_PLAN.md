@@ -66,6 +66,7 @@ docs/
         ├── A1-4-cron.patch                      api/send-daily-reminders.ts
         ├── A1-5a-secure-token-rng.patch         TokensAdmin.tsx
         ├── A1-5b-gitignore-env.patch            .gitignore
+        ├── A1-5b-env-example.patch              .env.example (17-variable inventory)
         ├── A1-5c-devtools-env-gate.patch        DevPhaseSwitcher.tsx
         └── OPTIONAL-A1-3-edge-repo-only.patch   repo hygiene — NOT an A1 deliverable
 ```
@@ -95,6 +96,7 @@ git apply docs/phase-0.5b/patches/A1-3b-reliability-ui.patch
 git apply docs/phase-0.5b/patches/A1-4-cron.patch
 git apply docs/phase-0.5b/patches/A1-5a-secure-token-rng.patch
 git apply docs/phase-0.5b/patches/A1-5b-gitignore-env.patch
+git apply docs/phase-0.5b/patches/A1-5b-env-example.patch
 git apply docs/phase-0.5b/patches/A1-5c-devtools-env-gate.patch
 ```
 

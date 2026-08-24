@@ -1,14 +1,15 @@
 diff --git a/.gitignore b/.gitignore
-index a547bf3..788656b 100644
+index a547bf3..cb9bcb2 100644
 --- a/.gitignore
 +++ b/.gitignore
-@@ -12,6 +12,14 @@ dist
+@@ -12,6 +12,15 @@ dist
  dist-ssr
  *.local
  
-+# A1-5b: local environment files hold SUPABASE_SERVICE_ROLE_KEY,
++# A1-5b — local environment files.
++# These hold SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY,
 +# GOOGLE_TTS_API_KEY, VAPID_PRIVATE_KEY and CRON_SECRET. Committing one
-+# means rotating all of them, so keep them out of git by default.
++# means rotating all of them, so keep every .env variant out of git.
 +# .env.example is the documented template and stays tracked.
 +.env
 +.env.*

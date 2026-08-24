@@ -1,8 +1,8 @@
 diff --git a/src/pages/admin/TokensAdmin.tsx b/src/pages/admin/TokensAdmin.tsx
-index ccf3900..bb93a75 100644
+index ccf3900..8437f7c 100644
 --- a/src/pages/admin/TokensAdmin.tsx
 +++ b/src/pages/admin/TokensAdmin.tsx
-@@ -84,12 +84,39 @@ const initialFormData: TokenFormData = {
+@@ -84,12 +84,37 @@ const initialFormData: TokenFormData = {
    is_active: true,
  };
  
@@ -17,12 +17,10 @@ index ccf3900..bb93a75 100644
 + * The alphabet (no look-alike characters) and length are UNCHANGED, so
 + * every existing token stays valid and the format is identical.
 + *
-+ * Rejection sampling — not modulo — keeps the 32-character alphabet
-+ * uniformly distributed over byte values. 256 is not a multiple of 32
-+ * only in the sense that we must discard bytes >= 256 - (256 % 32); with
-+ * a 32-char alphabet 256 % 32 === 0, so no byte is ever discarded, but
-+ * the guard is kept so the function stays correct if the alphabet is
-+ * ever edited.
++ * Rejection sampling — not modulo — keeps the alphabet uniformly
++ * distributed over byte values. With a 32-character alphabet 256 % 32 is
++ * 0, so no byte is ever actually discarded; the guard is kept so the
++ * function stays correct if the alphabet is ever edited.
 + */
  function generateRandomToken(length: number = 8): string {
    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

@@ -1,5 +1,5 @@
 diff --git a/api/generate-pack-audio.ts b/api/generate-pack-audio.ts
-index 304c117..ce99a30 100644
+index 304c117..15141ce 100644
 --- a/api/generate-pack-audio.ts
 +++ b/api/generate-pack-audio.ts
 @@ -55,7 +55,7 @@ export default async function handler(req: any, res: any) {
@@ -11,12 +11,16 @@ index 304c117..ce99a30 100644
  
    if (!pack_id) {
      return res.status(400).json({ error: 'pack_id is required' });
-@@ -63,15 +63,65 @@ export default async function handler(req: any, res: any) {
+@@ -63,15 +63,69 @@ export default async function handler(req: any, res: any) {
  
    const GOOGLE_TTS_API_KEY = process.env.GOOGLE_TTS_API_KEY;
    const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-+  const SUPABASE_ANON_KEY =
-+    process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
++  // Server-only name, deliberately NOT the VITE_-prefixed one. See
++  // .env.example: VITE_SUPABASE_ANON_KEY is the browser copy and is
++  // bundled into client JS; SUPABASE_ANON_KEY is this server handler's
++  // own variable. Keeping the names distinct is what makes it obvious at
++  // a glance which values reach the client.
++  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
  
    if (!GOOGLE_TTS_API_KEY) {

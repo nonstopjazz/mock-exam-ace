@@ -10,6 +10,7 @@
 |------|-------|--------|
 | **5a** secure token RNG | `patches/A1-5a-secure-token-rng.patch` | ✅ approved, prepared |
 | **5b** `.gitignore` env protection | `patches/A1-5b-gitignore-env.patch` | ✅ approved, prepared |
+| **5b** `.env.example` full inventory | `patches/A1-5b-env-example.patch` | ✅ approved, prepared |
 | **5c** dev tools env gate | `patches/A1-5c-devtools-env-gate.patch` | ✅ approved **with the Preview-preserving design** |
 
 All three **apply independently to a clean tree** (`git apply --check` verified) and touch no
@@ -110,13 +111,72 @@ Add to `.gitignore`:
 !.env.example
 ```
 
-**Optional companion:** `.env.example` currently documents 2 of the ~11 variables actually used. A1-4
-adds `CRON_SECRET` and A1-3 adds `SUPABASE_ANON_KEY` / `TTS_MAX_ITEMS_PER_REQUEST`, so someone will
-need the full list. Adding **names only, never values** is a small, useful change — flag if you want
-it in scope.
+### ✅ `.env.example` full inventory — APPROVED and DELIVERED
+
+`patches/A1-5b-env-example.patch`. A complete repository inventory of `process.env.*`,
+`import.meta.env.*` and `Deno.env.get()` was run; **17 distinct variables** were found and **all 17
+are documented** (`DEV` / `PROD` are Vite built-ins and are excluded by design, with a note saying so).
+
+Each entry carries: **name · safe placeholder · one-line purpose · which file uses it · environment
+scope · server-only vs client-exposed.**
+
+**Variables the earlier drafts had missed** — found only by doing the full inventory rather than
+adding the three we happened to be discussing:
+
+| Variable | Where | Why it was missed |
+|----------|-------|-------------------|
+| `VITE_SITE_ID` | `src/hooks/useSiteIdentifier.ts` | Local-only override; invisible in deployed environments |
+| `VITE_VAPID_PUBLIC_KEY` | `src/hooks/usePushSubscription.ts` | Browser half of the push key pair |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_EMAIL` | `api/send-daily-reminders.ts` | Server side of push |
+| `SUPABASE_URL` | both `api/*.ts` + the Edge Function | Server fallback behind `VITE_SUPABASE_URL` |
+
+**Structure:** §1 server-only · §2 client-exposed (Vite) · §3 optional configuration · a
+quick-reference table. It opens with an explanation that **the `VITE_` prefix is a security
+boundary** — anything carrying it is compiled into the browser bundle and is therefore public.
+
+**Specific callouts, as instructed:**
+
+- **`VITE_ENABLE_DEV_TOOLS`** — *"LOCAL AND PREVIEW ONLY. NEVER enable in Production."* with the
+  reason: unset in Production means **no activation path exists at all**.
+- **`CRON_SECRET`** — *"PRODUCTION SECRET"*, generate with `openssl rand -hex 32`, and
+  *"DO NOT reuse a Supabase key, a Google API key, or any other existing credential."*
+- **`TTS_MAX_ITEMS_PER_REQUEST`** — default **100**, explicitly **not required**; commented out so
+  the default applies unless deliberately overridden.
+
+**Verified safe:** no real project URL, no key-shaped string, no `nonstopjazz`/`ilearn.blog` value.
+Every placeholder is non-functional.
+
+### 3.1 ⚠️ Your correction, and a defect it exposed in my own patch
+
+You separated `SUPABASE_ANON_KEY` (server) from `VITE_SUPABASE_ANON_KEY` (browser) and said not to
+conflate them because the value may be the same. **That is right, and it caught a real mistake in my
+A1-3a patch.**
+
+My earlier version read:
+
+```ts
+const SUPABASE_ANON_KEY =
+  process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;   // ← conflates the two
+```
+
+I added that fallback for deployment convenience, and in doing so I **defeated the very property
+that makes the naming useful**: with the fallback, a reader can no longer tell from a variable's
+name whether its value reaches the client, and the server handler would silently work off the
+browser variable.
+
+**Fixed.** The patch now reads the server-only name and nothing else:
+
+```ts
+// Server-only name, deliberately NOT the VITE_-prefixed one.
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+```
+
+with a comment in the code explaining why, and matching notes on both entries in `.env.example`.
+**The cost is one extra Vercel variable to set. The benefit is that the naming convention stays
+honest** — and, as you put it, you can tell at a glance which values get bundled into client JS.
 
 ### Objects touched
-`.gitignore` (3 lines). Optionally `.env.example` (names only).
+`.gitignore` (7 lines) and `.env.example` (full rewrite — template values only).
 
 ### Risk
 🟢 **None.** Purely preventative. No runtime behaviour. The `!.env.example` negation keeps the
@@ -242,8 +302,13 @@ verifying it there costs nothing.
 - [ ] `npm run build` succeeds
 - [ ] **5a:** issue a new invite token in `/admin/tokens` — 8 characters, same alphabet, and an
       existing token still redeems successfully at `/claim/:token`
-- [ ] **5b:** `touch .env && git status` → `.env` is **not** listed; `git check-ignore -v .env`
-      confirms the rule; `.env.example` is still tracked
+- [ ] **5b `.gitignore`:** ✅ *already verified behaviourally* — with the patch applied,
+      `git check-ignore` reports `.env`, `.env.local` and `.env.production` as **ignored** while
+      `.env.example` stays **tracked**
+- [ ] **5b `.env.example`:** confirm a fresh `cp .env.example .env` + filling in real values still
+      boots the app locally (`npm run dev`)
+- [ ] **5b:** confirm no real value reached the template — `grep -E "eyJ|sk-|AIza" .env.example`
+      returns nothing
 - [ ] **5c Production:** `https://<prod>/?devmode=true` → **no panel**, and
       `localStorage.dev_mode_enabled` has no effect
 - [ ] **5c Preview:** `https://<preview>/?devmode=true` → panel **appears** (proves the capability
@@ -262,13 +327,17 @@ Each is independent — reverting one does not affect the others. None touches a
 there is no data to restore. Tokens issued while 5a was live remain valid after a rollback; they were
 simply generated from a better source.
 
-### Still open (deliberately)
+### ✅ Nothing left open in A1-5
 
-`.env.example` currently documents 2 of ~11 variables actually used. **Not included** in 5b, because
-you have not asked for it. Say the word and I will add the missing names — `SUPABASE_ANON_KEY`,
-`TTS_MAX_ITEMS_PER_REQUEST`, `CRON_SECRET`, `VITE_ENABLE_DEV_TOOLS`, `VAPID_*`,
-`GOOGLE_TTS_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `VITE_SITE_ID`, `VITE_APP_PRODUCT` — **names only,
-never values**.
+The `.env.example` inventory was the last outstanding item and is now delivered — all 17 variables,
+placeholders only.
+
+### One deployment consequence to note
+
+Because the `VITE_SUPABASE_ANON_KEY` fallback is removed (§3.1), **`SUPABASE_ANON_KEY` must be set
+in Vercel before A1-3a is deployed.** If it is missing the endpoint returns
+`500 Supabase credentials not configured` — it fails closed, which is the correct direction, but it
+would look like a broken deploy. It is on the deployment checklist in `PHASE_0_5B_A1_PLAN.md` §7.
 
 ---
 
