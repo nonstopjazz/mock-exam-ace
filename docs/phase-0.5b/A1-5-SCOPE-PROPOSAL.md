@@ -114,8 +114,10 @@ Add to `.gitignore`:
 ### ✅ `.env.example` full inventory — APPROVED and DELIVERED
 
 `patches/A1-5b-env-example.patch`. A complete repository inventory of `process.env.*`,
-`import.meta.env.*` and `Deno.env.get()` was run; **17 distinct variables** were found and **all 17
-are documented** (`DEV` / `PROD` are Vite built-ins and are excluded by design, with a note saying so).
+`import.meta.env.*` and `Deno.env.get()` was run; **15 distinct variables are documented** — the **12**
+currently referenced in source plus the **3** the A1 patches introduce (`SUPABASE_ANON_KEY`,
+`TTS_MAX_ITEMS_PER_REQUEST`, `VITE_ENABLE_DEV_TOOLS`). **No variable used in source is undocumented.**
+(`DEV` / `PROD` are Vite built-ins: excluded from the count by design, with a note saying so.)
 
 Each entry carries: **name · safe placeholder · one-line purpose · which file uses it · environment
 scope · server-only vs client-exposed.**
@@ -329,7 +331,7 @@ simply generated from a better source.
 
 ### ✅ Nothing left open in A1-5
 
-The `.env.example` inventory was the last outstanding item and is now delivered — all 17 variables,
+The `.env.example` inventory was the last outstanding item and is now delivered — all 15 variables,
 placeholders only.
 
 ### One deployment consequence to note
