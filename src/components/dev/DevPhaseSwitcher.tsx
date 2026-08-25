@@ -56,12 +56,43 @@ export function getSimulatedPhase(): SimulatedPhase {
 }
 
 // Check if dev mode is enabled via URL param or localStorage
+/**
+ * A1-5c (audit finding 9.13d) — where dev tooling may be activated.
+ *
+ * Previously `?devmode=true` enabled this panel on ANY deployment,
+ * including Production, and persisted that via localStorage. The
+ * component's own comment claimed it was "completely removed in
+ * production builds"; it was not.
+ *
+ * Now activation is only possible where dev tooling belongs:
+ *
+ *   local development   `import.meta.env.DEV` is true
+ *   Vercel Preview      VITE_ENABLE_DEV_TOOLS === 'true' (Preview scope only)
+ *   Production          neither holds  ->  permanently unavailable
+ *
+ * Preview capability is deliberately preserved: set
+ * VITE_ENABLE_DEV_TOOLS=true on the Vercel **Preview** environment only.
+ * An explicit opt-in variable is used rather than sniffing VERCEL_ENV so
+ * that enabling it is always a visible, intentional configuration act.
+ *
+ * Inside those environments the ?devmode=true + localStorage activation
+ * still works exactly as before.
+ */
+function devToolsAllowedHere(): boolean {
+  if (import.meta.env.DEV) return true;
+  return import.meta.env.VITE_ENABLE_DEV_TOOLS === "true";
+}
+
 function isDevModeEnabled(): boolean {
   if (typeof window === "undefined") return false;
 
-  // Always show in development
+  // Production: no activation path exists at all.
+  if (!devToolsAllowedHere()) return false;
+
+  // Always show in local development
   if (import.meta.env.DEV) return true;
 
+  // Preview only, from here down.
   // Check URL param: ?devmode=true
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get("devmode") === "true") {
