@@ -1620,3 +1620,54 @@ COMMIT;
 -- WHERE n.nspname = 'public'
 --   AND p.proname IN ('admin_grant_premium','admin_revoke_premium')
 -- ORDER BY p.proname;
+
+
+-- #####################################################################
+-- #  13. pack_images   (added 2026-08-26, after S3-6 hit it)
+-- #####################################################################
+-- =====================================================================
+--  SOURCE: hand-written -- like app_admins, there is NO DDL for this
+--  table in the repository. Reconstructed from its call sites:
+--    src/pages/admin/PacksAdmin.tsx:163,188,396
+--    src/hooks/useUserPacks.ts:127
+--    src/pages/practice/VocabularyPackDetail.tsx:126
+--
+--  WHY IT IS HERE
+--  Section 3.1 does not list it, because S3 was written as an API-level
+--  test. S3-6 opens the real admin pack page, and that page selects
+--    packs?select=*,cover_image:pack_images!pack_id(...)
+--  so without this table PostgREST fails the whole query with
+--    "Could not find a relationship between 'packs' and 'pack_images'"
+--  and the page never loads. S3-6 is the only check that proves the
+--  A1-3a UI patch actually attaches the caller's JWT, so it is worth
+--  unblocking rather than skipping.
+--
+--  ⚠️ ITS RLS IS NOT MODELLED ON PRODUCTION.
+--  Production's policies for this table were never captured by the
+--  discovery queries. What is below is permissive enough to let the
+--  admin page render on staging, and nothing more. No A1 item touches
+--  pack_images, so this does not affect any A1 conclusion -- but do NOT
+--  treat these policies as evidence of what Production has.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS public.pack_images (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  pack_id    uuid NOT NULL REFERENCES public.packs(id) ON DELETE CASCADE,
+  image_url  text NOT NULL,
+  is_cover   boolean DEFAULT false,
+  sort_order integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pack_images_pack_id ON public.pack_images(pack_id);
+
+ALTER TABLE public.pack_images ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Images of accessible packs are viewable" ON public.pack_images;
+CREATE POLICY "Images of accessible packs are viewable"
+  ON public.pack_images FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Pack owners can manage images" ON public.pack_images;
+CREATE POLICY "Pack owners can manage images"
+  ON public.pack_images FOR ALL
+  USING (EXISTS (SELECT 1 FROM public.packs p
+                  WHERE p.id = pack_images.pack_id AND p.created_by = auth.uid()));
