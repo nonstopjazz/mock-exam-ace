@@ -2,22 +2,32 @@
 
 > **No staging environment exists today.** Every A1 item is blocked on this.
 > **Constraint honoured: no real student PII is copied.** Schema + synthetic fixtures only.
+>
+> **A1 scope was frozen on 2026-08-25** — see `docs/PHASE_0_5B_A1_PLAN.md` §0. Staging validates
+> **exactly** that frozen scope. 🛑 **Do not add a staging check for anything outside it**, and do
+> not fix anything you discover here that is not already an A1 item.
 
 ---
 
 ## 1. What staging must be able to prove
 
-Exactly four things — the four A1 surfaces. Anything beyond this is out of scope.
+Exactly five things — the five A1 surfaces. Anything beyond this is out of scope.
 
 | # | Capability | Gates |
 |---|-----------|-------|
 | **S1** | Supabase **RPC behaviour + EXECUTE grants** | A1-1, A1-2, A1-6 |
-| **S2** | **`authenticated` vs `anon`** behaviour differences | A1-1, A1-2, A1-3 |
-| **S3** | **TTS caller path** end-to-end (browser → JWT → endpoint → admin check) | A1-3 |
-| **S4** | **Cron secret path** (scheduler header → guard → notification) | A1-4 |
+| **S2** | **`authenticated` vs `anon`** behaviour differences | A1-1, A1-2, A1-3a |
+| **S3** | **TTS caller path** end-to-end (browser → JWT → endpoint → admin check) + **chunking** | A1-3a, A1-3b |
+| **S4** | **Cron secret path** (header → guard → notification) | A1-4 |
+| **S5** | **A1-5 tail** — token RNG, `.env` hygiene, and the **dev-tools environment gate in both states** | A1-5a, A1-5b, A1-5c |
 
 **Not required:** production data volume, the 22 LMS tables, the writing application, real student
 records, real push devices, real Google TTS spend.
+
+> **On S5:** A1-5 does not strictly *need* to gate on staging the way the SQL and endpoint changes
+> do — but A1-5c is the one item whose correctness is **entirely a property of the environment it
+> runs in**, and Preview is the only place its "enabled" state can be observed before Production.
+> Verifying it here costs minutes.
 
 ---
 
@@ -26,7 +36,7 @@ records, real push devices, real Google TTS spend.
 ```
 ┌──────────────────────────────────┐     ┌────────────────────────────────┐
 │ Supabase project  gsat-staging   │     │ Vercel — Preview deployment    │
-│  (free tier is sufficient)       │     │  branch: claude/gsat-…-wiz5rt  │
+│  (free tier is sufficient)       │     │  branch: claude/security-…-i3hw1y │
 │                                  │◄────┤                                │
 │  • GSAT schema subset (§3)       │     │  VITE_SUPABASE_URL   → staging │
 │  • synthetic users (§4)          │     │  SUPABASE_*          → staging │
@@ -45,7 +55,7 @@ definitions and `EXECUTE` grants. Doing that inside the production database — 
 
 ## 3. Schema: which objects to create
 
-**Only what the four capabilities need.** Do not restore a full production dump.
+**Only what the five capabilities need.** Do not restore a full production dump.
 
 ### 3.1 Required
 
@@ -148,11 +158,17 @@ Vercel → Project → Settings → Environment Variables, scoped to **Preview**
 | `VITE_SUPABASE_URL` | staging project URL |
 | `VITE_SUPABASE_ANON_KEY` | staging anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | **staging** service-role key |
-| `SUPABASE_ANON_KEY` | staging anon key *(new — required by A1-3)* |
+| `SUPABASE_ANON_KEY` | staging anon key *(new — **required by A1-3a**, and there is deliberately **no fallback** to `VITE_SUPABASE_ANON_KEY`; if it is missing the endpoint returns `500 Supabase credentials not configured`)* |
 | `TTS_MAX_ITEMS_PER_REQUEST` | **`2`** on staging — makes the 3-item fixture pack chunk, so S3 exercises the cursor loop |
+| `VITE_ENABLE_DEV_TOOLS` | **`true`** *(new — required by **A1-5c**)*. **Preview scope ONLY.** This is what proves the approved design's middle row: Preview dev tools are available **only when explicitly enabled**. 🛑 **Never set this on Production** — with it unset there, no activation path exists at all. S5-2 temporarily removes it to model Production |
 | `CRON_SECRET` | `openssl rand -hex 32` — **different from Production** |
 | `GOOGLE_TTS_API_KEY` | a key restricted to a **capped** GCP project |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_EMAIL` | a staging VAPID pair |
+
+> **Two variables are new to this deployment** — `SUPABASE_ANON_KEY` (A1-3a) and
+> `VITE_ENABLE_DEV_TOOLS` (A1-5c). Both are also **Production-side prerequisites** with opposite
+> rules: `SUPABASE_ANON_KEY` **must** be set on Production, `VITE_ENABLE_DEV_TOOLS` **must not** be.
+> See `PHASE_0_5B_A1_PLAN.md` §7.0.
 
 > 🛑 **Triple-check `SUPABASE_SERVICE_ROLE_KEY` is the staging one.** A production service-role key in
 > a preview environment would let staging tests write to Production with RLS bypassed — the single
@@ -220,6 +236,26 @@ Run these from a browser console on the preview deployment, signed in as each us
 S4-4 is the one that proves fail-closed actually fails *closed*. Do not skip it — it is the entire
 point of the A1-4 patch.
 
+⚠️ **S4 does not close gate G4.** Preview deployments do not run crons, so staging can prove the
+*guard* is correct but never that **Vercel's scheduler attaches the header** to an automatic
+invocation. That remains a Production-only check (§9, and `PHASE_0_5B_A1_PLAN.md` §10.3).
+
+### S5 — A1-5 tail
+
+| # | Check | Expect |
+|---|-------|--------|
+| S5-1 | **A1-5c Preview, `VITE_ENABLE_DEV_TOOLS=true`:** open `https://<preview>/?devmode=true` | Dev panel **appears** — proves the Preview capability was preserved |
+| S5-2 | **A1-5c models Production:** remove `VITE_ENABLE_DEV_TOOLS` from Preview, redeploy, retry `?devmode=true`, and set `localStorage.dev_mode_enabled = 'true'` | Panel **does NOT appear** in either case — proves **no activation path exists** when the flag is absent. **Restore the variable afterwards** |
+| S5-3 | **A1-5a:** issue a new invite token in `/admin/tokens` | 8 characters, same alphabet as before |
+| S5-4 | **A1-5a backward compatibility:** redeem a **pre-existing** token at `/claim/:token` | Still redeems — alphabet and length are unchanged, so old tokens stay valid |
+| S5-5 | **A1-5b:** `grep -E "eyJ\|sk-\|AIza" .env.example` | Returns nothing — no real key reached the template |
+| S5-6 | **A1-5b:** `git check-ignore -v .env .env.local .env.production` and `git ls-files .env.example` | First three **ignored**; `.env.example` still **tracked** |
+| S5-7 | **A1-5b:** `cp .env.example .env`, fill in staging values, `npm run dev` | App boots — the template is complete enough to work from |
+
+> **S5-2 is the one that matters.** S5-1 only proves the feature still works; S5-2 proves the
+> Production posture — that with the flag absent there is **no way in at all**, including the
+> `localStorage` path. Testing only S5-1 would leave the actual security property unverified.
+
 ---
 
 ## 7. Setup checklist
@@ -232,12 +268,47 @@ point of the A1-4 patch.
 - [ ] Insert §4 fixtures (ids substituted)
 - [ ] Create the `pack-audio` bucket
 - [ ] Set Preview env vars (§5) — **verify the service-role key is staging's**
+- [ ] Confirm `SUPABASE_ANON_KEY` is set on Preview (A1-3a fails closed with `500` without it)
+- [ ] Confirm `VITE_ENABLE_DEV_TOOLS=true` is set on **Preview only** (A1-5c)
 - [ ] Deploy the branch to Vercel Preview
 - [ ] **Baseline run:** confirm S1-3 and S3-1/U1 **FAIL** on the unpatched code — i.e. reproduce both
       bugs on staging before fixing them
-- [ ] Apply A1 SQL + the four patches to staging
-- [ ] Run S1–S4 in full
+- [ ] Apply the A1 SQL, then **all nine patches** (§7.1)
+- [ ] Run **S1–S5** in full
 - [ ] Record results in `docs/phase-0.5b/STAGING_RESULTS.md`
+
+### 7.1 The nine patches — explicit list
+
+Superseding the earlier "the four patches" wording, which predates the A1-3a/A1-3b split and the
+A1-5 approval. **A1-3b applies on top of A1-3a**; the rest are independent.
+
+```bash
+# SQL first
+#   docs/phase-0.5b/A1-premium-functions.sql        (A1-1, A1-2, A1-6)
+
+# A1-3a — TTS security
+git apply docs/phase-0.5b/patches/A1-3a-security-api.patch
+git apply docs/phase-0.5b/patches/A1-3a-security-ui.patch
+
+# A1-3b — TTS reliability (REQUIRES A1-3a first; API + UI together)
+git apply docs/phase-0.5b/patches/A1-3b-reliability-api.patch
+git apply docs/phase-0.5b/patches/A1-3b-reliability-ui.patch
+
+# A1-4 — cron fail-closed
+git apply docs/phase-0.5b/patches/A1-4-cron.patch
+
+# A1-5 — independent of everything above and of each other
+git apply docs/phase-0.5b/patches/A1-5a-secure-token-rng.patch
+git apply docs/phase-0.5b/patches/A1-5b-gitignore-env.patch
+git apply docs/phase-0.5b/patches/A1-5b-env-example.patch
+git apply docs/phase-0.5b/patches/A1-5c-devtools-env-gate.patch
+```
+
+`OPTIONAL-A1-3-edge-repo-only.patch` is **not** in this list and **not** an A1 deliverable.
+
+⚠️ **Apply these to the staging deployment only.** 🛑 The `claude/security-architecture-continuation-i3hw1y`
+branch must keep `api/`, `src/`, `supabase/`, `.gitignore` and `.env.example` **byte-identical to
+`main`** — that is what guarantees pushing it cannot change deployed Production behaviour.
 
 > **The baseline run is not ceremony.** If staging cannot reproduce the bug, staging is not
 > faithfully modelling Production, and a green test run afterwards would prove nothing.
@@ -251,7 +322,7 @@ point of the A1-4 patch.
 | Supabase project + schema | ~1 h |
 | Fixtures + users | ~30 min |
 | Vercel Preview env | ~20 min |
-| Baseline + full S1–S4 | ~2 h |
+| Baseline + full S1–S5 | ~2 h |
 | **Total** | **~4 h** |
 
 Keep the project for Phase 0.5B-B and Phase 1 — the shared-LMS work in B will need a far more
@@ -270,8 +341,10 @@ Stating the limits, so a green run is not over-read:
   against your **largest real pack** separately (survey §P04) before choosing the Production value.
 - **Real push delivery** — the synthetic subscription cannot receive. Only a real device on
   Production closes that loop.
-- **Vercel's cron scheduler attaching the header** — preview deployments do not run cron jobs. This
-  is why A1-4 step 4 (§4 of `A1-4-CRON.md`) verifies a **real scheduled run on Production** after
-  setting the secret but **before** deploying fail-closed.
+- **Vercel's cron scheduler attaching the header (gate G4)** — preview deployments do not run cron
+  jobs. This is why A1-4 step 4 (§4 of `A1-4-CRON.md`) verifies a **real scheduled run on
+  Production** after setting the secret but **before** deploying fail-closed. **G4 is open, and a
+  fully green S1–S5 run does not close it.** G4 does **not** block creating or testing staging —
+  it blocks only the Production deployment of `A1-4-cron.patch`.
 - **Interaction with the LMS/Writing application** — absent from staging by design. Nothing in A1
   touches it; every item that does is deferred to Phase 0.5B-B.

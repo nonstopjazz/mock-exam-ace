@@ -7,9 +7,61 @@
 | | |
 |---|---|
 | **Prepared** | 2026-08-23 |
-| **Branch** | `claude/gsat-platform-audit-wiz5rt` |
+| **Scope frozen** | **2026-08-25** — see §0 |
+| **Branch** | `claude/security-architecture-continuation-i3hw1y` (identical content to `claude/gsat-platform-audit-wiz5rt`) |
 | **Predecessors** | `docs/PLATFORM_AUDIT.md` (Phase 0) · `docs/PRODUCTION_SCHEMA_AUDIT.md` (Phase 0.5A) |
 | **Phase 0.5B-A0** | ✅ Closed — R14/R15 run; no exploitation found; grantor `0aea72e3…` confirmed as the owner's admin account |
+
+---
+
+## 0. 🔒 A1 SCOPE IS FROZEN
+
+**Frozen by owner decision on 2026-08-25.** A1 is exactly the nine items below, plus one separately
+deployed data remediation. Nothing else.
+
+| # | Item | Artefact |
+|---|------|----------|
+| 1 | **A1-1** — `admin_grant_premium`: `is_admin()` gate, idempotent extend-in-place, `SET search_path = ''`, `REVOKE EXECUTE FROM PUBLIC, anon` | `phase-0.5b/A1-premium-functions.sql` |
+| 2 | **A1-2** — `admin_revoke_premium`: same gate and grants; signature kept; membership id resolves the user | same file |
+| 3 | **A1-3a** — TTS **security**: JWT auth + `is_admin()` evaluated as the caller; students → `403` | `patches/A1-3a-security-api.patch`, `patches/A1-3a-security-ui.patch` |
+| 4 | **A1-3b** — TTS **reliability**: chunking/cursor + UI loop; fixes the pre-existing large-pack timeout | `patches/A1-3b-reliability-api.patch`, `patches/A1-3b-reliability-ui.patch` |
+| 5 | **A1-4** — cron fail-closed + constant-time secret comparison; **GET stays allowed** | `patches/A1-4-cron.patch` |
+| 6 | **A1-5a** — `crypto.getRandomValues()` + rejection sampling for invite tokens | `patches/A1-5a-secure-token-rng.patch` |
+| 7 | **A1-5b** — `.gitignore` `.env` protection + full `.env.example` inventory (**15 variables**) | `patches/A1-5b-gitignore-env.patch`, `patches/A1-5b-env-example.patch` |
+| 8 | **A1-5c** — dev tools: local ✅ / Vercel Preview ✅ when explicitly enabled / **Production: no activation path** | `patches/A1-5c-devtools-env-gate.patch` |
+| 9 | **A1-6** — premium revocation fix (folded into the same two functions as A1-1/A1-2) | `phase-0.5b/A1-premium-functions.sql` |
+| — | **Premium duplicate data remediation** — **separate deployment, after A1 is deployed and verified** | `phase-0.5b/DATA-REMEDIATION-duplicate-membership.sql` |
+
+### 0.1 🛑 No additional findings may be added to A1
+
+**No finding, however severe, may be added to A1 without a new explicit owner decision.**
+
+This holds even when a new issue is discovered while working on A1, even when it looks small, and
+even when it appears adjacent to an item already in scope. Notice it, write it down in the audit or
+in the deferred list, and leave it there. **Discovering a problem is not authorisation to fix it.**
+
+Adding scope silently is how a reviewed, rollback-planned change set turns into an unreviewed one.
+
+### 0.2 Deferred — remains deferred under this freeze
+
+Each of these is deferred by an existing decision and is **not** reopened by the freeze:
+
+| Deferred item | Where it goes |
+|---|---|
+| **Shared LMS / Writing security** — RLS + grants for the 11 RLS-disabled tables (§9.1) | Phase 0.5B-B |
+| **`public.users` security / identity consolidation** — no `user_roles`, no role table | 0.5B-B / pre-Phase-1 decision |
+| **`essays` / `Essays` bucket work** (§9.2) — do not flip `public` to false | 0.5B-B |
+| **`claim_pack_with_token` `site` bug** (§9.5) | 0.5B-B |
+| **Remaining A2 `SECURITY DEFINER` hardening** — `claim_pack_with_token(text,text)`, `get_all_word_progress`, `is_premium_member`, `upsert_word_progress(8-arg)`. **Inventory each; do not bulk-edit** | A2 |
+| **`/exam` and the GSAT mock-exam domain** — 🛑 RESERVED, no changes of any kind | Reserved |
+| `assignments` / `assignment_submissions` / `student_tasks` redesign | 0.5B-B / Phase 4 |
+| §9.8 `notifications` INSERT policy · §9.9 broken `upsert_word_progress` overload · §9.10 SRS divergence | 0.5B-B / A2 / Phase 3 |
+| Cron **targeting** improvement (§5.3) | Later product/analytics work |
+
+### 0.3 What the freeze does not change
+
+The freeze is a scope decision, not a deployment approval. **Production deployment of A1 remains
+unapproved**, and staging remains a hard gate (§6). Open gates are tracked in §10.
 
 ---
 
@@ -56,7 +108,7 @@ docs/
     ├── A1-3-TTS.md                              ★ caller flow, auth design, chunking, verification
     ├── A1-3-pack-size-survey.sql                  read-only — sets the chunk limit from real data
     ├── A1-4-CRON.md                             ★ scheduler flow, secret placement, order, flashcard verification
-    ├── A1-5-SCOPE-PROPOSAL.md                     ⏸️ scope only — NOT approved, NOT prepared
+    ├── A1-5-SCOPE-PROPOSAL.md                     ✅ A1-5a/5b/5c — APPROVED and PREPARED
     ├── STAGING_PLAN.md                          ★ minimum viable staging (hard gate)
     └── patches/
         ├── A1-3a-security-api.patch             api/generate-pack-audio.ts      (auth)
@@ -66,7 +118,7 @@ docs/
         ├── A1-4-cron.patch                      api/send-daily-reminders.ts
         ├── A1-5a-secure-token-rng.patch         TokensAdmin.tsx
         ├── A1-5b-gitignore-env.patch            .gitignore
-        ├── A1-5b-env-example.patch              .env.example (17-variable inventory)
+        ├── A1-5b-env-example.patch              .env.example (15-variable inventory)
         ├── A1-5c-devtools-env-gate.patch        DevPhaseSwitcher.tsx
         └── OPTIONAL-A1-3-edge-repo-only.patch   repo hygiene — NOT an A1 deliverable
 ```
@@ -325,8 +377,9 @@ deployment is blocked on creating one.
 
 **Shape:** a second Supabase project (free tier) + a Vercel Preview deployment on this branch.
 
-**Proves exactly four things:** Supabase RPC/grants · `authenticated` vs `anon` · the TTS caller
-path · the cron secret path.
+**Proves five things:** S1 Supabase RPC/grants · S2 `authenticated` vs `anon` · S3 the TTS caller
+path · S4 the cron secret path · **S5 the A1-5 items, including that the A1-5c Preview gate behaves
+as designed in both states.**
 
 **No production PII.** Schema subset + synthetic fixtures: three `@example.test` users, a 3-item
 pack, one fake push subscription, and a deliberately reproduced duplicate membership. No student
@@ -349,23 +402,67 @@ Two things it deliberately cannot prove — stated so a green run is not over-re
 
 Nothing below is authorised yet.
 
+### 7.0 🔑 Environment-variable prerequisites — do these BEFORE the deploy they gate
+
+These are configuration, not code. Getting one wrong produces a deployment that looks broken while
+behaving exactly as designed.
+
+| Variable | Environment | Required by | Note |
+|---|---|---|---|
+| **`SUPABASE_ANON_KEY`** | **Production + Preview** | 🛑 **A1-3a** | ❗ **Currently NOT set on Vercel** (owner-confirmed 2026-08-25 — gate **G5**). Value = the same Supabase **public anon key** already used by `VITE_SUPABASE_ANON_KEY`. **Must exist before A1-3a deploys** or the endpoint returns `500 Supabase credentials not configured`. It fails closed — the correct direction — but looks like a broken deploy. 🛑 **Do not add a fallback between the two names** (§11.3 of the handoff): the name is what tells you whether a value is bundled into client JS |
+| **`VITE_ENABLE_DEV_TOOLS=true`** | **Preview ONLY** | A1-5c | 🛑 **Never set it on Production.** With it unset in Production there is **no activation path at all** — that is the approved design. Setting it on Preview is what preserves the Preview dev-tools capability |
+| `TTS_MAX_ITEMS_PER_REQUEST` | Optional | A1-3b | Default **100**. Set **`2`** on staging so a small fixture pack exercises the chunk loop |
+| `CRON_SECRET` | Production | A1-4 | ✅ Already set — 🛑 **do not change, rotate or delete it** |
+
+### 7.1 Order
+
 | # | Step | Gate |
 |---|------|------|
-| 0 | **Check whether `CRON_SECRET` is set** (§5.1) | If unset, this is your most urgent item |
+| 0a | ✅ **`CRON_SECRET` confirmed set** in Vercel Production (§5.1) | Done — exposure already closed |
+| 0b | **Set `SUPABASE_ANON_KEY`** on Production + Preview (§7.0) | 🛑 **Gate G5 — currently OPEN.** Blocks A1-3a only |
 | 1 | Build staging per `STAGING_PLAN.md` | 🛑 **HARD GATE for everything below** |
 | 2 | Baseline on staging — reproduce §9.15 and the TTS bypass | Proves staging is faithful |
-| 3 | Apply A1 SQL + 4 patches to staging | — |
-| 4 | Run S1–S4 acceptance in full | 🛑 All must pass |
-| 5 | **A1-4 steps 1–4**: set `CRON_SECRET` on Production, redeploy, verify a real scheduled run | 🛑 Before any fail-closed deploy |
+| 3 | Apply A1 SQL + **all nine patches** to staging (§7.2) | — |
+| 4 | Run **S1–S5** acceptance in full | 🛑 All must pass |
+| 5 | **A1-4 gate 4**: confirm a real **scheduled** cron run returns `200` | 🛑 **Gate G4 — currently OPEN.** Blocks the A1-4 deploy **only**; blocks neither this freeze nor staging |
 | 6 | Deploy **A1-1/A1-2/A1-6 SQL** to Production | Verification §A + §B (read-only) |
 | 7 | Verify grant / extend / revoke / unauthorized in `/admin/users` | 🛑 Your stated gate |
-| 8 | Deploy **A1-3 + A1-4 patches** to Production (one Vercel deploy) | Run TTS §6.1/§6.2 and Cron §7.1 |
-| 9 | Confirm Production healthy — one scheduled cron run, one TTS generation | — |
+| 8 | Deploy **A1-3a + A1-3b + A1-4 + A1-5a/5b/5c patches** to Production (one Vercel deploy) | 🛑 `SUPABASE_ANON_KEY` must already be set (step 0b). Run TTS §6.1/§6.2 and Cron §7.1 |
+| 9 | Confirm Production healthy — one scheduled cron run, one TTS generation, dev panel absent | — |
 | 10 | **Separately**, run the approved data remediation | Pre-flight → targeted UPDATE → post-check |
 | 11 | Verify `is_premium_member()` and active row count | 🛑 Your stated gate |
 
 Steps 6→7→10→11 are exactly the sequence you specified: fix functions → verify → confirm healthy →
 then cleanup → then verify again.
+
+⚠️ **If gate G4 is still open at step 8**, deploy the other patches and **hold `A1-4-cron.patch`
+back**. It is the only item in the deploy that G4 gates, and every other patch is independent of it.
+
+### 7.2 The nine patches — explicit list
+
+Superseding any earlier "four patches" wording, which predates the A1-3 split and the A1-5 approval.
+Order matters: **A1-3b applies on top of A1-3a**; the rest are independent.
+
+```bash
+# A1-3a — TTS security (independently deployable, independently rollbackable)
+git apply docs/phase-0.5b/patches/A1-3a-security-api.patch
+git apply docs/phase-0.5b/patches/A1-3a-security-ui.patch
+
+# A1-3b — TTS reliability (REQUIRES A1-3a first; API and UI deploy TOGETHER)
+git apply docs/phase-0.5b/patches/A1-3b-reliability-api.patch
+git apply docs/phase-0.5b/patches/A1-3b-reliability-ui.patch
+
+# A1-4 — cron fail-closed  🛑 blocked on gate G4
+git apply docs/phase-0.5b/patches/A1-4-cron.patch
+
+# A1-5 — independent of everything above and of each other
+git apply docs/phase-0.5b/patches/A1-5a-secure-token-rng.patch
+git apply docs/phase-0.5b/patches/A1-5b-gitignore-env.patch
+git apply docs/phase-0.5b/patches/A1-5b-env-example.patch
+git apply docs/phase-0.5b/patches/A1-5c-devtools-env-gate.patch
+```
+
+`OPTIONAL-A1-3-edge-repo-only.patch` is **not** in this list and **not** an A1 deliverable (§4.3).
 
 ---
 
@@ -387,9 +484,12 @@ No rollback deletes data. `is_active` is a soft flag throughout.
 Print this and tick it.
 
 ### Pre-deployment
-- [ ] `CRON_SECRET` presence checked in Vercel (§5.1)
+- [x] `CRON_SECRET` presence checked in Vercel (§5.1) — ✅ set
+- [ ] 🛑 **`SUPABASE_ANON_KEY` set on Vercel Production + Preview** (§7.0) — **gate G5, currently OPEN.** Required by A1-3a, no fallback
+- [ ] 🛑 **`VITE_ENABLE_DEV_TOOLS=true` set on Vercel Preview ONLY** (§7.0) — and **confirmed absent from Production**
 - [ ] Staging project created; schema + fixtures loaded
 - [ ] Preview env vars set — **service-role key confirmed to be staging's**
+- [ ] `TTS_MAX_ITEMS_PER_REQUEST=2` on staging (exercises the chunk loop)
 - [ ] Baseline: §9.15 reproduced on staging (revoke → still premium)
 - [ ] Baseline: TTS bypass reproduced on staging (unauthenticated POST → 200)
 
@@ -409,20 +509,29 @@ Print this and tick it.
 - [ ] S4-2/3 M4 with correct secret → 200
 - [ ] S4-4 secret removed → **503** + `CRON_SECRET is not configured` in the log
 - [ ] S4-5 secret restored → 200
+- [ ] **S5-1 (A1-5c) Preview:** `?devmode=true` → panel **appears** (proves Preview capability preserved)
+- [ ] **S5-2 (A1-5c) Preview with `VITE_ENABLE_DEV_TOOLS` unset**, redeployed → panel **does NOT appear** (models Production)
+- [ ] **S5-3 (A1-5a):** issue a new invite token → 8 chars, same alphabet; an **existing** token still redeems at `/claim/:token`
+- [ ] **S5-4 (A1-5b):** `grep -E "eyJ|sk-|AIza" .env.example` returns nothing
+- [ ] **S5-5 (A1-5b):** `git check-ignore` reports `.env` ignored, `.env.example` still tracked
 
 ### Production
-- [ ] `CRON_SECRET` set; redeployed
-- [ ] 🛑 **Real scheduled cron run returns 200** *(before any fail-closed deploy)*
+- [x] `CRON_SECRET` set; redeployed
+- [ ] 🛑 **`SUPABASE_ANON_KEY` set on Production** *(before the A1-3a deploy — gate G5)*
+- [ ] 🛑 **Real scheduled cron run returns 200** *(before any fail-closed deploy — gate G4)*
 - [ ] A1 SQL deployed; verification §A + §B pass
 - [ ] `/admin/users`: grant → badge appears
 - [ ] `/admin/users`: grant again → still one row (V04)
 - [ ] `/admin/users`: revoke → badge clears **and stays cleared after refresh**
-- [ ] TTS + cron patches deployed
+- [ ] TTS + cron + A1-5 patches deployed
 - [ ] Unauthenticated TTS POST → 401
 - [ ] Unauthenticated cron GET → 401
 - [ ] Admin TTS generation succeeds
 - [ ] One scheduled cron run succeeds post-patch
 - [ ] Notification actually received on a real device
+- [ ] 🛑 **A1-5c Production:** `https://<prod>/?devmode=true` → **no panel**, and `localStorage.dev_mode_enabled` has **no effect**
+- [ ] **A1-5c Production:** `VITE_ENABLE_DEV_TOOLS` confirmed **absent** from the Production environment
+- [ ] **A1-5a:** a new invite token issues correctly; an existing token still redeems
 
 ### Data remediation *(separate deployment)*
 - [ ] Pre-flight: 2 rows, both active, both permanent
@@ -434,16 +543,78 @@ Print this and tick it.
 
 ---
 
-## 10. Open questions
+## 10. Gate status — resolved decisions and open gates
 
-1. **Edge Function** — your Dashboard check (deployed? invocation logs?) decides patch vs. mark-obsolete
-   (§4.2). ⚠️ If it **is** deployed, its patch is as urgent as the Vercel one.
-2. **`CRON_SECRET`** — is it set? (§5.1) Determines whether A1-4 is urgent or routine.
-3. **Pack sizes** — run `phase-0.5b/A1-3-pack-size-survey.sql` and send me **P02**; I will recommend a
-   `TTS_MAX_ITEMS_PER_REQUEST`. Default 100 is safe meanwhile.
-4. **A1-5** — approve per `phase-0.5b/A1-5-SCOPE-PROPOSAL.md`? I recommend 5a + 5b; 5c is your call
-   (it removes `?devmode=true` on deployed URLs — tell me if you use that).
-5. **GCP quota cap** on the Text-to-Speech API — worth setting regardless of this work.
+> This section replaces the earlier "Open questions" list, **all five of which are now answered.**
+> Nothing here reopens a decision; §0 is the scope of record.
+
+### 10.1 ✅ Resolved — do not relitigate
+
+| Former question | Resolution |
+|---|---|
+| **Edge Function** — deployed? | ❌ **No Edge Functions visible** in the Supabase Dashboard. `GOOGLE_TTS_API_KEY` exists under Edge Function Secrets but has no function to run it. **Classification: repository-only / not confirmed deployed.** No Production patch required for A1. 🛑 **Do not delete the function directory; do not delete or rotate the key** (§4.3) |
+| **`CRON_SECRET`** — is it set? | ✅ **Set in Vercel Production, and the deployment was redeployed.** Because the old guard was `if (cronSecret && …)`, that **activated** it — §9.12's exposure is closed in Production *before* any code change. `A1-4-cron.patch` is now defense-in-depth. 🛑 **Do not change, rotate or delete the secret** |
+| **Pack sizes** | ✅ Largest observed Production pack: **214 items**. `TTS_MAX_ITEMS_PER_REQUEST` default **100** approved → 214 completes in **3 chunks** |
+| **A1-5** | ✅ **All three approved.** 5a and 5b as proposed; **5c approved with the amended, Preview-preserving design** — see §10.2. The earlier "5c removes `?devmode=true` on deployed URLs" framing described a **withdrawn** design and must not be reused |
+| **GCP quota cap** on the Text-to-Speech API | Recommended regardless — a **quota cap**, not merely a budget alert. Advisory; **not** an A1 deliverable and not a gate |
+
+### 10.2 🔒 The approved A1-5c design — restated so it cannot drift
+
+| Environment | Dev tools | Mechanism |
+|---|---|---|
+| **Local development** | ✅ **allowed** | `import.meta.env.DEV` |
+| **Vercel Preview** | ✅ **allowed only when explicitly enabled** | `VITE_ENABLE_DEV_TOOLS === 'true'`, **Preview scope only** |
+| **Production** | ❌ **no activation path exists** | Neither condition holds |
+
+Inside the permitted environments, `?devmode=true` + `localStorage` continue to work **exactly as
+today**. 🛑 **Do not remove the Preview capability**, and 🛑 **never set `VITE_ENABLE_DEV_TOOLS` on
+Production.**
+
+### 10.3 ⏳ Open gates
+
+| Gate | State | Blocks | Does **not** block |
+|---|---|---|---|
+| **G4** — a real **scheduled** (automatic) Vercel Cron invocation returns `200` | ⏳ **OPEN** | 🛑 **Production deployment of `A1-4-cron.patch` only** | The documentation freeze · staging creation · staging testing · every other A1 item |
+| **G5** — `SUPABASE_ANON_KEY` present on Vercel **Production + Preview** | ⏳ **OPEN** — owner-confirmed absent 2026-08-25; owner will add it using the same public anon-key value as `VITE_SUPABASE_ANON_KEY` | 🛑 **Production deployment of A1-3a** | The freeze · staging creation · every non-TTS item |
+
+🛑 **Neither G4 nor G5 changes A1 scope.** They are deployment gates on two specific items. §0 stands.
+
+#### G4 — what is and is not verified
+
+| Evidence | Status |
+|---|---|
+| `CRON_SECRET` added to Vercel Production; Production redeployed | ✅ Done |
+| **Manual** Vercel Cron "Run" | ✅ Succeeded |
+| A real device received the push notification | ✅ Confirmed |
+| **Automatic / scheduled** invocation | ⏳ **Still unconfirmed — this is G4** |
+
+So the **endpoint, the authorization path, and the push-delivery path are all verified manually.**
+What remains unverified is exactly one thing: **whether Vercel's scheduler attaches
+`Authorization: Bearer $CRON_SECRET` to its own automatic invocation.** A manual run proves nothing
+about that — *you* supplied the header in that test. Those are different mechanisms.
+
+🛑 **Do not deploy `A1-4-cron.patch` until a scheduled run is confirmed `200`.** If the scheduler is
+not attaching the header, the fail-closed patch returns 401 and **the daily flashcard reminder stops
+firing silently** — nobody watches a cron that simply does nothing.
+
+**Verify at:** Vercel → Project → Cron Jobs → last run status/timestamp. Expect `200` at ~12:00 UTC.
+`401` ⇒ header not attached, do not proceed. `503` ⇒ variable not set on that environment.
+
+#### G4 — 🔑 historical evidence that constrains the diagnosis
+
+**Before this security-hardening work began, this exact application on the Vercel Hobby plan was
+successfully sending the scheduled daily reminder every day, on the current schedule `0 12 * * *`.**
+
+Therefore:
+
+- **The Hobby plan is not considered the root cause.** Do not open a diagnosis premised on it.
+- 🛑 **Do not change the cron schedule.** `0 12 * * *` is known-good and is not under investigation.
+- 🛑 **Do not change reminder targeting or handler behaviour** as part of A1 (the targeting
+  observation in §5.3 remains a deferred product improvement, not an A1 fix).
+- 🛑 **Do not re-architect cron as part of A1.** A1-4 is a fail-closed guard and a constant-time
+  comparison. Nothing else.
+
+G4 is a **verification** step, not an invitation to redesign a mechanism that already worked.
 
 ---
 
@@ -460,4 +631,9 @@ Print this and tick it.
 | No data deleted | ✅ Soft-flag `UPDATE` only |
 | Staging as hard gate | ✅ §6, §7 step 1 |
 | No student PII in staging | ✅ Synthetic `@example.test` fixtures only |
-| Deferred items untouched | ✅ 11 LMS tables, `public.users`, essays buckets, assignments/student_tasks, identity consolidation, `claim_pack_with_token`, `/exam` |
+| Deferred items untouched | ✅ 11 LMS tables, `public.users`, essays buckets, assignments/student_tasks, identity consolidation, `claim_pack_with_token`, A2 `SECURITY DEFINER` functions, `/exam` |
+| **A1 scope frozen** | ✅ **§0 — nine items + separate data remediation, frozen 2026-08-25** |
+| **No scope added without a new owner decision** | ✅ §0.1 |
+| **A1-5c approved design preserved** | ✅ §10.2 — local ✅ / Preview ✅ when explicitly enabled / Production ❌ no activation path |
+| **Cron left alone** | ✅ Schedule `0 12 * * *`, targeting, and handler behaviour all unchanged; A1-4 is a guard only (§10.3) |
+| Patch implementations unmodified by the freeze | ✅ All ten patch files byte-identical; the freeze changed documentation only |
