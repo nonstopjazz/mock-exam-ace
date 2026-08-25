@@ -73,6 +73,32 @@ SELECT
 -- PASS criteria: anon_can_execute = false, authenticated_can_execute = true, both rows.
 
 
+-- ===== [V07] The admin gate fails closed on a NULL identity =====
+-- is_admin() returns NULL -- not false -- when auth.uid() is NULL,
+-- because its SELECT ... INTO matches no auth.users row. A gate written
+-- as a plain `NOT is_admin()` then evaluates to NULL, PL/pgSQL treats a
+-- NULL IF condition as false, and the UNAUTHORIZED branch is SKIPPED.
+-- A1 therefore uses `IS NOT TRUE`, which treats NULL and false alike.
+--
+-- This is the STRUCTURAL half of the check and is Production-safe.
+-- The behavioural half is Section C test T8 (staging only).
+SELECT
+  'V07' AS check_id,
+  p.proname AS function_name,
+  (pg_get_functiondef(p.oid) ILIKE '%is_admin() IS NOT TRUE%') AS uses_is_not_true,
+  (pg_get_functiondef(p.oid) ILIKE '%IF NOT public.is_admin()%'
+   OR pg_get_functiondef(p.oid) ILIKE '%IF NOT is_admin()%')   AS uses_bare_not
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('admin_grant_premium','admin_revoke_premium')
+ORDER BY p.proname;
+-- PASS criteria: uses_is_not_true = true AND uses_bare_not = false, BOTH rows.
+-- On a pre-A1 (or rolled-back) database both columns are false, because
+-- those bodies contain no admin check at all. That is the expected
+-- baseline reading, not a pass.
+
+
 -- =====================================================================
 --  SECTION B — data invariants (READ-ONLY, Production-safe)
 -- =====================================================================
@@ -150,6 +176,55 @@ BEGIN;
 --      Run this one while authenticated as a NON-admin user.
 --      EXPECT: {"success": false, "error": "UNAUTHORIZED"}
 SELECT 'T0' AS test, public.admin_grant_premium(:'test_user'::uuid, NULL, 'should be refused');
+
+-- T8 — NULL-IDENTITY TEST.  Verifies the APPLICATION-LAYER gate on its
+--      own, with the transport layer deliberately taken out of the
+--      picture.
+--
+--      WHY THIS EXISTS
+--      A1 has two independent defences:
+--        (a) transport layer -- REVOKE EXECUTE FROM PUBLIC, anon
+--        (b) application layer -- the is_admin() gate in the body
+--      STAGING_PLAN.md section 6 requires BOTH to be proven, because
+--      testing only one hides a hole in the other. T8 is (b).
+--
+--      During staging preparation, an earlier A1 draft written as a
+--      plain `NOT is_admin()` FAILED this test on PostgreSQL 16.13: with
+--      auth.uid() = NULL it returned
+--          {"success": true, "action": "extended", ...}
+--      Only the REVOKE was stopping anon. The gate now uses
+--      `IS NOT TRUE` and this test is what keeps it that way.
+--
+--      HOW TO RUN
+--      Run this block in the Supabase SQL Editor, which connects as a
+--      superuser. That BYPASSES the EXECUTE grant, so the call reaches
+--      the function body with no identity attached -- exactly the
+--      condition being tested. Do NOT run T8 through PostgREST: there
+--      the REVOKE would reject it first and the result would tell you
+--      nothing about the body.
+--
+--      Confirm the precondition first -- if auth.uid() is not NULL here,
+--      the test is not testing what it claims to.
+SELECT 'T8-pre' AS test,
+       auth.uid()          AS uid_must_be_null,
+       public.is_admin()   AS is_admin_expected_null;
+-- EXPECT: uid_must_be_null = NULL AND is_admin_expected_null = NULL
+
+SELECT 'T8-grant'  AS test, public.admin_grant_premium(:'test_user'::uuid, NULL, 'T8 null-identity probe');
+-- EXPECT: {"success": false, "error": "UNAUTHORIZED"}
+-- FAIL   : any response containing "success" : true  -- the gate is open
+--          to identity-less callers and only the REVOKE is holding.
+
+SELECT 'T8-revoke' AS test, public.admin_revoke_premium(gen_random_uuid());
+-- EXPECT: {"success": false, "error": "UNAUTHORIZED"}
+-- Note the expectation is UNAUTHORIZED, NOT MEMBERSHIP_NOT_FOUND. The
+-- admin gate must be reached BEFORE the membership lookup; getting
+-- MEMBERSHIP_NOT_FOUND would mean the gate was skipped.
+
+SELECT 'T8-check' AS test, count(*) AS rows_written
+FROM public.premium_memberships
+WHERE notes = 'T8 null-identity probe';
+-- EXPECT rows_written = 0 -- the refused call must not have written.
 
 -- The remaining tests assume an admin session.
 

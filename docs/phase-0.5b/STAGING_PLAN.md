@@ -188,7 +188,7 @@ Staging is ready when all of these pass. Each maps to a capability from §1.
 
 | # | Check | Expect |
 |---|-------|--------|
-| S1-1 | `A1-verification.sql` Section A (V01–V03) | admin check present; `anon` EXECUTE false; `authenticated` true |
+| S1-1 | `A1-verification.sql` Section A (V01–V03, **V07**) | admin check present; `anon` EXECUTE false; `authenticated` true; **V07: both bodies use `IS NOT TRUE`, neither uses a bare `NOT`** |
 | S1-2 | Section C tests T1–T4b as ADMIN | `granted` → `already_active` → `extended` → `extended` → `already_active`, **exactly 1 active row** |
 | S1-3 | Section C test T5 against USER_B's duplicate | `revoked_count: 2`, active rows 0, `is_premium_member` false |
 | S1-4 | T7 unknown id | `MEMBERSHIP_NOT_FOUND` |
@@ -201,12 +201,30 @@ Staging is ready when all of these pass. Each maps to a capability from §1.
 | S2-2 | same **as USER_A** (authenticated, non-admin) | `{"success":false,"error":"UNAUTHORIZED"}` |
 | S2-3 | same **as ADMIN** | `{"success":true,…}` |
 | S2-4 | Repeat S2-1..3 for `admin_revoke_premium` | same pattern |
+| **S2-5** | **`admin_grant_premium` and `admin_revoke_premium` with `auth.uid()` = NULL**, run from the **SQL Editor** so the EXECUTE grant is bypassed and the call reaches the function body with no identity — `A1-verification.sql` Section C **T8** | `{"success": false, "error": "UNAUTHORIZED"}` for both. **Any `"success": true` is a failure.** For revoke the expectation is `UNAUTHORIZED`, **not** `MEMBERSHIP_NOT_FOUND` — the gate must be reached before the lookup |
 
-> S2-1 and S2-2 fail *differently* on purpose: S2-1 is blocked by the `REVOKE` (transport layer),
-> S2-2 by `is_admin()` (application layer). **Both must be verified** — they are independent defences,
-> and testing only one hides a hole in the other.
+> S2-1, S2-2 and S2-5 fail *differently* on purpose, and all three must be verified — testing only
+> some of them hides a hole in the others:
+>
+> | | Blocked by | Layer |
+> |---|---|---|
+> | **S2-1** anon | the `REVOKE` | transport |
+> | **S2-2** authenticated non-admin | `is_admin()` returning **false** | application |
+> | **S2-5** NULL identity | `is_admin()` returning **NULL** | application |
+>
+> **Why S2-5 was added.** `is_admin()` returns **NULL**, not false, when `auth.uid()` is NULL — its
+> `SELECT ... INTO` matches no `auth.users` row. A gate written as a plain `NOT is_admin()` then
+> evaluates to NULL, PL/pgSQL treats a NULL `IF` condition as false, and the UNAUTHORIZED branch is
+> **skipped**. An earlier A1 draft did exactly this and, reproduced on PostgreSQL 16.13, returned
+> `{"success": true, "action": "extended", …}` to a caller with no identity — **only the `REVOKE` was
+> holding**, so the two defences were not independent as S2 assumes. The gate now uses
+> `IS NOT TRUE`. S2-5 is what keeps it that way.
+>
+> Run S2-5 from the **SQL Editor** (superuser, bypasses the grant), never through PostgREST — there
+> the `REVOKE` rejects it first and the result tells you nothing about the body. S2-1 is the reverse:
+> it must go through PostgREST, because the grant layer is precisely what it is testing.
 
-Run these from a browser console on the preview deployment, signed in as each user, via
+Run S2-1 to S2-4 from a browser console on the preview deployment, signed in as each user, via
 `supabase.rpc(...)` — that exercises the real PostgREST path rather than a psql superuser session.
 
 ### S3 — TTS caller path

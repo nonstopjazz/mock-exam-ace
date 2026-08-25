@@ -494,13 +494,14 @@ Print this and tick it.
 - [ ] Baseline: TTS bypass reproduced on staging (unauthenticated POST → 200)
 
 ### Staging acceptance
-- [ ] S1-1 V01–V03: admin check present; `anon` EXECUTE false; `authenticated` true
+- [ ] S1-1 V01–V03 + **V07**: admin check present; `anon` EXECUTE false; `authenticated` true; **both bodies use `IS NOT TRUE`, neither a bare `NOT`**
 - [ ] S1-2 T1–T4b: `granted` → `already_active` → `extended` → `extended` → `already_active`; **1 active row**
 - [ ] S1-3 T5: `revoked_count: 2`; active rows 0; `is_premium_member` false
 - [ ] S1-4 T7: `MEMBERSHIP_NOT_FOUND`
 - [ ] S2-1 anon RPC → denied at the grant layer
 - [ ] S2-2 non-admin RPC → `UNAUTHORIZED` from `is_admin()`
 - [ ] S2-3 admin RPC → success
+- [ ] **S2-5 (T8) NULL identity via SQL Editor → `UNAUTHORIZED` for grant AND revoke; 0 rows written**
 - [ ] S3-1 TTS U1–U5 → 401/401/401/**403**/405
 - [ ] S3-2 `pack_items.audio_url` unchanged after the unauthorized attempts
 - [ ] S3-3/4 admin generation → 200; force gating → 400 then 200

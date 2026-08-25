@@ -96,7 +96,26 @@ BEGIN
   -- A1-1: authoritative admin check. is_admin() is the same gate used by
   -- every other privileged object in this schema, so this makes these
   -- functions as strong as the rest of the system.
-  IF NOT public.is_admin() THEN
+  --
+  -- WHY `IS NOT TRUE` AND NOT A PLAIN `NOT`:
+  --   is_admin() returns NULL -- not false -- when auth.uid() is NULL,
+  --   because its SELECT ... INTO matches no auth.users row. Under a
+  --   plain NOT, the condition is then NULL; PL/pgSQL treats a NULL IF
+  --   condition as false, so this UNAUTHORIZED branch would be SKIPPED
+  --   and a caller with no identity would be granted.
+  --
+  --   Reproduced on PostgreSQL 16.13 while preparing staging. A call
+  --   with auth.uid() = NULL returned
+  --       {"success": true, "action": "extended", ...}
+  --   while an authenticated non-admin correctly returned UNAUTHORIZED.
+  --
+  --   `IS NOT TRUE` treats NULL and false alike, so the gate fails
+  --   closed. Behaviour for authenticated callers is unchanged.
+  --
+  --   The REVOKE at the bottom of this file also stops anon at the grant
+  --   layer, but the two defences must hold INDEPENDENTLY -- see
+  --   STAGING_PLAN.md section 6, S2. Verified by S2-5 / V07.
+  IF public.is_admin() IS NOT TRUE THEN
     RETURN json_build_object('success', false, 'error', 'UNAUTHORIZED');
   END IF;
 
@@ -179,7 +198,11 @@ DECLARE
   v_revoked_count integer;
 BEGIN
   -- A1-2: authoritative admin check.
-  IF NOT public.is_admin() THEN
+  -- `IS NOT TRUE` rather than a plain NOT -- see the note in
+  -- admin_grant_premium above. is_admin() returns NULL when auth.uid()
+  -- is NULL, and a NULL IF condition would skip this branch entirely.
+  -- Verified by S2-5 / V07.
+  IF public.is_admin() IS NOT TRUE THEN
     RETURN json_build_object('success', false, 'error', 'UNAUTHORIZED');
   END IF;
 
