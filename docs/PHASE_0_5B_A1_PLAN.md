@@ -415,7 +415,7 @@ behaving exactly as designed.
 
 | Variable | Environment | Required by | Note |
 |---|---|---|---|
-| **`SUPABASE_ANON_KEY`** | **Production + Preview** | 🛑 **A1-3a** | ❗ **Currently NOT set on Vercel** (owner-confirmed 2026-08-25 — gate **G5**). Value = the same Supabase **public anon key** already used by `VITE_SUPABASE_ANON_KEY`. **Must exist before A1-3a deploys** or the endpoint returns `500 Supabase credentials not configured`. It fails closed — the correct direction — but looks like a broken deploy. 🛑 **Do not add a fallback between the two names** (§11.3 of the handoff): the name is what tells you whether a value is bundled into client JS |
+| **`SUPABASE_ANON_KEY`** | **Production + Preview** | 🛑 **A1-3a** | ✅ **SET on both, 2026-08-26 (gate G5 closed).** Value = the same Supabase **public anon key** already used by `VITE_SUPABASE_ANON_KEY` **of the matching project** — Production's on Production, staging's on Preview. Verified by decoding each key's JWT `ref` claim. Without it the endpoint returns `500 Supabase credentials not configured`: fails closed, the correct direction, but looks like a broken deploy. 🛑 **Do not add a fallback between the two names** (§11.3 of the handoff): the name is what tells you whether a value is bundled into client JS |
 | **`VITE_ENABLE_DEV_TOOLS=true`** | **Preview ONLY** | A1-5c | 🛑 **Never set it on Production.** With it unset in Production there is **no activation path at all** — that is the approved design. Setting it on Preview is what preserves the Preview dev-tools capability |
 | `TTS_MAX_ITEMS_PER_REQUEST` | Optional | A1-3b | Default **100**. Set **`2`** on staging so a small fixture pack exercises the chunk loop |
 | `CRON_SECRET` | Production | A1-4 | ✅ Already set — 🛑 **do not change, rotate or delete it** |
@@ -425,12 +425,12 @@ behaving exactly as designed.
 | # | Step | Gate |
 |---|------|------|
 | 0a | ✅ **`CRON_SECRET` confirmed set** in Vercel Production (§5.1) | Done — exposure already closed |
-| 0b | **Set `SUPABASE_ANON_KEY`** on Production + Preview (§7.0) | 🛑 **Gate G5 — currently OPEN.** Blocks A1-3a only |
-| 1 | Build staging per `STAGING_PLAN.md` | 🛑 **HARD GATE for everything below** |
-| 2 | Baseline on staging — reproduce §9.15 and the TTS bypass | Proves staging is faithful |
-| 3 | Apply A1 SQL + **all nine patches** to staging (§7.2) | — |
-| 4 | Run **S1–S5** acceptance in full | 🛑 All must pass |
-| 5 | **A1-4 gate 4**: confirm a real **scheduled** cron run returns `200` | 🛑 **Gate G4 — currently OPEN.** Blocks the A1-4 deploy **only**; blocks neither this freeze nor staging |
+| 0b | ~~Set `SUPABASE_ANON_KEY` on Production + Preview~~ | ✅ **DONE 2026-08-26 — gate G5 closed** |
+| 1 | ~~Build staging per `STAGING_PLAN.md`~~ | ✅ **DONE 2026-08-26** |
+| 2 | ~~Baseline on staging~~ | ✅ **DONE** — both findings reproduced before their fixes |
+| 3 | ~~Apply A1 SQL + all nine patches to staging~~ | ✅ **DONE** via the throwaway branch `claude/a1-staging-validation` |
+| 4 | ~~Run S1–S5 acceptance in full~~ | ✅ **DONE — all pass.** `phase-0.5b/STAGING_RESULTS.md` |
+| 5 | ~~A1-4 gate 4: confirm a real scheduled cron run returns `200`~~ | ✅ **DONE 2026-08-25 — gate G4 closed** |
 | 6 | Deploy **A1-1/A1-2/A1-6 SQL** to Production | Verification §A + §B (read-only) |
 | 7 | Verify grant / extend / revoke / unauthorized in `/admin/users` | 🛑 Your stated gate |
 | 8 | Deploy **A1-3a + A1-3b + A1-4 + A1-5a/5b/5c patches** to Production (one Vercel deploy) | 🛑 `SUPABASE_ANON_KEY` must already be set (step 0b). Run TTS §6.1/§6.2 and Cron §7.1 |
@@ -491,8 +491,8 @@ Print this and tick it.
 
 ### Pre-deployment
 - [x] `CRON_SECRET` presence checked in Vercel (§5.1) — ✅ set
-- [ ] 🛑 **`SUPABASE_ANON_KEY` set on Vercel Production + Preview** (§7.0) — **gate G5, currently OPEN.** Required by A1-3a, no fallback
-- [ ] 🛑 **`VITE_ENABLE_DEV_TOOLS=true` set on Vercel Preview ONLY** (§7.0) — and **confirmed absent from Production**
+- [x] 🛑 **`SUPABASE_ANON_KEY` set on Vercel Production + Preview** (§7.0) — ✅ **G5 closed 2026-08-26**, each key verified against its own project's `ref`
+- [x] 🛑 **`VITE_ENABLE_DEV_TOOLS=true` set on Vercel Preview ONLY** (§7.0) — ✅ confirmed **absent from Production** 2026-08-26
 - [ ] Staging project created; schema + fixtures loaded
 - [ ] Preview env vars set — **service-role key confirmed to be staging's**
 - [ ] `TTS_MAX_ITEMS_PER_REQUEST=2` on staging (exercises the chunk loop)
@@ -524,8 +524,8 @@ Print this and tick it.
 
 ### Production
 - [x] `CRON_SECRET` set; redeployed
-- [ ] 🛑 **`SUPABASE_ANON_KEY` set on Production** *(before the A1-3a deploy — gate G5)*
-- [ ] 🛑 **Real scheduled cron run returns 200** *(before any fail-closed deploy — gate G4)*
+- [x] 🛑 **`SUPABASE_ANON_KEY` set on Production** — ✅ 2026-08-26 (gate G5)
+- [x] 🛑 **Real scheduled cron run returns 200** — ✅ 2026-08-25 (gate G4)
 - [ ] A1 SQL deployed; verification §A + §B pass
 - [ ] `/admin/users`: grant → badge appears
 - [ ] `/admin/users`: grant again → still one row (V04)
@@ -582,7 +582,7 @@ Production.**
 | Gate | State | Blocks | Does **not** block |
 |---|---|---|---|
 | **G4** — a real **scheduled** (automatic) Vercel Cron invocation returns `200` | ✅ **PASSED 2026-08-25** — see §10.4 | Nothing. **No longer blocks A1-4** | — |
-| **G5** — `SUPABASE_ANON_KEY` present on Vercel **Production + Preview** | ⏳ **OPEN for Production.** ✅ Set on **Preview** during the staging run and verified working (S3 admin calls returned 200, not `500 Supabase credentials not configured`) | 🛑 **Production deployment of A1-3a** | The freeze · staging · every non-TTS item |
+| **G5** — `SUPABASE_ANON_KEY` present on Vercel **Production + Preview** | ✅ **PASSED 2026-08-26.** Preview set and verified during the staging run (S3 admin calls returned 200, not `500 Supabase credentials not configured`). Production set 2026-08-26, with the key's JWT `ref` claim decoded to confirm it is the Production project's and **not** staging's, and `role = anon`. No redeploy was triggered — current Production code does not read this variable | Nothing. **No longer blocks A1-3a** | — |
 
 🛑 **Neither G4 nor G5 changes A1 scope.** They are deployment gates on two specific items. §0 stands.
 

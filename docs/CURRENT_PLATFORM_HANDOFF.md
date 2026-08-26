@@ -16,8 +16,8 @@
   record: `docs/PHASE_0_5B_A1_PLAN.md` §0. **No additions without a new owner decision** (§13.2).
 - ✅ **Staging is BUILT and S1–S5 all PASS** (2026-08-26). Results:
   `docs/phase-0.5b/STAGING_RESULTS.md`. The hard gate is satisfied.
-- ✅ **G4 PASSED** (2026-08-25) — a real scheduled cron run fired automatically and a device
-  received it. **G5 remains OPEN for Production** (`SUPABASE_ANON_KEY`), and blocks A1-3a only.
+- ✅ **G4 PASSED** (2026-08-25) and ✅ **G5 PASSED** (2026-08-26). **No deployment gate is open.**
+  What remains is an owner decision on Production deployment, which is still unapproved.
 - **Next action: owner decision on Production deployment** (§13 step 5). It is still unapproved.
 - **No application source code has been modified on this branch.** All code changes exist as
   **unapplied patch files** under `docs/phase-0.5b/patches/`. `api/`, `src/`, `supabase/`,
@@ -751,7 +751,7 @@ Approaches already rejected, corrected, or explicitly out of bounds.
 | # | Uncertainty | How to resolve | Do not assume |
 |---|-------------|----------------|---------------|
 | 1 | ~~Has the scheduled (automatic) cron run succeeded?~~ | — | ✅ **ANSWERED — G4 PASSED 2026-08-25 ~20:13 Asia/Taipei.** The `0 12 * * *` schedule fired automatically with no manual Run and a real device received the reminder. A1-4 is no longer gate-blocked. 🛑 The schedule, targeting, handler behaviour and secret must still **not** be changed |
-| 2 | **Is `SUPABASE_ANON_KEY` set in Vercel?** | Vercel → Environment Variables | ❗ **ANSWERED 2026-08-25: NO — it is NOT set (gate G5).** Present today: `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_URL`. Owner will add `SUPABASE_ANON_KEY` (same public anon-key value as `VITE_SUPABASE_ANON_KEY`) scoped to **Production + Preview**. 🛑 Required by A1-3a with **no fallback** |
+| 2 | ~~Is `SUPABASE_ANON_KEY` set in Vercel?~~ | — | ✅ **ANSWERED — G5 PASSED 2026-08-26.** Set on Production and Preview, each with its own project's anon key, verified by decoding the JWT `ref` claim. No redeploy was triggered: current Production code does not read it. 🛑 Still **no fallback** to `VITE_SUPABASE_ANON_KEY` — do not add one |
 | 3 | ~~Does staging exist yet?~~ | — | ✅ **Built and run 2026-08-26.** Supabase `gsat-staging` (ref `cwymrzcovgobfqxtithn`) + a Preview deployment of the throwaway branch `claude/a1-staging-validation`. 🛑 That branch carries the patched source: **never merge it** |
 | 4 | **Has any A1 item been deployed since this handoff?** | `git log` on `main`; Vercel deployments; re-run `docs/phase-0.5b/A1-verification.sql` §A | That Production still matches §4 |
 | 5 | **Is the duplicate membership still present?** | `DATA-REMEDIATION-…sql` **Step 1 pre-flight** | That `36258aeb…` still has exactly 2 active rows |
