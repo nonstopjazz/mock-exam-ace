@@ -370,10 +370,16 @@ vocabulary analytics work.
 
 ---
 
-## 6. Staging — hard gate
+## 6. Staging — hard gate ✅ PASSED 2026-08-26
 
-`phase-0.5b/STAGING_PLAN.md`. **No staging environment exists today**, so every A1 Production
-deployment is blocked on creating one.
+**Results: `phase-0.5b/STAGING_RESULTS.md`.** S1–S5 all pass. Both findings were reproduced on
+staging **before** their fixes and are closed after them, so the green run means something.
+
+Staging caught four defects, one of which would have shipped silently: the `REVOKE` block did not
+apply, leaving `anon` with `EXECUTE` on both admin functions while every functional signal looked
+correct. See `STAGING_RESULTS.md` §6.
+
+Plan: `phase-0.5b/STAGING_PLAN.md`.
 
 **Shape:** a second Supabase project (free tier) + a Vercel Preview deployment on this branch.
 
@@ -575,19 +581,36 @@ Production.**
 
 | Gate | State | Blocks | Does **not** block |
 |---|---|---|---|
-| **G4** — a real **scheduled** (automatic) Vercel Cron invocation returns `200` | ⏳ **OPEN** | 🛑 **Production deployment of `A1-4-cron.patch` only** | The documentation freeze · staging creation · staging testing · every other A1 item |
-| **G5** — `SUPABASE_ANON_KEY` present on Vercel **Production + Preview** | ⏳ **OPEN** — owner-confirmed absent 2026-08-25; owner will add it using the same public anon-key value as `VITE_SUPABASE_ANON_KEY` | 🛑 **Production deployment of A1-3a** | The freeze · staging creation · every non-TTS item |
+| **G4** — a real **scheduled** (automatic) Vercel Cron invocation returns `200` | ✅ **PASSED 2026-08-25** — see §10.4 | Nothing. **No longer blocks A1-4** | — |
+| **G5** — `SUPABASE_ANON_KEY` present on Vercel **Production + Preview** | ⏳ **OPEN for Production.** ✅ Set on **Preview** during the staging run and verified working (S3 admin calls returned 200, not `500 Supabase credentials not configured`) | 🛑 **Production deployment of A1-3a** | The freeze · staging · every non-TTS item |
 
 🛑 **Neither G4 nor G5 changes A1 scope.** They are deployment gates on two specific items. §0 stands.
 
-#### G4 — what is and is not verified
+#### 10.4 G4 — ✅ CLOSED 2026-08-25
 
 | Evidence | Status |
 |---|---|
 | `CRON_SECRET` added to Vercel Production; Production redeployed | ✅ Done |
 | **Manual** Vercel Cron "Run" | ✅ Succeeded |
 | A real device received the push notification | ✅ Confirmed |
-| **Automatic / scheduled** invocation | ⏳ **Still unconfirmed — this is G4** |
+| **Automatic / scheduled** invocation | ✅ **CONFIRMED 2026-08-25, ~20:13 Asia/Taipei** |
+
+**What closed it:** the `0 12 * * *` schedule fired **automatically** — no manual Run was pressed —
+and a real device received the flashcard reminder. That confirms all four links in one observation:
+the scheduler fired, Vercel attached `Authorization: Bearer $CRON_SECRET`, the guard accepted it,
+the reminder workflow ran, and delivery reached a real device.
+
+**Consequence:** `A1-4-cron.patch` is no longer gate-blocked. It stays defense-in-depth — the
+exposure itself closed when the variable was set.
+
+🛑 The rules below still stand: **do not change the schedule, the targeting, the handler behaviour,
+or the secret.**
+
+#### Superseded — the pre-2026-08-25 open state
+
+| Evidence | Status |
+|---|---|
+| **Automatic / scheduled** invocation | ~~⏳ Still unconfirmed~~ → ✅ closed above |
 
 So the **endpoint, the authorization path, and the push-delivery path are all verified manually.**
 What remains unverified is exactly one thing: **whether Vercel's scheduler attaches

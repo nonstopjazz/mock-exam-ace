@@ -14,8 +14,11 @@
 - The project is at the **end of Phase 0.5B-A1 preparation**. Nothing is deployed.
 - 🔒 **A1 scope was FROZEN on 2026-08-25** — nine items + one separate data remediation. Scope of
   record: `docs/PHASE_0_5B_A1_PLAN.md` §0. **No additions without a new owner decision** (§13.2).
-- **Next action: create staging** (§13 step 3). Two deployment gates are open: **G4** (scheduled cron
-  run unverified) and **G5** (`SUPABASE_ANON_KEY` not yet set). Neither blocks staging.
+- ✅ **Staging is BUILT and S1–S5 all PASS** (2026-08-26). Results:
+  `docs/phase-0.5b/STAGING_RESULTS.md`. The hard gate is satisfied.
+- ✅ **G4 PASSED** (2026-08-25) — a real scheduled cron run fired automatically and a device
+  received it. **G5 remains OPEN for Production** (`SUPABASE_ANON_KEY`), and blocks A1-3a only.
+- **Next action: owner decision on Production deployment** (§13 step 5). It is still unapproved.
 - **No application source code has been modified on this branch.** All code changes exist as
   **unapplied patch files** under `docs/phase-0.5b/patches/`. `api/`, `src/`, `supabase/`,
   `.gitignore` and `.env.example` are byte-identical to `main`.
@@ -520,9 +523,9 @@ crons — hence §8.2), or real push delivery.
 |---|------|--------|
 | 1 | ~~Finish `.env.example` inventory~~ | ✅ **ALREADY DONE** — commit `02246a5`, all 15 variables. See §13.1. |
 | 2 | **Freeze A1 scope** | ✅ **DONE 2026-08-25** — recorded in `docs/PHASE_0_5B_A1_PLAN.md` §0 |
-| 3 | **Create staging** per `docs/phase-0.5b/STAGING_PLAN.md` | ⏭️ **START HERE** — the hard gate |
-| 4 | **Validate A1 in staging** (S1–S5 + baseline run) | Pending |
-| 5 | **Only then** consider Production deployment | Pending, **not approved** |
+| 3 | **Create staging** per `docs/phase-0.5b/STAGING_PLAN.md` | ✅ **DONE 2026-08-26** |
+| 4 | **Validate A1 in staging** (S1–S5 + baseline run) | ✅ **DONE — all pass.** `docs/phase-0.5b/STAGING_RESULTS.md` |
+| 5 | **Only then** consider Production deployment | ⏭️ **HERE** — still **not approved**; needs an owner decision |
 
 ### 13.1 ⚠️ Correction to the step list
 
@@ -747,9 +750,9 @@ Approaches already rejected, corrected, or explicitly out of bounds.
 
 | # | Uncertainty | How to resolve | Do not assume |
 |---|-------------|----------------|---------------|
-| 1 | **Has the scheduled (automatic) cron run succeeded?** | Vercel → Cron Jobs → last run status | ⏳ **STILL OPEN (gate G4)** as of 2026-08-25. Do not assume the manual run implies it (§8.2). 🔑 The same schedule `0 12 * * *` worked daily on Hobby **before** this work began, so **Hobby is not the root cause** — and 🛑 the schedule, targeting and handler behaviour must **not** be changed (`PHASE_0_5B_A1_PLAN.md` §10.3) |
+| 1 | ~~Has the scheduled (automatic) cron run succeeded?~~ | — | ✅ **ANSWERED — G4 PASSED 2026-08-25 ~20:13 Asia/Taipei.** The `0 12 * * *` schedule fired automatically with no manual Run and a real device received the reminder. A1-4 is no longer gate-blocked. 🛑 The schedule, targeting, handler behaviour and secret must still **not** be changed |
 | 2 | **Is `SUPABASE_ANON_KEY` set in Vercel?** | Vercel → Environment Variables | ❗ **ANSWERED 2026-08-25: NO — it is NOT set (gate G5).** Present today: `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_URL`. Owner will add `SUPABASE_ANON_KEY` (same public anon-key value as `VITE_SUPABASE_ANON_KEY`) scoped to **Production + Preview**. 🛑 Required by A1-3a with **no fallback** |
-| 3 | **Does staging exist yet?** | Ask / check Supabase projects | ❌ **Still does not exist** as of 2026-08-25 |
+| 3 | ~~Does staging exist yet?~~ | — | ✅ **Built and run 2026-08-26.** Supabase `gsat-staging` (ref `cwymrzcovgobfqxtithn`) + a Preview deployment of the throwaway branch `claude/a1-staging-validation`. 🛑 That branch carries the patched source: **never merge it** |
 | 4 | **Has any A1 item been deployed since this handoff?** | `git log` on `main`; Vercel deployments; re-run `docs/phase-0.5b/A1-verification.sql` §A | That Production still matches §4 |
 | 5 | **Is the duplicate membership still present?** | `DATA-REMEDIATION-…sql` **Step 1 pre-flight** | That `36258aeb…` still has exactly 2 active rows |
 | 6 | **Are the 11 tables still RLS-disabled?** | R01 in `production_discovery_round2.sql` | That nothing changed |

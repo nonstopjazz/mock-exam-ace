@@ -1,6 +1,7 @@
 # Minimum Viable Staging — hard gate for any A1 Production deployment
 
-> **No staging environment exists today.** Every A1 item is blocked on this.
+> ✅ **BUILT AND RUN — 2026-08-26. S1–S5 all pass.** Results: `STAGING_RESULTS.md`.
+> This file remains the plan of record, for rebuilding staging in 0.5B-B or Phase 1.
 > **Constraint honoured: no real student PII is copied.** Schema + synthetic fixtures only.
 >
 > **A1 scope was frozen on 2026-08-25** — see `docs/PHASE_0_5B_A1_PLAN.md` §0. Staging validates
