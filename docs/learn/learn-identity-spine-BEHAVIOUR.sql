@@ -19,15 +19,21 @@
 --
 --  These must already exist as Supabase Auth users. This file never
 --  inserts into auth.users.
+--
+--  Mapped to gsat-staging on 2026-08-27 (L1/L2). S1 and S2 reuse the two
+--  existing staging accounts; TA, TB and G1 were created for this run.
+--  🛑 staging-admin@example.test is deliberately NOT used: TA drives every
+--     "the teacher CAN see it" assertion, and an admin account there could
+--     turn a false positive green.
 -- =====================================================================
 
 CREATE OR REPLACE VIEW public._learn_actors AS
 SELECT * FROM (VALUES
-  ('TA', 'learn-teacher-a@example.com'),
-  ('TB', 'learn-teacher-b@example.com'),
-  ('S1', 'learn-student-1@example.com'),
-  ('S2', 'learn-student-2@example.com'),
-  ('G1', 'learn-guardian-1@example.com')
+  ('TA', 'learn-teacher-a@example.test'),
+  ('TB', 'learn-teacher-b@example.test'),
+  ('S1', 'staging-user-a@example.test'),
+  ('S2', 'staging-user-b@example.test'),
+  ('G1', 'learn-guardian-1@example.test')
 ) v(slot, email);
 
 -- Precondition: fail loudly, naming exactly what is missing.
