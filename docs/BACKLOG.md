@@ -92,7 +92,7 @@ Also in A2: **9.9** `upsert_word_progress` 6-arg overload is broken — its `ON 
 | **9.3** premium functions: no authorization, `EXECUTE` to PUBLIC + `anon` | A1-1 / A1-2 | 2026-08-26 |
 | **9.11** TTS endpoint: `service_role`, no authentication | A1-3a | 2026-08-26 |
 | **9.12** cron endpoint open when `CRON_SECRET` unset | A1-4 | 2026-08-26 |
-| **9.15** premium revocation silently fails | A1-6 | 2026-08-26 (code) |
+| **9.15** premium revocation silently fails | A1-6 (code) + Phase C (data) | 2026-08-26 / 2026-08-27 |
 | §9.13 token RNG · dev panel · `.gitignore` | A1-5a / 5c / 5b | 2026-08-26 |
 | Pre-existing large-pack TTS timeout | A1-3b | 2026-08-26 |
 

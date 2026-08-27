@@ -20,8 +20,11 @@
   What remains is an owner decision on Production deployment, which is still unapproved.
 - ✅ **A1 IS DEPLOYED TO PRODUCTION (2026-08-26) and verified.** SQL first, then PR #108 merged as
   `5c910c4`. Record: `docs/PHASE_0_5B_A1_PLAN.md` §12. Four CRITICAL/HIGH findings closed.
-- **Next: the scheduled cron run after deployment**, then Phase C (premium duplicate remediation),
-  which the owner deferred until Production health checks finish.
+- ✅ **PHASE 0.5B-A1 IS CLOSED (2026-08-27).** Scheduled cron confirmed on two consecutive days;
+  Phase C remediation done with the user's entitlement unchanged.
+- **Mainline is now GSAT product development.** Remaining findings live in `docs/BACKLOG.md`,
+  which also carries the rule for when a new finding may interrupt product work. 🛑 **Two CRITICAL
+  findings (9.1, 9.2) remain open there** — do not treat A1's closure as "the platform is secure".
 - **No application source code has been modified on this branch.** All code changes exist as
   **unapplied patch files** under `docs/phase-0.5b/patches/`. `api/`, `src/`, `supabase/`,
   `.gitignore` and `.env.example` are byte-identical to `main`.

@@ -4,9 +4,9 @@
 > `mock-exam-ace` (GSAT). This banner previously said nothing had been deployed; that is no longer
 > true, and the deployment record is in §12.
 >
-> **What is still open:** the next scheduled cron run (the day after deployment) and Phase C, the
-> premium duplicate data remediation, which the owner has deferred until Production health checks
-> are complete.
+> ✅ **PHASE 0.5B-A1 IS CLOSED — 2026-08-27.** Deployment, post-merge verification, the scheduled
+> cron confirmation and the Phase C data remediation are all complete. Remaining findings are in
+> `docs/BACKLOG.md` and do not queue themselves into the next conversation.
 
 | | |
 |---|---|
@@ -771,10 +771,41 @@ A1-5c, a single visit to `?devmode=true` wrote `dev_mode_enabled` to localStorag
 stayed reachable afterwards **without** the parameter. Proving the URL route is closed says nothing
 about the persistent one; S5-2 on staging is what taught us to check both.
 
-### Still open
+### Phase C — duplicate membership remediation, 2026-08-27 ✅
+
+Pre-flight confirmed the audit's row id was still accurate and still active, and that **both** rows
+were permanent — so deactivating either could not shorten the user's entitlement. The correction
+targets one row by primary key rather than a generic "keep the newest per user", precisely so that
+drifted data produces `UPDATE 0` and a stop rather than an over-reach.
+
+| Check | Result |
+|---|---|
+| `total_rows` | **2** — no data deleted, `is_active` is a soft flag |
+| `active_rows` | **1** — duplicate cleared |
+| **`is_premium_after`** | **`true`** — 🔑 **entitlement unchanged**, which was the whole constraint |
+| `no_duplicates_anywhere` | **`true`** — V04 is now 0 across the entire table |
+
+**9.15 is now closed in both code and data.**
+
+> One deviation from the script, recorded: it was written as `BEGIN` → `UPDATE` → in-transaction
+> check → `COMMIT`, for a psql-style session. The Supabase SQL Editor shows only the last
+> statement's result, so the in-transaction check would have been invisible, and splitting it across
+> two runs risks the transaction landing on a different pooled connection. It was run as an
+> auto-committed `UPDATE` followed immediately by the verification, with the one-line rollback
+> prepared in advance. Safe because the pre-flight had just confirmed both rows active and
+> permanent.
+
+### Scheduled cron — confirmed 2026-08-27 ✅
+
+The owner confirms the reminder fired **on two consecutive days** at the configured time. Repeated
+observation, not a single sample — which matters for a cron, because its failure mode is silence.
+
+### Still open — moved to the backlog
+
+`docs/BACKLOG.md` now owns everything not closed here, along with the rule that decides when a new
+finding may interrupt product work.
 
 | Item | State |
 |---|---|
-| Next **scheduled** cron run after deployment | ⏳ Verify at ~12:00 UTC, plus real-device delivery |
-| **Phase C** — premium duplicate data remediation | ⏸️ Owner-deferred until Production health checks finish. V04 still reports the one known duplicate |
 | Staging teardown | ⏸️ Owner-deferred until the rollback window closes. 🛑 `claude/a1-staging-validation` must never be merged |
+| Everything else | `docs/BACKLOG.md` — **two CRITICAL findings (9.1, 9.2) remain open there**, blocked on the shared LMS/Writing application's maintainer |
