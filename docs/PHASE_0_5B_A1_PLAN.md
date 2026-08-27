@@ -1,8 +1,12 @@
 # Phase 0.5B-A1 — Safe Critical Hotfixes
 
-> 🛑 **NOTHING IN THIS PLAN HAS BEEN DEPLOYED. PRODUCTION IS UNMODIFIED.**
-> No application code, no SQL migration, and no Supabase object was changed while preparing it.
-> The source tree is untouched: the code changes ship as **patch files**, not as edits.
+> ✅ **A1 IS DEPLOYED TO PRODUCTION — 2026-08-26.** Both halves are live and verified against
+> `mock-exam-ace` (GSAT). This banner previously said nothing had been deployed; that is no longer
+> true, and the deployment record is in §12.
+>
+> **What is still open:** the next scheduled cron run (the day after deployment) and Phase C, the
+> premium duplicate data remediation, which the owner has deferred until Production health checks
+> are complete.
 
 | | |
 |---|---|
@@ -93,8 +97,9 @@ fail closed. For these two projects the patch **tightens** the endpoint; it does
 
 ### 0.3 What the freeze does not change
 
-The freeze is a scope decision, not a deployment approval. **Production deployment of A1 remains
-unapproved**, and staging remains a hard gate (§6). Open gates are tracked in §10.
+The freeze was a scope decision, not a deployment approval. Deployment was approved separately by
+the owner on 2026-08-26, after the staging hard gate passed and both G4 and G5 closed. **The frozen
+scope was honoured exactly: nine items, nothing added, nothing dropped.** See §12.
 
 ---
 
@@ -694,3 +699,58 @@ G4 is a **verification** step, not an invitation to redesign a mechanism that al
 | **A1-5c approved design preserved** | ✅ §10.2 — local ✅ / Preview ✅ when explicitly enabled / Production ❌ no activation path |
 | **Cron left alone** | ✅ Schedule `0 12 * * *`, targeting, and handler behaviour all unchanged; A1-4 is a guard only (§10.3) |
 | Patch implementations unmodified by the freeze | ✅ All ten patch files byte-identical; the freeze changed documentation only |
+
+
+---
+
+## 12. Production deployment record — 2026-08-26
+
+Deployed **only** to `mock-exam-ace` (GSAT). Kids and TOEIC are accepted known impact and deferred
+(§0.25).
+
+### Order, as §7.1 requires: SQL first, then code
+
+| Stage | What | Evidence |
+|---|---|---|
+| **A1** | `A1-premium-functions.sql` applied in the Production SQL Editor | Preceded by a read-only identity check — 22 users, 0 `@example.test`, `is_admin()` not the staging override, 0 staging fixture items — proving the session was Production and not `gsat-staging` |
+| **A2** | Grants verified immediately | `SECURITY DEFINER` + `search_path` pinned · gate reads `IS NOT TRUE` · **PUBLIC and `anon` both lost EXECUTE** · `authenticated` and `service_role` retained |
+| **A3** | `A1-verification.sql` §A + §B, read-only | V04 = 1 (the known duplicate, Phase C) · V05 PASS · V06 PASS, no unattributed grants · 5 total rows, matching A0 |
+| **A4** | Real `/admin/users` run | Three consecutive grants created **zero** new rows · revoke cleared it · **still non-premium after a refresh** |
+| **B** | PR #108 merged as `5c910c4` | Nine patches; source byte-identical to the tree that passed S1–S5 |
+
+### The before/after that closes finding 9.3
+
+```
+before  {=X/postgres, postgres=X/postgres, anon=X/postgres, authenticated=X/postgres, service_role=X/postgres}
+after   {             postgres=X/postgres,                  authenticated=X/postgres, service_role=X/postgres}
+```
+
+### Production verification after the merge
+
+| Check | Result |
+|---|---|
+| Unauthenticated TTS `POST` | **401** `UNAUTHENTICATED` — staging baseline was 200 with six audio files generated |
+| Unauthenticated cron `GET` | **401** — **not** 503, so `CRON_SECRET` is intact |
+| Admin TTS generation | Succeeds |
+| Dev panel via `?devmode=true` | Not present |
+
+### Findings closed in Production
+
+| Finding | Severity | Closed by |
+|---|---|---|
+| **9.3** premium functions had no authorization; `EXECUTE` granted to PUBLIC and `anon` | 🔴 CRITICAL ×2 | A1-1 / A1-2 |
+| **9.11** TTS endpoint ran as `service_role` with no authentication | 🔴 CRITICAL | A1-3a |
+| **9.15** premium revocation silently failed | 🟠 HIGH | A1-6 |
+| **9.12** cron endpoint open when `CRON_SECRET` unset | 🟠 HIGH | A1-4 (exposure had already closed when the variable was set) |
+| §9.13 token RNG · `.env` hygiene · dev tools in Production | 🟢 LOW | A1-5a / 5b / 5c |
+
+Also fixed: the **pre-existing large-pack TTS timeout** (A1-3b). The 214-item pack needed ~428
+syntheses against a 60-second `maxDuration` and returned 504; it now completes in chunks.
+
+### Still open
+
+| Item | State |
+|---|---|
+| Next **scheduled** cron run after deployment | ⏳ Verify at ~12:00 UTC, plus real-device delivery |
+| **Phase C** — premium duplicate data remediation | ⏸️ Owner-deferred until Production health checks finish. V04 still reports the one known duplicate |
+| Staging teardown | ⏸️ Owner-deferred until the rollback window closes. 🛑 `claude/a1-staging-validation` must never be merged |

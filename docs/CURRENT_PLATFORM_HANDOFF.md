@@ -18,7 +18,10 @@
   `docs/phase-0.5b/STAGING_RESULTS.md`. The hard gate is satisfied.
 - ✅ **G4 PASSED** (2026-08-25) and ✅ **G5 PASSED** (2026-08-26). **No deployment gate is open.**
   What remains is an owner decision on Production deployment, which is still unapproved.
-- **Next action: owner decision on Production deployment** (§13 step 5). It is still unapproved.
+- ✅ **A1 IS DEPLOYED TO PRODUCTION (2026-08-26) and verified.** SQL first, then PR #108 merged as
+  `5c910c4`. Record: `docs/PHASE_0_5B_A1_PLAN.md` §12. Four CRITICAL/HIGH findings closed.
+- **Next: the scheduled cron run after deployment**, then Phase C (premium duplicate remediation),
+  which the owner deferred until Production health checks finish.
 - **No application source code has been modified on this branch.** All code changes exist as
   **unapplied patch files** under `docs/phase-0.5b/patches/`. `api/`, `src/`, `supabase/`,
   `.gitignore` and `.env.example` are byte-identical to `main`.
@@ -525,7 +528,7 @@ crons — hence §8.2), or real push delivery.
 | 2 | **Freeze A1 scope** | ✅ **DONE 2026-08-25** — recorded in `docs/PHASE_0_5B_A1_PLAN.md` §0 |
 | 3 | **Create staging** per `docs/phase-0.5b/STAGING_PLAN.md` | ✅ **DONE 2026-08-26** |
 | 4 | **Validate A1 in staging** (S1–S5 + baseline run) | ✅ **DONE — all pass.** `docs/phase-0.5b/STAGING_RESULTS.md` |
-| 5 | **Only then** consider Production deployment | ⏭️ **HERE** — still **not approved**; needs an owner decision |
+| 5 | **Only then** consider Production deployment | ✅ **DONE 2026-08-26** — owner-approved, deployed, verified. `PHASE_0_5B_A1_PLAN.md` §12 |
 
 ### 13.1 ⚠️ Correction to the step list
 
