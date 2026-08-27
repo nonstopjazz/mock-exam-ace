@@ -178,13 +178,21 @@ UNION ALL SELECT 17, 'V17 exactly 4 FKs in learn point at auth.users (classes.ow
                      AND con.confrelid = 'auth.users'::regclass) = 4
             THEN 'PASS' ELSE 'FAIL' END
 
+-- to_regclass, not ::regclass: public.users is an LMS table and does not
+-- exist on staging at all, where a hard cast would abort the whole script.
+-- When it is absent the check is VACUOUS, and the detail column says so
+-- rather than reporting a bare 0 that would read as real evidence.
 UNION ALL SELECT 18, 'V18 NO foreign key in learn references public.users',
-       (SELECT count(*)::text FROM pg_constraint con
-         WHERE con.connamespace = 'learn'::regnamespace AND con.contype = 'f'
-           AND con.confrelid = 'public.users'::regclass),
-       CASE WHEN NOT EXISTS (SELECT 1 FROM pg_constraint con
-                              WHERE con.connamespace = 'learn'::regnamespace AND con.contype = 'f'
-                                AND con.confrelid = 'public.users'::regclass)
+       CASE WHEN to_regclass('public.users') IS NULL
+            THEN '(public.users does not exist here - check is vacuous)'
+            ELSE (SELECT count(*)::text FROM pg_constraint con
+                   WHERE con.connamespace = 'learn'::regnamespace AND con.contype = 'f'
+                     AND con.confrelid = to_regclass('public.users'))
+       END,
+       CASE WHEN to_regclass('public.users') IS NULL
+             OR NOT EXISTS (SELECT 1 FROM pg_constraint con
+                             WHERE con.connamespace = 'learn'::regnamespace AND con.contype = 'f'
+                               AND con.confrelid = to_regclass('public.users'))
             THEN 'PASS' ELSE 'FAIL' END
 
 UNION ALL SELECT 19, 'V19 no column named student_id anywhere in schema learn',
