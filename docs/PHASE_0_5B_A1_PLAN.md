@@ -748,8 +748,6 @@ after   {             postgres=X/postgres,                  authenticated=X/post
 Also fixed: the **pre-existing large-pack TTS timeout** (A1-3b). The 214-item pack needed ~428
 syntheses against a 60-second `maxDuration` and returned 504; it now completes in chunks.
 
-### Still open
-
 Both dev-tool activation routes were checked separately, and that separation matters: before
 A1-5c, a single visit to `?devmode=true` wrote `dev_mode_enabled` to localStorage and the panel
 stayed reachable afterwards **without** the parameter. Proving the URL route is closed says nothing
