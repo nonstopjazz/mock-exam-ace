@@ -58,6 +58,39 @@ Each of these is deferred by an existing decision and is **not** reopened by the
 | §9.8 `notifications` INSERT policy · §9.9 broken `upsert_word_progress` overload · §9.10 SRS divergence | 0.5B-B / A2 / Phase 3 |
 | Cron **targeting** improvement (§5.3) | Later product/analytics work |
 
+### 0.25 Three Vercel projects deploy this repo — Kids and TOEIC: owner accepted, deferred
+
+Discovered 2026-08-26 from a Vercel PR comment: **three** Vercel projects deploy from this
+repository, not one. Every prior document — the audit, this plan, gates G4 and G5 — assumed a single
+project.
+
+| Project | Production branch | In A1 scope? |
+|---|---|---|
+| **`mock-exam-ace`** (GSAT) | `main` | ✅ **The only A1 target.** All prerequisites verified against it |
+| `kids-ilearn-blog` | `main` | ❌ **Owner accepted known impact, deferred** |
+| `toeic-ilearn-blog` | `main` | ❌ **Owner accepted known impact, deferred** |
+
+**Owner decision, 2026-08-26 — do not relitigate and do not investigate these two further:**
+
+Confirmed state of both: no `SUPABASE_ANON_KEY`, **no Cron Job**, no `CRON_SECRET`, and no
+`VITE_ENABLE_DEV_TOOLS` on Production.
+
+Accepted consequences of merging the A1 code patches:
+
+1. Both will redeploy from `main` alongside GSAT.
+2. Their **admin** TTS endpoint may return `500 Supabase credentials not configured` for want of
+   `SUPABASE_ANON_KEY`. Accepted; to be handled later. It fails closed, and the feature is
+   admin-only.
+3. Their cron endpoint returns **503** with no `CRON_SECRET`. Accepted — **neither project has a
+   Cron Job**, so nothing is calling it on a schedule and nothing breaks.
+4. **No environment variables will be added** for either project.
+5. **No Production verification** will be performed for either project.
+6. **A1 scope is unchanged** by this. Nine items, nothing added.
+
+⚠️ Note for whoever picks these two up later: before A1-4, their reminder endpoint runs the old
+`if (cronSecret && …)` guard with no secret set, so the check is skipped entirely. A1-4 makes that
+fail closed. For these two projects the patch **tightens** the endpoint; it does not loosen it.
+
 ### 0.3 What the freeze does not change
 
 The freeze is a scope decision, not a deployment approval. **Production deployment of A1 remains
