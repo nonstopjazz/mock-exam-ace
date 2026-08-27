@@ -114,9 +114,12 @@ These are not backlog items. They are constraints on everything built from here.
 
 **The identity model for all `/learn` work is decided:** `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md`.
 
-🛑 **Two owner decisions there are still unanswered and block the first `/learn` table:**
+✅ **Both owner decisions are DECIDED (2026-08-27):**
 
-| | Decision | Recommendation |
+| | Decision | Outcome |
 |---|---|---|
-| **D1** | A dedicated `learn` schema, or `public` with a `learn_` prefix? | A dedicated `learn` schema — costs one Dashboard setting, buys a `REVOKE`-based second defence layer under RLS |
-| **D2** | How a teacher reads a classmate's `display_name` | An additive `SELECT` policy on `user_profiles`, scoped to a shared active class or a confirmed guardian link |
+| **D1** | Namespace | A dedicated **`learn` schema**. `anon` gets no access to it; `authenticated` gets `USAGE` + `SELECT/INSERT/UPDATE` and **no `DELETE`**; schema privilege is a second layer, never a substitute for RLS |
+| **D2** | Profile visibility | Additive `SELECT` policies on `user_profiles`, **narrowed**: class owner and confirmed guardian only. 🛑 A student gets nothing from merely sharing a class |
+
+First migration: `docs/learn/IDENTITY_SPINE_PLAN.md` — dry-run clean, **staging not yet run,
+Production not proposed**.

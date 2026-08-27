@@ -8,8 +8,9 @@
 > identity anchor for *new* work and nothing else. It does **not** reconcile the existing LMS
 > identity model, and it does **not** propose a migration.
 >
-> 🛑 **Two owner decisions (D1, D2 in §9 and §10) must be answered before the first `/learn` table
-> is created.** Everything else below is decided.
+> ✅ **D1 and D2 were both DECIDED by the owner on 2026-08-27** (§9, §10). Everything in this
+> document is now settled. The first migration built on it is
+> `docs/learn/IDENTITY_SPINE_PLAN.md`.
 
 ---
 
@@ -208,6 +209,13 @@ CREATE TABLE learn_guardian_links (
   attributable. This is the same soft-flag lesson as the A1 Phase C remediation.
 - **`owner_teacher_user_id` is denormalised onto the class on purpose.** §8 explains why: it is what
   makes the membership policies non-recursive.
+- ⚠️ **Refined during the v1 migration (2026-08-27):** the owner is *also* denormalised onto
+  `learn.class_members` as `class_owner_teacher_user_id`, tied to the class by a **composite FK with
+  `ON UPDATE CASCADE`** so it cannot drift. §8.2 below routes teacher visibility through
+  `learn.classes`, which is correct on its own — but once `learn.classes` *also* needs a
+  member-visibility policy, the two form a cycle that PostgreSQL rejects. The extra column makes
+  `class_members` a leaf and removes the cycle without a `SECURITY DEFINER` helper. See
+  `docs/learn/IDENTITY_SPINE_PLAN.md` §3.1.
 - **`ON DELETE RESTRICT` on the class owner** — deleting a teacher account must not silently orphan
   or cascade-destroy a class full of student work. `ON DELETE CASCADE` everywhere else.
 - **Guardian access is derived, not granted.** A guardian sees a child's data because
@@ -395,9 +403,19 @@ they are public, and their insert/update/delete policies have no owner predicate
 
 ---
 
-## 9. 🛑 Owner decision D1 — namespace: a `learn` schema, or `public` with a prefix?
+## 9. ✅ D1 — DECIDED: a dedicated `learn` schema
 
-**Recommendation: create a dedicated `learn` schema.**
+**Owner decision, 2026-08-27: approved.** A dedicated `learn` schema; **not** `public` with a
+`learn_` prefix. With these conditions, all of which the v1 migration implements and verifies:
+
+| Condition | Where it is enforced | Check |
+|---|---|---|
+| `anon` gets no general access to `learn` | `REVOKE ALL ON SCHEMA learn FROM PUBLIC`; no grant to `anon` | V02, V03, V05, V10 · B03 |
+| `authenticated` gets only what it needs | `USAGE` + `SELECT/INSERT/UPDATE`; **no `DELETE`** | V04, V11, V12 · B19 |
+| Every table still RLS ON | policies written in the same migration | V07, V08 |
+| Schema privilege is **not** a substitute for RLS | both layers tested separately | V07–V12 · B01–B25 |
+
+The reasoning that led there:
 
 | | `learn` schema **(recommended)** | `public` + `learn_` prefix |
 |---|---|---|
@@ -413,15 +431,12 @@ The whole shape of this audit came from `public` being an undifferentiated names
 applications with no ownership marker. A separate schema fixes that structurally, for one Dashboard
 setting.
 
-**If D1 is answered "no",** nothing else in this document changes: every table name gains a `learn_`
-prefix and lives in `public`, and §8's grants become per-object instead of per-schema.
-
-**Per the standing working rule, if D1 is approved the Dashboard step will be walked one step at a
-time.**
+The Exposed-schemas Dashboard step is **L6** of the staging plan and is walked on its own, per the
+standing working rule.
 
 ---
 
-## 10. 🛑 Owner decision D2 — how a teacher reads a student's display name
+## 10. ✅ D2 — DECIDED: Option A, narrowed
 
 A class roster needs `user_profiles.display_name` for people other than the caller. Today
 `user_profiles` is self-only, so a roster renders as a list of uuids.
@@ -432,8 +447,23 @@ A class roster needs `user_profiles.display_name` for people other than the call
 | B — a `SECURITY DEFINER` roster function | Adds a third `SECURITY DEFINER` function for something a policy expresses directly. Contradicts the standing "avoid unless required" rule |
 | C — duplicate `display_name` onto `learn_class_members` | Cheapest to write and the worst outcome: a second copy of profile data that drifts, and the beginning of a second identity store |
 
-Option A grants strictly less than it looks: no new table becomes readable, and the predicate is
-bounded by a membership the caller already has.
+**Owner decision, 2026-08-27: Option A approved, with the predicate narrowed.** 🛑 The
+"shares an active class" condition of the original recommendation was **rejected as too wide.** What
+is granted:
+
+| # | Rule | Implementation | Check |
+|---|---|---|---|
+| 1 | The existing self policy is **not modified** | untouched by the migration | V22 · B15 |
+| 2 | A **class owner** may read the profiles of the active members of an active class they own | `user_profiles_select_by_class_owner` | V23 · B11, B22, B23 |
+| 3 | A **confirmed guardian** may read their linked child's profile | `user_profiles_select_by_guardian`, `status = 'active'` only | V23 · B13, B14 |
+| 4 | 🛑 A student gets **nothing** from merely sharing a class | no such predicate exists anywhere | V25 · **B10** |
+| 5 | No pre-opening for a future need | v1 grants only rules 2 and 3 | — |
+| 6 | `display_name` is **not** copied onto `class_members` | option C stays rejected | V06 |
+| 7 | No `SECURITY DEFINER` unless RLS structurally cannot express it — otherwise **STOP and report** | ✅ **not triggered.** The spine contains zero functions; §3.1 of the spine plan shows how the recursion was removed structurally instead | **V13** |
+
+Rule 2 is scoped to an **active** class, exactly as worded. Consequence worth knowing: archiving a
+class also removes the teacher's view of its members' names (B23). If teachers later need to review
+archived rosters, that is a narrowly-scoped follow-up policy — not something to pre-open now.
 
 ---
 
@@ -468,10 +498,12 @@ decision costs nothing to reverse today, and would cost a data migration to reve
 
 ## 13. Next step
 
-With D1 and D2 answered, `/learn` schema work can begin. The first migration should be the identity
-spine only — `learn_classes`, `learn_class_members`, `learn_guardian_links`, their policies, and the
-D2 policy — verified the way A1 was: a structural check per claim, including a NULL-identity call and
-a `has_function_privilege` check for every grant.
+D1 and D2 are answered, so the first migration exists: **`docs/learn/IDENTITY_SPINE_PLAN.md`** —
+`learn.classes`, `learn.class_members`, `learn.guardian_links`, their policies, and the two D2
+policies. It is dry-run clean locally (26/26 structural, 25/25 behavioural, rollback verified) and
+awaits staging execution. Production is a separate, later approval.
 
-🛑 **This checkpoint is closed once D1 and D2 are answered. It does not reopen for adjacent findings**
-— those go to `docs/BACKLOG.md` under the interrupt rule.
+🛑 **This checkpoint closes once the identity spine passes staging verification. It does not reopen
+for adjacent findings** — those go to `docs/BACKLOG.md` under the interrupt rule. After it closes,
+mainline returns to `/learn` product feature development: no A2, no shared LMS/Writing security, no
+9.1 / 9.2, no bucket audit, no identity migration, unless the owner approves it separately.
