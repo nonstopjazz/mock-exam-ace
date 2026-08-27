@@ -50,7 +50,7 @@ system.
 | Item | State |
 |---|---|
 | **9.6** Five parallel admin authorization mechanisms | Deferred to **Phase 1**. `is_admin()` hard-codes one email; `app_admins`; inline `auth.jwt()->>'email'`; `raw_user_meta_data->>'role'` (**inert — 0 users hold it**); `public.users.is_admin` (RLS off, unenforced) |
-| **Identity migration / consolidation** | Blocked on the identity-root question: do the LMS `student_id` columns reference `auth.users.id` or `public.users.id`? 🛑 **Do not create `user_roles` or any new role table before that is settled.** See the identity architecture checkpoint |
+| **Identity migration / consolidation** | Still blocked on the identity-root question: do the LMS `student_id` columns reference `auth.users.id` or `public.users.id`? 🛑 **Do not create `user_roles` or any global role table.** ✅ **No longer blocks `/learn`** — `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md` (2026-08-27) decouples the two by anchoring all new work on `auth.users.id`. The LMS root stays unanswered until the two applications must actually share data |
 
 ### 🟡 A2 — remaining `SECURITY DEFINER` hardening
 
@@ -111,3 +111,12 @@ These are not backlog items. They are constraints on everything built from here.
 | **Identity** | 🛑 **Do not introduce another users/identity table.** There are already too many |
 | **`SECURITY DEFINER`** | Avoid unless genuinely required. If used: pin `search_path`, and `REVOKE` down to the minimum `EXECUTE` |
 | **Shared LMS/Writing tables and public buckets** | 🛑 **Do not depend on them** without explicit owner approval — they carry the open 9.1 / 9.2 problems |
+
+**The identity model for all `/learn` work is decided:** `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md`.
+
+🛑 **Two owner decisions there are still unanswered and block the first `/learn` table:**
+
+| | Decision | Recommendation |
+|---|---|---|
+| **D1** | A dedicated `learn` schema, or `public` with a `learn_` prefix? | A dedicated `learn` schema — costs one Dashboard setting, buys a `REVOKE`-based second defence layer under RLS |
+| **D2** | How a teacher reads a classmate's `display_name` | An additive `SELECT` policy on `user_profiles`, scoped to a shared active class or a confirmed guardian link |

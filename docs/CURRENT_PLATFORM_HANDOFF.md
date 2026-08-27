@@ -25,6 +25,11 @@
 - **Mainline is now GSAT product development.** Remaining findings live in `docs/BACKLOG.md`,
   which also carries the rule for when a new finding may interrupt product work. 🛑 **Two CRITICAL
   findings (9.1, 9.2) remain open there** — do not treat A1's closure as "the platform is secure".
+- 🧭 **The identity model for all new `/learn` work is decided (2026-08-27):**
+  `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md`. Canonical root is **`auth.users.id`**; `user_profiles`
+  is reused; roles are **relationship-scoped** (no global role table); `public.users` is
+  **quarantined**. Design only — **no migration**. 🛑 **Two owner decisions (D1 namespace, D2 roster
+  visibility) are unanswered and block the first `/learn` table.**
 - **No application source code has been modified on this branch.** All code changes exist as
   **unapplied patch files** under `docs/phase-0.5b/patches/`. `api/`, `src/`, `supabase/`,
   `.gitignore` and `.env.example` are byte-identical to `main`.
