@@ -733,6 +733,7 @@ after   {             postgres=X/postgres,                  authenticated=X/post
 | Unauthenticated cron `GET` | **401** — **not** 503, so `CRON_SECRET` is intact |
 | Admin TTS generation | Succeeds |
 | Dev panel via `?devmode=true` | Not present |
+| Dev panel via `localStorage.dev_mode_enabled = 'true'` + reload | **Not present** — the persistent route is closed too |
 
 ### Findings closed in Production
 
@@ -746,6 +747,13 @@ after   {             postgres=X/postgres,                  authenticated=X/post
 
 Also fixed: the **pre-existing large-pack TTS timeout** (A1-3b). The 214-item pack needed ~428
 syntheses against a 60-second `maxDuration` and returned 504; it now completes in chunks.
+
+### Still open
+
+Both dev-tool activation routes were checked separately, and that separation matters: before
+A1-5c, a single visit to `?devmode=true` wrote `dev_mode_enabled` to localStorage and the panel
+stayed reachable afterwards **without** the parameter. Proving the URL route is closed says nothing
+about the persistent one; S5-2 on staging is what taught us to check both.
 
 ### Still open
 
