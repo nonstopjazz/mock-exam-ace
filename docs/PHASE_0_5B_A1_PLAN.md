@@ -743,7 +743,25 @@ after   {             postgres=X/postgres,                  authenticated=X/post
 | **9.11** TTS endpoint ran as `service_role` with no authentication | 🔴 CRITICAL | A1-3a |
 | **9.15** premium revocation silently failed | 🟠 HIGH | A1-6 |
 | **9.12** cron endpoint open when `CRON_SECRET` unset | 🟠 HIGH | A1-4 (exposure had already closed when the variable was set) |
-| §9.13 token RNG · `.env` hygiene · dev tools in Production | 🟢 LOW | A1-5a / 5b / 5c |
+
+**9.15 is closed in CODE, not yet in DATA.** Revocation now clears every active row for a user and
+no new duplicates can be created, but user `36258aeb-…` still holds the two active rows created
+before the fix. V04 reports 1. That is Phase C, and it is data hygiene rather than a live defect —
+a single revoke on that user would now clear both.
+
+### §9.13 is a BUNDLE — 3 of 6 sub-items closed, 3 remain
+
+The audit lists §9.13 as one line covering six separate lower-severity issues. A1-5 closed three of
+them. Do not read "§9.13" as closed.
+
+| Sub-item | Severity | State |
+|---|---|---|
+| `Math.random()` invite tokens | 🟡 MEDIUM | ✅ Closed — A1-5a |
+| Dev panel via `?devmode=true` | 🟢 LOW | ✅ Closed — A1-5c |
+| `.gitignore` omits `.env` | ⚪ INFORMATIONAL | ✅ Closed — A1-5b |
+| **`/dashboard/result-summary` ungated** | 🟡 **MEDIUM** | ❌ **Open** — sits in the reserved `/exam` domain; needs explicit owner approval to touch |
+| **9 legacy admin routes gated only by `!IS_PRODUCTION`** | 🟢 LOW | ❌ **Open** — same reserved-domain consideration |
+| **Unauthenticated blog analytics inserts** | 🟢 LOW | ❌ **Open** — never in A1 scope, and not on any deferred list either. Needs a home |
 
 Also fixed: the **pre-existing large-pack TTS timeout** (A1-3b). The 214-item pack needed ~428
 syntheses against a 60-second `maxDuration` and returned 504; it now completes in chunks.
