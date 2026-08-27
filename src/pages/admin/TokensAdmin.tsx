@@ -84,12 +84,37 @@ const initialFormData: TokenFormData = {
   is_active: true,
 };
 
+/**
+ * A1-5a (audit finding 9.13b) — invite tokens must not be predictable.
+ *
+ * Previously this used Math.random(), which is not cryptographically
+ * secure: V8's PRNG state is recoverable from a modest sample, so past
+ * and future tokens become predictable. That compounds finding 9.4,
+ * where invite_tokens is already readable by `anon` in Production.
+ *
+ * The alphabet (no look-alike characters) and length are UNCHANGED, so
+ * every existing token stays valid and the format is identical.
+ *
+ * Rejection sampling — not modulo — keeps the alphabet uniformly
+ * distributed over byte values. With a 32-character alphabet 256 % 32 is
+ * 0, so no byte is ever actually discarded; the guard is kept so the
+ * function stays correct if the alphabet is ever edited.
+ */
 function generateRandomToken(length: number = 8): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const maxUnbiased = 256 - (256 % chars.length);
   let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+
+  while (result.length < length) {
+    const bytes = new Uint8Array(length - result.length);
+    crypto.getRandomValues(bytes);
+    for (const byte of bytes) {
+      if (byte >= maxUnbiased) continue; // discard to avoid modulo bias
+      result += chars.charAt(byte % chars.length);
+      if (result.length === length) break;
+    }
   }
+
   return result;
 }
 
