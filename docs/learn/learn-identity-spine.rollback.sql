@@ -11,7 +11,30 @@
 --
 --  ⚠️ DESTRUCTIVE: drops learn.* and everything in it. On Production
 --     this is only correct while the spine still holds no real data.
--- =====================================================================
+--
+--  =====================================================================
+--  🛑 MANDATORY PRE-STEP -- DO NOT SKIP, DO NOT REORDER
+--  =====================================================================
+--  BEFORE running any of the SQL below, remove `learn` from
+--    Dashboard -> Project Settings -> Data API -> Exposed schemas
+--  and save. Wait for PostgREST to reload.
+--
+--  WHY: measured on gsat-staging, 2026-08-27 (rehearsal step L8-2). With
+--  `learn` still listed as an exposed schema but the schema itself
+--  dropped, PostgREST cannot build its schema cache AT ALL and the whole
+--  Data API returns 503:
+--
+--      {"code":"PGRST002",
+--       "message":"Could not query the database for the schema cache. Retrying."}
+--
+--  That is not scoped to learn.* -- an anonymous read of public.user_profiles
+--  returned the same 503. On Production that window is a FULL OUTAGE of the
+--  live GSAT site, for as long as the mismatch lasts.
+--
+--  Recovery, if it is hit anyway: re-create the schema (re-apply
+--  learn-identity-spine.sql) or remove `learn` from Exposed schemas.
+--  Either resolves the mismatch and PostgREST recovers on its own.
+--  =====================================================================
 
 BEGIN;
 
@@ -34,6 +57,6 @@ DROP SCHEMA IF EXISTS learn;
 
 COMMIT;
 
--- After running this, remove `learn` from Supabase Dashboard →
--- Project Settings → API → Exposed schemas. The order matters: exposing
--- a schema that does not exist makes PostgREST log an error on reload.
+-- The Exposed-schemas change belongs BEFORE this file, not after. See the
+-- mandatory pre-step at the top. An earlier version of this comment had it
+-- backwards; staging step L8-2 measured what that actually costs.

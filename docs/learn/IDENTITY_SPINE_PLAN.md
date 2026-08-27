@@ -214,8 +214,33 @@ walked **one at a time** — I stop and wait after each.
 | **L5** | Run `learn-identity-spine-BEHAVIOUR.sql` → expect **25 / 25 PASS** | you paste the grid |
 | **L6** | **[DASHBOARD]** Project Settings → API → **Exposed schemas**: add `learn`. One step, on its own | you |
 | **L7** | Transport tests T1–T6 from the browser against staging | you paste results |
-| **L8** | **Rollback rehearsal**: run the rollback, confirm the baseline from L1 is restored exactly, then re-apply and re-run V + B. ⚠️ A1 never rehearsed its rollback; this one will be rehearsed before Production is even proposed | you |
+| **L8** | **Rollback rehearsal**: run the rollback, confirm the baseline from L1 is restored exactly, then re-apply and re-run V + B. ⚠️ A1 never rehearsed its rollback; this one will be rehearsed before Production is even proposed. ✅ **Done — and it found a real defect, §6.1** | you |
 | **L9** | Record everything in `docs/learn/IDENTITY_SPINE_STAGING_RESULTS.md` | me |
+
+### 6.1 🛑 What the rollback rehearsal found — an exposed schema that does not exist takes the WHOLE Data API down
+
+Measured on `gsat-staging`, 2026-08-27, at step **L8-2**. With `learn` still listed under
+**Exposed schemas** but the schema itself dropped by the rollback, PostgREST cannot build its schema
+cache at all:
+
+```
+GET /rest/v1/user_profiles   ->  503
+{"code":"PGRST002","message":"Could not query the database for the schema cache. Retrying."}
+```
+
+**That request does not touch `learn` at all.** `public.user_profiles` — the live GSAT app's own
+table — returned the same 503. The blast radius is the entire Data API, not the new schema.
+
+| | |
+|---|---|
+| **Consequence for Production** | Running the rollback in the order originally written would take the **whole live site's API down** for as long as the mismatch lasted |
+| **Fix** | The Exposed-schemas change is now a **mandatory pre-step at the top of the rollback file**, not a footnote at the bottom. Remove `learn` from Exposed schemas *first*, then run the SQL |
+| **Recovery if hit anyway** | Re-create the schema (re-apply the migration) **or** remove `learn` from Exposed schemas. Either resolves the mismatch and PostgREST recovers by itself — no data is at risk |
+| **Also true in the other direction** | On *apply*, the SQL must come **before** the Exposed-schemas change. L3-then-L6 was already the right order, and now there is a measured reason for it rather than an assumption |
+
+This is exactly what a rehearsal is for. A1 shipped without one; this defect would otherwise have been
+discovered during a live Production rollback, at the worst possible moment, with the site down and the
+obvious instinct — "the rollback broke it, roll further back" — being the wrong move.
 
 **Stop conditions.** Any FAIL in L4, L5 or L7 stops the run. I diagnose and report; I do not
 re-run hoping for a different answer, and I do not adjust an expected value to match an actual one
@@ -241,3 +266,13 @@ frontend route.
 approval. It will follow the A1 shape that worked: SQL first, one step at a time, an explicit
 rollback prepared in advance, and both verification layers re-run against Production afterwards —
 including the grant checks, because that is exactly where A1's silent failure hid.
+
+Two orderings are now **forced**, not chosen, by §6.1:
+
+| Direction | Order | Why |
+|---|---|---|
+| **Apply** | SQL **first**, Exposed schemas **second** | The schema must exist before it is exposed |
+| **Rollback** | Exposed schemas **first**, SQL **second** | Otherwise the whole Data API 503s while the mismatch lasts |
+
+Both are a Dashboard step adjacent to a SQL step, so both will be walked one step at a time with an
+explicit confirmation in between.
