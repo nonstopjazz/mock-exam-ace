@@ -1,6 +1,7 @@
 # `/learn` Identity Spine v1 — Production deployment plan
 
-> **Status:** 🛑 **PROPOSED — awaiting an explicit owner decision. Nothing has been deployed.**
+> **Status:** ✅ **DEPLOYED AND VERIFIED — 2026-08-28.** Owner approved the safe variant: apply the
+> SQL, do **not** expose the `learn` schema. See §8 for the actual result.
 > **Written:** 2026-08-27 · **Evidence:** `docs/learn/IDENTITY_SPINE_STAGING_RESULTS.md`
 >
 > Staging passed end to end: 26/26 structural, 25/25 behavioural, 6/6 transport, rollback rehearsed
@@ -127,3 +128,50 @@ It does not start `/learn` feature work, touch `public.users`, resolve the LMS `
 question, reopen A2 or 9.1 / 9.2, or audit anything. Per the owner's instruction, once the spine is
 deployed and verified the identity checkpoint is **CLOSED** and mainline returns to `/learn` product
 features.
+
+---
+
+## 8. Production result — 2026-08-28
+
+Deployed exactly as planned. Every step was walked one at a time, with the owner confirming each.
+
+| Step | Result |
+|---|---|
+| **P0** target confirmation | ✅ `auth_users = 22`, `has_lms_users = true`, `has_essay_submissions = true`, `learn` absent. `public.users` present is the discriminator that cannot be faked by a stale tab |
+| **P1** baseline | ✅ **C02 = 5, C03 = 1, C04 = 3**; the three original policies, all `PUBLIC` |
+| **P2** migration | ✅ `Success. No rows returned.` |
+| **P3** re-run and compare | ✅ **C02 = 5, C03 = 1 — unchanged.** C04 = 5 (+2). C07 = `0 / 0 / 0`. C08 = `denied 42501` |
+| **P4** structural verification | ✅ **26 / 26 PASS**, with **V18 a real check on Production** (`public.users` exists) reporting **0** |
+| **P5** live regression | ✅ Login, `/practice/vocabulary`, `/admin/users`, `/practice` — all normal, no console errors |
+| **P6** cleanup and record | ✅ temp functions dropped, this record written |
+
+### What the numbers establish
+
+A **per-user census of all 22 real accounts** returned the same digest before and after the
+migration. Not one account gained or lost visibility of a single `user_profiles` row. Combined with
+C07 (`0 / 0 / 0`), the two new policies are **provably inert** until the first class exists — measured,
+not argued.
+
+### Notable, and worth carrying forward
+
+**22 accounts, but only 5 `user_profiles` rows.** `user_profiles` is created on demand by
+`upsert_user_profile()`, so most accounts have none. The checkpoint already treats the profile as
+optional (§3, gap A) — this is the confirmation. 🛑 `/learn` must never `INNER JOIN` through
+`user_profiles` in a way that silently drops a class member from a roster.
+
+**Two temp functions were left executable by `PUBLIC`.** `_learn_prod_checks()` and
+`_learn_spine_verify()` were created in `public`, where PostgreSQL grants `EXECUTE` to `PUBLIC` by
+default and Supabase does not revoke it. `_learn_prod_checks()` reads `auth.users` and therefore
+failed for unprivileged callers; `_learn_spine_verify()` reads only system catalogs and would have
+returned schema metadata to an anonymous caller. No user data was exposed. Both were dropped at P6 —
+and this is the same shape as finding 9.3. **Any future helper function created in `public` must be
+dropped when done, or created with an explicit `REVOKE`.**
+
+### Rollback
+
+Still available and unchanged: `docs/learn/learn-identity-spine.rollback.sql`. Because `learn` was
+**not** added to Exposed schemas, the mandatory pre-step in that file does not apply and the rollback
+is pure SQL with no API window. It drops two policies and three empty tables; no existing data is
+touched.
+
+🛑 **The moment `learn` is ever added to Exposed schemas, that pre-step becomes mandatory again.**

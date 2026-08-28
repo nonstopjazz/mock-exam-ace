@@ -25,6 +25,11 @@
 - **Mainline is now GSAT product development.** Remaining findings live in `docs/BACKLOG.md`,
   which also carries the rule for when a new finding may interrupt product work. 🛑 **Two CRITICAL
   findings (9.1, 9.2) remain open there** — do not treat A1's closure as "the platform is secure".
+- ✅ **THE `/learn` IDENTITY SPINE IS LIVE ON PRODUCTION (2026-08-28) and the identity checkpoint is
+  CLOSED.** `learn` schema + three tables + 10 policies + two additive `user_profiles` policies.
+  Verified 26/26 on Production with a per-user census showing zero visibility change across all 22
+  accounts. 🛑 `learn` is **not** in Exposed schemas — `learn.*` is unreachable from the browser
+  until that step is deliberately taken. Records: `docs/learn/IDENTITY_SPINE_PRODUCTION_PLAN.md` §8.
 - 🧭 **The identity model for all new `/learn` work is decided (2026-08-27):**
   `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md`. Canonical root is **`auth.users.id`**; `user_profiles`
   is reused; roles are **relationship-scoped** (no global role table); `public.users` is

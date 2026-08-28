@@ -111,6 +111,8 @@ These are not backlog items. They are constraints on everything built from here.
 | **Identity** | 🛑 **Do not introduce another users/identity table.** There are already too many |
 | **`SECURITY DEFINER`** | Avoid unless genuinely required. If used: pin `search_path`, and `REVOKE` down to the minimum `EXECUTE` |
 | **Shared LMS/Writing tables and public buckets** | 🛑 **Do not depend on them** without explicit owner approval — they carry the open 9.1 / 9.2 problems |
+| **Helper functions in `public`** | 🆕 PostgreSQL grants `EXECUTE` to `PUBLIC` on every new function and Supabase does not revoke it. A one-off helper must be **dropped when done**, or created with an explicit `REVOKE`. Two verification helpers were left callable by `anon` during the Production run and dropped at P6 — same shape as 9.3 |
+| **`user_profiles` is optional** | 22 Production accounts, **5 profile rows**. Never `INNER JOIN` through it in a way that drops a class member from a roster |
 
 **The identity model for all `/learn` work is decided:** `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md`.
 
@@ -121,5 +123,14 @@ These are not backlog items. They are constraints on everything built from here.
 | **D1** | Namespace | A dedicated **`learn` schema**. `anon` gets no access to it; `authenticated` gets `USAGE` + `SELECT/INSERT/UPDATE` and **no `DELETE`**; schema privilege is a second layer, never a substitute for RLS |
 | **D2** | Profile visibility | Additive `SELECT` policies on `user_profiles`, **narrowed**: class owner and confirmed guardian only. 🛑 A student gets nothing from merely sharing a class |
 
-First migration: `docs/learn/IDENTITY_SPINE_PLAN.md` — dry-run clean, **staging not yet run,
-Production not proposed**.
+✅ **The identity spine is DEPLOYED to Production (2026-08-28) and the checkpoint is CLOSED.**
+`learn` schema · `learn.classes` / `class_members` / `guardian_links` · 10 policies · two additive
+`user_profiles` policies. Staging 26/26 + 25/25 + 6/6 with a rehearsed rollback; Production 26/26
+with a per-user census showing no visibility change across all 22 accounts.
+
+🛑 **`learn` is NOT in Production's Exposed schemas** — deliberate. `learn.*` cannot be reached from
+the browser until that step is taken, and taking it makes the rollback file's Exposed-schemas
+pre-step mandatory (an exposed-but-missing schema 503s the **entire** Data API — measured on
+staging).
+
+Records: `docs/learn/IDENTITY_SPINE_STAGING_RESULTS.md` · `docs/learn/IDENTITY_SPINE_PRODUCTION_PLAN.md`

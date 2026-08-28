@@ -8,9 +8,12 @@
 > identity anchor for *new* work and nothing else. It does **not** reconcile the existing LMS
 > identity model, and it does **not** propose a migration.
 >
-> ✅ **D1 and D2 were both DECIDED by the owner on 2026-08-27** (§9, §10). Everything in this
-> document is now settled. The first migration built on it is
-> `docs/learn/IDENTITY_SPINE_PLAN.md`.
+> ✅ **CLOSED — 2026-08-28.** D1 and D2 were decided by the owner on 2026-08-27 (§9, §10), and the
+> identity spine built on them is **deployed to Production and verified**:
+> `docs/learn/IDENTITY_SPINE_PRODUCTION_PLAN.md` §8.
+>
+> Mainline is now `/learn` product feature development. 🛑 This checkpoint does not reopen for
+> adjacent findings — those go to `docs/BACKLOG.md` under the interrupt rule.
 
 ---
 
@@ -498,10 +501,15 @@ decision costs nothing to reverse today, and would cost a data migration to reve
 
 ## 13. Next step
 
-D1 and D2 are answered, so the first migration exists: **`docs/learn/IDENTITY_SPINE_PLAN.md`** —
-`learn.classes`, `learn.class_members`, `learn.guardian_links`, their policies, and the two D2
-policies. It is dry-run clean locally (26/26 structural, 25/25 behavioural, rollback verified) and
-awaits staging execution. Production is a separate, later approval.
+✅ **Done.** `learn.classes`, `learn.class_members`, `learn.guardian_links`, their policies and the
+two D2 policies are live on Production, verified 26/26 structurally with a per-user census showing
+zero change in visibility for all 22 real accounts. Staging: 26/26 + 25/25 + 6/6 with the rollback
+rehearsed. Records: `docs/learn/IDENTITY_SPINE_STAGING_RESULTS.md`,
+`docs/learn/IDENTITY_SPINE_PRODUCTION_PLAN.md` §8.
+
+🛑 `learn` is deliberately **not** in Production's Exposed schemas, so `learn.*` is unreachable from
+the browser. That step happens when the first `/learn` screen needs it — and from that moment the
+rollback file's Exposed-schemas pre-step becomes mandatory.
 
 🛑 **This checkpoint closes once the identity spine passes staging verification. It does not reopen
 for adjacent findings** — those go to `docs/BACKLOG.md` under the interrupt rule. After it closes,
