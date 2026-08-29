@@ -30,6 +30,12 @@
   Verified 26/26 on Production with a per-user census showing zero visibility change across all 22
   accounts. 🛑 `learn` is **not** in Exposed schemas — `learn.*` is unreachable from the browser
   until that step is deliberately taken. Records: `docs/learn/IDENTITY_SPINE_PRODUCTION_PLAN.md` §8.
+- 🔎 **Vocabulary architecture audited (2026-08-29):** `docs/learn/VOCABULARY_ARCHITECTURE.md`.
+  Key finding: **`level_words` is already the canonical word table** and Level 1–6 progress is
+  already keyed on it — the duplication is entirely on the pack side, where `pack_items.word` is free
+  text with no canonical link and every progress key contains `pack_id`. Target model promotes
+  `level_words` rather than adding a second vocabulary system. 🛑 **Audit + design only — no
+  migration proposed or approved.**
 - 📘 **The `/learn` product & competency model is specified (2026-08-29):**
   `docs/learn/LEARNING_DOMAIN_MODEL.md` — Program→Module→Lesson→Activity, Content Assets outside the
   hierarchy, Relationship/Enrollment/Assignment kept separate, and the Domain→Category→Skill→

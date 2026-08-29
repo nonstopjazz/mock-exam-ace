@@ -79,7 +79,9 @@ Also in A2: **9.9** `upsert_word_progress` 6-arg overload is broken — its `ON 
 
 | Item | Note |
 |---|---|
-| **9.10** Divergent SRS semantics | Level words: client-computed, mastery cap 6, `next_review_time BIGINT`. Pack items: server-computed, cap 5, mastered ≥ 4, `next_review_at TIMESTAMPTZ`. Both track pack items. Phase 3 — analytics will force the question |
+| **9.10** Divergent SRS semantics | Level words: client-computed, mastery cap 6, `next_review_time BIGINT`. Pack items: server-computed, cap 5, mastered ≥ 4, `next_review_at TIMESTAMPTZ`. Both track pack items. Phase 3 — analytics will force the question. 📎 Full mechanism in `docs/learn/VOCABULARY_ARCHITECTURE.md` §2.5 |
+| 🆕 **Vocabulary duplicates progress per pack** | `pack_items.word` is free text with no canonical link, and every progress key contains `pack_id`, so one word in three packs is three progress records and three cards in one review session. Audit + target model: `docs/learn/VOCABULARY_ARCHITECTURE.md`. 🛑 Design only — no migration proposed |
+| 🆕 ⚠️ **Client store read/write key mismatch** | Pack progress is *loaded* under `pack:<pack_id>:<word_id>` (`wordProgressSync.ts:23`) but *written* under the bare item id (every practice screen). Inferred from code, **not verified at runtime**. Does not meet the interrupt rule. `VOCABULARY_ARCHITECTURE.md` §3.6 |
 | Cron targeting | Targets purely on `user_stats.last_study_date != today` and never consults `user_word_progress`, so a fully caught-up student still gets a 「回來複習」 nudge. Owner-confirmed as a later product improvement |
 | `assignments` / `assignment_submissions` / `student_tasks` redesign | 0.5B-B / Phase 4. 🛑 These exist with live data — **do not design a replacement** |
 
