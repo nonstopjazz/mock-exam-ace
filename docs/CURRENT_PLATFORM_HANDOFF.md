@@ -33,12 +33,14 @@
 - 📘 **The `/learn` product & competency model is specified (2026-08-29):**
   `docs/learn/LEARNING_DOMAIN_MODEL.md` — Program→Module→Lesson→Activity, Content Assets outside the
   hierarchy, Relationship/Enrollment/Assignment kept separate, and the Domain→Category→Skill→
-  Micro-skill competency axis. **Grammar is decided to Skill level — 10 categories, 51 coded skills
+  Micro-skill competency axis. **Grammar is decided to Skill level — 10 categories, 51 coded skills,
+  plus 234 PROVISIONAL Micro-skill candidates
   — with `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx` as its detailed source of
   truth; every other taxonomy is PROVISIONAL or BLOCKED — do not complete them.** Design spec only:
   no table, no migration, no seed data. An owner ruling on 2026-08-29 closed four open items
   (direct teacher–student relationship, vocabulary dimensions, tag precedence, asset versioning) and
-  settled naming; 🛑 **six blocked decisions remain** in its §15. ⚠️ The deployed spine still cannot
+  settled naming; a Grammar Micro-skill blocker was then withdrawn as a bad export rather than a
+  missing decision; 🛑 **five blocked decisions remain** in its §15. ⚠️ The deployed spine still cannot
   represent a direct teacher–student relationship, which is now a decided requirement awaiting its
   own deployment.
 - 🧭 **The identity model for all new `/learn` work is decided (2026-08-27):**

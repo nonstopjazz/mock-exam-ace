@@ -118,7 +118,7 @@ These are not backlog items. They are constraints on everything built from here.
 
 **The `/learn` product & competency model is specified:** `docs/learn/LEARNING_DOMAIN_MODEL.md`
 (2026-08-29, revised the same day after an owner ruling on eight open items). 🛑 Its §15 carries
-**six** BLOCKED decisions and marks every taxonomy except Grammar as PROVISIONAL. **Do not complete a
+**five** BLOCKED decisions and marks every taxonomy except Grammar as PROVISIONAL. **Do not complete a
 taxonomy, seed skill data, or build an entity whose governing decision is still blocked.**
 
 Standing rules that now bind all `/learn` work:
@@ -132,10 +132,11 @@ Standing rules that now bind all `/learn` work:
 | **Access** | 🛑 A teaching relationship grants **no** Program access. Enrollment is the only source |
 
 **Grammar taxonomy source of truth:** `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx`
-— 10 Categories, **51 Skills with stable codes** (`GRAM_G7_REL_PRON` …), plus source-material
-provenance and the binding tagging rules OD-01…OD-05. The Markdown records structure and principles
-only; the spreadsheet wins on detail. 🛑 Its **Micro-skill level is empty** — tag at Skill level and
-do not invent micro-skills.
+— 10 Categories · **51 Skills with stable codes** (`GRAM_G7_REL_PRON` …) · **234 Micro-skill
+candidates** covering all 51 Skills, plus source-material provenance and the binding tagging rules
+OD-01…OD-05. The Markdown records structure and principles only; the spreadsheet wins on detail.
+🟡 Micro-skills are **PROVISIONAL / CANDIDATE** — usable for tagging, 🛑 not DECIDED, and do not
+invent additions.
 
 ⚠️ **Known spec ↔ schema gap (§14.1) — now a DECIDED requirement, not an open question.** The owner
 ruled on 2026-08-29 that the direct teacher–student relationship is **first-class and independent of

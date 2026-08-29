@@ -395,8 +395,8 @@ not renamed by this document.
 
 ## 8. Grammar taxonomy — owner-defined, use verbatim
 
-> **Status: DECIDED at Category and Skill level.** 10 Categories · **51 Skills**, each with a stable
-> code. Micro-skill is **not yet populated** — see §8.13.
+> **Status: DECIDED at Category and Skill level** — 10 Categories · **51 Skills**, each with a stable
+> code. **Micro-skill: PROVISIONAL / CANDIDATE** — 234 candidates supplied, not yet frozen (§8.13).
 >
 > 📎 **The detailed taxonomy's source of truth is the spreadsheet, not this document:**
 > **`docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx`** (Grammar Skill Taxonomy v1 Draft,
@@ -412,16 +412,17 @@ not renamed by this document.
 |---|---|
 | `README` | Version framing, the 10 categories, the G1/G7 and G3/G4 boundaries, terminology rules |
 | `Skill_Summary` | **The taxonomy proper** — 51 Skills: category code, Chinese and English names, stable Skill code, source counts, suggested school stage, status |
-| `Skill_Taxonomy` | Intended for Micro-skills. ⚠️ **Currently empty** — §8.13 |
+| `Skill_Taxonomy` | **234 Micro-skill candidates**, each with a code, its parent Skill, source ticks and suggested stage — §8.13 |
 | `高中原始對照` | 182 senior-high source topics mapped to canonical Category + Skill, each with an Action |
 | `國中目錄對照` | 92 junior-high 會考 syllabus headings, mapped the same way |
 | `待審核` | **CLOSED** — no pending decisions remain |
 | `最新版修正` | The 7 renames from the previous draft to this one |
 | `Owner_Decisions` | **OD-01 … OD-05**, the binding tagging rules (§8.12) |
 
-`docs/learn/grammar-taxonomy/Skill_Summary.csv` is a **generated, greppable extract** of the
-`Skill_Summary` sheet, kept so the taxonomy is diffable in git. 🛑 It is a convenience copy, **not**
-seed data and **not** for import. If it disagrees with the spreadsheet, the spreadsheet is right.
+`Skill_Summary.csv` (51 rows) and `Skill_Taxonomy.csv` (234 rows) alongside it are **generated,
+greppable extracts**, kept so the taxonomy is diffable in git. 🛑 They are convenience copies, **not**
+seed data and **not** for import. If either disagrees with the spreadsheet, the spreadsheet is right.
+Both are regenerated from the workbook, never hand-edited.
 
 ### 8.2 The ten Categories — DECIDED, frozen, verbatim
 
@@ -560,22 +561,70 @@ any future taxonomy revision.
 earned by what the question actually demands, never added because two topics are related. This is the
 same discipline §10 states in general, and these are its two worked precedents.
 
-### 8.13 ⚠️ Micro-skill is not yet populated
+### 8.13 Micro-skill — PROVISIONAL / CANDIDATE
 
-The spreadsheet's `Skill_Taxonomy` sheet is intended for the Micro-skill level, but currently holds
-only a malformed header row (`Micro Code` repeated 12 times) and **no data**.
+> **Status: 🟡 PROVISIONAL / CANDIDATE.** The complete candidate list exists — **234 Micro-skills**
+> in the `Skill_Taxonomy` sheet — but the owner has **not frozen them item by item**.
 
-So the taxonomy is decided **three levels deep** — Domain → Category → Skill — and the fourth level
-is **empty**.
+🛑 **Do not mark the 234 as DECIDED.** They are a candidate set: usable as the working taxonomy,
+subject to change until the owner freezes them.
 
-🛑 **Do not populate it.** The §8.9 example (`Grammar → G7 → 關係代名詞 → who / whom / whose /
-which / that`) shows the *shape* a micro-skill takes, not permission to write them. Tag at Skill
-level until the owner supplies Micro-skills.
+Coverage, computed from the workbook:
 
-⚠️ Also worth the owner's attention: **`GRAM_G1_ADJ_CLAUSE` has 0 junior-high and 0 senior-high
-source records** ("待補來源") — every adjective-clause item in both source materials was filed under
-the relative-clause topics that became G7. The skill is doctrinally required by §8.9, but currently
-has no material behind it. Not an error; a gap the owner may want to fill.
+| Category | Micro-skills | | Category | Micro-skills |
+|---|---|---|---|---|
+| G1 | 37 | | G6 | 17 |
+| G2 | 23 | | G7 | 24 |
+| G3 | 37 | | G8 | 21 |
+| G4 | 14 | | G9 | 12 |
+| G5 | 24 | | G10 | 25 |
+| | | | **Total** | **234** |
+
+**All 51 Skills have at least one Micro-skill.** There are no gaps in the parent coverage.
+
+Micro-skill codes extend the Skill code with a two-digit suffix — `GRAM_G1_SENT_PAT_01`,
+`GRAM_G1_ADJ_CLAUSE_03`. As with Skills (§8.3), **the code is the identity**, not the Chinese label.
+
+**What PROVISIONAL means in practice:**
+
+- ✅ Tag questions at Micro-skill level where a candidate fits.
+- ✅ Build against the four-level structure — it is real, not hypothetical.
+- 🛑 Do **not** treat a Micro-skill code as permanent for reporting or entitlement until frozen.
+- 🛑 Do **not** invent Micro-skills outside the candidate list.
+
+> ⚠️ **Correction to the previous revision of this document.** It recorded the Micro-skill level as
+> empty and listed it as BLOCKED. That was true of the *file* — the earlier export produced a
+> corrupted sheet containing only a repeated header — but **not** of the taxonomy. The owner had
+> supplied it all along. The repaired workbook (2026-08-29) replaces it, and the BLOCKED entry is
+> **withdrawn**.
+
+### 8.14 `GRAM_G1_ADJ_CLAUSE` — an owner-defined conceptual Skill
+
+> **Status: DECIDED (owner ruling, 2026-08-29). Not a blocker.**
+
+I previously flagged that this Skill has **zero source records** in both the junior- and senior-high
+materials, because every adjective-clause item in them was filed under the relative-clause topics
+that became G7.
+
+**The owner's ruling:**
+
+> **G1 → Adjective Clauses** represents the teaching competency of *clause type and clause function*.
+> **G7 → Relative Clauses** represents the complete, in-depth *Relative Clause + Relative Words*
+> system. **The two are permitted to overlap conceptually.**
+>
+> **Provenance landing entirely in G7 does not mean G1's Adjective Clause must be deleted.**
+> `GRAM_G1_ADJ_CLAUSE` stands as an **owner-defined conceptual Skill**.
+
+It has three Micro-skill candidates of its own — 形容詞子句的功能 · 形容詞子句修飾名詞 ·
+形容詞子句辨識 — which is what a *function-level* competency looks like, distinct from G7's
+structural treatment.
+
+**If richer provenance is wanted later,** the source material may be cross-referenced to G1 in
+addition to G7. 🛑 **Do not modify the source mapping this round**, and do not "fix" the zero count.
+
+> The general principle, worth stating once: **a taxonomy node is justified by the competency it
+> names, not by how much source material happens to sit under it.** Source counts measure coverage of
+> the existing materials, not whether a skill deserves to exist.
 
 ## 9. The other Domains — placeholders only
 
@@ -590,9 +639,9 @@ has no material behind it. Not an error; a gap the owner may want to fill.
 | **Vocabulary** | Two dimensions recorded in §7; the Category level itself is **not** decided |
 | **Exam / Academic Skills** | 🛑 **BLOCKED** — the owner is still designing this |
 
-> ✅ **Grammar is the exception and is no longer provisional at Skill level.** Its 10 Categories and
-> 51 Skills are decided; see §8 and the spreadsheet. Only its **Micro-skill** level remains empty
-> (§8.13).
+> ✅ **Grammar is the exception.** Its 10 Categories and 51 Skills are **decided**; its 234
+> Micro-skills are **PROVISIONAL / CANDIDATE** — supplied in full, not yet frozen item by item.
+> See §8 and the spreadsheet.
 
 ⚠️ **Speaking → Grammar** and **Writing → Grammar & Sentence Structure** are *assessment criteria*
 within a performance rubric. Whether they reference the Grammar Domain's Skills or are separate
@@ -656,7 +705,8 @@ Principles:
 3. **Secondary never counts as full evidence.** Weighting is a mastery-model decision (§11), but
    secondary evidence must never be treated as equal to primary.
 4. **Tag at the level the student is being asked to operate at**, which may be Skill or Micro-skill.
-   ⚠️ Grammar Micro-skills do not exist yet (§8.13) — tag at Skill level.
+   ⚠️ Grammar Micro-skills are **candidates, not frozen** (§8.13) — tagging at that level is fine,
+   but a code is not yet permanent for reporting or entitlement.
 
 ---
 
@@ -866,6 +916,32 @@ Recorded in §7.1 and in §13's preamble.
 The larger taxonomy question stays blocked (§14.4 below), but this constraint holds regardless and is
 recorded in §9 and §11.
 
+#### 14.9 ✅ Grammar Micro-skills — WITHDRAWN as a blocker
+
+> **Ruling / correction, 2026-08-29:** the Micro-skill level was **never missing**. The earlier
+> workbook export was corrupted — its `Skill_Taxonomy` sheet contained only a repeated header. The
+> repaired workbook carries **234 Micro-skill candidates** covering all 51 Skills.
+
+Status is now **PROVISIONAL / CANDIDATE**, not BLOCKED: the list is complete, the owner has not
+frozen it item by item. Recorded in §8.13. 🛑 Do not mark the 234 as DECIDED, and do not invent
+Micro-skills outside the list.
+
+**Worth keeping as a lesson:** I reported an empty sheet, which was accurate about the *file* and
+wrong about the *taxonomy* — and I turned that file-level observation into a BLOCKED decision, which
+was a bigger claim than the evidence supported. An artefact being broken is not the same as a
+decision being unmade. The report was right; the conclusion drawn from it was not.
+
+#### 14.11 ✅ `GRAM_G1_ADJ_CLAUSE` zero source records — not a blocker
+
+> **Ruling:** G1 → Adjective Clauses is the *clause type / clause function* competency; G7 → Relative
+> Clauses is the complete relative system. They may overlap. Provenance landing entirely in G7 does
+> **not** require deleting G1's Adjective Clause, which stands as an **owner-defined conceptual
+> Skill**.
+
+Recorded in §8.14, together with the general principle it implies: a taxonomy node is justified by
+the competency it names, not by how much source material sits under it. 🛑 Source mapping is **not**
+to be modified this round; cross-referencing to G1 is a possible future refinement, not a task.
+
 ---
 
 ### 🟡 Recommended, not frozen
@@ -889,15 +965,6 @@ before `enrollment` is designed.
 `Speaking → Grammar` and `Writing → Grammar & Sentence Structure` are rubric criteria. Whether they
 reference Grammar Domain Skills or are independent rubric dimensions is **undecided**, and both
 taxonomies are still PROVISIONAL. The §14.8 constraint applies meanwhile. 🛑 No answer invented.
-
-#### 14.9 Grammar Micro-skills are not populated, and one Skill has no source material
-
-1. The spreadsheet's `Skill_Taxonomy` sheet holds **no data** — only a malformed header row. The
-   taxonomy is decided **three** levels deep, not four. 🛑 Tag at Skill level; do not invent
-   micro-skills (§8.13).
-2. **`GRAM_G1_ADJ_CLAUSE` has zero source records** in both materials — every adjective-clause item
-   was filed under the relative-clause topics that became G7. Doctrinally required by §8.9, currently
-   unbacked. 🛑 Owner's call.
 
 #### 14.10 Guardian access rules
 
@@ -945,6 +1012,8 @@ rules invented.
 - G3 uses **語態**, never 體 / Aspect; all twelve forms are 時態. Passive voice is G3, **not** G4
 - G8 is 「不定詞、動名詞與分詞」, **never** 「非限定動詞」; G6 is 「介係詞與連接詞」
 - G1 Adjective Clause and G7 Relative Clause **both stand**; §8.9 governs
+- 🆕 **`GRAM_G1_ADJ_CLAUSE` is an owner-defined conceptual Skill** — zero source records is not a
+  defect, and a node is justified by the competency it names, not by its provenance count (§8.14)
 - Indirect Questions (間接問句) and Reported Speech (間接引語) are **separate Skills**;
   「間接引句」 is **forbidden**
 - **Owner Decisions OD-01 … OD-05** are binding tagging rules, including *do not dual-tag by default*
@@ -974,7 +1043,8 @@ rules invented.
 - **Program distribution authorization** — the recommended model in §4.5 awaits owner confirmation
 - Reading · Listening · Speaking · Writing first-level lists (§9)
 - Vocabulary's **Skill** level — real vocabulary competencies are still undesigned (§7)
-- Grammar **Micro-skill** level — the sheet is empty (§8.13). 🛑 Do not populate
+- Grammar **Micro-skill** level — **234 candidates supplied, covering all 51 Skills**, not yet frozen
+  item by item (§8.13). ✅ Usable for tagging · 🛑 not DECIDED, and do not invent additions
 - Learning Objective phrasing format (§6)
 
 ### 🛑 BLOCKED — needs an owner decision before the work starts
@@ -985,12 +1055,12 @@ rules invented.
 | 2 | **Mastery algorithm** — scale, decay, thresholds, weighting, roll-up (§11) | `user_skill_mastery` |
 | 3 | **Speaking / Writing rubric ↔ Grammar Skills** (§14.4) | those two domains' scoring |
 | 4 | **Guardian access rules** (§14.10) | any parent-facing view |
-| 5 | **Grammar Micro-skills** — the sheet is empty (§8.13, §14.9) | micro-skill-level tagging |
-| 6 | Reconciling the **two existing vocabulary mastery models** (9.10, `docs/BACKLOG.md`) | Vocabulary competency |
+| 5 | Reconciling the **two existing vocabulary mastery models** (9.10, `docs/BACKLOG.md`) | Vocabulary competency |
 
-> **Down from ten to six.** Four were closed by the 2026-08-29 ruling (direct relationship,
-> vocabulary dimensions, tag precedence, asset versioning), and naming was settled outright. The
-> `teacher_student_relationships` schema gap is now a **decided requirement awaiting its own
+> **Down from ten to five.** Four were closed by the first 2026-08-29 ruling (direct relationship,
+> vocabulary dimensions, tag precedence, asset versioning) and naming was settled outright; the
+> Grammar Micro-skill entry was then **withdrawn** — it was never blocked, only mis-exported. The
+> `teacher_student_relationships` schema gap is a **decided requirement awaiting its own
 > deployment**, not a blocked decision.
 
 ---
