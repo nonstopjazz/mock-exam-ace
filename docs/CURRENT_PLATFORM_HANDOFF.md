@@ -36,8 +36,11 @@
   Micro-skill competency axis. **Grammar is decided to Skill level — 10 categories, 51 coded skills
   — with `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx` as its detailed source of
   truth; every other taxonomy is PROVISIONAL or BLOCKED — do not complete them.** Design spec only:
-  no table, no migration, no seed data. 🛑 Ten blocked decisions are listed in its §15, including
-  that the deployed spine cannot yet represent a direct teacher–student relationship.
+  no table, no migration, no seed data. An owner ruling on 2026-08-29 closed four open items
+  (direct teacher–student relationship, vocabulary dimensions, tag precedence, asset versioning) and
+  settled naming; 🛑 **six blocked decisions remain** in its §15. ⚠️ The deployed spine still cannot
+  represent a direct teacher–student relationship, which is now a decided requirement awaiting its
+  own deployment.
 - 🧭 **The identity model for all new `/learn` work is decided (2026-08-27):**
   `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md`. Canonical root is **`auth.users.id`**; `user_profiles`
   is reused; roles are **relationship-scoped** (no global role table); `public.users` is

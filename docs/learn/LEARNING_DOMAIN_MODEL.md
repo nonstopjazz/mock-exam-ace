@@ -1,6 +1,7 @@
 # `/learn` Learning Domain Model
 
-> **Written:** 2026-08-29 · **Revised:** 2026-08-29 (Grammar Skill Taxonomy v1 supplied by the owner)
+> **Written:** 2026-08-29 · **Revised:** 2026-08-29 — Grammar Skill Taxonomy v1, then an owner
+> ruling on eight open items (§14)
 > **Status:** 🟡 **DESIGN SPEC ONLY — no table, no migration, no seed data, no frontend, no
 > Production change.**
 >
@@ -113,14 +114,40 @@ Lessons and Activities. Therefore:
 - An asset is **never owned by** a Program. It has no parent in the curriculum tree.
 - An asset carries **no position, no ordering, no due date**. Those belong to the referencing
   Activity or Assignment.
-- Editing an asset changes it **everywhere** it is referenced. This is the intended behaviour and
-  also the main risk — see the versioning question in §14.6.
+- Editing an asset changes it **everywhere** it is referenced. This is the intended behaviour, and
+  §3.1 is the constraint that keeps it safe.
+
+### 3.1 Versioning — an asset with evidence is immutable
+
+> **Status: architecture principle DECIDED (owner ruling, 2026-08-29). 🛑 No version table this
+> round.**
+
+> **Once a Content Asset version has produced a Student Response or Skill Evidence, that version must
+> not be destructively overwritten.** A content change creates a **new version**.
+>
+> **Every historical Student Response must be able to point back at the exact asset / content version
+> the student actually answered.**
+
+Why this is load-bearing rather than tidy-mindedness: §11 makes Student Response immutable and
+everything downstream derived. If the question a response refers to can be silently rewritten, that
+immutability is worthless — the response survives, but what it *means* has changed underneath it, and
+every piece of evidence derived from it becomes unsound without anything looking wrong.
+
+**Consequences to honour when this is eventually built:**
+
+- A response references a **version**, not just an asset.
+- An asset that has never produced a response may be edited freely; the moment it has, edits fork a
+  new version.
+- Whether a fork also re-points live Activities at the new version is a **product** decision, not
+  settled here.
 
 ---
 
 ## 4. Relationship · Enrollment · Assignment — three separate things
 
-> **Status: DECIDED** that they are separate. **Some mechanics are BLOCKED** — see §14.1.
+> **Status: DECIDED** — that they are separate, and (2026-08-29) that the direct teacher–student
+> relationship is first-class. Program **distribution authorization** is RECOMMENDED but not frozen
+> (§4.5).
 
 The single most important structural decision in this document. Conflating any two of these is how
 learning platforms become unfixable.
@@ -142,9 +169,17 @@ Two shapes are **both first-class**:
 
 > 🛑 **A one-to-one student must not be forced into a class of one.**
 
+**Owner ruling, 2026-08-29 — DECIDED:**
+
+- The **Teacher ↔ Student direct relationship is a first-class relationship, independent of Class.**
 - **Class is optional grouping.** It is *not* the required container for a Student Home.
-- The same student may simultaneously be: a teacher's direct student, a member of one or more
-  Classes, and enrolled in one or more Programs. None implies the others.
+- A student may simultaneously be a teacher's direct student, a member of one or more Classes, and
+  enrolled in one or more Programs. **None implies the others.**
+- **A student may hold separate teaching relationships with several teachers**, concurrently.
+- 🛑 **A relationship does not grant Program access.** Teaching someone is not entitling them.
+  Access comes only from Enrollment (§4.2).
+
+Reserved entity name for the future: **`teacher_student_relationships`**. 🛑 Not built this round.
 
 ### 4.2 Enrollment — which Program a student may use
 
@@ -153,6 +188,9 @@ Enrollment is the **entitlement**. Without it a student cannot open a Program.
 Enrollment is **per student**, not per class. A class may be a convenient way to grant it in bulk,
 but the grant that matters is the one attached to the student — otherwise removing a student from a
 class would silently revoke access to work they have already done.
+
+🛑 **Enrollment is the only source of Program access.** Neither a direct relationship nor class
+membership grants it (§4.1).
 
 ### 4.3 Assignment — what to complete, by when
 
@@ -172,6 +210,25 @@ teacher.
 
 An Assignment's completion state is a **view over** progress, not a separate truth. Progress exists
 whether or not an assignment does.
+
+### 4.5 🟡 Program distribution authorization — RECOMMENDED, not frozen
+
+> **Status: RECOMMENDED by the owner, awaiting final confirmation. 🛑 Do not treat as frozen and do
+> not build against it yet.**
+
+The recommended model, recorded verbatim in substance:
+
+1. **Owner / Admin creates Programs.**
+2. A **Teacher may grant a Program only if that Teacher has permission to distribute or use that
+   Program.**
+3. A **Teacher may enrol only students they legitimately teach** — through a direct relationship
+   (§4.1) or a Class they manage.
+
+Rule 2 implies a further entity that does not exist yet: something recording *which teacher may
+distribute which Program*. Rule 3 is the point at which the direct relationship becomes load-bearing
+for authorization, not merely for display.
+
+🛑 This decides an RLS policy, so it must be frozen by the owner before `enrollment` is designed.
 
 ---
 
@@ -225,6 +282,23 @@ worked example, §8.9), **both are kept**.
 🛑 Do not merge, delete, or "clean up" one of them to make the taxonomy tidy. Overlap is resolved at
 **tagging** time by Primary / Secondary Skill (§10), not at taxonomy time.
 
+### 5.4 Not everything is a taxonomy node
+
+> **Status: DECIDED (owner ruling, 2026-08-29).**
+
+The four-level hierarchy is **not** the only way the model classifies things. Some facts are
+**orthogonal dimensions**, and forcing them into Domain → Category → Skill → Micro-skill would be a
+modelling error, not a completeness win.
+
+| Kind of fact | Where it belongs |
+|---|---|
+| A competency a learner can develop | The **hierarchy** — a Skill or Micro-skill |
+| A property of a piece of content | **Content metadata** — e.g. a word's 教育部 level, an item's difficulty |
+| A property of a *learner × content* pair | **A mastery dimension** — e.g. recognition vs production |
+
+Vocabulary (§7) is the worked example. 🛑 When something does not fit the hierarchy, check which of
+these three it is **before** concluding the taxonomy is incomplete.
+
 ---
 
 ## 6. Learning Objective
@@ -246,8 +320,10 @@ worked example, §8.9), **both are kept**.
 Relationship: **`Lesson → Learning Objectives → Skills`.**
 
 A Lesson's skill coverage is therefore **derived** through its objectives, not declared directly.
-(Whether an Activity may additionally tag skills its Lesson's objectives do not cover is open —
-§14.5.)
+
+⚠️ An Activity's own skill tags are an **instructional target** (§10.1), so an Activity tagging a
+skill its Lesson's objectives do not name is a signal that the objectives are incomplete — not that
+the tag is wrong. Either way it changes no evidence, because evidence comes from question-level tags.
 
 Proposed phrasing shape — **concept only, not a schema**:
 
@@ -255,31 +331,65 @@ Proposed phrasing shape — **concept only, not a schema**:
 
 ---
 
-## 7. Vocabulary — two dimensions
+## 7. Vocabulary — two orthogonal dimensions
 
-> **Status: the two-dimension decision is DECIDED. Its place in the Domain→Category→Skill→Micro-skill
-> hierarchy is OPEN — see §14.3.**
+> **Status: DECIDED (owner ruling, 2026-08-29).** This was previously recorded as an open modelling
+> problem. It is not one.
 
-Vocabulary carries at least **two independent dimensions**:
+> **Word Level and Recognition / Production are orthogonal dimensions, not taxonomy nodes.**
+> 🛑 Do **not** force them into `Domain → Category → Skill → Micro-skill`.
 
-### A. Word Level — a property of the word
+### A. Word Level — metadata **of the word**
 
-`Level 1` · `Level 2` · `Level 3` · `Level 4` · `Level 5` · `Level 6` · `Beyond`
+`MOE_1` · `MOE_2` · `MOE_3` · `MOE_4` · `MOE_5` · `MOE_6` · `BEYOND`
 
-Levels 1–6 follow the **教育部字彙分級** and match the site's six existing vocabulary packs.
+Levels 1–6 follow the **教育部字彙分級** and match the site's six existing vocabulary packs. This is a
+**classification of the word itself**: intrinsic, the same for every learner, and unchanged by
+anyone's progress.
 
-### B. Learner Mastery Type — a property of the *learner–word pair*
+### B. Recognition / Production — a mastery dimension of the **learner × word** pair
 
 `Recognition` · `Production`
 
-🛑 **Recognition / Production is not a peer of Level 1–6.** They are different kinds of fact:
+This is **not** a property of the word, and **not** a peer of the levels:
 
-> A Level 4 word may be **recognition** vocabulary for one student and already at **production**
+> A `MOE_4` word may be **recognition** vocabulary for one student and already at **production**
 > mastery for another. The word's level does not change; the learner's relationship to it does.
 
-⚠️ **Naming collision to avoid at implementation time.** "Level" here means a Ministry vocabulary
-band. "Level" elsewhere in this document (§5.1) means generic difficulty. Two different concepts —
-they must not share a field name.
+### Where each lives
+
+| | Word Level | Recognition / Production |
+|---|---|---|
+| Attached to | the **word** | the **learner–word pair** |
+| Kind | content metadata | mastery dimension |
+| Changes when | the 教育部 list is revised | the learner improves |
+| Field | `word_level` | a mastery dimension, not a taxonomy node |
+
+Vocabulary may **still** have real Skills in the hierarchy — word formation, collocation, meaning in
+context and so on. Those remain **PROVISIONAL** (§9); nothing above pre-empts them. The point of this
+ruling is narrower: **these two dimensions are not among them.**
+
+### 7.1 🛑 Naming — `level` is banned as a generic field name
+
+> **Status: DECIDED (owner ruling, 2026-08-29).**
+
+"Level" was being used for four unrelated things. Each now has its own name, and the generic word is
+not to be used for any of them:
+
+| Concept | Field | Values |
+|---|---|---|
+| 教育部 vocabulary band | **`word_level`** | `MOE_1` … `MOE_6`, `BEYOND` |
+| Content or item difficulty | **`difficulty`** | — |
+| CEFR level | **`cefr_level`** | — |
+| The student's school year | **`grade`** | — |
+
+🛑 **Never a bare `level` column, prop, or parameter.** A generic `level` is how these four silently
+merge into one another.
+
+⚠️ Note the collision that already exists in Production: `user_profiles.grade` holds the school year
+(國一…高三, 重考), matching row 4 above — but the vocabulary system's client-side SRS also speaks of
+"level" for 教育部 bands. New `/learn` code uses the names in this table; the existing columns are
+not renamed by this document.
 
 ---
 
@@ -486,13 +596,45 @@ has no material behind it. Not an error; a gap the owner may want to fill.
 
 ⚠️ **Speaking → Grammar** and **Writing → Grammar & Sentence Structure** are *assessment criteria*
 within a performance rubric. Whether they reference the Grammar Domain's Skills or are separate
-rubric dimensions is **open** (§14.4).
+rubric dimensions remains **BLOCKED / PROVISIONAL** (§14.4).
+
+🛑 **One constraint is DECIDED regardless (owner ruling, 2026-08-29):**
+
+> **A Speaking or Writing rubric's Grammar score must never be treated as Grammar Domain mastery.**
+> Only evidence that can be resolved to a **specific Grammar Skill** may update that skill's mastery.
+
+A holistic "grammar: 4/5" on an essay identifies no skill. Feeding it into the Grammar Domain would
+manufacture mastery the evidence does not support — and would do so invisibly, since the number looks
+authoritative. Rubric scores stay rubric scores until something can say *which* grammar.
 
 ---
 
 ## 10. Question tagging — Primary and Secondary Skill
 
-> **Status: principle DECIDED. Precedence rules OPEN — §14.5.**
+> **Status: DECIDED**, including the two-kinds-of-tag rule settled on 2026-08-29 (§10.1).
+
+### 10.1 Two kinds of skill tag — they mean different things
+
+> **Status: DECIDED (owner ruling, 2026-08-29).**
+
+| Tag on | Means | Is |
+|---|---|---|
+| **Lesson / Activity** | *what this content intends to teach* | an **instructional target** |
+| **Question / assessable item** | *what this item actually measures* | a **measured skill** |
+
+> 🛑 **Skill Evidence is derived primarily from question / assessable-item tags.**
+>
+> 🛑 **An Activity tagged with a Skill does NOT make every response inside it evidence for that
+> Skill.**
+
+The distinction is what keeps the competency axis honest. A vocabulary Activity tagged
+`Reading → Inference` as its teaching intent does not turn twenty spelling responses into inference
+evidence. Intent drives **recommendation and reporting**; measurement drives **evidence**.
+
+This also settles what was previously an open question: the two tag sets do not compete, because they
+answer different questions. Neither "wins" — they are not the same claim.
+
+### 10.2 Primary and Secondary
 
 ```
 Question → Primary Skill  (exactly one, required)
@@ -514,6 +656,7 @@ Principles:
 3. **Secondary never counts as full evidence.** Weighting is a mastery-model decision (§11), but
    secondary evidence must never be treated as equal to primary.
 4. **Tag at the level the student is being asked to operate at**, which may be Skill or Micro-skill.
+   ⚠️ Grammar Micro-skills do not exist yet (§8.13) — tag at Skill level.
 
 ---
 
@@ -530,8 +673,15 @@ Student Response  ──►  Skill Evidence  ──►  User Skill Mastery
 | Stage | What it is | Property that matters |
 |---|---|---|
 | **Student Response** | What the student actually did — the answer chosen, the text written, the recording made, with its timestamp and context | **Immutable.** Never rewritten when the taxonomy or scoring changes |
-| **Skill Evidence** | That response interpreted *against a skill*: which skill, correct or not, how strong, primary or secondary | **Derived and re-derivable.** If tagging changes, evidence is recomputed from responses |
+| **Skill Evidence** | That response interpreted *against a skill*: which skill, correct or not, how strong, primary or secondary. 🛑 Derived from the **question / assessable-item** tags, not the Activity's (§10.1) | **Derived and re-derivable.** If tagging changes, evidence is recomputed from responses |
 | **User Skill Mastery** | The current estimate of a learner's command of one skill | **Never authored.** Always computed from evidence |
+
+🛑 **Two rules constrain this flow, both DECIDED (2026-08-29):**
+
+1. **Evidence follows the measured skill, not the instructional target** (§10.1). An Activity's tags
+   never convert its responses into evidence wholesale.
+2. **A rubric score that resolves to no specific Skill updates no Skill** (§9). This applies to
+   Speaking and Writing rubric grammar scores in particular.
 
 **The load-bearing property is that responses are immutable while everything downstream is
 derived.** Taxonomies get revised; questions get re-tagged; scoring models improve. If mastery were
@@ -539,8 +689,11 @@ stored as the only truth, every such change would silently corrupt history. Keep
 means the entire competency picture can be rebuilt from scratch.
 
 🛑 **BLOCKED — not decided, do not invent:** the mastery scale, decay over time, how many
-observations constitute mastery, how difficulty weights evidence, primary vs secondary weighting,
+observations constitute mastery, how `difficulty` weights evidence, primary vs secondary weighting,
 and how Micro-skill evidence rolls up into Skill.
+
+⚠️ A response must reference the **exact asset version** it was answered against (§3.1). Without
+that, re-deriving evidence after a content edit silently produces the wrong answer.
 
 ⚠️ **There are already two divergent mastery models in Production** for vocabulary (client-side
 mastery cap 6 vs server-side cap 5 — finding 9.10 in `docs/BACKLOG.md`). 🛑 `User Skill Mastery`
@@ -574,6 +727,9 @@ it returns nothing useful.
 > `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md`: **RLS ON with policies written at the same time**,
 > `TO authenticated`, `*_user_id uuid REFERENCES auth.users(id)`, never a bare `student_id`, no
 > second identity store, no dependency on the shared LMS/Writing tables.
+>
+> 🛑 **Naming, per §7.1:** `word_level` · `difficulty` · `cefr_level` · `grade`. **Never a bare
+> `level`.**
 
 ### 13.1 Content axis
 
@@ -584,6 +740,7 @@ it returns nothing useful.
 | `lesson` | A complete learning unit with shared objectives | belongs to `module`; has many `activity`, many `learning_objective` |
 | `activity` | The smallest evidence-producing teaching activity | belongs to `lesson`; references `content_asset`; tagged to `skill` |
 | `content_asset` | Reusable content, outside the hierarchy | referenced by many `activity`; owned by no program |
+| `content_asset_version` | An immutable snapshot of an asset's content. 🛑 Required by §3.1 — a version with evidence is never overwritten | belongs to `content_asset`; referenced by `student_response` |
 | `activity_asset_ref` | The many-to-many join, carrying per-use context (order, role) | joins `activity` ↔ `content_asset` |
 
 ### 13.2 Competency axis
@@ -605,13 +762,14 @@ it returns nothing useful.
 | `classes` ✅ | Optional grouping owned by a teacher | **Already deployed** — Identity Spine |
 | `class_members` ✅ | Membership of a class, with role | **Already deployed** |
 | `guardian_links` ✅ | Confirmed guardian ↔ student link | **Already deployed** |
-| `teacher_student_link` 🆕 | **Direct** teacher ↔ student relationship, independent of any class | 🛑 **Does not exist yet — see §14.1** |
+| `teacher_student_relationships` 🆕 | **Direct** teacher ↔ student relationship, independent of any class. First-class (§4.1); grants **no** Program access; a student may hold several concurrently | teacher ↔ student. 🛑 **Does not exist yet — §14.1** |
+| `program_distribution_right` 🆕 | Which teacher may distribute or use which Program | teacher ↔ `program`. 🛑 **Shape follows §4.5, which is RECOMMENDED, not frozen** |
 | `enrollment` 🆕 | A student's entitlement to one Program | student ↔ `program`, with granting teacher and state |
 | `assignment` 🆕 | Teacher's instruction: what, for whom, by when | targets a student or class; points at `lesson` / `activity` |
 | `assignment_target` 🆕 | Resolves a class-level assignment to individual students | joins `assignment` ↔ student |
 | `activity_progress` 🆕 | Derived per-student, per-activity progress | student ↔ `activity` |
-| `student_response` 🆕 | **Immutable** record of what a student actually did | student ↔ `activity` / question asset |
-| `skill_evidence` 🆕 | A response interpreted against a skill; re-derivable | derived from `student_response`, references `skill` |
+| `student_response` 🆕 | **Immutable** record of what a student actually did | student ↔ `activity`; 🛑 references the exact `content_asset_version` answered (§3.1) |
+| `skill_evidence` 🆕 | A response interpreted against a skill; re-derivable. 🛑 Derived from **question-level** tags, never from an Activity's instructional target (§10.1) | derived from `student_response`, references `skill` |
 | `user_skill_mastery` 🆕 | Current computed estimate per student per skill | derived from `skill_evidence` |
 
 ### 13.4 🛑 Naming hazards
@@ -630,108 +788,122 @@ Our entities live in the **`learn` schema**, which is what makes the collision s
 
 ---
 
-## 14. Contradictions and gaps found
+## 14. Open items and how they were ruled
 
-> Reported, not resolved. Each needs an owner decision before the affected work starts.
+> The owner ruled on eight of these on **2026-08-29**. What follows records **which are closed, which
+> remain open, and what each ruling actually constrains** — a resolved item is kept rather than
+> deleted, because the reasoning is what stops it being re-litigated.
 
-### 14.1 🔴 The deployed Identity Spine cannot represent a direct teacher–student relationship
+### ✅ Resolved by owner ruling
 
-**The most consequential gap in this document.**
+#### 14.1 🔴 The deployed Identity Spine cannot represent a direct teacher–student relationship
 
-§4.1 makes `Teacher ↔ Student` direct relationship first-class, and forbids forcing a one-to-one
-student into a class of one. But the Identity Spine deployed to Production on 2026-08-28 has exactly
-one membership mechanism: `learn.class_members`, which requires a `learn.classes` row.
+**Product question — RESOLVED. Schema gap — still open.**
 
-Concretely, the additive `user_profiles` policy shipped as **D2** grants a teacher visibility of a
-student's `display_name` **only through active membership of an active class they own**. So today:
+> **Ruling:** the direct Teacher ↔ Student relationship is **first-class and independent of Class**.
+> A one-to-one student must never be forced into a class of one. A student may hold concurrent
+> relationships with several teachers. 🛑 **A relationship grants no Program access.**
 
-> **A direct student with no class is invisible to their own teacher.** The teacher would see a uuid.
+Recorded in §4.1. The reserved entity name is **`teacher_student_relationships`**.
 
-This is not a defect in the spine — it implemented what was decided at the time. It is a **decided
-product requirement that the current schema does not yet serve**.
+⚠️ **The implementation gap is unchanged and is now a decided requirement, not an open question.**
+The Identity Spine deployed on 2026-08-28 has exactly one membership mechanism,
+`learn.class_members`, which requires a `learn.classes` row. The additive `user_profiles` policy
+shipped as **D2** grants a teacher sight of a student's `display_name` **only through active
+membership of an active class they own**. So today:
 
-**Resolution shape (not built, not approved):** an additive `learn.teacher_student_link` table, plus
-a **second** additive `user_profiles` SELECT policy scoped to a confirmed direct link — mirroring
-exactly how the guardian policy already works. The guardian policy is the precedent: it grants
-profile visibility through a **person-to-person** link with no class involved. 🛑 Owner decision
-required; deliberately not designed further here.
+> **A direct student with no class is invisible to their own teacher** — the teacher sees a uuid.
 
-### 14.2 ❓ Who may enrol a student in which Program?
+**Resolution shape (not built, not approved):** the `teacher_student_relationships` table plus a
+**second** additive `user_profiles` SELECT policy scoped to a confirmed direct relationship. The
+existing guardian policy is the exact precedent — it already grants profile visibility through a
+**person-to-person** link with no class involved. 🛑 Requires its own owner approval, and follows the
+staged process the spine used.
 
-§2.1 says Programs are owner-authored and **teachers activate them for students**. Unspecified:
-whether any teacher may grant any Program, or whether a teacher must themselves be licensed for it.
+#### 14.3 ✅ Vocabulary dimensions — not a modelling problem
 
-This is an **authorization** question, and it decides an RLS policy. It cannot be inferred. 🛑 Owner
-decision required before `enrollment` is designed.
+> **Ruling:** Word Level and Recognition / Production are **orthogonal dimensions, not taxonomy
+> nodes**. 🛑 Do not force them into Domain → Category → Skill → Micro-skill.
 
-### 14.3 ❓ Vocabulary does not fit `Domain → Category → Skill → Micro-skill`
+I had recorded this as a blocker. It was not one — it was me assuming the hierarchy had to absorb
+everything. Word Level is **metadata of the word**; Recognition / Production is a **mastery dimension
+of the learner × word pair**. Neither is a competency.
 
-§5 defines a four-level hierarchy for every Domain. §7 defines Vocabulary as **two orthogonal
-dimensions** — Word Level (a property of the word) and Mastery Type (a property of the
-learner–word pair). Neither is a Category, and neither is a Skill.
+Generalised into §5.4, so the same mistake is not repeated for another domain: when something does
+not fit the hierarchy, first ask whether it is a competency, content metadata, or a learner × content
+fact. Full detail in §7.
 
-Vocabulary plausibly has *both*: real skills (word formation, collocation, meaning in context) in the
-hierarchy, **plus** Level and Mastery Type as attributes hanging off words and off the learner's
-relationship to them. But that is my reading, not an owner decision. 🛑 Recorded as open;
-deliberately not resolved.
+#### 14.5 ✅ Activity tags vs question tags — they answer different questions
 
-### 14.4 ❓ Speaking / Writing rubric dimensions vs Grammar Domain Skills
+> **Ruling:** Lesson / Activity tags are the **instructional target** (what this intends to teach).
+> Question / assessable-item tags are the **measured skill** (what this item actually tests). Skill
+> Evidence derives primarily from the **question-level** tags. 🛑 An Activity tagged with a Skill does
+> **not** make every response inside it evidence for that Skill. Primary / Secondary rules still apply.
 
-`Speaking → Grammar` and `Writing → Grammar & Sentence Structure` (§9) are rubric criteria. Do they
-reference the Grammar Domain's Skills, or are they independent rubric dimensions?
+My earlier framing asked "which wins" — the wrong question, because the two are not competing claims
+about the same thing. Recorded in §10.1, with the constraint restated in §11.
 
-- If they reference Grammar Skills, an essay's grammar score could feed grammar mastery — powerful,
-  and hard to do well.
-- If independent, they are simpler but produce a second, disconnected notion of "grammar ability".
+#### 14.6 ✅ Content Asset versioning — evidence freezes a version
 
-🛑 Both taxonomies are still PROVISIONAL; no answer invented.
+> **Ruling:** once a Content Asset version has produced a Student Response or Skill Evidence, that
+> version must **not** be destructively overwritten. Content changes create a **new version**, and
+> every historical response must be able to point back at the **exact version** the student answered.
 
-### 14.5 ❓ Skill tags on Activity vs on Content Asset — which wins?
+Recorded in §3.1. 🛑 Architecture principle only — no version table this round.
 
-§5 has `Activity → Skills`; §10 has `Question → Primary / Secondary Skill`. A question is a Content
-Asset (§3), and a Content Asset is reusable across Activities. So a question can arrive carrying its
-own tags into an Activity that has different ones.
+#### 14.7 ✅ `level` is banned as a generic name
 
-Related: may an Activity tag a Skill that none of its Lesson's Learning Objectives covers (§6)?
+> **Ruling:** `word_level` (`MOE_1` … `MOE_6`, `BEYOND`) · `difficulty` · `cefr_level` · `grade`.
+> 🛑 Never a bare `level`.
 
-**Suggested resolution, for the owner to accept or reject:** the **asset's** tags are the truth for
-evidence (they describe what the question tests, which does not change with placement); the
-**activity's** tags describe pedagogical intent and drive recommendation. 🛑 Not adopted — a
-suggestion only.
+Recorded in §7.1 and in §13's preamble.
 
-### 14.6 ❓ Content Asset editing has no versioning story
+#### 14.8 ✅ Speaking / Writing rubric grammar — a constraint, even while blocked
 
-§3 states editing an asset changes it everywhere. Combined with §11's immutable responses: if a
-question is edited after students have answered it, their stored responses now refer to a question
-that no longer exists in that form, and the evidence derived from it becomes unsound.
+> **Ruling:** a Speaking or Writing rubric's Grammar score **must never be treated as Grammar Domain
+> mastery**. Only evidence resolvable to a **specific Grammar Skill** may update that skill.
 
-Options range from full asset versioning to freezing an asset once it has responses. 🛑 Owner
-decision required before `content_asset` is built.
+The larger taxonomy question stays blocked (§14.4 below), but this constraint holds regardless and is
+recorded in §9 and §11.
 
-### 14.7 ⚠️ Grammar's Micro-skill level is empty, and one Skill has no source material
+---
 
-Two observations from the spreadsheet, both recorded rather than fixed:
+### 🟡 Recommended, not frozen
 
-1. **`Skill_Taxonomy` (the Micro-skill sheet) contains no data** — only a malformed header row. The
-   taxonomy is decided three levels deep, not four. 🛑 Tag at Skill level until the owner supplies
-   Micro-skills; do not invent them (§8.13).
-2. **`GRAM_G1_ADJ_CLAUSE` has zero source records in both materials.** Every adjective-clause item in
-   the junior- and senior-high sources was filed under the relative-clause topics that became G7. The
-   skill is required by the §8.9 doctrine, but nothing currently backs it. 🛑 Owner's call whether to
-   add material, leave it as a doctrinal placeholder, or reconsider.
+#### 14.2 Program distribution authorization
 
-### 14.8 ⚠️ "Level" is overloaded
+> **Recommended model (owner, not yet frozen):** Owner/Admin creates Programs · a Teacher may grant a
+> Program only if that Teacher has permission to distribute or use it · a Teacher may enrol only
+> students they legitimately teach, through a direct relationship or a Class they manage.
 
-"Level 1–6" (教育部 vocabulary bands, §7) and "level" as generic difficulty (§5.1) are different
-concepts. 🛑 They must never share a field name. Suggested: `vocab_level` and `difficulty`.
+Recorded in §4.5. 🛑 **Do not freeze it, and do not build against it.** It decides an RLS policy and
+implies an entity (`program_distribution_right`) that does not exist. Owner confirmation required
+before `enrollment` is designed.
 
-### 14.9 ⚠️ Guardians are built but absent from this model
+---
 
-`learn.guardian_links` is deployed and working, but this document does not mention parents. Nothing
-here says what a guardian may see of a child's assignments, progress, or evidence.
+### 🛑 Still blocked
 
-Not a contradiction — a decided capability the product model has not yet caught up with. 🛑
-Recorded; no access rules invented.
+#### 14.4 Speaking / Writing rubric dimensions vs Grammar Domain Skills
+
+`Speaking → Grammar` and `Writing → Grammar & Sentence Structure` are rubric criteria. Whether they
+reference Grammar Domain Skills or are independent rubric dimensions is **undecided**, and both
+taxonomies are still PROVISIONAL. The §14.8 constraint applies meanwhile. 🛑 No answer invented.
+
+#### 14.9 Grammar Micro-skills are not populated, and one Skill has no source material
+
+1. The spreadsheet's `Skill_Taxonomy` sheet holds **no data** — only a malformed header row. The
+   taxonomy is decided **three** levels deep, not four. 🛑 Tag at Skill level; do not invent
+   micro-skills (§8.13).
+2. **`GRAM_G1_ADJ_CLAUSE` has zero source records** in both materials — every adjective-clause item
+   was filed under the relative-clause topics that became G7. Doctrinally required by §8.9, currently
+   unbacked. 🛑 Owner's call.
+
+#### 14.10 Guardian access rules
+
+`learn.guardian_links` is deployed and working, but nothing states what a guardian may see of a
+child's assignments, progress, or evidence. 🛑 **Explicitly out of scope this round.** No access
+rules invented.
 
 ---
 
@@ -739,56 +911,87 @@ Recorded; no access rules invented.
 
 ### ✅ DECIDED
 
+**Content axis**
+
 - Program → Module → Lesson → Activity, with the definitions in §2
 - Module is **not** a week
 - Content Asset sits **outside** the hierarchy and is reusable
+- 🆕 **An asset version that has produced evidence is immutable**; changes fork a new version, and
+  responses point at the exact version answered (§3.1)
+
+**People and access**
+
 - Relationship · Enrollment · Assignment are **three separate concepts**; Progress is derived
-- Teacher ↔ Student **direct** relationship is first-class; **Class is optional grouping**
-- A one-to-one student is **never** forced into a class of one
-- Competency structure: Domain → Category → Skill → Micro-skill
+- 🆕 **Teacher ↔ Student direct relationship is first-class and independent of Class**; a student may
+  hold several concurrently; **a relationship grants no Program access** (§4.1)
+- A one-to-one student is **never** forced into a class of one; **Class is optional grouping**
+- **Enrollment is the only source of Program access**
+
+**Competency axis**
+
+- Structure: Domain → Category → Skill → Micro-skill
 - Skills are **program-independent**; no 國中/高中/學測 forks
 - Categories **need not be mutually exclusive**; overlap is resolved by tagging
+- 🆕 **Not everything is a taxonomy node** — competency vs content metadata vs learner × content
+  mastery dimension (§5.4)
 - Learning Objective ≠ Skill; `Lesson → Learning Objectives → Skills`
 - The seven Domains
-- **Grammar: ten Categories (G1–G10) and 51 Skills with stable codes — frozen, verbatim.**
-  Detailed source of truth: `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx`
-- **Owner Decisions OD-01 … OD-05** (§8.12) are binding tagging rules, including *do not dual-tag by
-  default*
-- G3 uses **語態**, never 體 / Aspect; all twelve forms are 時態
-- Passive voice is G3, **not** G4
-- G8 is 「不定詞、動名詞與分詞」, **never** 「非限定動詞」
-- G6 is 「介係詞與連接詞」
+
+**Grammar**
+
+- **Ten Categories (G1–G10) and 51 Skills with stable codes — frozen, verbatim.** Detailed source of
+  truth: `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx`
+- Skill **code** is the identity, not the display name
+- G3 uses **語態**, never 體 / Aspect; all twelve forms are 時態. Passive voice is G3, **not** G4
+- G8 is 「不定詞、動名詞與分詞」, **never** 「非限定動詞」; G6 is 「介係詞與連接詞」
 - G1 Adjective Clause and G7 Relative Clause **both stand**; §8.9 governs
 - Indirect Questions (間接問句) and Reported Speech (間接引語) are **separate Skills**;
   「間接引句」 is **forbidden**
-- Question tagging: exactly one Primary Skill, optional Secondary
-- Evidence flow: Student Response → Skill Evidence → User Skill Mastery
-- Vocabulary has two dimensions; Recognition / Production is **not** a peer of Level 1–6
+- **Owner Decisions OD-01 … OD-05** are binding tagging rules, including *do not dual-tag by default*
 
-### 🟡 PROVISIONAL — direction only, do not complete
+**Vocabulary**
 
+- 🆕 Word Level and Recognition / Production are **orthogonal dimensions, not taxonomy nodes** (§7)
+- 🆕 Word Level is **metadata of the word**; Recognition / Production is a **learner × word** mastery
+  dimension
+
+**Tagging and evidence**
+
+- 🆕 **Lesson / Activity tags = instructional target; question tags = measured skill** (§10.1)
+- 🆕 **Evidence derives from question-level tags**; an Activity's tag does not convert its responses
+  wholesale
+- Exactly one Primary Skill per question, optional Secondary
+- Evidence flow: Student Response → Skill Evidence → User Skill Mastery, responses immutable
+- 🆕 **A rubric score resolvable to no specific Skill updates no Skill** (§9)
+
+**Naming**
+
+- 🆕 `word_level` (`MOE_1`…`MOE_6`, `BEYOND`) · `difficulty` · `cefr_level` · `grade`.
+  🛑 **Never a bare `level`** (§7.1)
+
+### 🟡 PROVISIONAL / RECOMMENDED — do not freeze, do not build against
+
+- **Program distribution authorization** — the recommended model in §4.5 awaits owner confirmation
 - Reading · Listening · Speaking · Writing first-level lists (§9)
-- Vocabulary's Category level (§7, §14.3)
-- Grammar **Micro-skill** level — the spreadsheet's sheet for it is empty (§8.13). 🛑 Do not populate
+- Vocabulary's **Skill** level — real vocabulary competencies are still undesigned (§7)
+- Grammar **Micro-skill** level — the sheet is empty (§8.13). 🛑 Do not populate
 - Learning Objective phrasing format (§6)
-
-> ✅ Two items that were PROVISIONAL in the previous revision are now **DECIDED** by the spreadsheet:
-> Grammar's Skill level (51 skills), and the G7 formal-name discrepancy (「關係子句與關係詞」).
 
 ### 🛑 BLOCKED — needs an owner decision before the work starts
 
 | # | Blocked item | Blocks |
 |---|---|---|
 | 1 | **Exam / Academic Skills taxonomy** — owner still designing | that Domain entirely |
-| 2 | **Direct teacher–student relationship** (§14.1) | Student Home, teacher roster, any one-to-one flow |
-| 3 | **Who may enrol whom in which Program** (§14.2) | `enrollment` and its RLS |
-| 4 | **Mastery algorithm** — scale, decay, thresholds, weighting, roll-up (§11) | `user_skill_mastery` |
-| 5 | **Content Asset versioning** (§14.6) | `content_asset`, and the soundness of historical evidence |
-| 6 | **Activity vs Asset skill-tag precedence** (§14.5) | evidence derivation |
-| 7 | **Speaking / Writing rubric ↔ Grammar Skills** (§14.4) | those two domains' scoring |
-| 8 | **Guardian access rules** (§14.9) | any parent-facing view |
-| 9 | Reconciling the **two existing vocabulary mastery models** (9.10, `docs/BACKLOG.md`) | Vocabulary competency |
-| 10 | **Grammar Micro-skills** — the sheet is empty (§8.13, §14.7) | micro-skill-level tagging and reporting |
+| 2 | **Mastery algorithm** — scale, decay, thresholds, weighting, roll-up (§11) | `user_skill_mastery` |
+| 3 | **Speaking / Writing rubric ↔ Grammar Skills** (§14.4) | those two domains' scoring |
+| 4 | **Guardian access rules** (§14.10) | any parent-facing view |
+| 5 | **Grammar Micro-skills** — the sheet is empty (§8.13, §14.9) | micro-skill-level tagging |
+| 6 | Reconciling the **two existing vocabulary mastery models** (9.10, `docs/BACKLOG.md`) | Vocabulary competency |
+
+> **Down from ten to six.** Four were closed by the 2026-08-29 ruling (direct relationship,
+> vocabulary dimensions, tag precedence, asset versioning), and naming was settled outright. The
+> `teacher_student_relationships` schema gap is now a **decided requirement awaiting its own
+> deployment**, not a blocked decision.
 
 ---
 

@@ -117,9 +117,19 @@ These are not backlog items. They are constraints on everything built from here.
 **The identity model for all `/learn` work is decided:** `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md`.
 
 **The `/learn` product & competency model is specified:** `docs/learn/LEARNING_DOMAIN_MODEL.md`
-(2026-08-29). 🛑 Its §15 carries ten BLOCKED decisions, and marks every taxonomy except Grammar as
-PROVISIONAL. **Do not complete a taxonomy, seed skill data, or build an entity whose governing
-decision is still blocked.**
+(2026-08-29, revised the same day after an owner ruling on eight open items). 🛑 Its §15 carries
+**six** BLOCKED decisions and marks every taxonomy except Grammar as PROVISIONAL. **Do not complete a
+taxonomy, seed skill data, or build an entity whose governing decision is still blocked.**
+
+Standing rules that now bind all `/learn` work:
+
+| Rule | |
+|---|---|
+| **Naming** | `word_level` (`MOE_1`…`MOE_6`, `BEYOND`) · `difficulty` · `cefr_level` · `grade`. 🛑 **Never a bare `level`** |
+| **Evidence** | Derives from **question / assessable-item** tags. 🛑 An Activity's skill tag never converts its responses into evidence wholesale |
+| **Rubrics** | 🛑 A Speaking/Writing rubric grammar score is **not** Grammar Domain mastery. Only evidence resolvable to a specific Skill updates that Skill |
+| **Asset versions** | 🛑 A content version that has produced evidence is **immutable**; changes fork a new version and responses point at the exact version answered |
+| **Access** | 🛑 A teaching relationship grants **no** Program access. Enrollment is the only source |
 
 **Grammar taxonomy source of truth:** `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx`
 — 10 Categories, **51 Skills with stable codes** (`GRAM_G7_REL_PRON` …), plus source-material
@@ -127,10 +137,15 @@ provenance and the binding tagging rules OD-01…OD-05. The Markdown records str
 only; the spreadsheet wins on detail. 🛑 Its **Micro-skill level is empty** — tag at Skill level and
 do not invent micro-skills.
 
-⚠️ **Known spec ↔ schema gap (§14.1):** the product model makes a direct teacher–student
-relationship first-class, but the deployed Identity Spine can only express membership through
-`learn.classes`. A direct student with no class is invisible to their teacher under the D2
-`user_profiles` policy. Needs an owner decision before Student Home or any one-to-one flow.
+⚠️ **Known spec ↔ schema gap (§14.1) — now a DECIDED requirement, not an open question.** The owner
+ruled on 2026-08-29 that the direct teacher–student relationship is **first-class and independent of
+Class**, but the deployed Identity Spine can only express membership through `learn.classes`. A
+direct student with no class is invisible to their teacher under the D2 `user_profiles` policy.
+
+**Resolution shape:** a `teacher_student_relationships` table plus a second additive `user_profiles`
+SELECT policy scoped to a confirmed direct relationship — the existing guardian policy is the exact
+precedent. 🛑 Needs its own owner approval and the same staged staging→Production process the spine
+used. Blocks Student Home and any one-to-one flow until then.
 
 ✅ **Both owner decisions are DECIDED (2026-08-27):**
 
