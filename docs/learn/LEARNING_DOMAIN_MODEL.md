@@ -1,7 +1,7 @@
 # `/learn` Learning Domain Model
 
 > **Written:** 2026-08-29 · **Revised:** 2026-08-29 — Grammar Skill Taxonomy v1, an owner ruling on
-> eight open items (§14), then Reading Taxonomy v1 (§9.1) and Listening Taxonomy v1 (§9.7)
+> eight open items (§14), then Reading (§9.1), Listening (§9.7) and Speaking (§9.12) Taxonomy v1
 > **Status:** 🟡 **DESIGN SPEC ONLY — no table, no migration, no seed data, no frontend, no
 > Production change.**
 >
@@ -28,8 +28,8 @@
 | **Reading** | ✅ **CLOSED / DECIDED v1** — 6 Categories · 25 Skills · no Micro-skill (§9.1) |
 | **Vocabulary** | ✅ **DESIGN PHASE COMPLETE / TEMPORARILY CLOSED** — architecture frozen; 🛑 **off the active mainline**. `docs/learn/VOCABULARY_ARCHITECTURE.md` |
 | **Listening** | ✅ **CLOSED / DECIDED v1** — 4 Categories · 18 Skills · no Micro-skill (§9.7) |
-| **Speaking** | 🔜 **NEXT — the active design checkpoint** |
-| **Writing** | ⏳ queued |
+| **Speaking** | ✅ **CLOSED / DECIDED v1** — 4 Categories · 19 Skills · no Micro-skill (§9.12) |
+| **Writing** | 🔜 **NEXT — the active design checkpoint** |
 | **Exam / Academic Skills** | 🛑 BLOCKED — owner still designing |
 
 **Then, in order:** Learning Objective spec → Evidence / Mastery model → Competency DB schema.
@@ -717,7 +717,7 @@ addition to G7. 🛑 **Do not modify the source mapping this round**, and do not
 > names, not by how much source material happens to sit under it.** Source counts measure coverage of
 > the existing materials, not whether a skill deserves to exist.
 
-## 9. Reading and Listening taxonomies, and the remaining Domains
+## 9. Reading, Listening and Speaking taxonomies, and the remaining Domains
 
 ### 9.1 Reading — Categories and Skills both DECIDED v1
 
@@ -768,6 +768,7 @@ and none is to be invented.** See §9.3 on why depth varies by domain.
 | **Grammar** | Micro-skill — 234 candidates (§8.13) |
 | **Reading** | **Skill — by owner decision, no Micro-skill in v1** |
 | **Listening** | **Skill — same decision (§9.7)** |
+| **Speaking** | **Skill — same decision (§9.12)** |
 
 🛑 A domain stopping at Skill is **not** an incomplete taxonomy, and is **not** an invitation to fill
 in the missing level. Depth follows what the domain actually needs to diagnose.
@@ -947,24 +948,111 @@ one is not queued.
 The domains are deliberately separate (§5.2), so a learner strong at reading inference and weak at
 listening inference carries **two independent mastery records**. That is the intended behaviour.
 
-### 9.12 The remaining Domains — placeholders only
+### 9.12 Speaking — CLOSED / DECIDED v1
+
+> **Status: 🔒 CLOSED (2026-08-29).** 4 Categories **DECIDED** · 19 Skills **DECIDED v1** · 🛑 no
+> Micro-skill in v1.
+>
+> 📎 **Source of truth: `docs/learn/speaking-taxonomy/Speaking_Taxonomy_v1.xlsx`** — the workbook
+> states its own status, and carries the 19 definitions, their Includes / Excludes rules and the 12
+> tagging rules (TR-01 … TR-12). Structure and principles only here.
+
+| Code | Category (Chinese) | English | Skills |
+|---|---|---|---|
+| **S1** | 流暢與連貫 | Fluency & Coherence | 5 |
+| **S2** | 詞彙運用 | Lexical Resource | 5 |
+| **S3** | 文法運用 | Grammatical Range & Accuracy | 4 |
+| **S4** | 發音與語調 | Pronunciation & Intonation | 5 |
+| | | **Total** | **19** |
+
+Skill codes: `SPEAK_FLUENCY_INTERACTION`, `SPEAK_LEXICAL_COLLOCATION`, `SPEAK_GRAMMAR_REALTIME`,
+`SPEAK_PRON_CONNECTED` … 🛑 opaque identifiers, never parsed (§8.3).
+
+### 9.13 ⚠️ Speaking is a **production** domain — the assessable unit is different
+
+Reading and Listening categories are *comprehension processes*; Speaking's are **rubric criteria**.
+That changes what "exactly one Primary Skill" attaches to, and the workbook's TR-01 says so
+precisely: *每一道可計分 Speaking assessable item **/ rubric evidence** 必須恰好有一個 Primary Skill*.
+
+> 🛑 **The unit is the rubric evidence, not the recording.** One two-minute response legitimately
+> produces several rubric evidences — fluency, lexis, grammar, pronunciation — and **each** carries
+> exactly one Primary Skill. It does **not** mean one recording must be reduced to a single skill.
+
+Read the other way round, the rule would be unworkable: a spoken performance is simultaneously all
+four things. This is the same "exactly one Primary" contract (§10.2), applied at the level where it
+makes sense for productive skills.
+
+### 9.14 What is not a Speaking Skill
+
+| 🛑 Not a Skill | Where it belongs |
+|---|---|
+| Picture Description · Read Aloud · Role Play · Interview · Presentation · Debate · IELTS Speaking Part 1/2/3 · KET / PET speaking parts | **`task_type` / `activity_type`** |
+| Preparation time · response duration · picture prompt · live interaction · task difficulty · number of interlocutors | **task / stimulus metadata** (`difficulty`, §7.1) |
+| **Overall Intelligibility** | A **rubric outcome / derived / reporting metric** — 🛑 explicitly **not** a 20th Skill (TR-10). It is what S4's five pronunciation skills jointly produce |
+
+Intelligibility follows the model's standing shape: **derived, never stored as its own competency**
+— the same reasoning that keeps User Skill Mastery computed rather than authored (§11).
+
+### 9.15 Four rulings about what the Speaking rubric actually measures
+
+> These exist because each names a plausible-sounding proxy that would measure the wrong thing.
+
+| Ruling | |
+|---|---|
+| **Accent is not a target** | 🛑 Pronunciation is **not** judged by resemblance to an American or British speaker. It is judged on **intelligibility and phonological control** — segmental accuracy, stress, rhythm, intonation, connected speech. 🛑 A Taiwanese, American or British accent must **never** attract a bonus or a penalty *for being that accent* |
+| **Fluency is not speed** | 🛑 Faster is not better. Fluency is continuity, appropriate pace, pausing and hesitation control, organisation and coherence. **Fast but hard to follow, or fast and out of control, must not score higher** |
+| **Range is not difficulty** | 🛑 Lexical Resource does not reward harder words. It asks whether the learner has **enough vocabulary to complete the communicative task**. **Accurate, natural, sufficient simple vocabulary beats unnatural or misused advanced vocabulary** |
+| **Interaction applies conditionally** | `SPEAK_FLUENCY_INTERACTION` produces evidence **only** where the task has real interaction demand — dialogue, interview, role play, paired speaking. 🛑 A solo monologue or presentation must **not** be penalised for containing no turn-taking |
+
+⚠️ **The interaction rule has a consequence the mastery model must honour.** A learner who only ever
+does monologues will have **no evidence** for `SPEAK_FLUENCY_INTERACTION`. 🛑 *No evidence* must be
+represented as **not measured**, never as *weak*. Otherwise the taxonomy quietly penalises a task-type
+choice the learner never made. This is a constraint on the **blocked** mastery algorithm, recorded
+now so it is not discovered after the fact.
+
+### 9.16 ✅ Speaking Grammar ↔ Grammar Domain — the boundary
+
+Two different things share the word "grammar", and conflating them would fabricate mastery:
+
+| | Measures |
+|---|---|
+| **Speaking S3** — Grammatical Range & Accuracy | Whether the learner can deploy grammar **accurately and flexibly in real-time spoken production** |
+| **Grammar Domain** (§8) | Command of **specific grammar skills** — tenses, relative clauses, conditionals, passive voice … |
+
+> 🛑 **A Speaking grammar rubric score must never be written into Grammar Domain mastery.**
+>
+> A learner scoring **70% on Speaking grammar** does **not** thereby score 70% on
+> `Grammar → Tenses`, 70% on `Grammar → Relative Clauses` and 70% on `Grammar → Conditionals`. The
+> rubric score identifies **no specific skill**, so it can update **none**.
+
+This is the general rule of §9.17 and §14.8, with a concrete worked case.
+
+**What may become Grammar evidence later:** if analysis of a learner's speech identifies a *specific*
+grammar skill — a repeated tense error, subject–verb agreement failures, conditional structure use,
+relative clause control — that is a **candidate Grammar Skill evidence**.
+
+🛑 **How, whether, and with what confidence such candidates update Grammar mastery belongs to the
+Evidence / Mastery Model. No algorithm is designed here** (§14.4).
+
+### 9.17 The remaining Domains — placeholders only
 
 > 🛑 **PROVISIONAL. First-level direction only. Do NOT complete, freeze, or seed these.**
 
 | Domain | First-level direction (PROVISIONAL) |
 |---|---|
-| **Speaking** | Fluency & Coherence · Lexical Resource · Grammar · Pronunciation & Intonation |
 | **Writing** | Content & Task · Organization & Coherence · Lexical Resource · Grammar & Sentence Structure · Register & Audience Awareness |
 | **Vocabulary** | Two orthogonal dimensions recorded in §7; the **Category and Skill levels are not designed** |
 | **Exam / Academic Skills** | 🛑 **BLOCKED** — the owner is still designing this |
 
-> ✅ **Grammar, Reading and Listening are the exceptions.** Grammar is decided to Skill level with
-> 234 PROVISIONAL Micro-skill candidates (§8); **Reading** is frozen as v1 — 6 Categories, 25 Skills
-> (§9.1); **Listening** is frozen as v1 — 4 Categories, 18 Skills (§9.7). Neither has Micro-skills.
+> ✅ **Grammar, Reading, Listening and Speaking are the exceptions.** Grammar is decided to Skill
+> level with 234 PROVISIONAL Micro-skill candidates (§8); **Reading** (6 Categories, 25 Skills,
+> §9.1), **Listening** (4 Categories, 18 Skills, §9.7) and **Speaking** (4 Categories, 19 Skills,
+> §9.12) are each frozen as v1, none with Micro-skills.
 
-⚠️ **Speaking → Grammar** and **Writing → Grammar & Sentence Structure** are *assessment criteria*
-within a performance rubric. Whether they reference the Grammar Domain's Skills or are separate
-rubric dimensions remains **BLOCKED / PROVISIONAL** (§14.4).
+⚠️ **Writing → Grammar & Sentence Structure** is an *assessment criterion* within a performance
+rubric. ✅ Speaking's equivalent is settled — **S3 is its own thing, separate from the Grammar
+Domain** (§9.16). What remains open for both is **whether and how rubric evidence may ever update
+Grammar Domain mastery** (§14.4).
 
 🛑 **One constraint is DECIDED regardless (owner ruling, 2026-08-29):**
 
@@ -1057,7 +1145,7 @@ Student Response  ──►  Skill Evidence  ──►  User Skill Mastery
 
 1. **Evidence follows the measured skill, not the instructional target** (§10.1). An Activity's tags
    never convert its responses into evidence wholesale.
-2. **A rubric score that resolves to no specific Skill updates no Skill** (§9.12). This applies to
+2. **A rubric score that resolves to no specific Skill updates no Skill** (§9.17). This applies to
    Speaking and Writing rubric grammar scores in particular.
 3. 🆕 **A Secondary Skill tag does not produce evidence weighted equally with the Primary** (§10.2).
    Until the mastery algorithm is frozen, secondaries are metadata and a future evidence candidate.
@@ -1330,11 +1418,30 @@ before `enrollment` is designed.
 
 ### 🛑 Still blocked
 
-#### 14.4 Speaking / Writing rubric dimensions vs Grammar Domain Skills
+#### 14.4 May Speaking / Writing rubric evidence ever update Grammar Domain mastery?
 
-`Speaking → Grammar` and `Writing → Grammar & Sentence Structure` are rubric criteria. Whether they
-reference Grammar Domain Skills or are independent rubric dimensions is **undecided**, and both
-taxonomies are still PROVISIONAL. The §14.8 constraint applies meanwhile. 🛑 No answer invented.
+> ⚠️ **Reframed 2026-08-29 — this is no longer a taxonomy question.**
+>
+> It used to read "are these rubric dimensions or Grammar Skills, and both taxonomies are
+> PROVISIONAL". **Speaking is now DECIDED v1** (§9.12), and its S3 *Grammatical Range & Accuracy* is
+> settled as **its own thing, separate from the Grammar Domain** (§9.16). 🛑 **This blocker must not
+> be used to hold the Speaking taxonomy in PROVISIONAL.**
+
+**What actually remains open** is an **Evidence / Mastery Model** question:
+
+> **If analysis of a learner's speech or writing identifies a *specific* Grammar Skill — a repeated
+> tense error, subject–verb agreement failures, conditional structure use, relative clause control —
+> may that become Grammar Domain evidence, and with what confidence and weight?**
+
+The constraint that holds meanwhile is unchanged and DECIDED (§14.8): 🛑 **a rubric score resolvable
+to no specific Skill updates no Skill.** 70% on Speaking grammar writes nothing to
+`Grammar → Tenses`.
+
+🛑 No algorithm designed here. Belongs with the mastery algorithm, and is scheduled after the
+remaining domain taxonomies.
+
+**Writing's half is still genuinely open at taxonomy level** — its first-level list is PROVISIONAL
+(§9.17) — so this entry stays blocked until Writing is decided too.
 
 #### 14.10 Guardian access rules
 
@@ -1420,6 +1527,25 @@ rules invented.
   stated points → L4, integration plus an unstated conclusion → L3
 - 🆕 🛑 **Numbers / dates / prices get no Skill of their own** — normally L2 Explicit Detail
 
+**Speaking**
+
+- 🆕 **CLOSED / DECIDED v1** — 4 Categories (S1–S4) and 19 Skills, frozen 2026-08-29, no Micro-skill.
+  Source of truth: `docs/learn/speaking-taxonomy/Speaking_Taxonomy_v1.xlsx`
+- 🆕 **The assessable unit is the rubric evidence, not the recording** — one response yields several
+  rubric evidences, each with exactly one Primary Skill (§9.13)
+- 🆕 🛑 **Task Type ≠ Skill** (Picture Description, Read Aloud, Role Play, Interview, Presentation,
+  Debate, IELTS/KET/PET parts) and **task metadata ≠ Skill** (prep time, response duration, prompt,
+  live interaction, difficulty, interlocutor count)
+- 🆕 🛑 **Accent is not a target** — intelligibility and phonological control are; no accent earns a
+  bonus or penalty for being that accent
+- 🆕 🛑 **Fluency ≠ speed** · 🛑 **Lexical range ≠ hard words** — sufficient, accurate, natural
+  vocabulary beats misused advanced vocabulary
+- 🆕 **Interaction evidence is conditional** — only from tasks with real interaction demand; ⚠️ *no
+  evidence* must be modelled as **not measured**, never as *weak* (§9.15)
+- 🆕 🛑 **Overall Intelligibility is a derived metric, not a 20th Skill**
+- 🆕 **Speaking S3 ≠ Grammar Domain** — a 70% speaking grammar score writes nothing to
+  `Grammar → Tenses` (§9.16)
+
 **Vocabulary**
 
 - 🆕 Word Level and Recognition / Production are **orthogonal dimensions, not taxonomy nodes** (§7)
@@ -1451,7 +1577,7 @@ rules invented.
 ### 🟡 PROVISIONAL / RECOMMENDED — do not freeze, do not build against
 
 - **Program distribution authorization** — the recommended model in §4.5 awaits owner confirmation
-- Speaking · Writing first-level lists (§9.12)
+- Writing first-level list (§9.17)
 - Vocabulary's **Skill** level — real vocabulary competencies are still undesigned (§7)
 - Grammar **Micro-skill** level — **234 candidates supplied, covering all 51 Skills**, not yet frozen
   item by item (§8.13). ✅ Usable for tagging · 🛑 not DECIDED, and do not invent additions

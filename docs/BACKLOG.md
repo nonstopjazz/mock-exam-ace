@@ -120,8 +120,11 @@ These are not backlog items. They are constraints on everything built from here.
 
 **The `/learn` product & competency model is specified:** `docs/learn/LEARNING_DOMAIN_MODEL.md`
 (2026-08-29, revised the same day after an owner ruling on eight open items). 🛑 Its §15 carries
-**five** BLOCKED decisions and marks every taxonomy except Grammar, Reading and Listening as
-PROVISIONAL.
+**five** BLOCKED decisions and marks every taxonomy except Grammar, Reading, Listening and Speaking
+as PROVISIONAL. ⚠️ The **Speaking / Writing ↔ Grammar** blocker was **reframed** on 2026-08-29: it is
+no longer "is the Speaking taxonomy decided" (it is) but "**may rubric evidence ever update Grammar
+Domain mastery, and with what weight**" — an Evidence / Mastery Model question. 🛑 It must not be
+used to hold the Speaking taxonomy in PROVISIONAL.
 ✅ **None of them blocks the next design stage** — each gates a specific later capability. **Do not complete a
 taxonomy, seed skill data, or build an entity whose governing decision is still blocked.**
 
@@ -139,10 +142,19 @@ Standing rules that now bind all `/learn` work:
 | **Skill codes** | 🆕 🛑 **Opaque identifiers — never parse a code to derive its Category.** `GRAM_G7_…` embedding `G7` is a mnemonic, not relational data. Use the declared taxonomy relationship |
 | **Vocabulary v1** | 🆕 **Item-centric, architecture frozen 2026-08-29** (`VOCABULARY_ARCHITECTURE.md` §1.2). Canonical identity is a **headword** (no sense ontology); `level_words` is the evolution starting point, 🛑 **never a parallel canonical system**; one Collection concept for all set types; mastery is `learner × canonical_word` with `Recognition` / `Production` only; SRS gives **one due date per word** regardless of collections; 🛑 Practice Type is event metadata, never a mastery axis; 🛑 normalization is trim / case / Unicode only — **no silent morphological merge** |
 
-🔜 **The active design checkpoint is the Speaking taxonomy.** Domain order: Grammar ✅ · Reading ✅ ·
-Vocabulary ✅ (architecture temporarily closed) · Listening ✅ · **Speaking ← NEXT** · Writing ·
+🔜 **The active design checkpoint is the Writing taxonomy.** Domain order: Grammar ✅ · Reading ✅ ·
+Vocabulary ✅ (architecture temporarily closed) · Listening ✅ · Speaking ✅ · **Writing ← NEXT** ·
 Exam / Academic Skills. Then Learning Objective spec → Evidence / Mastery model → Competency DB
 schema. 🛑 **Vocabulary migration work does not interrupt this line.**
+
+**Speaking taxonomy source of truth:** `docs/learn/speaking-taxonomy/Speaking_Taxonomy_v1.xlsx`
+— **4 Categories (S1–S4) + 19 Skills, both DECIDED v1** (frozen 2026-08-29) · 12 tagging rules.
+🛑 No Micro-skill; 🛑 **Overall Intelligibility is a derived metric, not a 20th Skill**. The
+assessable unit is the **rubric evidence, not the recording**. 🛑 Task Type and task metadata are
+never Skills. 🛑 **Accent is not a target** · 🛑 fluency ≠ speed · 🛑 lexical range ≠ hard words.
+⚠️ Interaction evidence is conditional — *no evidence* means **not measured**, never *weak*.
+🛑 **Speaking S3 ≠ Grammar Domain**: a 70% speaking grammar score writes nothing to
+`Grammar → Tenses`.
 
 **Listening taxonomy source of truth:** `docs/learn/listening-taxonomy/Listening_Taxonomy_v1.xlsx`
 — **4 Categories (L1–L4) + 18 Skills, both DECIDED v1** (frozen 2026-08-29) · 11 tagging rules.
