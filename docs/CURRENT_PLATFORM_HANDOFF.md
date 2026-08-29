@@ -30,6 +30,13 @@
   Verified 26/26 on Production with a per-user census showing zero visibility change across all 22
   accounts. 🛑 `learn` is **not** in Exposed schemas — `learn.*` is unreachable from the browser
   until that step is deliberately taken. Records: `docs/learn/IDENTITY_SPINE_PRODUCTION_PLAN.md` §8.
+- 📘 **The `/learn` product & competency model is specified (2026-08-29):**
+  `docs/learn/LEARNING_DOMAIN_MODEL.md` — Program→Module→Lesson→Activity, Content Assets outside the
+  hierarchy, Relationship/Enrollment/Assignment kept separate, and the Domain→Category→Skill→
+  Micro-skill competency axis. **Grammar's ten categories (G1–G10) are frozen in the owner's
+  terminology; every other taxonomy is PROVISIONAL or BLOCKED — do not complete them.** Design spec
+  only: no table, no migration, no seed data. 🛑 Nine blocked decisions are listed in its §15,
+  including that the deployed spine cannot yet represent a direct teacher–student relationship.
 - 🧭 **The identity model for all new `/learn` work is decided (2026-08-27):**
   `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md`. Canonical root is **`auth.users.id`**; `user_profiles`
   is reused; roles are **relationship-scoped** (no global role table); `public.users` is

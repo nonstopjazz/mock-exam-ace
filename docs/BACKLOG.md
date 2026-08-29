@@ -116,6 +116,16 @@ These are not backlog items. They are constraints on everything built from here.
 
 **The identity model for all `/learn` work is decided:** `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md`.
 
+**The `/learn` product & competency model is specified:** `docs/learn/LEARNING_DOMAIN_MODEL.md`
+(2026-08-29). 🛑 Its §15 carries nine BLOCKED decisions, and marks every taxonomy except Grammar's
+ten categories as PROVISIONAL. **Do not complete a taxonomy, seed skill data, or build an entity
+whose governing decision is still blocked.**
+
+⚠️ **Known spec ↔ schema gap (§14.1):** the product model makes a direct teacher–student
+relationship first-class, but the deployed Identity Spine can only express membership through
+`learn.classes`. A direct student with no class is invisible to their teacher under the D2
+`user_profiles` policy. Needs an owner decision before Student Home or any one-to-one flow.
+
 ✅ **Both owner decisions are DECIDED (2026-08-27):**
 
 | | Decision | Outcome |
