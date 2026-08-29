@@ -1,26 +1,26 @@
 Category Code,Category 中文,Skill Code,Skill 中文,Skill English,Definition,Includes / Typical Tasks,Excludes / Boundary Rule,Status
-R1,掌握主旨,READ_MAIN_CENTRAL,全文主旨,Passage Central Idea,辨識整篇文章最核心的主張、概念或主要內容。,全文主要在說什麼；中心思想；主要論點,不等同 Best Title 題型；若題目只是找某一段主旨，改標 Paragraph Main Idea,CANDIDATE
-R1,掌握主旨,READ_MAIN_PARAGRAPH,段落主旨,Paragraph Main Idea,辨識特定段落的主要內容或核心概念。,某段主要在談什麼；段落中心思想,若問某段在全文中的功能，優先考慮 R5 Sentence & Paragraph Function,CANDIDATE
-R1,掌握主旨,READ_MAIN_SUMMARY,摘要歸納,Summarization,保留關鍵資訊並排除枝節，選出或形成能代表全文的摘要。,best summary；整合主要內容,若只是選出單一中心思想而非摘要多個重點，可標 Passage Central Idea,CANDIDATE
-R1,掌握主旨,READ_MAIN_THEME,核心訊息／主題,Key Message / Theme,辨識故事、文章或演講背後欲傳達的核心訊息、教訓或主題。,lesson; message; theme,不要與作者寫作目的混同；Purpose 問的是作者為什麼寫,CANDIDATE
-R2,擷取細節,READ_DETAIL_EXPLICIT,明示細節,Explicit Detail,從文章中找到直接陳述的事實、事件、特徵或資訊。,According to the passage; which is true; factual detail,如果答案需要推出未明說的結論，改標 Inference,CANDIDATE
-R2,擷取細節,READ_DETAIL_EVIDENCE,證據定位,Evidence Identification,找出支持某一答案、主張或判斷的明示文本證據。,哪一句/哪一段最能支持；supporting evidence,不只是答對內容，也要求定位支持依據,CANDIDATE
-R2,擷取細節,READ_DETAIL_MATCHING,資訊配對,Information Matching,將人物、事件、特徵、選項或條件與文章中的明示資訊正確配對。,person ↔ preference; item ↔ description,若需跨多處資訊再推出新結論，改標 Integration 或 Inference,CANDIDATE
-R2,擷取細節,READ_DETAIL_INTEGRATION,跨句／跨段資訊整合,Explicit Information Integration,整合兩處以上已明示資訊以完成答案，但不額外推出文本未明說的新結論。,跨句、跨段拼接明示資訊,A+B 仍只是文本已明說內容 → 本 Skill；A+B 推出未明說 C → Inference,CANDIDATE
-R3,理解語境,READ_CONTEXT_WORD,字義判斷,Word Meaning in Context,利用上下文判斷單字在該篇文章中的實際意義。,closest in meaning; word means,不是單純脫離文本的字彙知識測驗,CANDIDATE
-R3,理解語境,READ_CONTEXT_PHRASE,片語／表達意義,Phrase & Expression Meaning,利用上下文判斷片語、慣用表達或較長語句片段的意義。,phrase; expression; sentence fragment meaning,若主要考 figurative / idiomatic 特殊意義，可標 Figurative & Idiomatic Meaning,CANDIDATE
-R3,理解語境,READ_CONTEXT_REFERENCE,指涉判斷,Reference Resolution,判斷代名詞、指示詞或表達在文本中指向的對象或概念。,this/that/it/they/which refers to,重點是 antecedent/reference，不是一般 Grammar pronoun 題,CANDIDATE
-R3,理解語境,READ_CONTEXT_FIGURATIVE,慣用／比喻意義,Figurative & Idiomatic Meaning,理解非字面性的比喻、隱喻、慣用語或修辭性表達。,metaphor; idiom; figurative expression,若只是一般片語的語境字義，標 Phrase & Expression Meaning,CANDIDATE
-R4,推論引申,READ_INFER_LOCAL,局部推論,Local Inference,根據相鄰一兩句或局部段落資訊，推出未直接陳述但合理的結論。,短距離、局部證據推論,若需整合全文多段，標 Global Inference & Conclusion,CANDIDATE
-R4,推論引申,READ_INFER_GLOBAL,全文推論與結論,Global Inference & Conclusion,整合全文或多段證據，推出整體性結論或未明說的整體判斷。,overall inference; conclusion,若主要在判斷作者態度，優先標 R6 Tone & Attitude,CANDIDATE
-R4,推論引申,READ_INFER_CAUSE,原因／動機推論,Cause & Motivation Inference,根據文本線索推論未直接明說的原因、動機或行為目的。,why did X; motivation; unstated cause,如果原因已直接寫出，標 Explicit Detail,CANDIDATE
-R4,推論引申,READ_INFER_IMPLICATION,隱含意義／預測,Implication & Prediction,根據文本推出隱含含意、可能後果或後續發展。,imply; likely happen next; consequence,重點是文本沒有直接說出的 implication / prediction,CANDIDATE
-R5,篇章結構,READ_STRUCTURE_PATTERN,篇章組織模式,Organizational Pattern,辨識文章或段落採用的主要組織方式。,cause-effect; compare-contrast; problem-solution; chronology; claim-evidence,若題目問某一句/某一段在文中的作用，標 Function,CANDIDATE
-R5,篇章結構,READ_STRUCTURE_FUNCTION,句子／段落功能,Sentence & Paragraph Function,判斷特定句子、例子、段落或資料在全文論述中扮演的功能。,give example; provide evidence; introduce counterargument; explain,不是作者整篇文章的目的；整篇 Purpose 歸 R6,CANDIDATE
-R5,篇章結構,READ_STRUCTURE_COHESION,銜接與連貫,Cohesion & Transition,理解句與句、段與段之間的邏輯關係、銜接詞與篇章連貫。,however; therefore; contrast; example; logical connection,若只是單純考某連接詞文法，可屬 Grammar，不是 Reading evidence,CANDIDATE
-R5,篇章結構,READ_STRUCTURE_ORDERING,排序與插入,Ordering & Sentence Insertion,根據篇章邏輯、指涉與銜接判斷句子／段落的合理順序或插入位置。,sentence insertion; paragraph ordering,這不是單純 question type；真正能力是 discourse flow,CANDIDATE
-R6,作者意圖與風格,READ_PURPOSE_AUTHOR,作者目的,Author's Purpose,判斷作者寫作整篇文章或主要段落的目的。,inform; persuade; criticize; warn; explain; entertain,不要與某句/某段的局部功能混同，後者通常是 R5 Function,CANDIDATE
-R6,作者意圖與風格,READ_PURPOSE_TONE,語氣與態度,Tone & Attitude,判斷作者對主題、事件或人物所呈現的語氣與態度。,optimistic; skeptical; critical; concerned; neutral,雖常需推論，但 taxonomy 中 primary 固定歸 Purpose & Style,CANDIDATE
-R6,作者意圖與風格,READ_PURPOSE_PERSPECTIVE,觀點與立場,Point of View & Perspective,辨識作者或文中人物／來源的觀點、立場及彼此差異。,position; viewpoint; perspective,若只是從全文推論一般結論、不涉及立場，標 Inference,CANDIDATE
-R6,作者意圖與風格,READ_PURPOSE_RHETORIC,修辭策略,Rhetorical Strategy,判斷作者如何運用例子、統計、引述、對比、反問等策略達成效果。,statistics; quotation; anecdote; contrast; rhetorical question,若題目只問某段扮演什麼結構功能，可標 R5 Function,CANDIDATE
-R6,作者意圖與風格,READ_PURPOSE_STYLE,文體、語域與讀者,"Style, Register & Audience",判斷文本的文體、正式度、語域、寫作風格或預期讀者。,formal/informal; academic; journalistic; conversational; target audience,不等同 Tone；Tone 側重態度，Style/Register 側重表達方式與受眾,CANDIDATE
+R1,掌握主旨,READ_MAIN_CENTRAL,全文主旨,Passage Central Idea,辨識整篇文章最核心的主張、概念或主要內容。,全文主要在說什麼；中心思想；主要論點,不等同 Best Title 題型；若題目只是找某一段主旨，改標 Paragraph Main Idea,DECIDED v1
+R1,掌握主旨,READ_MAIN_PARAGRAPH,段落主旨,Paragraph Main Idea,辨識特定段落的主要內容或核心概念。,某段主要在談什麼；段落中心思想,若問某段在全文中的功能，優先考慮 R5 Sentence & Paragraph Function,DECIDED v1
+R1,掌握主旨,READ_MAIN_SUMMARY,摘要歸納,Summarization,保留關鍵資訊並排除枝節，選出或形成能代表全文的摘要。,best summary；整合主要內容,若只是選出單一中心思想而非摘要多個重點，可標 Passage Central Idea,DECIDED v1
+R1,掌握主旨,READ_MAIN_THEME,核心訊息／主題,Key Message / Theme,辨識故事、文章或演講背後欲傳達的核心訊息、教訓或主題。,lesson; message; theme,不要與作者寫作目的混同；Purpose 問的是作者為什麼寫,DECIDED v1
+R2,擷取細節,READ_DETAIL_EXPLICIT,明示細節,Explicit Detail,從文章中找到直接陳述的事實、事件、特徵或資訊。,According to the passage; which is true; factual detail,如果答案需要推出未明說的結論，改標 Inference,DECIDED v1
+R2,擷取細節,READ_DETAIL_EVIDENCE,證據定位,Evidence Identification,找出支持某一答案、主張或判斷的明示文本證據。,哪一句/哪一段最能支持；supporting evidence,不只是答對內容，也要求定位支持依據,DECIDED v1
+R2,擷取細節,READ_DETAIL_MATCHING,資訊配對,Information Matching,將人物、事件、特徵、選項或條件與文章中的明示資訊正確配對。,person ↔ preference; item ↔ description,若需跨多處資訊再推出新結論，改標 Integration 或 Inference,DECIDED v1
+R2,擷取細節,READ_DETAIL_INTEGRATION,跨句／跨段資訊整合,Explicit Information Integration,整合兩處以上已明示資訊以完成答案，但不額外推出文本未明說的新結論。,跨句、跨段拼接明示資訊,A+B 仍只是文本已明說內容 → 本 Skill；A+B 推出未明說 C → Inference,DECIDED v1
+R3,理解語境,READ_CONTEXT_WORD,字義判斷,Word Meaning in Context,利用上下文判斷單字在該篇文章中的實際意義。,closest in meaning; word means,不是單純脫離文本的字彙知識測驗,DECIDED v1
+R3,理解語境,READ_CONTEXT_PHRASE,片語／表達意義,Phrase & Expression Meaning,利用上下文判斷片語、慣用表達或較長語句片段的意義。,phrase; expression; sentence fragment meaning,若主要考 figurative / idiomatic 特殊意義，可標 Figurative & Idiomatic Meaning,DECIDED v1
+R3,理解語境,READ_CONTEXT_REFERENCE,指涉判斷,Reference Resolution,判斷代名詞、指示詞或表達在文本中指向的對象或概念。,this/that/it/they/which refers to,重點是 antecedent/reference，不是一般 Grammar pronoun 題,DECIDED v1
+R3,理解語境,READ_CONTEXT_FIGURATIVE,慣用／比喻意義,Figurative & Idiomatic Meaning,理解非字面性的比喻、隱喻、慣用語或修辭性表達。,metaphor; idiom; figurative expression,若只是一般片語的語境字義，標 Phrase & Expression Meaning,DECIDED v1
+R4,推論引申,READ_INFER_LOCAL,局部推論,Local Inference,根據相鄰一兩句或局部段落資訊，推出未直接陳述但合理的結論。,短距離、局部證據推論,若需整合全文多段，標 Global Inference & Conclusion,DECIDED v1
+R4,推論引申,READ_INFER_GLOBAL,全文推論與結論,Global Inference & Conclusion,整合全文或多段證據，推出整體性結論或未明說的整體判斷。,overall inference; conclusion,若主要在判斷作者態度，優先標 R6 Tone & Attitude,DECIDED v1
+R4,推論引申,READ_INFER_CAUSE,原因／動機推論,Cause & Motivation Inference,根據文本線索推論未直接明說的原因、動機或行為目的。,why did X; motivation; unstated cause,如果原因已直接寫出，標 Explicit Detail,DECIDED v1
+R4,推論引申,READ_INFER_IMPLICATION,隱含意義／預測,Implication & Prediction,根據文本推出隱含含意、可能後果或後續發展。,imply; likely happen next; consequence,重點是文本沒有直接說出的 implication / prediction,DECIDED v1
+R5,篇章結構,READ_STRUCTURE_PATTERN,篇章組織模式,Organizational Pattern,辨識文章或段落採用的主要組織方式。,cause-effect; compare-contrast; problem-solution; chronology; claim-evidence,若題目問某一句/某一段在文中的作用，標 Function,DECIDED v1
+R5,篇章結構,READ_STRUCTURE_FUNCTION,句子／段落功能,Sentence & Paragraph Function,判斷特定句子、例子、段落或資料在全文論述中扮演的功能。,give example; provide evidence; introduce counterargument; explain,不是作者整篇文章的目的；整篇 Purpose 歸 R6,DECIDED v1
+R5,篇章結構,READ_STRUCTURE_COHESION,銜接與連貫,Cohesion & Transition,理解句與句、段與段之間的邏輯關係、銜接詞與篇章連貫。,however; therefore; contrast; example; logical connection,若只是單純考某連接詞文法，可屬 Grammar，不是 Reading evidence,DECIDED v1
+R5,篇章結構,READ_STRUCTURE_ORDERING,排序與插入,Ordering & Sentence Insertion,根據篇章邏輯、指涉與銜接判斷句子／段落的合理順序或插入位置。,sentence insertion; paragraph ordering,這不是單純 question type；真正能力是 discourse flow,DECIDED v1
+R6,作者意圖與風格,READ_PURPOSE_AUTHOR,作者目的,Author's Purpose,判斷作者寫作整篇文章或主要段落的目的。,inform; persuade; criticize; warn; explain; entertain,不要與某句/某段的局部功能混同，後者通常是 R5 Function,DECIDED v1
+R6,作者意圖與風格,READ_PURPOSE_TONE,語氣與態度,Tone & Attitude,判斷作者對主題、事件或人物所呈現的語氣與態度。,optimistic; skeptical; critical; concerned; neutral,雖常需推論，但 taxonomy 中 primary 固定歸 Purpose & Style,DECIDED v1
+R6,作者意圖與風格,READ_PURPOSE_PERSPECTIVE,觀點與立場,Point of View & Perspective,辨識作者或文中人物／來源的觀點、立場及彼此差異。,position; viewpoint; perspective,若只是從全文推論一般結論、不涉及立場，標 Inference,DECIDED v1
+R6,作者意圖與風格,READ_PURPOSE_RHETORIC,修辭策略,Rhetorical Strategy,判斷作者如何運用例子、統計、引述、對比、反問等策略達成效果。,statistics; quotation; anecdote; contrast; rhetorical question,若題目只問某段扮演什麼結構功能，可標 R5 Function,DECIDED v1
+R6,作者意圖與風格,READ_PURPOSE_STYLE,文體、語域與讀者,"Style, Register & Audience",判斷文本的文體、正式度、語域、寫作風格或預期讀者。,formal/informal; academic; journalistic; conversational; target audience,不等同 Tone；Tone 側重態度，Style/Register 側重表達方式與受眾,DECIDED v1

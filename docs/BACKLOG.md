@@ -141,9 +141,9 @@ Standing rules that now bind all `/learn` work:
 has **no Micro-skill** — do not create any. **Question Type ≠ Skill**: Best Title / EXCEPT /
 According to the passage are `question_type` values, not competencies. The 50–100 question pilot is
 **optional future validation, never a gate**; revisions go through **versioning (v1.1 / v2)**, never
-by editing v1. ⚠️ The workbook's **TR-01 is superseded** — it reads "at least one Primary", the rule
-is **exactly one** (the workbook was not hand-edited; `LEARNING_DOMAIN_MODEL.md` §9.4 records the
-override).
+by editing v1. The workbook's 11 tagging rules (TR-01 … TR-11) and `LEARNING_DOMAIN_MODEL.md` §9
+**agree in full** — TR-01 states exactly one Primary Skill, TR-02 the Secondary rule, TR-11 the
+opaque-code rule.
 
 **Grammar taxonomy source of truth:** `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx`
 — 10 Categories · **51 Skills with stable codes** (`GRAM_G7_REL_PRON` …) · **234 Micro-skill

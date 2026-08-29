@@ -510,6 +510,7 @@ Grammar and **silently returns nothing** for Reading — the worst failure shape
 
 This ruling also settles the naming inconsistency between the two domains: 🛑 **the 25 Reading codes
 are not to be renamed** to resemble Grammar's. Opacity is the contract; matching shapes are not.
+The Reading workbook carries the same rule as **TR-11**.
 
 ### 8.4 G1 — clause types and sentence function
 
@@ -711,8 +712,9 @@ and none is to be invented.** See §9.3 on why depth varies by domain.
 **Skill codes** are of the form `READ_MAIN_CENTRAL`, `READ_DETAIL_INTEGRATION`,
 `READ_PURPOSE_TONE`. As everywhere, **the code is the identity**, not the display name (§8.3).
 
-**Frozen as v1 by owner decision on 2026-08-29.** The earlier "CANDIDATE, pending a 50–100 question
-pilot" framing is **withdrawn** — see §9.6.
+**Frozen as v1 by owner decision on 2026-08-29**, and the workbook says so itself: every row of
+`Category_Summary` reads `DECIDED` and every row of `Skill_Taxonomy` reads `DECIDED v1`. The earlier
+"CANDIDATE, pending a 50–100 question pilot" framing is **withdrawn** — see §9.6.
 
 **What DECIDED v1 permits and forbids:**
 
@@ -737,7 +739,7 @@ in the missing level. Depth follows what the domain actually needs to diagnose.
 ### 9.4 Reading tagging rules — DECIDED
 
 These are owner rulings and bind anything that tags a Reading question. Full text in the workbook's
-`Tagging_Rules` sheet (TR-01 … TR-10).
+`Tagging_Rules` sheet (**TR-01 … TR-11**).
 
 **Question Type is not a Skill.**
 
@@ -765,13 +767,9 @@ competency axis measure question wording rather than reading ability.
 default**. 🛑 A Meaning-in-Context question that needs a little reasoning does **not** thereby earn an
 Inference secondary — ruling A is the test, not intuition.
 
-> ⚠️ **TR-01 in the workbook is SUPERSEDED.** Its text reads 「至少要有一個 Primary Skill」 (*at
-> least* one). The owner ruled on 2026-08-29 that every assessable item has **exactly one** Primary
-> Skill (§10.2, §14.13).
->
-> 🛑 **The workbook has not been edited** — a source-of-truth file is not hand-modified from here. So
-> for **this one rule**, this document overrides it. Everything else in the workbook stands.
-> The owner may wish to correct TR-01 in the next workbook revision so the two agree.
+The workbook's **TR-01** states the same rule directly: 每一道可計分 Reading assessable item 必須
+**恰好**有一個 Primary Skill. **TR-02** carries the Secondary rule, and **TR-11** the opaque-code
+rule. This document and the workbook agree in full.
 
 ### 9.5 ⚠️ Reading's boundary rules reach into three other Domains
 
@@ -894,7 +892,7 @@ Principles:
    🛑 **Multiple Primary Skills are not permitted**, in any domain.
    **When several competencies are involved, the Primary is the one that most directly determines
    whether the student gets the item right.** Others that are genuinely measured may be Secondary.
-   ⚠️ Reading's TR-01 in the workbook still reads "at least one" and is **superseded** (§9.4).
+   Reading's **TR-01** states the same rule for its domain.
 2. **Secondary is for genuine cross-category demand**, not for listing everything present in the
    text. A reading question containing a relative clause is not thereby a G7 question.
    🛑 **OD-01 and OD-02 (§8.12) are binding worked precedents for this**: do not dual-tag by
@@ -1169,8 +1167,9 @@ Also decided, because the mastery algorithm is not yet frozen: 🛑 **a Secondar
 automatically produce mastery evidence weighted equally with the Primary.** For v1, Secondary is
 tagging metadata, analysis metadata, and a future evidence candidate.
 
-Recorded in §10.2 and §11. ⚠️ Reading's **TR-01 in the workbook still reads "at least one" and is
-superseded** — the workbook is not hand-edited from here, so §9.4 records the override explicitly.
+Recorded in §10.2 and §11. ✅ The owner reissued the Reading workbook on 2026-08-29 with **TR-01
+corrected to 「恰好有一個」**, so the earlier Markdown-overrides-workbook exception is gone and the two
+agree in full.
 
 #### 14.14 ✅ Skill code naming — WITHDRAWN as a blocker
 
