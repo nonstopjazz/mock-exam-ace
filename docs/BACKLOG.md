@@ -118,10 +118,8 @@ These are not backlog items. They are constraints on everything built from here.
 
 **The `/learn` product & competency model is specified:** `docs/learn/LEARNING_DOMAIN_MODEL.md`
 (2026-08-29, revised the same day after an owner ruling on eight open items). 🛑 Its §15 carries
-**seven** BLOCKED decisions and marks every taxonomy except Grammar and Reading as PROVISIONAL.
-⚠️ Two were raised by the Reading taxonomy and **must be settled before tagging begins**: whether a
-question may carry more than one Primary Skill, and the inconsistent Skill-code convention between
-domains (codes cannot be renamed once evidence is attached). **Do not complete a
+**five** BLOCKED decisions and marks every taxonomy except Grammar and Reading as PROVISIONAL.
+✅ **None of them blocks the next design stage** — each gates a specific later capability. **Do not complete a
 taxonomy, seed skill data, or build an entity whose governing decision is still blocked.**
 
 Standing rules that now bind all `/learn` work:
@@ -133,12 +131,19 @@ Standing rules that now bind all `/learn` work:
 | **Rubrics** | 🛑 A Speaking/Writing rubric grammar score is **not** Grammar Domain mastery. Only evidence resolvable to a specific Skill updates that Skill |
 | **Asset versions** | 🛑 A content version that has produced evidence is **immutable**; changes fork a new version and responses point at the exact version answered |
 | **Access** | 🛑 A teaching relationship grants **no** Program access. Enrollment is the only source |
+| **Primary Skill** | 🆕 **Exactly one** per scorable item — 🛑 never multiple. The Primary is what most directly determines a correct answer |
+| **Secondary Skill** | 🆕 🛑 Produces **no equal-weight evidence** while the mastery algorithm is unfrozen. Treat as tagging / analysis metadata |
+| **Skill codes** | 🆕 🛑 **Opaque identifiers — never parse a code to derive its Category.** `GRAM_G7_…` embedding `G7` is a mnemonic, not relational data. Use the declared taxonomy relationship |
+| **Vocabulary v1** | 🆕 **Item-centric** — Canonical Word · Collections · Learner × Word Mastery · Practice Type. 🛑 No Skill taxonomy required; Practice Type is not a permanent mastery dimension |
 
 **Reading taxonomy source of truth:** `docs/learn/reading-taxonomy/Reading_Taxonomy_v1.xlsx`
-— **6 Categories (R1–R6, DECIDED)** · **25 Skills (CANDIDATE)** · 10 tagging rules. 🛑 Reading v1 has
-**no Micro-skill** by owner decision — do not create any. 🛑 Skills freeze only after a **50–100
-question pilot**. **Question Type ≠ Skill**: Best Title / EXCEPT / According to the passage are
-`question_type` values, not competencies.
+— **6 Categories + 25 Skills, both DECIDED v1** (frozen 2026-08-29) · 10 tagging rules. 🛑 Reading v1
+has **no Micro-skill** — do not create any. **Question Type ≠ Skill**: Best Title / EXCEPT /
+According to the passage are `question_type` values, not competencies. The 50–100 question pilot is
+**optional future validation, never a gate**; revisions go through **versioning (v1.1 / v2)**, never
+by editing v1. ⚠️ The workbook's **TR-01 is superseded** — it reads "at least one Primary", the rule
+is **exactly one** (the workbook was not hand-edited; `LEARNING_DOMAIN_MODEL.md` §9.4 records the
+override).
 
 **Grammar taxonomy source of truth:** `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx`
 — 10 Categories · **51 Skills with stable codes** (`GRAM_G7_REL_PRON` …) · **234 Micro-skill

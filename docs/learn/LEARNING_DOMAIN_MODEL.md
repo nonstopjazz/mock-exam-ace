@@ -1,7 +1,7 @@
 # `/learn` Learning Domain Model
 
 > **Written:** 2026-08-29 · **Revised:** 2026-08-29 — Grammar Skill Taxonomy v1, an owner ruling on
-> eight open items (§14), then Reading Taxonomy v1 (§9)
+> eight open items (§14), then Reading Taxonomy v1 frozen with three further rulings (§9)
 > **Status:** 🟡 **DESIGN SPEC ONLY — no table, no migration, no seed data, no frontend, no
 > Production change.**
 >
@@ -394,6 +394,38 @@ merge into one another.
 "level" for 教育部 bands. New `/learn` code uses the names in this table; the existing columns are
 not renamed by this document.
 
+### 7.2 Vocabulary v1 is **item-centric**, not taxonomy-centric
+
+> **Status: DECIDED direction (owner ruling, 2026-08-29).**
+
+🛑 **Vocabulary v1 does not need to fit `Domain → Category → Skill → Micro-skill` in order to record
+evidence.** It is an **item-centric** domain: the thing being learned is a *word*, not a competency.
+
+The v1 model direction:
+
+| Piece | What it is |
+|---|---|
+| **Canonical Word** | The word itself, once, with its metadata (including `word_level`) |
+| **Vocabulary Collections** | Groupings of words — the existing packs are an instance |
+| **Learner × Word Mastery** | What this learner can do with this word |
+| **Practice Type** | How the word was practised on a given occasion |
+
+**Learner × Word Mastery v1 tracks `Recognition` and `Production`** (§7).
+
+**Practice Type** may include: meaning recognition · recall · spelling · typing · cloze ·
+collocation · word formation · contextual usage.
+
+🛑 **Practice Type is not a permanent mastery dimension.** It records *how* an observation was
+produced, not *what the learner has become*. Do not let the list of practice types quietly turn into
+a second mastery axis.
+
+**What this settles:** a bare vocabulary item — `abandon = ?` — updates **learner × word mastery**.
+It needs no Reading Skill and no Vocabulary Skill taxonomy, which is why Reading's word-meaning
+boundary (§9.5) is no longer blocked on anything.
+
+A cross-word competency taxonomy — meaning, morphology, collocation — **may** be designed later.
+🛑 It is **not** a prerequisite for Vocabulary v1.
+
 ---
 
 ## 8. Grammar taxonomy — owner-defined, use verbatim
@@ -458,6 +490,26 @@ Every skill carries a code of the form **`GRAM_G{n}_{NAME}`** — e.g. `GRAM_G7_
 🛑 **The code is the identity, not the Chinese label.** Names may be reworded for teaching or UI; the
 code must not change once evidence has been recorded against it. Any future `skill` table keys on the
 code, never on a display name.
+
+#### 🛑 A Skill code is an opaque identifier — never parse it
+
+> **Status: DECIDED (owner ruling, 2026-08-29). Applies to every Domain.**
+
+Grammar codes happen to contain their category (`GRAM_G7_REL_PRON`); Reading codes do not
+(`READ_PURPOSE_TONE` belongs to R6, and says so nowhere). **That is a naming convention, not
+relational information.**
+
+| | |
+|---|---|
+| 🛑 **Forbidden** | `if code.contains("G7") then category = G7` · deriving a category from any part of a code · any query, analytics job, or UI grouping that reads meaning out of the string |
+| ✅ **Required** | Skill → Category comes from the **declared taxonomy relationship**, always |
+
+The mnemonic in a Grammar code is for humans reading a spreadsheet. Code that depends on it works for
+Grammar and **silently returns nothing** for Reading — the worst failure shape, because it looks like
+"no data" rather than "wrong query".
+
+This ruling also settles the naming inconsistency between the two domains: 🛑 **the 25 Reading codes
+are not to be renamed** to resemble Grammar's. Opacity is the contract; matching shapes are not.
 
 ### 8.4 G1 — clause types and sentence function
 
@@ -631,9 +683,9 @@ addition to G7. 🛑 **Do not modify the source mapping this round**, and do not
 
 ## 9. Reading taxonomy, and the remaining Domains
 
-### 9.1 Reading — Categories DECIDED, Skills CANDIDATE
+### 9.1 Reading — Categories and Skills both DECIDED v1
 
-> **Status: Categories DECIDED · Skills CANDIDATE / PROVISIONAL · 🛑 no Micro-skill in v1.**
+> **Status: Categories DECIDED · Skills DECIDED v1 (frozen 2026-08-29) · 🛑 no Micro-skill in v1.**
 >
 > 📎 **Source of truth: `docs/learn/reading-taxonomy/Reading_Taxonomy_v1.xlsx`** (Reading Taxonomy v1
 > Candidate, supplied by the owner 2026-08-29).
@@ -659,17 +711,16 @@ and none is to be invented.** See §9.3 on why depth varies by domain.
 **Skill codes** are of the form `READ_MAIN_CENTRAL`, `READ_DETAIL_INTEGRATION`,
 `READ_PURPOSE_TONE`. As everywhere, **the code is the identity**, not the display name (§8.3).
 
-**Why Skills are CANDIDATE rather than frozen:** the 25 are complete enough to design against and to
-pilot-tag with, but they have **not been validated against a large body of real exam questions**. The
-workbook recommends a pilot of **50–100 existing Reading questions** to check that each lands
-stably on a single Primary Skill; two skills that cannot be told apart in practice get merged or
-renamed before the freeze.
+**Frozen as v1 by owner decision on 2026-08-29.** The earlier "CANDIDATE, pending a 50–100 question
+pilot" framing is **withdrawn** — see §9.6.
 
-**What CANDIDATE permits and forbids:**
+**What DECIDED v1 permits and forbids:**
 
-- ✅ Design against them · ✅ pilot-tag questions · ✅ build reporting on the Category level
-- 🛑 Not DECIDED — a code is not yet permanent for entitlement or long-term reporting
-- 🛑 Do **not** add, remove, merge, or rename skills. Do **not** create Reading Micro-skills
+- ✅ Design against them · ✅ tag questions · ✅ build reporting at Category and Skill level
+- ✅ Skill codes are **stable** — safe to attach evidence to
+- 🛑 Do **not** add, remove, merge, or rename skills within v1
+- 🛑 Do **not** create Reading Micro-skills
+- Changes go through **taxonomy versioning** (v1.1 / v2), never by editing v1 in place (§9.6)
 
 ### 9.3 ⚠️ Taxonomy depth varies by Domain — this is intentional
 
@@ -710,9 +761,17 @@ competency axis measure question wording rather than reading ability.
 | **B** | Tone & Attitude | Usually requires inference, but Primary is **fixed** to **R6 `READ_PURPOSE_TONE`** by taxonomy rule |
 | **C** | Local function vs whole-text purpose | *What does this sentence / paragraph do here?* → **R5 `READ_STRUCTURE_FUNCTION`**. *Why did the author write this article?* → **R6 `READ_PURPOSE_AUTHOR`** |
 
-**Primary / Secondary** follow §10 unchanged: at least one Primary; Secondary optional and **never
-by default**. 🛑 A Meaning-in-Context question that needs a little reasoning does **not** thereby earn
-an Inference secondary — ruling A is the test, not intuition.
+**Primary / Secondary** follow §10: **exactly one** Primary; Secondary optional and **never by
+default**. 🛑 A Meaning-in-Context question that needs a little reasoning does **not** thereby earn an
+Inference secondary — ruling A is the test, not intuition.
+
+> ⚠️ **TR-01 in the workbook is SUPERSEDED.** Its text reads 「至少要有一個 Primary Skill」 (*at
+> least* one). The owner ruled on 2026-08-29 that every assessable item has **exactly one** Primary
+> Skill (§10.2, §14.13).
+>
+> 🛑 **The workbook has not been edited** — a source-of-truth file is not hand-modified from here. So
+> for **this one rule**, this document overrides it. Everything else in the workbook stands.
+> The owner may wish to correct TR-01 in the next workbook revision so the two agree.
 
 ### 9.5 ⚠️ Reading's boundary rules reach into three other Domains
 
@@ -720,26 +779,46 @@ Three of the workbook's Excludes rules resolve a question **out of Reading**:
 
 | Reading skill | Excludes | Lands in |
 |---|---|---|
-| `READ_CONTEXT_WORD` | vocabulary knowledge tested **without** the passage | **Vocabulary** — 🛑 whose Skill level does not exist yet (§7) |
+| `READ_CONTEXT_WORD` | vocabulary knowledge tested **without** the passage | **Vocabulary** — its **item-centric** model receives these; no Vocabulary Skill taxonomy is required (§7.2) |
 | `READ_CONTEXT_REFERENCE` | a plain pronoun-grammar item | **Grammar G2** 名詞、代名詞與限定詞 |
 | `READ_STRUCTURE_COHESION` | a plain connective-grammar item | **Grammar G6** 介係詞與連接詞 |
 
-Two of the three land in Grammar, which is decided. The Vocabulary one points at a taxonomy that has
-not been designed. 🛑 Recorded as a dependency, not resolved — see §14.12.
+All three now have a destination. Two land in Grammar, which is decided; the Vocabulary one lands in
+the item-centric model of §7.2 — a bare `abandon = ?` updates **learner × word mastery**, not a
+Reading Skill. ✅ This was previously recorded as a blocking dependency; the owner ruling of
+2026-08-29 removes it (§14.12).
 
-### 9.6 Validation before freeze
+**The boundary, stated once:**
 
-Freezing the 25 Skills is gated on a pilot, per the workbook:
+| The question requires | Domain |
+|---|---|
+| knowing what the word means, **passage or no passage** | **Vocabulary** — learner × word mastery |
+| working out what the word means **in this text** | **Reading** — `READ_CONTEXT_WORD` |
 
-1. Take **50–100 real Reading questions**.
-2. Tag each with a single Primary Skill, supplying **passage + stem + options + correct answer +
-   explanation** — a stem alone ("Which is true?") cannot be classified reliably.
-3. Where two Skills cannot be separated consistently, **merge or rename** them.
-4. Then freeze.
+### 9.6 Validation and versioning — the pilot is optional, not a gate
 
-> The principle behind it, worth keeping: **a taxonomy is validated against real items, not against
-> how tidy it looks.** Fine distinctions that no marker can apply consistently are not fine
-> distinctions.
+> **Status: DECIDED (owner ruling, 2026-08-29).**
+
+🛑 **The 50–100 question pilot is NOT a freeze prerequisite.** It is **optional future validation**,
+and must not be recorded anywhere as a blocker, a gate, or a required prerequisite.
+
+The owner's chosen approach instead: **new questions are designed and verified against a stated Skill
+target** by AI / workflow, rather than back-fitting the taxonomy to an existing question bank.
+
+**If the taxonomy needs to change after real use, it changes by version — not by editing v1.**
+
+| | |
+|---|---|
+| ✅ Correct | Publish **v1.1** or **v2** with the revision, and record what moved |
+| 🛑 Wrong | Edit v1 in place, or leave v1 parked in CANDIDATE indefinitely waiting for perfect evidence |
+
+A frozen v1 that later gets superseded is a normal, healthy outcome. **A taxonomy stuck in
+CANDIDATE is not** — nothing downstream can safely depend on it, so nothing gets built.
+
+The optional pilot, if it is ever run, looks like this: take 50–100 real questions; tag each with a
+single Primary Skill, supplying **passage + stem + options + correct answer + explanation** (a stem
+alone — "Which is true?" — cannot be classified reliably); where two Skills cannot be told apart
+consistently, that is input to the **next version**.
 
 ### 9.7 The remaining Domains — placeholders only
 
@@ -754,8 +833,8 @@ Freezing the 25 Skills is gated on a pilot, per the workbook:
 | **Exam / Academic Skills** | 🛑 **BLOCKED** — the owner is still designing this |
 
 > ✅ **Grammar and Reading are the exceptions.** Grammar is decided to Skill level with 234
-> PROVISIONAL Micro-skill candidates (§8); Reading has DECIDED Categories and 25 CANDIDATE Skills
-> (§9.1).
+> PROVISIONAL Micro-skill candidates (§8); Reading is **frozen as v1** — 6 DECIDED Categories and 25
+> DECIDED Skills, with no Micro-skill (§9.1).
 
 ⚠️ **Speaking → Grammar** and **Writing → Grammar & Sentence Structure** are *assessment criteria*
 within a performance rubric. Whether they reference the Grammar Domain's Skills or are separate
@@ -810,16 +889,22 @@ Primary Skills, because they demand three different competencies.
 
 Principles:
 
-1. **Exactly one Primary.** If two feel equally primary, the question is testing two things and
-   should probably be two questions.
-   ⚠️ **The Reading taxonomy's TR-01 says "at least one Primary".** Whether a question may carry
-   more than one Primary is genuinely undecided — see §14.13. Until it is ruled on, tag one.
+1. **Exactly one Primary — DECIDED (owner ruling, 2026-08-29).** Every scorable assessable item has
+   **exactly one** Primary Skill and **zero or more** optional Secondary Skills.
+   🛑 **Multiple Primary Skills are not permitted**, in any domain.
+   **When several competencies are involved, the Primary is the one that most directly determines
+   whether the student gets the item right.** Others that are genuinely measured may be Secondary.
+   ⚠️ Reading's TR-01 in the workbook still reads "at least one" and is **superseded** (§9.4).
 2. **Secondary is for genuine cross-category demand**, not for listing everything present in the
    text. A reading question containing a relative clause is not thereby a G7 question.
    🛑 **OD-01 and OD-02 (§8.12) are binding worked precedents for this**: do not dual-tag by
    default; a secondary skill is earned by what the question demands.
-3. **Secondary never counts as full evidence.** Weighting is a mastery-model decision (§11), but
-   secondary evidence must never be treated as equal to primary.
+3. **Secondary produces no equal-weight evidence — DECIDED (owner ruling, 2026-08-29).** Until the
+   mastery algorithm is frozen, a Secondary Skill tag is **tagging metadata, analysis metadata, and a
+   future evidence candidate** — not evidence of the same standing as the Primary.
+   🛑 **v1 architecture rule: a Secondary tag must not automatically generate mastery evidence
+   weighted equally with the Primary.** Whether, and how, secondaries produce weighted evidence is
+   decided when the mastery algorithm is (§11).
 4. **Tag at the level the student is being asked to operate at**, which may be Skill or Micro-skill.
    ⚠️ Grammar Micro-skills are **candidates, not frozen** (§8.13) — tagging at that level is fine,
    but a code is not yet permanent for reporting or entitlement.
@@ -846,8 +931,10 @@ Student Response  ──►  Skill Evidence  ──►  User Skill Mastery
 
 1. **Evidence follows the measured skill, not the instructional target** (§10.1). An Activity's tags
    never convert its responses into evidence wholesale.
-2. **A rubric score that resolves to no specific Skill updates no Skill** (§9). This applies to
+2. **A rubric score that resolves to no specific Skill updates no Skill** (§9.7). This applies to
    Speaking and Writing rubric grammar scores in particular.
+3. 🆕 **A Secondary Skill tag does not produce evidence weighted equally with the Primary** (§10.2).
+   Until the mastery algorithm is frozen, secondaries are metadata and a future evidence candidate.
 
 **The load-bearing property is that responses are immutable while everything downstream is
 derived.** Taxonomies get revised; questions get re-tagged; scoring models improve. If mastery were
@@ -1058,6 +1145,46 @@ Recorded in §8.14, together with the general principle it implies: a taxonomy n
 the competency it names, not by how much source material sits under it. 🛑 Source mapping is **not**
 to be modified this round; cross-referencing to G1 is a possible future refinement, not a task.
 
+#### 14.12 ✅ Reading's Vocabulary boundary — resolved by the item-centric model
+
+> **Ruling:** Vocabulary v1 is **item-centric** — Canonical Word · Vocabulary Collections ·
+> Learner × Word Mastery · Practice Type. It does **not** have to fit
+> Domain → Category → Skill → Micro-skill in order to receive evidence.
+
+I had reported that `READ_CONTEXT_WORD`'s exclusion sends items to a Vocabulary taxonomy that does
+not exist, and called it a dependency on Reading's critical path. **It is not.** A bare `abandon = ?`
+updates **learner × word mastery**; only working out a word's meaning *from the text* is
+`READ_CONTEXT_WORD`. Recorded in §7.2 and §9.5.
+
+A cross-word competency taxonomy (meaning / morphology / collocation) may follow later. 🛑 It is not a
+prerequisite for anything.
+
+#### 14.13 ✅ Primary Skill cardinality — exactly one
+
+> **Ruling:** every scorable assessable item has **exactly one** Primary Skill and zero or more
+> optional Secondary Skills. 🛑 No multiple Primaries. Where several competencies are involved, the
+> Primary is **the one that most directly determines whether the student answers correctly**.
+
+Also decided, because the mastery algorithm is not yet frozen: 🛑 **a Secondary tag must not
+automatically produce mastery evidence weighted equally with the Primary.** For v1, Secondary is
+tagging metadata, analysis metadata, and a future evidence candidate.
+
+Recorded in §10.2 and §11. ⚠️ Reading's **TR-01 in the workbook still reads "at least one" and is
+superseded** — the workbook is not hand-edited from here, so §9.4 records the override explicitly.
+
+#### 14.14 ✅ Skill code naming — WITHDRAWN as a blocker
+
+> **Ruling:** a Skill code is a **stable opaque identifier**. 🛑 No application, query, or analytics
+> may derive a Skill's Category by parsing its code. Skill → Category comes only from the declared
+> taxonomy relationship. Grammar's embedded `G1`–`G10` is a **mnemonic**, not relational information.
+
+So the difference between `GRAM_G7_REL_PRON` and `READ_PURPOSE_TONE` stops mattering: nothing is
+allowed to depend on it either way. 🛑 **The 25 Reading codes are not to be renamed.**
+
+Recorded in §8.3. My earlier framing — "must be reconciled before tagging begins" — assumed code
+parsing was a legitimate technique. Forbidding the technique is the better fix, and it is the one
+that does not require renaming anything.
+
 ---
 
 ### 🟡 Recommended, not frozen
@@ -1071,52 +1198,6 @@ to be modified this round; cross-referencing to G1 is a possible future refineme
 Recorded in §4.5. 🛑 **Do not freeze it, and do not build against it.** It decides an RLS policy and
 implies an entity (`program_distribution_right`) that does not exist. Owner confirmation required
 before `enrollment` is designed.
-
----
-
-### 🆕 Raised by the Reading taxonomy — need an owner ruling
-
-#### 14.12 ❓ Reading's Vocabulary boundary points at a taxonomy that does not exist
-
-`READ_CONTEXT_WORD` excludes "vocabulary knowledge tested without the passage", which by construction
-resolves such an item **into the Vocabulary Domain**. But Vocabulary has **no Category or Skill
-level** — §7 decided only its two orthogonal dimensions.
-
-So a question excluded from Reading on this rule currently has **nowhere to go**. Its two siblings are
-fine: `READ_CONTEXT_REFERENCE` and `READ_STRUCTURE_COHESION` hand off to Grammar G2 and G6, both
-decided.
-
-🛑 A dependency, not a defect in the Reading taxonomy. It surfaces when Vocabulary skills are
-designed, and it means Vocabulary cannot be deferred indefinitely once Reading tagging starts.
-
-#### 14.13 ❓ May a question carry more than one Primary Skill?
-
-A direct conflict between two owner-supplied rules, and it decides how evidence is weighted:
-
-| Source | Says |
-|---|---|
-| §10.2 (this document, from the earlier ruling) | *"Exactly one Primary. If two feel equally primary, the question is testing two things."* |
-| Reading `Tagging_Rules` **TR-01** | *「每一道可計分 Reading question 至少要有一個 Primary Skill。」* — **at least** one |
-
-"At least one" permits several; "exactly one" does not. The two readings produce different mastery
-arithmetic — with two Primaries, one response becomes full-strength evidence for two skills at once.
-
-**Not resolved here.** 🛑 Owner ruling required. Meanwhile §10.2's "tag one" stands, since it is the
-narrower behaviour and does not foreclose the other.
-
-#### 14.14 ⚠️ Skill code conventions differ between Domains
-
-| Domain | Pattern | Category recoverable from the code? |
-|---|---|---|
-| Grammar | `GRAM_G7_REL_PRON` | ✅ yes — `G7` is embedded |
-| Reading | `READ_PURPOSE_TONE` | ❌ no — `PURPOSE` is a mnemonic, not the `R6` code |
-
-Neither is wrong, but they are inconsistent, and code is the stable identity (§8.3). Anything that
-tries to group skills by category from the code alone will work for Grammar and silently fail for
-Reading.
-
-🛑 **Listed, not changed.** Renaming codes after evidence is attached is exactly what §8.3 forbids,
-so if this is to be reconciled it must happen **before** tagging begins. Owner's call.
 
 ---
 
@@ -1171,6 +1252,8 @@ rules invented.
 - **Ten Categories (G1–G10) and 51 Skills with stable codes — frozen, verbatim.** Detailed source of
   truth: `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx`
 - Skill **code** is the identity, not the display name
+- 🆕 **A Skill code is a stable OPAQUE identifier** — 🛑 never parse it to derive a Category, in any
+  domain. Skill → Category comes only from the declared taxonomy relationship (§8.3)
 - G3 uses **語態**, never 體 / Aspect; all twelve forms are 時態. Passive voice is G3, **not** G4
 - G8 is 「不定詞、動名詞與分詞」, **never** 「非限定動詞」; G6 is 「介係詞與連接詞」
 - G1 Adjective Clause and G7 Relative Clause **both stand**; §8.9 governs
@@ -1182,8 +1265,10 @@ rules invented.
 
 **Reading**
 
-- 🆕 **Six Categories (R1–R6) — DECIDED.** Detailed source of truth:
-  `docs/learn/reading-taxonomy/Reading_Taxonomy_v1.xlsx`
+- 🆕 **Six Categories (R1–R6) — DECIDED** · **25 Skills — DECIDED v1, frozen 2026-08-29.** Detailed
+  source of truth: `docs/learn/reading-taxonomy/Reading_Taxonomy_v1.xlsx`
+- 🆕 **The 50–100 question pilot is OPTIONAL future validation — not a freeze gate, not a blocker.**
+  Revisions go through **taxonomy versioning** (v1.1 / v2), never by editing v1 in place (§9.6)
 - 🆕 **Reading v1 uses three levels only** — no Micro-skill, by owner decision. Taxonomy **depth
   varies by domain** and a shorter one is not incomplete (§9.3)
 - 🆕 **Question Type ≠ Skill** — Best Title, EXCEPT/NOT, According to the passage are `question_type`
@@ -1198,13 +1283,19 @@ rules invented.
 - 🆕 Word Level and Recognition / Production are **orthogonal dimensions, not taxonomy nodes** (§7)
 - 🆕 Word Level is **metadata of the word**; Recognition / Production is a **learner × word** mastery
   dimension
+- 🆕 **Vocabulary v1 is item-centric** — Canonical Word · Vocabulary Collections · Learner × Word
+  Mastery · Practice Type. 🛑 It does **not** need a Skill taxonomy to record evidence, and Practice
+  Type is **not** a permanent mastery dimension (§7.2)
 
 **Tagging and evidence**
 
 - 🆕 **Lesson / Activity tags = instructional target; question tags = measured skill** (§10.1)
 - 🆕 **Evidence derives from question-level tags**; an Activity's tag does not convert its responses
   wholesale
-- Exactly one Primary Skill per question, optional Secondary
+- 🆕 **Exactly one Primary Skill per scorable item** — 🛑 multiple Primaries are not permitted in any
+  domain. The Primary is the competency that most directly determines a correct answer
+- 🆕 **A Secondary tag produces no equal-weight evidence** while the mastery algorithm is unfrozen —
+  it is tagging metadata, analysis metadata, and a future evidence candidate (§10.2)
 - Evidence flow: Student Response → Skill Evidence → User Skill Mastery, responses immutable
 - 🆕 **A rubric score resolvable to no specific Skill updates no Skill** (§9)
 
@@ -1216,9 +1307,6 @@ rules invented.
 ### 🟡 PROVISIONAL / RECOMMENDED — do not freeze, do not build against
 
 - **Program distribution authorization** — the recommended model in §4.5 awaits owner confirmation
-- **Reading's 25 Skills — CANDIDATE.** Complete and usable for design and pilot tagging, but not
-  validated against real items. 🛑 Freeze is gated on a **50–100 question pilot** (§9.6). Do not add,
-  merge, rename, or extend them
 - Listening · Speaking · Writing first-level lists (§9.7)
 - Vocabulary's **Skill** level — real vocabulary competencies are still undesigned (§7)
 - Grammar **Micro-skill** level — **234 candidates supplied, covering all 51 Skills**, not yet frozen
@@ -1234,16 +1322,18 @@ rules invented.
 | 3 | **Speaking / Writing rubric ↔ Grammar Skills** (§14.4) | those two domains' scoring |
 | 4 | **Guardian access rules** (§14.10) | any parent-facing view |
 | 5 | Reconciling the **two existing vocabulary mastery models** (9.10, `docs/BACKLOG.md`) | Vocabulary competency |
-| 6 | 🆕 **May a question carry more than one Primary Skill?** §10.2 says exactly one, Reading TR-01 says at least one (§14.13) | mastery weighting; the tagging contract |
-| 7 | 🆕 **Skill code conventions differ between Domains** (§14.14) — must be settled *before* tagging, since codes cannot move afterwards | grouping skills by code |
-| — | 🆕 ⚠️ **Vocabulary Skills are now on Reading's critical path** (§14.12) — not blocked, but no longer indefinitely deferrable | Reading's word-meaning boundary |
 
-> **Five carried forward, two newly raised by the Reading taxonomy.** Of the original ten, four were
-> closed by the first 2026-08-29 ruling (direct relationship, vocabulary dimensions, tag precedence,
-> asset versioning), naming was settled outright, and the Grammar Micro-skill entry was **withdrawn**
-> — it was never blocked, only mis-exported. Adding Reading raised the Primary-cardinality conflict
-> and the code-convention inconsistency. The `teacher_student_relationships` schema gap remains a
+
+> **Down to five.** The three items the Reading taxonomy raised were all closed by the second
+> 2026-08-29 ruling: Primary cardinality is **exactly one**, Skill codes are **opaque so the naming
+> difference cannot matter**, and the Vocabulary boundary resolves into the **item-centric** model.
+> Of the original ten, four closed earlier, naming was settled outright, and the Grammar Micro-skill
+> entry was withdrawn as a bad export. The `teacher_student_relationships` schema gap remains a
 > **decided requirement awaiting its own deployment**, not a blocked decision.
+>
+> **Nothing on this list blocks the next design stage.** Every remaining item gates a specific later
+> capability — scoring for two domains, parent-facing views, the mastery engine, an exam taxonomy —
+> not the content and competency modelling that comes next.
 
 ---
 
