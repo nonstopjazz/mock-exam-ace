@@ -34,8 +34,12 @@
   Key finding: **`level_words` is already the canonical word table** and Level 1–6 progress is
   already keyed on it — the duplication is entirely on the pack side, where `pack_items.word` is free
   text with no canonical link and every progress key contains `pack_id`. Target model promotes
-  `level_words` rather than adding a second vocabulary system. 🛑 **Audit + design only — no
-  migration proposed or approved.**
+  `level_words` rather than adding a second vocabulary system. ✅ **Vocabulary v1 architecture was
+  frozen on 2026-08-29** (§1.2): headword identity with no sense ontology, one Collection concept,
+  mastery on `learner × canonical_word` (`Recognition` / `Production`), one SRS due date per word,
+  and safe normalization only. 🛑 **Design only — no migration proposed or approved**, and legacy
+  Level 1–6 progress stays untouched. 🔍 One finding must be **verified at runtime before any
+  vocabulary migration** (§3.6).
 - 📘 **The `/learn` product & competency model is specified (2026-08-29):**
   `docs/learn/LEARNING_DOMAIN_MODEL.md` — Program→Module→Lesson→Activity, Content Assets outside the
   hierarchy, Relationship/Enrollment/Assignment kept separate, and the Domain→Category→Skill→

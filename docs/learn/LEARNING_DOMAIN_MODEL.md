@@ -426,6 +426,19 @@ boundary (§9.5) is no longer blocked on anything.
 A cross-word competency taxonomy — meaning, morphology, collocation — **may** be designed later.
 🛑 It is **not** a prerequisite for Vocabulary v1.
 
+**Vocabulary v1's architecture was frozen on 2026-08-29** —
+📎 `docs/learn/VOCABULARY_ARCHITECTURE.md` §1.2 is the source of truth. The parts that bind the wider
+model:
+
+| | |
+|---|---|
+| Canonical identity | A **teachable lexical item / headword**, multi-word items included. 🛑 **No sense ontology in v1** — different meanings are collection-level enrichment, not separate identities |
+| Existing data | 🛑 **No parallel canonical system beside `level_words`** — it is the evolution starting point |
+| Collections | **One concept** for MOE sets, topics, lessons, GSAT packs and student-saved lists. 🛑 A collection never creates a second mastery record |
+| Mastery | `learner × canonical_word`, dimensions `Recognition` / `Production`. 🛑 Collection is **not** part of the identity |
+| SRS | Keyed on `learner × canonical_word` — one due date, one review, whatever collections contain the word |
+| Normalization | Trim / case / Unicode only. 🛑 **No silent fuzzy or morphological merge** (`went → go` may not be automatic) |
+
 ---
 
 ## 8. Grammar taxonomy — owner-defined, use verbatim

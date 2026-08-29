@@ -1,6 +1,7 @@
 # Vocabulary Architecture — audit and target model
 
-> **Written:** 2026-08-29 · **Status:** 🟡 **AUDIT + DESIGN ONLY.**
+> **Written:** 2026-08-29 · **Revised:** 2026-08-29 — owner rulings on the architecture questions
+> (§1.2) · **Status:** 🟡 **AUDIT + DESIGN ONLY.**
 > No table, no SQL, no migration, no seed data, no data migration, no frontend change, no Production
 > change, no schema exposure.
 >
@@ -31,6 +32,41 @@ different time representations, both live.
 exists".** Promote `level_words` to canonical, point `pack_items` at it, and re-key mastery onto the
 word. That is additive, and it avoids the outcome the owner is trying to prevent: a second vocabulary
 system running alongside the first.
+
+### 1.1 Status legend
+
+Every claim in this document carries one of four states. 🛑 **Nothing may be built on anything that
+is not DECIDED.**
+
+| | Meaning |
+|---|---|
+| ✅ **DECIDED** | Frozen by the owner. Build against it |
+| 🟡 **PROVISIONAL** | A direction, not a commitment. Do not freeze, do not build against |
+| 🛑 **BLOCKED / DEFERRED** | Explicitly not decided yet. 🛑 Do not invent an answer |
+| 🔍 **VERIFY BEFORE MIGRATION** | A finding from static inspection that must be confirmed at runtime **before** any migration relies on it. 🛑 Not an assertion that anything is broken |
+
+### 1.2 Vocabulary v1 — frozen architecture decisions
+
+> **Owner rulings, 2026-08-29.** These settle the questions §9 of the original audit could not.
+
+| # | Decision | ✅ |
+|---|---|---|
+| **1** | **Canonical identity is a teachable lexical item / headword** — normally a lemma (`abandon`, `evidence`, `sustainable`). **Multi-word lexical items have their own identity** (`give up`, `in spite of`, `take advantage of`). 🛑 **v1 does NOT adopt a per-sense ontology** | DECIDED |
+| **2** | **Multiple meanings are a Collection concern, not an identity concern.** One canonical `issue` carries *議題／問題* in an Environment collection and *發行* in a Publishing one. 🛑 Different senses do **not** create additional canonical identities | DECIDED |
+| **3** | 🛑 **No parallel canonical system beside `level_words`.** It is the **evolution starting point** of the canonical layer. Level 1–6 is **word metadata** — not a Skill taxonomy, not learner mastery. Concept name **`word_level`**, values `MOE_1…MOE_6`, `BEYOND`. Whether and when the physical `level` column is renamed belongs to migration design | DECIDED |
+| **4** | **One Collection concept for everything**: MOE / level browsing sets, topic vocabulary, lesson / course vocabulary, GSAT packs, student-saved words, and future sets. A word may belong to many. 🛑 **A Collection must never create a second learner mastery record** | DECIDED |
+| **5** | **Learner × Canonical Word mastery, v1 dimensions: `Recognition` and `Production`.** 🛑 **Mastery identity does not include Collection** | DECIDED |
+| **6** | **Practice Type is Practice Event metadata** — meaning recognition · recall · typing · spelling · cloze · collocation · word formation · contextual usage. 🛑 **Not v1 mastery dimensions.** Do not create spelling mastery, collocation mastery, or word-formation mastery axes | DECIDED |
+| **7** | **SRS scheduling is ultimately keyed on learner × canonical word.** A word in Level 4, Crime & Law and GSAT Week 8, due the same day, is reviewed **once**. A Collection may affect **presentation context, example, teaching note, source badge** — 🛑 never the schedule | DECIDED |
+| **8** | **Safe normalization only** — trim whitespace, case, Unicode. 🛑 **Silent fuzzy or morphological merge is forbidden**: `abandoned → abandon`, `went → go`, `better → good` may **not** be collapsed by automatic rule. AI may *propose* mappings; anything non-exact or high-risk needs explicit validation | DECIDED |
+| **9** | **Legacy progress migration is NOT decided** — merge rules, which review stage survives, schedule conversion, SRS stage 5 ↔ 6. 🛑 Depends on the Mastery Algorithm and a migration policy. **Legacy Level 1–6 progress stays untouched for now** | 🛑 DEFERRED |
+| **10** | The pack progress **read/write key mismatch** (§3.6) is a static-inspection finding with **no runtime verification**. 🛑 Do not fix it this round, and **do not assume Production is failing** | 🔍 VERIFY BEFORE MIGRATION |
+
+**What decisions 1 and 2 buy, stated plainly:** identity becomes a question with a cheap, stable
+answer — *is this the same headword?* — instead of an expensive, contested one — *is this the same
+sense?* Senses still get taught differently, through collection-level enrichment (§7.2), but they no
+longer fragment the learner's mastery record. That is the whole trade, and it is the right one for
+v1.
 
 ---
 
@@ -178,7 +214,11 @@ is the part that does not need migrating.
 > exactly the behaviour the owner's requirement 5 forbids, and it is a queue-construction issue as
 > much as a schema one.
 
-### 3.6 ⚠️ A read/write key mismatch in the client store
+### 3.6 🔍 VERIFY BEFORE MIGRATION — a read/write key mismatch in the client store
+
+> **Status: 🔍 VERIFY BEFORE MIGRATION (owner ruling, 2026-08-29).** A static-inspection finding with
+> **no runtime verification**. 🛑 Not to be fixed this round, and 🛑 **not to be treated as evidence
+> that Production is failing.**
 
 Reported because it bears directly on whether existing pack progress is trustworthy.
 
@@ -194,9 +234,14 @@ So loaded pack progress lands under one key shape and written pack progress unde
 face of the code, **a pack word's synced progress would not be seen by the screen that writes it**,
 and a fresh row would be created on the bare key each session.
 
-🛑 **This is inferred from reading the code, not from a runtime trace.** It should be verified before
-anyone relies on it — but it matters here because *if* it is real, some existing pack progress may
-already be less meaningful than it appears, which changes how much care a future re-key owes it.
+🛑 **This is inferred from reading the code, not from a runtime trace.** It matters here because *if*
+it is real, some existing pack progress may already be less meaningful than it appears — which
+changes how much care a future re-key owes it. It is equally possible that something in the call path
+reconciles the two shapes and nothing is wrong.
+
+**What must happen before any vocabulary migration:** confirm at runtime whether a pack word's synced
+progress is actually seen by the screen that writes it. Until then, no migration step may **assume**
+pack progress is either sound or unsound.
 
 This does **not** meet the interrupt rule in `docs/BACKLOG.md` (no data leak, no unauthorised admin
 operation, no Production outage). Recorded, not acted on.
@@ -272,8 +317,30 @@ But the honest finding is that **`level_words` already provides it**:
 Only the last two are absent. So the work is: **make collections point at it, and give every
 pack-only word a canonical row.**
 
-> 🛑 **Creating a new `canonical_word` table beside `level_words` would be the second vocabulary
-> system the owner asked to avoid.** The name `level_words` is misleading for its new role, but a
+### 6.1 ✅ What a canonical identity is — DECIDED
+
+> **One row per teachable lexical item / headword** — normally a lemma. **Multi-word lexical items
+> get their own identity**: `give up`, `in spite of`, `take advantage of` are each one canonical word.
+>
+> 🛑 **v1 is not a sense ontology.** Different meanings of one headword do **not** become separate
+> canonical identities; they are expressed as collection-level enrichment (§7.2).
+
+This answers the question the original audit could not (old §8.1): **identity is per spelling /
+headword, not per sense.**
+
+⚠️ **One consequence, stated so it is not discovered later as a surprise.** True homographs with
+different pronunciations — `lead` /liːd/ (verb) vs `lead` /lɛd/ (metal) — collapse into a single
+canonical row under this rule, and therefore share one `ipa`, one `audio_url`, and **one mastery
+record**. For `issue` (議題 / 發行) that is exactly right; for `lead` it is a deliberate v1
+simplification.
+
+🟡 Whether a small allow-list of pronunciation-distinct homographs should be split is **not decided
+and not urgent** — it affects audio and IPA display before it affects mastery. 🛑 Do not act on it;
+raise it if the word list turns out to contain many such pairs.
+
+> ✅ **DECIDED (2026-08-29):** `level_words` **is** the evolution starting point of the canonical
+> layer. 🛑 **Creating a new `canonical_word` table beside it would be the second vocabulary system
+> the owner asked to avoid.** The name `level_words` is misleading for its new role, but a
 > rename is a breaking change across hooks, RPCs and RLS policies for zero behavioural gain. **Keep
 > the table, treat the name as legacy, and document the role.** A renamed view can front it later if
 > the name genuinely bothers anyone.
@@ -290,27 +357,27 @@ pack-only word a canonical row.**
 
 | Entity | Responsibility | Relationships | Origin |
 |---|---|---|---|
-| **`canonical_word`** | One row per word. Word-level metadata: `word_level` (MOE_1…MOE_6 / BEYOND), IPA, POS, base translation, audio | referenced by everything below | **= today's `level_words`, promoted** |
-| **`vocabulary_collection`** | A named set of words: MOE level, topic, lesson, or a learner's own list. Carries a **type** discriminator | has many `collection_word` | **= today's `packs`, plus type** |
-| **`collection_word`** | **Membership + collection-specific enrichment**: target sense, example sentence, teaching note, collocation, `sort_order` | `collection` ↔ `canonical_word` | **= today's `pack_items`, re-pointed** |
+| **`canonical_word`** | One row per **teachable lexical item / headword** (§6.1), single- or multi-word. Word-level metadata: `word_level` (`MOE_1…MOE_6`, `BEYOND`), IPA, POS, base translation, audio | referenced by everything below | **= today's `level_words`, promoted** |
+| **`vocabulary_collection`** | A named set of words. **One concept for all types** (§1.2 #4): MOE / level browsing · topic · lesson / course · GSAT pack · student-saved · future sets. Carries a **type** discriminator | has many `collection_word` | **= today's `packs`, plus type** |
+| **`collection_word`** | **Membership + collection-specific enrichment**: **target meaning / sense note**, example sentence, teaching note, collocation, `sort_order` (§1.2 #2) | `collection` ↔ `canonical_word` | **= today's `pack_items`, re-pointed** |
 | **`learner_word_mastery`** | What this learner can do with this word. v1 dimensions: **Recognition**, **Production** | learner ↔ `canonical_word` | **= today's `user_word_progress`, re-keyed** |
 | **`practice_event`** | One immutable observation: what was practised, which `practice_type`, correct or not, when | learner ↔ `canonical_word`, optionally ↔ `collection` | 🆕 new |
 
 **Deprecate:** `pack_item_progress` — its role is absorbed by `learner_word_mastery` plus
 `practice_event`. 🛑 Deprecate means *stop writing, keep reading, remove later*, never a silent drop.
 
-### 7.2 The two rules that make it work
+### 7.2 ✅ The two rules that make it work — DECIDED
 
-**Mastery is keyed on `(learner, canonical_word, mastery_type)` — never on a collection.**
-A word learned in a lesson pack and revised from MOE Level 4 is one mastery record. This is the
-requirement, stated as a key.
+**Mastery is keyed on `(learner, canonical_word, mastery_type)` — 🛑 never on a collection.**
+A word learned in a lesson pack and revised from MOE Level 4 is one mastery record. v1 mastery types
+are **`Recognition`** and **`Production`**, and nothing else.
 
 **Enrichment is keyed on `(collection, canonical_word)`.**
 Which satisfies the owner's requirement 6 without touching mastery: the same word may carry a
 different target sense, example, note and order in every collection it appears in. **Enrichment
 varies; mastery does not.**
 
-### 7.3 Practice Type stays out of the mastery key
+### 7.3 ✅ Practice Type stays out of the mastery key — DECIDED
 
 `practice_type` — meaning recognition · recall · spelling · typing · cloze · collocation ·
 word formation · contextual usage — belongs on **`practice_event`**, describing *how an observation
@@ -320,15 +387,26 @@ was produced*.
 the whole exercise removes, one axis over. v1 mastery dimensions are **Recognition** and
 **Production**, and nothing else (`LEARNING_DOMAIN_MODEL.md` §7.2).
 
+🛑 **Explicitly forbidden by ruling #6:** creating `spelling mastery`, `collocation mastery`, or
+`word-formation mastery` as learner-word axes.
+
 The open question is the **mapping** from practice type to mastery dimension — does a spelling
 success evidence Production? That is part of the **BLOCKED** mastery algorithm and 🛑 must not be
 invented here.
 
-### 7.4 Unified SRS
+### 7.4 ✅ Unified SRS — DECIDED
 
 Scheduling attaches to **`(learner, canonical_word)`**, so one word has one due date no matter how
 many collections contain it. Queue building becomes: resolve the selected collections to a **set of
 canonical words**, then schedule — de-duplication falls out of the key instead of needing a pass.
+
+A word in **Level 4**, **Crime & Law** and **GSAT Week 8**, due the same day, is reviewed **once**.
+
+**What a Collection may still influence**, and what it may not:
+
+| ✅ Collection may affect | 🛑 Collection may never affect |
+|---|---|
+| presentation context · which example sentence is shown · teaching note · target meaning · source badge · ordering | the schedule · the due date · the mastery record · whether the word appears twice |
 
 ⚠️ Two scale questions must be settled first, and both are part of the blocked mastery work:
 
@@ -372,7 +450,7 @@ topic pack added before it inherits the duplication and enlarges the eventual ba
 > 🛑 No migration is proposed, scheduled, or approved. This is the risk register a future proposal
 > must answer.
 
-### 8.1 🔴 Word matching is not a safe automatic join
+### 8.1 ✅ Normalization is bounded — DECIDED, and it is why matching stays hard
 
 `pack_items.word` is free text. Matching it to `level_words.word` is **not** a clean equality:
 
@@ -384,24 +462,37 @@ topic pack added before it inherits the duplication and enlarges the eventual ba
 | **Homographs** | `lead` (verb) vs `lead` (metal) — one spelling, two words |
 | **Sense divergence** | The pack's definition may target a different sense from the canonical row |
 
-🛑 **A silent fuzzy backfill would merge distinct words and split identical ones**, and mastery is
-attached to the result. Stage 2 must be reviewed, with unmatched rows left null rather than guessed.
+**The owner ruling (2026-08-29) draws the line explicitly:**
 
-**Homographs are the deeper question:** is `canonical_word` one row per *spelling* or per *sense*?
-Per spelling is simpler and matches `level_words` today; per sense is more correct and much more
-work. 🛑 **An owner decision, not settled here.**
+| ✅ Permitted automatically | 🛑 Forbidden as an automatic rule |
+|---|---|
+| trim whitespace · case normalization · Unicode normalization | **silent fuzzy or morphological merge** — `abandoned → abandon`, `went → go`, `better → good` |
 
-### 8.2 🟠 Merging duplicate progress needs a stated rule
+> AI may **propose** a mapping. 🛑 Anything non-exact or high-risk requires **explicit validation**
+> before it is applied.
+
+So the first two hazards in the table above are handled by safe normalization; the middle two require
+review; and **homographs are settled by §6.1** — v1 is one row per headword, so `lead` is one
+canonical identity with a known, accepted consequence.
+
+Stage 2 therefore stays a **reviewed** step, with unmatched rows left null rather than guessed.
+
+### 8.2 🛑 DEFERRED — legacy progress migration is not decided
+
+> **Owner ruling, 2026-08-29:** merge rules, which review stage survives, schedule conversion, and
+> SRS stage 5 ↔ 6 mapping are **not decided**. They depend on the Mastery Algorithm and a migration
+> policy. 🛑 **Legacy Level 1–6 progress stays untouched for now.**
 
 When two rows for the same learner and word collapse into one, something must decide the survivor:
-highest mastery? most recent? most reviews? A wrong rule silently rewrites a student's history.
+highest mastery? most recent? most reviews? A wrong rule silently rewrites a student's history — and
+unlike most mistakes in this project, that one is not observable afterwards.
 
-🛑 It is also **part of the blocked mastery algorithm**, so this cannot be settled before that is.
+🛑 Do not propose a merge rule, and do not let a migration stage quietly imply one.
 
-### 8.3 🟠 Scale and time-representation mismatch
+### 8.3 🛑 DEFERRED — scale and time-representation mismatch
 
 Cap 6 vs cap 5, and `BIGINT` Unix ms vs `TIMESTAMPTZ`. Any mapping changes what a stored number
-means. Blocked with the mastery algorithm.
+means. Explicitly part of ruling #9: 🛑 **do not decide the SRS stage 5 ↔ 6 conversion here.**
 
 ### 8.4 🟡 The client store persists to localStorage
 
@@ -437,15 +528,50 @@ Listed so a future proposal does not trip over them. 🛑 **Not to be acted on h
 
 ---
 
-## 9. Open decisions this audit cannot make
+## 9. Status index — what is settled and what is not
 
-| # | Decision | Blocks |
+### ✅ DECIDED — Vocabulary v1 architecture is frozen
+
+Full statements in §1.2. In short:
+
+1. Canonical identity = **teachable lexical item / headword**, multi-word items included; **no sense
+   ontology** in v1 (§6.1)
+2. **Multiple meanings are collection enrichment**, not separate identities (§7.2)
+3. **`level_words` is the evolution starting point** — 🛑 no parallel canonical system. `word_level`
+   with `MOE_1…MOE_6`, `BEYOND` as the concept name
+4. **One Collection concept** for MOE sets, topics, lessons, GSAT packs, student-saved lists and
+   future sets; 🛑 a Collection never creates a second mastery record
+5. **Mastery = learner × canonical word**, dimensions `Recognition` and `Production`; 🛑 collection
+   is not part of the identity
+6. **Practice Type is event metadata**, 🛑 not a mastery axis
+7. **SRS is keyed on learner × canonical word** — one due date, one review; collection affects
+   presentation only (§7.4)
+8. **Safe normalization only** — 🛑 no silent fuzzy or morphological merge (§8.1)
+
+### 🟡 PROVISIONAL — direction only, do not freeze
+
+| Item | Note |
+|---|---|
+| Splitting pronunciation-distinct homographs (`lead` /liːd/ vs /lɛd/) | §6.1. Affects IPA and audio before it affects mastery. 🛑 Not urgent, do not act |
+| Physical rename of the `level` column to `word_level` | The **concept** is decided; the schema change belongs to migration design |
+| Whether `level_words` is renamed or fronted by a view | Naming only; zero behavioural effect (§6) |
+
+### 🛑 BLOCKED / DEFERRED — do not invent an answer
+
+| # | Item | Blocks |
 |---|---|---|
-| 1 | **Canonical word = one per spelling, or one per sense?** (§8.1) | the whole canonical layer |
-| 2 | **Mastery algorithm** — scale, merge rule, decay, thresholds (already BLOCKED) | stages 4–6 |
-| 3 | **practice_type → mastery dimension mapping** (§7.3) | evidence generation |
-| 4 | Whether `level_words` is renamed, fronted by a view, or left as-is (§6) | naming only |
-| 5 | What happens to anonymous localStorage progress (§8.5) | stage 5 |
+| 1 | **Mastery algorithm** — scale, decay, thresholds, weighting (already blocked platform-wide) | stages 4–6 of §7.5 |
+| 2 | **Legacy progress migration** — merge rule, surviving stage, schedule conversion, stage 5 ↔ 6 (§8.2, §8.3) | any re-key of existing progress |
+| 3 | **`practice_type` → mastery dimension mapping** (§7.3) | evidence generation |
+| 4 | Anonymous / localStorage-only progress (§8.5) | stage 5 of §7.5 |
+
+🛑 **Legacy Level 1–6 progress stays untouched** while 1 and 2 are open.
+
+### 🔍 VERIFY BEFORE MIGRATION
+
+| Item | Rule |
+|---|---|
+| **Pack progress read/write key mismatch** (§3.6) | Confirm at runtime **before** any vocabulary migration relies on the soundness of existing pack progress. 🛑 Do not fix this round; 🛑 do not assume Production is failing |
 
 ---
 
