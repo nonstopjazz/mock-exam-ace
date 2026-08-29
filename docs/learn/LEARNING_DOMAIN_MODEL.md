@@ -18,6 +18,28 @@
 
 ---
 
+## 0. Where this work is
+
+**Domain design mainline — one domain at a time.**
+
+| Domain | State |
+|---|---|
+| **Grammar** | ✅ **CLOSED** — 10 Categories · 51 Skills DECIDED · 234 Micro-skill candidates PROVISIONAL (§8) |
+| **Reading** | ✅ **CLOSED / DECIDED v1** — 6 Categories · 25 Skills · no Micro-skill (§9.1) |
+| **Vocabulary** | ✅ **DESIGN PHASE COMPLETE / TEMPORARILY CLOSED** — architecture frozen; 🛑 **off the active mainline**. `docs/learn/VOCABULARY_ARCHITECTURE.md` |
+| **Listening** | ✅ **CLOSED / DECIDED v1** — 4 Categories · 18 Skills · no Micro-skill (§9.7) |
+| **Speaking** | 🔜 **NEXT — the active design checkpoint** |
+| **Writing** | ⏳ queued |
+| **Exam / Academic Skills** | 🛑 BLOCKED — owner still designing |
+
+**Then, in order:** Learning Objective spec → Evidence / Mastery model → Competency DB schema.
+
+🛑 **Vocabulary migration work does not interrupt this line.** Everything it still needs is parked
+under **BEFORE VOCABULARY MIGRATION** in its own document, including the Stage 0 measurements, which
+the owner has explicitly deprioritised.
+
+---
+
 ## 1. The two axes
 
 The whole model rests on one idea: **content and competency are different dimensions, and they cross
@@ -832,10 +854,10 @@ single Primary Skill, supplying **passage + stem + options + correct answer + ex
 alone — "Which is true?" — cannot be classified reliably); where two Skills cannot be told apart
 consistently, that is input to the **next version**.
 
-### 9.7 Listening — Categories and Skills both DECIDED v1
+### 9.7 Listening — CLOSED / DECIDED v1
 
-> **Status: 4 Categories DECIDED · 18 Skills DECIDED v1 (frozen 2026-08-29) · 🛑 no Micro-skill in
-> v1.**
+> **Status: 🔒 CLOSED (2026-08-29).** 4 Categories **DECIDED** · 18 Skills **DECIDED v1** · 🛑 no
+> Micro-skill in v1. **Listening has no architecture blocker.**
 >
 > 📎 **Source of truth: `docs/learn/listening-taxonomy/Listening_Taxonomy_v1.xlsx`** — and the
 > workbook states its own status: every `Category_Summary` row reads `DECIDED`, every
@@ -895,7 +917,7 @@ Rulings A and D are the same test Reading applies (§9.4 A): **is the answer in 
 the learner have to produce it?** Ruling B has the same shape as Reading's fixed Tone Primary — the
 *form* of prosody is perception, the *meaning* of prosody is inference.
 
-### 9.11 ⚠️ A cross-domain asymmetry worth knowing about
+### 9.11 ✅ Modality-specific placement — a design choice, not a contradiction
 
 Reading and Listening place **purpose and tone** on opposite sides of the inference line:
 
@@ -905,14 +927,22 @@ Reading and Listening place **purpose and tone** on opposite sides of the infere
 | Author / speaker purpose | **R6** → `READ_PURPOSE_AUTHOR` | **L3** → `LISTEN_INFER_PURPOSE` |
 | Main idea | **R1 Main Idea** — a whole category, 4 skills | **L2** → one skill, `LISTEN_LITERAL_GIST` |
 
-Neither placement is wrong. Reading has a dedicated Purpose & Style category and Listening does not,
-so L3 is the natural home there — and both fix Tone's Primary by rule, so tagging stays unambiguous
-**within** each domain.
+> **Owner ruling, 2026-08-29:** this is **modality-specific taxonomy design, not a contradiction.**
+> 🛑 **Do not adjust the Reading or Listening taxonomy to make them symmetrical.**
 
-**The consequence, stated so nobody meets it by surprise:** any future report that aggregates
-"inference ability" **across modalities** would be comparing different things — Listening's inference
-category includes tone and purpose, Reading's excludes them. 🛑 Cross-modality roll-up is not a v1
-feature and no such report exists; recorded as a constraint on one, not a defect in either taxonomy.
+Reading has a dedicated Purpose & Style category and Listening does not, so L3 is the natural home
+there — and both fix Tone's Primary by rule, so tagging stays unambiguous **within** each domain.
+Symmetry across domains was never a requirement; consistency **inside** each one was, and both have
+it.
+
+**One constraint follows, on analytics rather than on taxonomy:**
+
+> 🛑 A future cross-modality report **must not assume** `Reading Inference` ≡
+> `Listening Inferential Understanding`. Their Skill composition differs — Listening's includes tone
+> and speaker purpose, Reading's excludes them.
+
+✅ This is a **future analytics limitation, not a v1 blocker**. No such report exists, and building
+one is not queued.
 
 The domains are deliberately separate (§5.2), so a learner strong at reading inference and weak at
 listening inference carries **two independent mastery records**. That is the intended behaviour.
@@ -1377,8 +1407,11 @@ rules invented.
 
 **Listening**
 
-- 🆕 **Four Categories (L1–L4) and 18 Skills — both DECIDED v1, frozen 2026-08-29.** Detailed source
-  of truth: `docs/learn/listening-taxonomy/Listening_Taxonomy_v1.xlsx`
+- 🆕 **CLOSED / DECIDED v1** — four Categories (L1–L4) and 18 Skills, frozen 2026-08-29, no
+  architecture blocker. Detailed source of truth:
+  `docs/learn/listening-taxonomy/Listening_Taxonomy_v1.xlsx`
+- 🆕 **Modality-specific category placement is a design choice, not a contradiction** — 🛑 do not
+  rebalance Reading or Listening for symmetry (§9.11)
 - 🆕 **No Micro-skill in v1**, same decision as Reading (§9.3)
 - 🆕 **Accent · speech speed · audio length · speaker count · noise level are stimulus / difficulty
   metadata, never Skills** (§9.9) — the audio counterpart of "Question Type ≠ Skill"
@@ -1395,6 +1428,8 @@ rules invented.
 - 🆕 **Vocabulary v1 is item-centric** — Canonical Word · Vocabulary Collections · Learner × Word
   Mastery · Practice Type. 🛑 It does **not** need a Skill taxonomy to record evidence, and Practice
   Type is **not** a permanent mastery dimension (§7.2)
+- 🆕 **Vocabulary design phase is COMPLETE / TEMPORARILY CLOSED** and 🛑 **off the active design
+  mainline** (§0). Its open items are parked under **BEFORE VOCABULARY MIGRATION**
 
 **Tagging and evidence**
 

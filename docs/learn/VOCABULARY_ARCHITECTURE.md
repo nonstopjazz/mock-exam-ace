@@ -1,7 +1,22 @@
 # Vocabulary Architecture — audit and target model
 
 > **Written:** 2026-08-29 · **Revised:** 2026-08-29 — owner rulings on the architecture questions
-> (§1.2) · **Status:** 🟡 **AUDIT + DESIGN ONLY.**
+> (§1.2)
+>
+> ## 🔒 Status: **DESIGN PHASE COMPLETE / TEMPORARILY CLOSED** (2026-08-29)
+>
+> The v1 architecture in §1.2 is **frozen and stands**. Vocabulary is **no longer on the active design
+> mainline** — that is now the remaining Domain taxonomies, starting with **Speaking**.
+>
+> 🛑 **Do not reopen this document for implementation work.** Everything still unresolved is
+> gathered in §9 under **BEFORE VOCABULARY MIGRATION**, and none of it blocks the content or
+> competency modelling that comes next.
+>
+> 🛑 **Stage 0 (§7.5) — the distinct-word overlap measurement and the runtime key verification — is
+> explicitly DEPRIORITISED by the owner.** Technically still worthwhile; not to be run now, and not
+> a reason to interrupt taxonomy design.
+>
+> **Status:** 🟡 **AUDIT + DESIGN ONLY.**
 > No table, no SQL, no migration, no seed data, no data migration, no frontend change, no Production
 > change, no schema exposure.
 >
@@ -419,7 +434,7 @@ Each stage is reversible on its own and leaves the product working.
 
 | Stage | What | Why it is safe |
 |---|---|---|
-| **0** | Confirm the §3.6 key mismatch is real, and measure how many `pack_items` words already exist in `level_words` | Read-only. Sizes the whole problem before anything moves |
+| **0** | Confirm the §3.6 key mismatch is real, and measure how many `pack_items` words already exist in `level_words` | Read-only. Sizes the whole problem before anything moves. 🛑 **DEPRIORITISED by the owner (2026-08-29) — belongs to the BEFORE VOCABULARY MIGRATION checkpoint, not to now** |
 | **1** | Add a nullable canonical reference to `pack_items`; **backfill nothing automatically** | Column is unused; nothing reads it |
 | **2** | Match and backfill under review, leaving unmatched rows null | Reversible; §8.1 says why this cannot be fully automatic |
 | **3** | Create canonical rows for pack-only words | Additive; grows `level_words` with rows whose `word_level` is `BEYOND` or unset |
@@ -558,6 +573,9 @@ Full statements in §1.2. In short:
 
 ### 🛑 BLOCKED / DEFERRED — do not invent an answer
 
+All four are now gathered under **BEFORE VOCABULARY MIGRATION** below, because that is when they
+must be answered. None of them blocks the current design mainline.
+
 | # | Item | Blocks |
 |---|---|---|
 | 1 | **Mastery algorithm** — scale, decay, thresholds, weighting (already blocked platform-wide) | stages 4–6 of §7.5 |
@@ -565,13 +583,22 @@ Full statements in §1.2. In short:
 | 3 | **`practice_type` → mastery dimension mapping** (§7.3) | evidence generation |
 | 4 | Anonymous / localStorage-only progress (§8.5) | stage 5 of §7.5 |
 
-🛑 **Legacy Level 1–6 progress stays untouched** while 1 and 2 are open.
+### 🔍 BEFORE VOCABULARY MIGRATION
 
-### 🔍 VERIFY BEFORE MIGRATION
+> **Owner ruling, 2026-08-29.** These are **not** blockers on the current design mainline. They are
+> the checklist that must be worked through **before a vocabulary migration is designed** — and 🛑
+> **none of them is a reason to interrupt taxonomy design now.**
 
 | Item | Rule |
 |---|---|
-| **Pack progress read/write key mismatch** (§3.6) | Confirm at runtime **before** any vocabulary migration relies on the soundness of existing pack progress. 🛑 Do not fix this round; 🛑 do not assume Production is failing |
+| **Pack progress read/write key mismatch** (§3.6) | Confirm at runtime before any migration relies on the soundness of existing pack progress. 🛑 Do not fix speculatively; 🛑 **do not open a Production debugging exercise** on the strength of a static reading |
+| **Distinct-word overlap measurement** (§7.5 stage 0) | How many `pack_items` words already exist in `level_words`. Read-only, and it converts the §8.1 risk register from guesswork into numbers — but 🛑 **not now** |
+| **Mastery algorithm** | Scale, decay, thresholds, weighting |
+| **Legacy progress merge policy** | Merge rule, surviving stage, schedule conversion, SRS stage 5 ↔ 6 (§8.2, §8.3) |
+| **`practice_type` → mastery evidence mapping** (§7.3) | |
+| **Anonymous / localStorage-only progress** (§8.5) | |
+
+🛑 **Until this checkpoint is opened, legacy Level 1–6 progress stays untouched.**
 
 ---
 

@@ -37,9 +37,15 @@
   `level_words` rather than adding a second vocabulary system. ✅ **Vocabulary v1 architecture was
   frozen on 2026-08-29** (§1.2): headword identity with no sense ontology, one Collection concept,
   mastery on `learner × canonical_word` (`Recognition` / `Production`), one SRS due date per word,
-  and safe normalization only. 🛑 **Design only — no migration proposed or approved**, and legacy
-  Level 1–6 progress stays untouched. 🔍 One finding must be **verified at runtime before any
-  vocabulary migration** (§3.6).
+  and safe normalization only. 🔒 **The design phase is COMPLETE / TEMPORARILY CLOSED and vocabulary
+  is OFF the active design mainline.** 🛑 No migration proposed or approved; legacy Level 1–6
+  progress stays untouched; the Stage 0 measurements and the runtime key verification are
+  **owner-deprioritised** into a **BEFORE VOCABULARY MIGRATION** checkpoint — 🛑 they are not a
+  reason to interrupt taxonomy design or to start Production debugging.
+- 🔜 **The active design checkpoint is the SPEAKING taxonomy.** Domain order: Grammar ✅ · Reading ✅ ·
+  Vocabulary ✅ (temporarily closed) · Listening ✅ · **Speaking ← NEXT** · Writing · Exam. Then
+  Learning Objective spec → Evidence / Mastery model → Competency DB schema.
+  `docs/learn/LEARNING_DOMAIN_MODEL.md` §0.
 - 📘 **The `/learn` product & competency model is specified (2026-08-29):**
   `docs/learn/LEARNING_DOMAIN_MODEL.md` — Program→Module→Lesson→Activity, Content Assets outside the
   hierarchy, Relationship/Enrollment/Assignment kept separate, and the Domain→Category→Skill→

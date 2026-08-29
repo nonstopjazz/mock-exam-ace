@@ -80,8 +80,8 @@ Also in A2: **9.9** `upsert_word_progress` 6-arg overload is broken — its `ON 
 | Item | Note |
 |---|---|
 | **9.10** Divergent SRS semantics | Level words: client-computed, mastery cap 6, `next_review_time BIGINT`. Pack items: server-computed, cap 5, mastered ≥ 4, `next_review_at TIMESTAMPTZ`. Both track pack items. Phase 3 — analytics will force the question. 📎 Full mechanism in `docs/learn/VOCABULARY_ARCHITECTURE.md` §2.5 |
-| 🆕 **Vocabulary duplicates progress per pack** | `pack_items.word` is free text with no canonical link, and every progress key contains `pack_id`, so one word in three packs is three progress records and three cards in one review session. Audit + target model: `docs/learn/VOCABULARY_ARCHITECTURE.md`. ✅ **Vocabulary v1 architecture frozen 2026-08-29** (§1.2). 🛑 Design only — no migration proposed or approved |
-| 🆕 🔍 **VERIFY BEFORE VOCABULARY MIGRATION** | Pack progress is *loaded* under `pack:<pack_id>:<word_id>` (`wordProgressSync.ts:23`) but *written* under the bare item id (every practice screen). **Static inspection only — no runtime verification.** 🛑 Do not fix speculatively and 🛑 do not assume Production is failing; confirm at runtime **before** any vocabulary migration relies on existing pack progress. Does not meet the interrupt rule. `VOCABULARY_ARCHITECTURE.md` §3.6 |
+| 🆕 **Vocabulary duplicates progress per pack** | `pack_items.word` is free text with no canonical link, and every progress key contains `pack_id`, so one word in three packs is three progress records and three cards in one review session. ✅ **Vocabulary v1 architecture frozen 2026-08-29 and the design phase is TEMPORARILY CLOSED** — `docs/learn/VOCABULARY_ARCHITECTURE.md` §1.2. 🛑 **Off the active design mainline**; no migration proposed or approved |
+| 🆕 🔍 **BEFORE VOCABULARY MIGRATION** — a checkpoint, not a task queue | Everything vocabulary still needs is parked here and 🛑 **none of it interrupts taxonomy design**: (a) the pack progress read/write key mismatch — loaded under `pack:<pack_id>:<word_id>` (`wordProgressSync.ts:23`), written under the bare item id (every practice screen), **static inspection only, no runtime verification** — 🛑 do not fix speculatively, 🛑 **do not open a Production debugging exercise**; (b) the distinct-word overlap measurement (Stage 0) — 🛑 **owner-deprioritised, not now**; (c) mastery algorithm; (d) legacy progress merge policy incl. stage 5 ↔ 6 and schedule conversion; (e) `practice_type` → mastery evidence mapping; (f) anonymous / localStorage progress. 🛑 **Legacy Level 1–6 progress stays untouched.** Does not meet the interrupt rule |
 | Cron targeting | Targets purely on `user_stats.last_study_date != today` and never consults `user_word_progress`, so a fully caught-up student still gets a 「回來複習」 nudge. Owner-confirmed as a later product improvement |
 | `assignments` / `assignment_submissions` / `student_tasks` redesign | 0.5B-B / Phase 4. 🛑 These exist with live data — **do not design a replacement** |
 
@@ -138,6 +138,11 @@ Standing rules that now bind all `/learn` work:
 | **Secondary Skill** | 🆕 🛑 Produces **no equal-weight evidence** while the mastery algorithm is unfrozen. Treat as tagging / analysis metadata |
 | **Skill codes** | 🆕 🛑 **Opaque identifiers — never parse a code to derive its Category.** `GRAM_G7_…` embedding `G7` is a mnemonic, not relational data. Use the declared taxonomy relationship |
 | **Vocabulary v1** | 🆕 **Item-centric, architecture frozen 2026-08-29** (`VOCABULARY_ARCHITECTURE.md` §1.2). Canonical identity is a **headword** (no sense ontology); `level_words` is the evolution starting point, 🛑 **never a parallel canonical system**; one Collection concept for all set types; mastery is `learner × canonical_word` with `Recognition` / `Production` only; SRS gives **one due date per word** regardless of collections; 🛑 Practice Type is event metadata, never a mastery axis; 🛑 normalization is trim / case / Unicode only — **no silent morphological merge** |
+
+🔜 **The active design checkpoint is the Speaking taxonomy.** Domain order: Grammar ✅ · Reading ✅ ·
+Vocabulary ✅ (architecture temporarily closed) · Listening ✅ · **Speaking ← NEXT** · Writing ·
+Exam / Academic Skills. Then Learning Objective spec → Evidence / Mastery model → Competency DB
+schema. 🛑 **Vocabulary migration work does not interrupt this line.**
 
 **Listening taxonomy source of truth:** `docs/learn/listening-taxonomy/Listening_Taxonomy_v1.xlsx`
 — **4 Categories (L1–L4) + 18 Skills, both DECIDED v1** (frozen 2026-08-29) · 11 tagging rules.
