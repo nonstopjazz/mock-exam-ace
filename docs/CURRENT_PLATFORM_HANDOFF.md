@@ -44,14 +44,16 @@
   `docs/learn/LEARNING_DOMAIN_MODEL.md` — Program→Module→Lesson→Activity, Content Assets outside the
   hierarchy, Relationship/Enrollment/Assignment kept separate, and the Domain→Category→Skill→
   Micro-skill competency axis. **Grammar is decided to Skill level — 10 categories, 51 coded skills,
-  plus 234 PROVISIONAL Micro-skill candidates; Reading decided to Skill level with no Micro-skill
+  plus 234 PROVISIONAL Micro-skill candidates; Reading and Listening decided to Skill level with no
+  Micro-skill
   — with `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx` as its detailed source of
   truth; every other taxonomy is PROVISIONAL or BLOCKED — do not complete them.** Design spec only:
   no table, no migration, no seed data. An owner ruling on 2026-08-29 closed four open items
   (direct teacher–student relationship, vocabulary dimensions, tag precedence, asset versioning) and
   settled naming; a Grammar Micro-skill blocker was then withdrawn as a bad export rather than a
-  missing decision; **Reading Taxonomy v1 is frozen — 6 Categories + 25 Skills, both DECIDED**, with
-  exactly one Primary Skill per item and Skill codes treated as opaque identifiers that must never be
+  missing decision; **Reading Taxonomy v1 (6 Categories + 25 Skills) and Listening Taxonomy v1
+  (4 Categories + 18 Skills) are both frozen as DECIDED v1**, neither with Micro-skills, with exactly
+  one Primary Skill per item and Skill codes treated as opaque identifiers that must never be
   parsed. 🛑 **Five blocked decisions remain** in its §15; ✅ none of them blocks the next design
   stage. ⚠️ The deployed spine still cannot
   represent a direct teacher–student relationship, which is now a decided requirement awaiting its

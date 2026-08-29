@@ -1,0 +1,12 @@
+Rule ID,規則,例子
+TR-01,每一道可計分 Listening assessable item 必須恰好有一個 Primary Skill。,若一題同時需要聽出語調與判斷態度，Primary 選 LISTEN_INFER_ATTITUDE。
+TR-02,Secondary Skill 是 optional，預設 null；v1 不自動產生與 Primary Skill 等權的 mastery evidence。,Secondary 先作 tagging / analysis metadata，不因概念相關就固定雙標。
+TR-03,Question Type / Practice Type 與 Skill 分離。,Multiple Choice、True/False、Dictation、Note Completion 都不是 Skill。
+TR-04,Accent、speech speed、audio length、speaker count、noise level 是 stimulus / difficulty metadata，不是 Skill。,British accent / fast speech 不建立成 Skill。
+TR-05,音訊已明示答案 → Literal Understanding；需推出未明說答案 → Inferential Understanding。,直接說 because... → L2 Detail；未說原因、需從線索推出 → L3 Cause & Motivation。
+TR-06,Speech Perception 與 Inferential Understanding 的邊界：若只要求辨識重音／語調形式，標 L1 Prosody；若用語調判斷態度，Primary 固定標 L3 Tone & Attitude。,rising/falling intonation → L1；speaker sounds annoyed → L3。
+TR-07,Reference Resolution 與 Speaker Tracking 分開：近距離指涉歸 L2 Reference；多人／長距離觀點追蹤歸 L4 Speaker & Perspective Tracking。,What does 'they' refer to? → L2；Who eventually supports plan B? → L4。
+TR-08,Global Information Integration 與 Inference 的界線：整合多處明示資訊仍得出已明示內容 → L4 Integration；整合後推出未明說結論 → L3。,兩段各提供一個明示因素 → L4；由兩因素推出新結論 → L3。
+TR-09,Numbers / Dates / Prices 不建立獨立 Listening Skill；若直接擷取，通常屬 L2 Explicit Detail。,What time does the train leave? → LISTEN_LITERAL_DETAIL。
+TR-10,Listening v1 不建立 Micro-skill。,四層 taxonomy 是上限不是配額；Listening v1 在 Skill 層結束。
+TR-11,Skill code 是 stable opaque identifier；禁止 parse code 字串推導 Category。,LISTEN_INFER_ATTITUDE 屬 L3 必須由正式 taxonomy relationship 取得。

@@ -1,7 +1,7 @@
 # `/learn` Learning Domain Model
 
 > **Written:** 2026-08-29 · **Revised:** 2026-08-29 — Grammar Skill Taxonomy v1, an owner ruling on
-> eight open items (§14), then Reading Taxonomy v1 frozen with three further rulings (§9)
+> eight open items (§14), then Reading Taxonomy v1 (§9.1) and Listening Taxonomy v1 (§9.7)
 > **Status:** 🟡 **DESIGN SPEC ONLY — no table, no migration, no seed data, no frontend, no
 > Production change.**
 >
@@ -695,7 +695,7 @@ addition to G7. 🛑 **Do not modify the source mapping this round**, and do not
 > names, not by how much source material happens to sit under it.** Source counts measure coverage of
 > the existing materials, not whether a skill deserves to exist.
 
-## 9. Reading taxonomy, and the remaining Domains
+## 9. Reading and Listening taxonomies, and the remaining Domains
 
 ### 9.1 Reading — Categories and Skills both DECIDED v1
 
@@ -745,6 +745,7 @@ and none is to be invented.** See §9.3 on why depth varies by domain.
 |---|---|
 | **Grammar** | Micro-skill — 234 candidates (§8.13) |
 | **Reading** | **Skill — by owner decision, no Micro-skill in v1** |
+| **Listening** | **Skill — same decision (§9.7)** |
 
 🛑 A domain stopping at Skill is **not** an incomplete taxonomy, and is **not** an invitation to fill
 in the missing level. Depth follows what the domain actually needs to diagnose.
@@ -831,21 +832,105 @@ single Primary Skill, supplying **passage + stem + options + correct answer + ex
 alone — "Which is true?" — cannot be classified reliably); where two Skills cannot be told apart
 consistently, that is input to the **next version**.
 
-### 9.7 The remaining Domains — placeholders only
+### 9.7 Listening — Categories and Skills both DECIDED v1
+
+> **Status: 4 Categories DECIDED · 18 Skills DECIDED v1 (frozen 2026-08-29) · 🛑 no Micro-skill in
+> v1.**
+>
+> 📎 **Source of truth: `docs/learn/listening-taxonomy/Listening_Taxonomy_v1.xlsx`** — and the
+> workbook states its own status: every `Category_Summary` row reads `DECIDED`, every
+> `Skill_Taxonomy` row reads `DECIDED v1`.
+>
+> Structure and principles only here. The 18 skill definitions, their Includes / Excludes boundary
+> rules and the 11 tagging rules (TR-01 … TR-11) live in the workbook.
+
+**Listening uses three levels: `Domain → Category → Skill`** — the same shape as Reading, and for the
+same reason (§9.3).
+
+### 9.8 The four Categories — DECIDED
+
+| Code | Category (Chinese) | English | Skills |
+|---|---|---|---|
+| **L1** | 語音辨識 | Speech Perception | 4 |
+| **L2** | 字面理解 | Literal Understanding | 5 |
+| **L3** | 推論理解 | Inferential Understanding | 5 |
+| **L4** | 篇章整合 | Discourse Integration | 4 |
+| | | **Total** | **18** |
+
+**Skill codes** are of the form `LISTEN_PERCEPT_PROSODY`, `LISTEN_LITERAL_DETAIL`,
+`LISTEN_INFER_ATTITUDE`, `LISTEN_DISCOURSE_SPEAKER`. 🛑 Opaque identifiers — never parsed (§8.3,
+and the workbook's TR-11).
+
+### 9.9 Listening tagging rules — DECIDED
+
+The cross-domain rules apply unchanged: **exactly one Primary Skill** per scorable item; Secondary
+optional and never by default; **a Secondary produces no equal-weight mastery evidence** in v1;
+**Question Type ≠ Skill**; Skill codes are opaque.
+
+**One rule is new with this domain, and it generalises a distinction the model needed anyway:**
+
+> 🛑 **Accent · speech speed · audio length · speaker count · noise level are *stimulus / difficulty
+> metadata*, not Skills.**
+
+A British accent at 160 wpm with three speakers is not a competency — it is a property of the
+recording that makes the same competency harder. It belongs in `difficulty` and stimulus metadata
+(§7.1), never in the taxonomy. This is the audio counterpart of "Best Title is a `question_type`,
+not a Skill" (§9.4): **the taxonomy describes what the learner must do, never what the item looks or
+sounds like.**
+
+### 9.10 The four boundary rulings
+
+| # | Boundary | Ruling |
+|---|---|---|
+| **A** | Literal vs Inference | Answer **stated in the audio** → **L2 Literal Understanding**. Answer requires working out something the audio never says → **L3 Inferential Understanding** |
+| **B** | Prosody vs Tone | Identifying stress, rhythm, rising/falling intonation, information focus → **L1 `LISTEN_PERCEPT_PROSODY`**. Using intonation, stress or wording to judge **attitude or emotion** → **L3 `LISTEN_INFER_ATTITUDE`**, whose Primary is **fixed** |
+| **C** | Reference vs Speaker tracking | Short-range *it / they / this / that* → **L2 `LISTEN_LITERAL_REFERENCE`**. Tracking across a long or multi-speaker exchange — who supports what, who objects, who changes position → **L4 `LISTEN_DISCOURSE_SPEAKER`** |
+| **D** | Integration vs Inference | Combining several **stated** points into an answer the audio already gives → **L4 `LISTEN_DISCOURSE_INTEGRATION`**. Combining them and then reaching an **unstated** conclusion → **L3 Inferential Understanding** |
+
+**E · Numbers, dates and prices get no Skill of their own.** Straight extraction of a time, date,
+price, number or location is normally **L2 `LISTEN_LITERAL_DETAIL`**. 🛑 Do not create a
+"numbers" skill — the content of a detail does not change which competency retrieves it.
+
+Rulings A and D are the same test Reading applies (§9.4 A): **is the answer in the stimulus, or does
+the learner have to produce it?** Ruling B has the same shape as Reading's fixed Tone Primary — the
+*form* of prosody is perception, the *meaning* of prosody is inference.
+
+### 9.11 ⚠️ A cross-domain asymmetry worth knowing about
+
+Reading and Listening place **purpose and tone** on opposite sides of the inference line:
+
+| Concept | Reading | Listening |
+|---|---|---|
+| Tone / attitude | **R6 Purpose & Style** → `READ_PURPOSE_TONE` — *outside* the Inference category | **L3 Inferential Understanding** → `LISTEN_INFER_ATTITUDE` — *inside* it |
+| Author / speaker purpose | **R6** → `READ_PURPOSE_AUTHOR` | **L3** → `LISTEN_INFER_PURPOSE` |
+| Main idea | **R1 Main Idea** — a whole category, 4 skills | **L2** → one skill, `LISTEN_LITERAL_GIST` |
+
+Neither placement is wrong. Reading has a dedicated Purpose & Style category and Listening does not,
+so L3 is the natural home there — and both fix Tone's Primary by rule, so tagging stays unambiguous
+**within** each domain.
+
+**The consequence, stated so nobody meets it by surprise:** any future report that aggregates
+"inference ability" **across modalities** would be comparing different things — Listening's inference
+category includes tone and purpose, Reading's excludes them. 🛑 Cross-modality roll-up is not a v1
+feature and no such report exists; recorded as a constraint on one, not a defect in either taxonomy.
+
+The domains are deliberately separate (§5.2), so a learner strong at reading inference and weak at
+listening inference carries **two independent mastery records**. That is the intended behaviour.
+
+### 9.12 The remaining Domains — placeholders only
 
 > 🛑 **PROVISIONAL. First-level direction only. Do NOT complete, freeze, or seed these.**
 
 | Domain | First-level direction (PROVISIONAL) |
 |---|---|
-| **Listening** | Speech Perception · Literal Understanding · Inferential Understanding · Discourse Integration |
 | **Speaking** | Fluency & Coherence · Lexical Resource · Grammar · Pronunciation & Intonation |
 | **Writing** | Content & Task · Organization & Coherence · Lexical Resource · Grammar & Sentence Structure · Register & Audience Awareness |
 | **Vocabulary** | Two orthogonal dimensions recorded in §7; the **Category and Skill levels are not designed** |
 | **Exam / Academic Skills** | 🛑 **BLOCKED** — the owner is still designing this |
 
-> ✅ **Grammar and Reading are the exceptions.** Grammar is decided to Skill level with 234
-> PROVISIONAL Micro-skill candidates (§8); Reading is **frozen as v1** — 6 DECIDED Categories and 25
-> DECIDED Skills, with no Micro-skill (§9.1).
+> ✅ **Grammar, Reading and Listening are the exceptions.** Grammar is decided to Skill level with
+> 234 PROVISIONAL Micro-skill candidates (§8); **Reading** is frozen as v1 — 6 Categories, 25 Skills
+> (§9.1); **Listening** is frozen as v1 — 4 Categories, 18 Skills (§9.7). Neither has Micro-skills.
 
 ⚠️ **Speaking → Grammar** and **Writing → Grammar & Sentence Structure** are *assessment criteria*
 within a performance rubric. Whether they reference the Grammar Domain's Skills or are separate
@@ -942,7 +1027,7 @@ Student Response  ──►  Skill Evidence  ──►  User Skill Mastery
 
 1. **Evidence follows the measured skill, not the instructional target** (§10.1). An Activity's tags
    never convert its responses into evidence wholesale.
-2. **A rubric score that resolves to no specific Skill updates no Skill** (§9.7). This applies to
+2. **A rubric score that resolves to no specific Skill updates no Skill** (§9.12). This applies to
    Speaking and Writing rubric grammar scores in particular.
 3. 🆕 **A Secondary Skill tag does not produce evidence weighted equally with the Primary** (§10.2).
    Until the mastery algorithm is frozen, secondaries are metadata and a future evidence candidate.
@@ -1290,6 +1375,18 @@ rules invented.
 - 🆕 **Tone & Attitude Primary is fixed to R6**, despite usually requiring inference
 - 🆕 **Sentence / paragraph function (R5) is separate from whole-text author's purpose (R6)**
 
+**Listening**
+
+- 🆕 **Four Categories (L1–L4) and 18 Skills — both DECIDED v1, frozen 2026-08-29.** Detailed source
+  of truth: `docs/learn/listening-taxonomy/Listening_Taxonomy_v1.xlsx`
+- 🆕 **No Micro-skill in v1**, same decision as Reading (§9.3)
+- 🆕 **Accent · speech speed · audio length · speaker count · noise level are stimulus / difficulty
+  metadata, never Skills** (§9.9) — the audio counterpart of "Question Type ≠ Skill"
+- 🆕 **Stated in the audio → L2; must be worked out → L3.** Prosody *form* → L1, prosody *meaning* →
+  L3 (Tone Primary fixed). Short-range reference → L2, multi-speaker tracking → L4. Integration of
+  stated points → L4, integration plus an unstated conclusion → L3
+- 🆕 🛑 **Numbers / dates / prices get no Skill of their own** — normally L2 Explicit Detail
+
 **Vocabulary**
 
 - 🆕 Word Level and Recognition / Production are **orthogonal dimensions, not taxonomy nodes** (§7)
@@ -1319,7 +1416,7 @@ rules invented.
 ### 🟡 PROVISIONAL / RECOMMENDED — do not freeze, do not build against
 
 - **Program distribution authorization** — the recommended model in §4.5 awaits owner confirmation
-- Listening · Speaking · Writing first-level lists (§9.7)
+- Speaking · Writing first-level lists (§9.12)
 - Vocabulary's **Skill** level — real vocabulary competencies are still undesigned (§7)
 - Grammar **Micro-skill** level — **234 candidates supplied, covering all 51 Skills**, not yet frozen
   item by item (§8.13). ✅ Usable for tagging · 🛑 not DECIDED, and do not invent additions

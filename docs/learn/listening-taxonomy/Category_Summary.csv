@@ -1,0 +1,5 @@
+Category Code,Category 中文,Category English,Skill 數量,定義,Status
+L1,語音辨識,Speech Perception,4,辨識語音形式與連續語流中的聲音、單字、切分及韻律線索。,DECIDED
+L2,字面理解,Literal Understanding,5,理解音訊中直接明示的主旨、細節、改述、順序與指涉。,DECIDED
+L3,推論理解,Inferential Understanding,5,根據音訊線索推論未直接明說的結論、原因、態度、意圖與隱含意義。,DECIDED
+L4,篇章整合,Discourse Integration,4,跨句、跨段或跨說話者整合篇章結構、銜接、觀點與資訊。,DECIDED

@@ -1,0 +1,19 @@
+Category Code,Category 中文,Skill Code,Skill 中文,Skill English,Definition,Includes / Typical Tasks,Excludes / Boundary Rule,Status
+L1,語音辨識,LISTEN_PERCEPT_SOUND,語音辨音,Sound Discrimination,辨識並區分相近或易混淆的語音差異。,minimal pairs；can/can't；fifteen/fifty；相近母音或子音,若重點是理解語調所表達的態度，應標 L3 Tone & Attitude,DECIDED v1
+L1,語音辨識,LISTEN_PERCEPT_WORD,連續語流中的單字辨識,Word Recognition in Connected Speech,在自然連續語流中辨識已知單字與常見縮約、弱化、連音等語音形式。,linking；reduction；weak forms；contractions；connected speech,若主要測的是單字意思而非聲音辨識，屬 Vocabulary 或 L2/L3,DECIDED v1
+L1,語音辨識,LISTEN_PERCEPT_SEGMENT,語流切分,Speech Segmentation & Chunking,將連續語音正確切分為單字、片語或有意義的語塊。,word boundaries；phrase boundaries；chunking,若已成功切分但不理解內容，應依理解任務標到 L2/L3/L4,DECIDED v1
+L1,語音辨識,LISTEN_PERCEPT_PROSODY,重音、節奏與語調線索,"Stress, Rhythm & Intonation Cues",辨識重音、節奏、語調及其資訊焦點或結構提示。,contrastive stress；rising/falling intonation；rhythm；focus,若問題要求判斷說話者態度、情緒或立場，Primary 應標 L3 Tone & Attitude,DECIDED v1
+L2,字面理解,LISTEN_LITERAL_GIST,主旨與大意,Gist & Main Idea,辨識對話、演講或音訊片段的主要話題、核心內容或大意。,What are they mainly discussing?；What is the talk mainly about?,若要求跨多段整合而非單一主旨，可考慮 L4 Global Information Integration,DECIDED v1
+L2,字面理解,LISTEN_LITERAL_DETAIL,明示細節,Explicit Detail,擷取音訊中直接明示的事實、人物、時間、地點、數字、事件或原因。,time；price；location；who/what/when；directly stated reason,如果答案需要推出音訊未明說的資訊，應標 L3 Inference,DECIDED v1
+L2,字面理解,LISTEN_LITERAL_PARAPHRASE,同義改述辨識,Paraphrase Recognition,辨識音訊內容與選項或題幹中的同義改述、重述或語意等值表達。,cheaper ↔ price fell；same meaning in different wording,若只是辨認一個單字意思，不需跨語句對應，不一定屬本 Skill,DECIDED v1
+L2,字面理解,LISTEN_LITERAL_SEQUENCE,順序與事件關係,Sequence & Event Relations,理解音訊中明示的事件先後、步驟、時間關係或事件關聯。,before/after；first/then/finally；which happened first,若因果／動機未明說而需推論，應標 L3 Cause & Motivation Inference,DECIDED v1
+L2,字面理解,LISTEN_LITERAL_REFERENCE,指涉與對象辨識,Reference Resolution,判斷代名詞、指示詞、名詞片語或對話中的表達所指涉的對象。,it/they/this/that refers to；who/what does X refer to,若主要困難是多人觀點長距離追蹤，應標 L4 Speaker & Perspective Tracking,DECIDED v1
+L3,推論理解,LISTEN_INFER_LOCAL,局部推論,Local Inference,根據相鄰一句或短段資訊推出未直接明說但可合理判斷的結論。,What will the man probably do?；What can be inferred from this exchange?,若需整合整段或多段資訊，考慮 L4 Integration 或其他 L3 Skill,DECIDED v1
+L3,推論理解,LISTEN_INFER_CAUSE,原因與動機推論,Cause & Motivation Inference,根據音訊線索推論未直接明說的原因、動機或行為目的。,Why did the speaker probably...?；unstated motivation,若原因已直接說明，應標 L2 Explicit Detail,DECIDED v1
+L3,推論理解,LISTEN_INFER_ATTITUDE,語氣與態度判斷,Tone & Attitude,根據措辭、語調、重音、停頓等線索判斷說話者的情緒、態度或立場。,annoyed；skeptical；relieved；enthusiastic；sarcastic,雖需用到 prosody，但只要題目問態度／情緒，Primary 固定歸本 Skill,DECIDED v1
+L3,推論理解,LISTEN_INFER_PURPOSE,說話者意圖與目的,Speaker Intention & Purpose,判斷說話者說某句話、提出某回應或進行某段發言的溝通意圖與目的。,Why does she say...?；announcement purpose；polite refusal；topic shift,若只是辨識整段主題，應標 L2 Gist；若問段落功能可考慮 L4,DECIDED v1
+L3,推論理解,LISTEN_INFER_IMPLICATION,隱含意義與預測,Implication & Prediction,根據音訊推出隱含含意、可能後果、下一步或未來發展。,What does the speaker imply?；What will most likely happen next?,若答案是音訊直接說出的下一步安排，應標 L2 Detail/Sequence,DECIDED v1
+L4,篇章整合,LISTEN_DISCOURSE_STRUCTURE,篇章組織,Discourse Organization,辨識整段口語篇章的組織方式、展開順序與主要結構關係。,problem-solution；cause-effect；compare-contrast；claim-evidence；chronology,若只是抓整體主旨而不需辨識組織方式，應標 L2 Gist,DECIDED v1
+L4,篇章整合,LISTEN_DISCOURSE_COHESION,銜接與話語標記,Cohesion & Discourse Markers,理解話語標記、轉折、補充、修正、舉例等如何連結句段並維持口語連貫。,however；anyway；actually；I mean；by the way；therefore,若只是考某單一連接詞文法，不應視為 Listening Skill evidence,DECIDED v1
+L4,篇章整合,LISTEN_DISCOURSE_SPEAKER,說話者與觀點追蹤,Speaker & Perspective Tracking,在多人或長篇對話中持續追蹤不同說話者的主張、態度、立場與變化。,who supports X；whose view changed；speaker A vs B vs C,若只是近距離代名詞指涉，應標 L2 Reference Resolution,DECIDED v1
+L4,篇章整合,LISTEN_DISCOURSE_INTEGRATION,跨段／跨資訊整合,Global Information Integration,整合音訊中不同時間點、段落或來源的明示資訊，以形成完整理解。,combine multiple stated points；two major factors mentioned in different parts,若整合後還需推出未明說的新結論，Primary 應標相應 L3 Inference Skill,DECIDED v1
