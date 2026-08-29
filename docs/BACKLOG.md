@@ -117,9 +117,15 @@ These are not backlog items. They are constraints on everything built from here.
 **The identity model for all `/learn` work is decided:** `docs/IDENTITY_ARCHITECTURE_CHECKPOINT.md`.
 
 **The `/learn` product & competency model is specified:** `docs/learn/LEARNING_DOMAIN_MODEL.md`
-(2026-08-29). 🛑 Its §15 carries nine BLOCKED decisions, and marks every taxonomy except Grammar's
-ten categories as PROVISIONAL. **Do not complete a taxonomy, seed skill data, or build an entity
-whose governing decision is still blocked.**
+(2026-08-29). 🛑 Its §15 carries ten BLOCKED decisions, and marks every taxonomy except Grammar as
+PROVISIONAL. **Do not complete a taxonomy, seed skill data, or build an entity whose governing
+decision is still blocked.**
+
+**Grammar taxonomy source of truth:** `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx`
+— 10 Categories, **51 Skills with stable codes** (`GRAM_G7_REL_PRON` …), plus source-material
+provenance and the binding tagging rules OD-01…OD-05. The Markdown records structure and principles
+only; the spreadsheet wins on detail. 🛑 Its **Micro-skill level is empty** — tag at Skill level and
+do not invent micro-skills.
 
 ⚠️ **Known spec ↔ schema gap (§14.1):** the product model makes a direct teacher–student
 relationship first-class, but the deployed Identity Spine can only express membership through

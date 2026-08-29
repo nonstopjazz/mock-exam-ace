@@ -1,7 +1,8 @@
 # `/learn` Learning Domain Model
 
-> **Written:** 2026-08-29 · **Status:** 🟡 **DESIGN SPEC ONLY — no table, no migration, no seed data,
-> no frontend, no Production change.**
+> **Written:** 2026-08-29 · **Revised:** 2026-08-29 (Grammar Skill Taxonomy v1 supplied by the owner)
+> **Status:** 🟡 **DESIGN SPEC ONLY — no table, no migration, no seed data, no frontend, no
+> Production change.**
 >
 > This document records **owner decisions**. It is the vocabulary the `/learn` product is built in,
 > and the place to check before naming anything.
@@ -219,7 +220,7 @@ BLOCKED. **Do not complete any other taxonomy.**
 
 The owner's teaching taxonomy **does not require first-level Categories to be disjoint**. Where two
 Categories legitimately touch the same grammar (G1 Adjective Clause vs G7 Relative Clause is the
-worked example, §8.7), **both are kept**.
+worked example, §8.9), **both are kept**.
 
 🛑 Do not merge, delete, or "clean up" one of them to make the taxonomy tidy. Overlap is resolved at
 **tagging** time by Primary / Secondary Skill (§10), not at taxonomy time.
@@ -284,105 +285,109 @@ they must not share a field name.
 
 ## 8. Grammar taxonomy — owner-defined, use verbatim
 
-> **Status: the 10 first-level Categories are DECIDED and FROZEN.**
-> The contents listed under each are the owner's **statement of scope** ("概念上包括"), not a frozen
-> Skill list — those are **PROVISIONAL** (§9).
+> **Status: DECIDED at Category and Skill level.** 10 Categories · **51 Skills**, each with a stable
+> code. Micro-skill is **not yet populated** — see §8.13.
+>
+> 📎 **The detailed taxonomy's source of truth is the spreadsheet, not this document:**
+> **`docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx`** (Grammar Skill Taxonomy v1 Draft,
+> supplied by the owner 2026-08-29).
+>
+> This section records the **structure and the design principles**. It deliberately does **not**
+> re-transcribe the 51 skills or the ~274 source mappings — two copies of a taxonomy diverge, and the
+> spreadsheet wins by definition.
+
+### 8.1 What the spreadsheet contains
+
+| Sheet | Contents |
+|---|---|
+| `README` | Version framing, the 10 categories, the G1/G7 and G3/G4 boundaries, terminology rules |
+| `Skill_Summary` | **The taxonomy proper** — 51 Skills: category code, Chinese and English names, stable Skill code, source counts, suggested school stage, status |
+| `Skill_Taxonomy` | Intended for Micro-skills. ⚠️ **Currently empty** — §8.13 |
+| `高中原始對照` | 182 senior-high source topics mapped to canonical Category + Skill, each with an Action |
+| `國中目錄對照` | 92 junior-high 會考 syllabus headings, mapped the same way |
+| `待審核` | **CLOSED** — no pending decisions remain |
+| `最新版修正` | The 7 renames from the previous draft to this one |
+| `Owner_Decisions` | **OD-01 … OD-05**, the binding tagging rules (§8.12) |
+
+`docs/learn/grammar-taxonomy/Skill_Summary.csv` is a **generated, greppable extract** of the
+`Skill_Summary` sheet, kept so the taxonomy is diffable in git. 🛑 It is a convenience copy, **not**
+seed data and **not** for import. If it disagrees with the spreadsheet, the spreadsheet is right.
+
+### 8.2 The ten Categories — DECIDED, frozen, verbatim
 
 🛑 **Use the owner's pedagogical terminology exactly.** Do not translate it back into linguistic
 convention, do not "correct" it, do not substitute a more standard name.
 
-| ID | Category (formal name) |
-|---|---|
-| **G1** | 句子與結構一致 |
-| **G2** | 名詞、代名詞與限定詞 |
-| **G3** | 動詞、時態與語態 |
-| **G4** | 助動詞 |
-| **G5** | 形容詞、副詞與比較 |
-| **G6** | 介係詞與連接詞 |
-| **G7** | 關係子句與關係詞 |
-| **G8** | 不定詞、動名詞與分詞 |
-| **G9** | 條件與假設 |
-| **G10** | 疑問、否定與特殊句構 |
+| ID | Category (Chinese — formal) | English | Skills |
+|---|---|---|---|
+| **G1** | 句子與結構一致 | Sentence Structure & Agreement | 7 |
+| **G2** | 名詞、代名詞與限定詞 | Nouns, Pronouns & Determiners | 5 |
+| **G3** | 動詞、時態與語態 | Verbs, Tenses & Voice | 8 |
+| **G4** | 助動詞 | Auxiliary Verbs | 2 |
+| **G5** | 形容詞、副詞與比較 | Adjectives, Adverbs & Comparison | 5 |
+| **G6** | 介係詞與連接詞 | Prepositions & Conjunctions | 4 |
+| **G7** | 關係子句與關係詞 | Relative Clauses & Relative Words | 5 |
+| **G8** | 不定詞、動名詞與分詞 | Infinitives, Gerunds & Participles | 4 |
+| **G9** | 條件與假設 | Conditionals & Subjunctive | 4 |
+| **G10** | 疑問、否定與特殊句構 | Questions, Negation & Special Structures | 7 |
+| | | **Total** | **51** |
 
-> ⚠️ **One discrepancy in the source, resolved here.** G7 appears as 「關係詞」 in the owner's summary
-> list and as 「關係子句與關係詞」 where the category is defined in full. This document treats
-> **「關係子句與關係詞」 as the formal name** and 「關係詞」 as a short display form. 🛑 Owner to confirm.
+> ✅ **A discrepancy flagged in the previous revision of this document is now resolved.** G7's formal
+> name is **「關係子句與關係詞」**, confirmed by the spreadsheet's `README` and `最新版修正` sheets.
+> 「關係詞」 is a short display form only.
 
-### 8.1 G1 句子與結構一致
+### 8.3 Skill codes are the stable identifier
 
-Covers sentence structure, sentence elements, agreement, and **clause types and clause functions**.
+Every skill carries a code of the form **`GRAM_G{n}_{NAME}`** — e.g. `GRAM_G7_REL_PRON`,
+`GRAM_G3_PASSIVE_TENSE`, `GRAM_G10_INDIRECT_Q`.
 
-Scope: 基本句型 · 主詞 · 受詞 · 補語 · 主詞與動詞一致 · 動詞與補語結構 · 句子結構分析
+🛑 **The code is the identity, not the Chinese label.** Names may be reworded for teaching or UI; the
+code must not change once evidence has been recorded against it. Any future `skill` table keys on the
+code, never on a display name.
 
-Clause classification: **名詞子句 Noun Clauses** · **形容詞子句 Adjective Clauses** ·
-**副詞子句 Adverb Clauses**
+### 8.4 G1 — clause types and sentence function
 
-The organising question in G1 is: **what function does this clause serve in the whole sentence?**
-A Noun Clause is a clause functioning as a noun; an Adjective Clause functions adjectivally; an
-Adverb Clause functions adverbially.
+G1 covers sentence structure, sentence elements, agreement, and **clause types and clause functions**.
 
-🛑 The full relative-clause system — formation, relative pronouns, relative adverbs,
-restriction / non-restriction, omission — lives in **G7**, not here.
+Its clause classification is **名詞子句 Noun Clauses · 形容詞子句 Adjective Clauses ·
+副詞子句 Adverb Clauses**, and the organising question is:
 
-### 8.2 G2 名詞、代名詞與限定詞
+> **What function does this clause serve in the whole sentence?**
 
-名詞 · 可數 / 不可數名詞 · 名詞單複數 · 所有格 · 人稱代名詞 · 反身代名詞 · 指示代名詞 ·
-不定代名詞 · 冠詞 · 限定詞 · 數量詞 · 基數 / 序數
+A Noun Clause functions as a noun; an Adjective Clause functions adjectivally; an Adverb Clause
+functions adverbially.
 
-### 8.3 G3 動詞、時態與語態
+🛑 The full relative system lives in **G7**, not here.
 
-動詞基本用法 · 及物 / 不及物動詞 · 時態 · 各種現在時態 · 各種過去時態 · 各種未來時態 ·
-時態整合 · 混合時態 · 主動語態 · 被動語態 · 各時態的被動語態 · `get + p.p.` · 特殊被動句型 ·
-感官動詞被動 · 使役動詞被動 · 授與動詞被動 · 受詞補語相關被動
+### 8.5 G3 — 時態 and 語態
 
-**All twelve of these are 時態 in the owner's taxonomy:**
+🛑 **All twelve forms are 時態** in the owner's taxonomy: 現在簡單式 · 現在進行式 · 現在完成式 ·
+現在完成進行式 · 過去簡單式 · 過去進行式 · 過去完成式 · 過去完成進行式 · 未來簡單式 ·
+未來進行式 · 未來完成式 · 未來完成進行式.
 
-現在簡單式 · 現在進行式 · 現在完成式 · 現在完成進行式 · 過去簡單式 · 過去進行式 · 過去完成式 ·
-過去完成進行式 · 未來簡單式 · 未來進行式 · 未來完成式 · 未來完成進行式
+🛑 **Do not introduce a 「體 / Aspect」 taxonomy.** The category is **「動詞、時態與語態」**, never
+「動詞、時態與體」.
 
-🛑 **Do not introduce a separate 「體 / Aspect」 taxonomy.** 🛑 The category is
-**「動詞、時態與語態」** — never 「動詞、時態與體」.
+🛑 **Passive voice is G3.** Three of G3's eight skills are voice skills
+(`GRAM_G3_VOICE`, `GRAM_G3_PASSIVE_TENSE`, `GRAM_G3_PASSIVE_PAT`).
 
-### 8.4 G4 助動詞
+### 8.6 G4 — auxiliaries only
 
-`can / could` · `may / might` · `will / would` · `shall / should` · `must / have to` · `ought to` ·
-`need` · `had better` · `used to`
+G4 handles auxiliaries and `modal + have p.p.` — two skills, `GRAM_G4_AUX` and `GRAM_G4_AUX_PERF`.
 
-and: `should have p.p.` · `must have p.p.` · `could have p.p.` · `might have p.p.` ·
-`modal + have p.p.`
+🛑 **Passive voice does not belong to G4.**
 
-🛑 **Passive voice does not belong to G4.** It is in G3.
+### 8.7 G6 and G8 — name rules
 
-### 8.5 G5 形容詞、副詞與比較
+🛑 G6 is **「介係詞與連接詞」**.
+🛑 G8 is **「不定詞、動名詞與分詞」** — **never** 「非限定動詞」 in taxonomy or UI.
 
-adjectives · adverbs · participial adjectives · comparative · superlative · degree · modification ·
-adjective / adverb position · 相關修飾語用法
+### 8.8 G7 — the relative system in depth
 
-### 8.6 G6 介係詞與連接詞
+G7's five skills cover Relative Clauses · Relative Pronouns · Relative Adverbs · Compound Relatives ·
+Special Rules for Relative Words.
 
-時間介係詞 · 地方介係詞 · 其他介係詞 · 介係詞片語 · prepositional verb patterns ·
-phrasal verb patterns · 對等連接詞 · 相關連接詞 · 從屬連接詞 · 其他連接詞
-
-🛑 Formal Chinese name: **「介係詞與連接詞」**.
-
-### 8.7 G7 關係子句與關係詞
-
-The category that treats the relative system **in depth**.
-
-**Relative Clauses** — 關係子句基本結構 · 限定關係子句 · 非限定關係子句 · 關係子句形成 ·
-關係詞省略 · 關係子句簡化 / reduction · 介係詞與關係子句
-
-**Relative Pronouns** — `who` · `whom` · `whose` · `which` · `that`
-
-**Relative Adverbs** — `where` · `when` · `why`
-
-**Compound Relatives / Related Forms** — `what` · `whoever` · `whatever` · `whichever` ·
-其他教材中實際使用的複合關係詞
-
-**Special Rules** — 關係詞限定用法 · 非限定用法相關規則 · 限用 that 的情形 ·
-不可使用 that 的情形 · 關係詞省略 · 介係詞 + 關係詞 · 其他特殊用法
-
-#### The G1 / G7 overlap — the governing principle
+### 8.9 The G1 / G7 overlap — the governing principle
 
 > **G1's Adjective Clause** is learned at the level of *clause type and sentence function*.
 > **G7's Relative Clause** is learned at the level of *full relative structure and relative-word use*.
@@ -391,52 +396,76 @@ The category that treats the relative system **in depth**.
 
 It is resolved per **question**, by Primary Skill:
 
-| The question asks the student to… | Primary Skill | Secondary Skill |
+| The question asks the student to… | Primary Skill | Secondary |
 |---|---|---|
-| identify that *who lives next door* functions adjectivally | **G1 → Adjective Clause** | — |
-| choose between `who / whom / which / that` | **G7 → Relative Pronouns** | optionally G1 → Adjective Clause |
-| analyse the full structure of the relative clause | **G7 → Relative Clauses** | optionally G1 → Adjective Clause |
+| identify that *who lives next door* functions adjectivally | **`GRAM_G1_ADJ_CLAUSE`** | — |
+| choose between `who / whom / which / that` | **`GRAM_G7_REL_PRON`** | optionally `GRAM_G1_ADJ_CLAUSE` |
+| analyse the full structure of the relative clause | **`GRAM_G7_REL_CLAUSE`** | optionally `GRAM_G1_ADJ_CLAUSE` |
 
 Worked sentence: *The man who lives next door is my teacher.*
 
-### 8.8 G8 不定詞、動名詞與分詞
+### 8.10 G10 — two distinct skills, never merged
 
-不定詞 · 動名詞 · 分詞 · 分詞構句 · 關係子句分詞化省略 · reduced constructions · 相關特殊句型
-
-🛑 **Do not use 「非限定動詞」 as the category name** in taxonomy or UI.
-
-### 8.9 G9 條件與假設
-
-conditionals · 真實條件 · 與現在事實相反 · 與過去事實相反 · 未來假設 · mixed conditionals ·
-`wish` · `as if / as though` · `It is time` · `But for / Without` · `insist / suggest` 類句型 ·
-`necessary` 類假設語氣 · if 省略與條件倒裝
-
-### 8.10 G10 疑問、否定與特殊句構
-
-questions · interrogatives · tag questions · negation · inversion · `there be` · imperative ·
-exclamations · emphasis / cleft structures · 其他特殊句型
-
-**Owner ruling — two distinct Skills, never merged:**
-
-| Term | Meaning |
-|---|---|
-| **Indirect Questions** | 間接問句 |
-| **Reported Speech** | 間接引語 |
+| Skill code | Term | Meaning |
+|---|---|---|
+| `GRAM_G10_INDIRECT_Q` | **Indirect Questions** | 間接問句 |
+| `GRAM_G10_REPORTED` | **Reported Speech** | 間接引語 |
 
 🛑 The name **「間接引句」 is forbidden** — it is ambiguous between the two.
-🛑 **Do not merge Indirect Questions with Reported Speech.**
+🛑 **Do not merge them.**
 
-### 8.11 Grammar hierarchy — worked examples
+### 8.11 Source mappings and the Action vocabulary
 
-```
-Grammar → G7 關係子句與關係詞 → 關係代名詞 → who / whom / whose / which / that
-Grammar → G1 句子與結構一致   → 關係子句   → 限定關係子句 / 非限定關係子句
-```
+The two 對照 sheets trace every canonical Skill back to the teaching material it came from — 182
+senior-high topics and 92 junior-high headings. Actions observed across them:
 
-> **A knowledge point is not required to live in exactly one competency context.** Where two contexts
-> teach it differently, both entries stand, and Primary / Secondary tagging carries the distinction.
+| Action | Meaning | Count |
+|---|---|---|
+| `KEEP` | retained as-is | 179 |
+| `MERGE` | folded into an existing skill | 63 |
+| `ADD` | newly added | 20 |
+| `REMAP` | moved to a different skill | 7 |
+| `CROSS-TAG` | suggests a cross-domain / cross-skill tag | 3 |
+| `MOVE` | moved out of Grammar entirely | 2 |
+| `REVIEW` | awaiting a teacher ruling | **0 — none remain** |
 
----
+**This traceability is worth preserving in the eventual schema.** It is what will let a teacher ask
+"where did this skill come from, and what did it use to be called?" — and it is the audit trail for
+any future taxonomy revision.
+
+### 8.12 Owner Decisions OD-01 … OD-05 — binding tagging rules
+
+> **Status: DECIDED.** These are not commentary. They are the rules that settle recurring tagging
+> arguments, and they must be honoured by anything that tags questions.
+
+| ID | Rule |
+|---|---|
+| **OD-01** | **特殊動詞** (`say/speak/tell`, `see/look/watch`, `spend/cost/take/pay` …) → Primary **`GRAM_G3_VERB_USAGE`**. 🛑 Do **not** dual-tag by default; add a `Vocabulary → Usage & Collocation` secondary **only** when the question genuinely tests lexical usage or collocation |
+| **OD-02** | **情緒動詞／情緒形容詞** → Primary **`GRAM_G5_PART_ADJ`**. 🛑 Do **not** routinely add a G8 secondary; add it only when the question really tests participle formation, syntax, or participial construction |
+| **OD-03** | **`there be`** → **`GRAM_G1_SENT_PAT`**. Here/There inversion and locative inversion stay in **`GRAM_G10_INVERSION`**. No fixed secondary tag |
+| **OD-04** | **基數／序數** stay in **`GRAM_G2_QUANT`** — *not* under adjectives, despite the junior-high textbook's arrangement |
+| **OD-05** | **Vocabulary / 片語** items are **moved out of Grammar**; the source record is kept with action `MOVE`. 🛑 Do **not** create a catch-all 「單字」 or 「片語」 Grammar skill. They wait for the Vocabulary taxonomy |
+
+**The shared principle across OD-01 and OD-02:** *do not dual-tag by default.* A secondary skill is
+earned by what the question actually demands, never added because two topics are related. This is the
+same discipline §10 states in general, and these are its two worked precedents.
+
+### 8.13 ⚠️ Micro-skill is not yet populated
+
+The spreadsheet's `Skill_Taxonomy` sheet is intended for the Micro-skill level, but currently holds
+only a malformed header row (`Micro Code` repeated 12 times) and **no data**.
+
+So the taxonomy is decided **three levels deep** — Domain → Category → Skill — and the fourth level
+is **empty**.
+
+🛑 **Do not populate it.** The §8.9 example (`Grammar → G7 → 關係代名詞 → who / whom / whose /
+which / that`) shows the *shape* a micro-skill takes, not permission to write them. Tag at Skill
+level until the owner supplies Micro-skills.
+
+⚠️ Also worth the owner's attention: **`GRAM_G1_ADJ_CLAUSE` has 0 junior-high and 0 senior-high
+source records** ("待補來源") — every adjective-clause item in both source materials was filed under
+the relative-clause topics that became G7. The skill is doctrinally required by §8.9, but currently
+has no material behind it. Not an error; a gap the owner may want to fill.
 
 ## 9. The other Domains — placeholders only
 
@@ -450,6 +479,10 @@ Grammar → G1 句子與結構一致   → 關係子句   → 限定關係子句
 | **Writing** | Content & Task · Organization & Coherence · Lexical Resource · Grammar & Sentence Structure · Register & Audience Awareness |
 | **Vocabulary** | Two dimensions recorded in §7; the Category level itself is **not** decided |
 | **Exam / Academic Skills** | 🛑 **BLOCKED** — the owner is still designing this |
+
+> ✅ **Grammar is the exception and is no longer provisional at Skill level.** Its 10 Categories and
+> 51 Skills are decided; see §8 and the spreadsheet. Only its **Micro-skill** level remains empty
+> (§8.13).
 
 ⚠️ **Speaking → Grammar** and **Writing → Grammar & Sentence Structure** are *assessment criteria*
 within a performance rubric. Whether they reference the Grammar Domain's Skills or are separate
@@ -467,7 +500,7 @@ Question → Primary Skill  (exactly one, required)
 ```
 
 **Primary Skill = what the question actually tests**, not what it happens to contain. The worked
-example in §8.7 is the reference: three questions about the same sentence carry three different
+example in §8.9 is the reference: three questions about the same sentence carry three different
 Primary Skills, because they demand three different competencies.
 
 Principles:
@@ -476,6 +509,8 @@ Principles:
    should probably be two questions.
 2. **Secondary is for genuine cross-category demand**, not for listing everything present in the
    text. A reading question containing a relative clause is not thereby a G7 question.
+   🛑 **OD-01 and OD-02 (§8.12) are binding worked precedents for this**: do not dual-tag by
+   default; a secondary skill is earned by what the question demands.
 3. **Secondary never counts as full evidence.** Weighting is a mastery-model decision (§11), but
    secondary evidence must never be treated as equal to primary.
 4. **Tag at the level the student is being asked to operate at**, which may be Skill or Micro-skill.
@@ -557,10 +592,11 @@ it returns nothing useful.
 |---|---|---|
 | `domain` | One of the seven top-level domains | has many `category` |
 | `category` | e.g. G1–G10 for Grammar | belongs to `domain`; has many `skill` |
-| `skill` | A stable, program-independent competency | belongs to `category`; has many `micro_skill` |
+| `skill` | A stable, program-independent competency. 🛑 Identified by its **code** (`GRAM_G7_REL_PRON`), never by its display name — §8.3 | belongs to `category`; has many `micro_skill` |
 | `micro_skill` | The finest addressable competency | belongs to `skill` |
 | `learning_objective` | A lesson-specific observable outcome | belongs to `lesson`; references many `skill` |
 | `question_skill_tag` | Primary / secondary skill tagging for a question asset | joins `content_asset` (question) ↔ `skill`, with a primary flag |
+| `skill_source_mapping` | Provenance: which source-material topic a skill came from, and the action taken (KEEP/MERGE/ADD/REMAP/CROSS-TAG/MOVE) — §8.11 | references `skill`; the audit trail for taxonomy revisions |
 
 ### 13.3 People, entitlement, work
 
@@ -672,12 +708,24 @@ that no longer exists in that form, and the evidence derived from it becomes uns
 Options range from full asset versioning to freezing an asset once it has responses. 🛑 Owner
 decision required before `content_asset` is built.
 
-### 14.7 ⚠️ "Level" is overloaded
+### 14.7 ⚠️ Grammar's Micro-skill level is empty, and one Skill has no source material
+
+Two observations from the spreadsheet, both recorded rather than fixed:
+
+1. **`Skill_Taxonomy` (the Micro-skill sheet) contains no data** — only a malformed header row. The
+   taxonomy is decided three levels deep, not four. 🛑 Tag at Skill level until the owner supplies
+   Micro-skills; do not invent them (§8.13).
+2. **`GRAM_G1_ADJ_CLAUSE` has zero source records in both materials.** Every adjective-clause item in
+   the junior- and senior-high sources was filed under the relative-clause topics that became G7. The
+   skill is required by the §8.9 doctrine, but nothing currently backs it. 🛑 Owner's call whether to
+   add material, leave it as a doctrinal placeholder, or reconsider.
+
+### 14.8 ⚠️ "Level" is overloaded
 
 "Level 1–6" (教育部 vocabulary bands, §7) and "level" as generic difficulty (§5.1) are different
 concepts. 🛑 They must never share a field name. Suggested: `vocab_level` and `difficulty`.
 
-### 14.8 ⚠️ Guardians are built but absent from this model
+### 14.9 ⚠️ Guardians are built but absent from this model
 
 `learn.guardian_links` is deployed and working, but this document does not mention parents. Nothing
 here says what a guardian may see of a child's assignments, progress, or evidence.
@@ -702,12 +750,15 @@ Recorded; no access rules invented.
 - Categories **need not be mutually exclusive**; overlap is resolved by tagging
 - Learning Objective ≠ Skill; `Lesson → Learning Objectives → Skills`
 - The seven Domains
-- **Grammar's ten first-level Categories (G1–G10) and their names — frozen, verbatim**
+- **Grammar: ten Categories (G1–G10) and 51 Skills with stable codes — frozen, verbatim.**
+  Detailed source of truth: `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx`
+- **Owner Decisions OD-01 … OD-05** (§8.12) are binding tagging rules, including *do not dual-tag by
+  default*
 - G3 uses **語態**, never 體 / Aspect; all twelve forms are 時態
 - Passive voice is G3, **not** G4
 - G8 is 「不定詞、動名詞與分詞」, **never** 「非限定動詞」
 - G6 is 「介係詞與連接詞」
-- G1 Adjective Clause and G7 Relative Clause **both stand**; §8.7 governs
+- G1 Adjective Clause and G7 Relative Clause **both stand**; §8.9 governs
 - Indirect Questions (間接問句) and Reported Speech (間接引語) are **separate Skills**;
   「間接引句」 is **forbidden**
 - Question tagging: exactly one Primary Skill, optional Secondary
@@ -718,9 +769,11 @@ Recorded; no access rules invented.
 
 - Reading · Listening · Speaking · Writing first-level lists (§9)
 - Vocabulary's Category level (§7, §14.3)
-- Grammar **Skill and Micro-skill** levels — §8's lists are scope statements, not frozen taxonomies
+- Grammar **Micro-skill** level — the spreadsheet's sheet for it is empty (§8.13). 🛑 Do not populate
 - Learning Objective phrasing format (§6)
-- The G7 formal-name discrepancy (§8) — owner to confirm
+
+> ✅ Two items that were PROVISIONAL in the previous revision are now **DECIDED** by the spreadsheet:
+> Grammar's Skill level (51 skills), and the G7 formal-name discrepancy (「關係子句與關係詞」).
 
 ### 🛑 BLOCKED — needs an owner decision before the work starts
 
@@ -733,8 +786,9 @@ Recorded; no access rules invented.
 | 5 | **Content Asset versioning** (§14.6) | `content_asset`, and the soundness of historical evidence |
 | 6 | **Activity vs Asset skill-tag precedence** (§14.5) | evidence derivation |
 | 7 | **Speaking / Writing rubric ↔ Grammar Skills** (§14.4) | those two domains' scoring |
-| 8 | **Guardian access rules** (§14.8) | any parent-facing view |
+| 8 | **Guardian access rules** (§14.9) | any parent-facing view |
 | 9 | Reconciling the **two existing vocabulary mastery models** (9.10, `docs/BACKLOG.md`) | Vocabulary competency |
+| 10 | **Grammar Micro-skills** — the sheet is empty (§8.13, §14.7) | micro-skill-level tagging and reporting |
 
 ---
 
