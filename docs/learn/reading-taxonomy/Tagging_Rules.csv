@@ -1,0 +1,11 @@
+Rule ID,規則,例子
+TR-01,每道可計分 Reading 題目至少一個 Primary Skill。,Q: What can be inferred...? → READ_INFER_*
+TR-02,Secondary Skill 是 optional，預設 null。只有題目真的同時測第二能力時才標。,不要因為 Context 題需要『推一下』就自動加 Inference secondary。
+TR-03,Question Type / Stem Format 與 Skill 分離。,Best Title → question_type=BEST_TITLE；Primary Skill 通常 READ_MAIN_CENTRAL。
+TR-04,EXCEPT / NOT / According to the passage 不是 Skill。,實際答案若是明示細節 → READ_DETAIL_EXPLICIT。
+TR-05,明示資訊整合 vs 推論：若只是把文章已明說的 A+B 合起來，標 R2 Integration；若 A+B 還要推出未明說 C，標 R4 Inference。,A+B → stated result = R2；A+B → unstated conclusion = R4。
+TR-06,作者語氣／態度雖需推論，但 Primary 固定歸 R6 Tone & Attitude。,How does the author feel...? → READ_PURPOSE_TONE。
+TR-07,句段局部作用歸 R5 Function；整篇寫作目的歸 R6 Author's Purpose。,Why mention X in paragraph 3? 通常 R5；Why write this article? → R6。
+TR-08,Reading v1 暫時不建立 Micro-skill。,先驗證 25 Skills 是否足以穩定分類既有真題。
+TR-09,AI 批次分類時，應提供 Passage + Question stem + Options + Correct answer + Explanation（若有）。,單看 Which is true? 無法可靠分類。
+TR-10,建議 pilot：先跑 50–100 題；若兩個 Skills 長期無法穩定區分，再合併或重命名。,taxonomy 用真題驗證，不先追求理論上的極細分類。

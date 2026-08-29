@@ -40,7 +40,9 @@
   no table, no migration, no seed data. An owner ruling on 2026-08-29 closed four open items
   (direct teacher–student relationship, vocabulary dimensions, tag precedence, asset versioning) and
   settled naming; a Grammar Micro-skill blocker was then withdrawn as a bad export rather than a
-  missing decision; 🛑 **five blocked decisions remain** in its §15. ⚠️ The deployed spine still cannot
+  missing decision; Reading Taxonomy v1 then added 6 DECIDED Categories and 25 CANDIDATE Skills;
+  🛑 **seven blocked decisions remain** in its §15, two of which must be settled *before* any
+  question tagging starts. ⚠️ The deployed spine still cannot
   represent a direct teacher–student relationship, which is now a decided requirement awaiting its
   own deployment.
 - 🧭 **The identity model for all new `/learn` work is decided (2026-08-27):**

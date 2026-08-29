@@ -1,0 +1,7 @@
+Category Code,Category 中文,Category English,Skill 數量,定義,Status
+R1,掌握主旨,Main Idea,4,理解全文或段落的核心內容、摘要與主題訊息。,CANDIDATE
+R2,擷取細節,Details & Evidence,4,從文章中定位、配對與整合明示資訊與支持證據。,CANDIDATE
+R3,理解語境,Meaning in Context,4,依上下文判斷字詞、表達、指涉與比喻／慣用意義。,CANDIDATE
+R4,推論引申,Inference,4,根據文本證據推出未直接明說的資訊、原因、結論或意涵。,CANDIDATE
+R5,篇章結構,Text Structure,4,理解文章組織、句段功能、銜接關係與篇章排序。,CANDIDATE
+R6,作者意圖與風格,Purpose & Style,5,判斷作者目的、態度、立場、修辭策略、文體與讀者。,CANDIDATE
