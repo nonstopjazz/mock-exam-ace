@@ -771,7 +771,11 @@ and none is to be invented.** See §9.3 on why depth varies by domain.
 | **Reading** | **Skill — by owner decision, no Micro-skill in v1** |
 | **Listening** | **Skill — same decision (§9.7)** |
 | **Speaking** | **Skill — same decision (§9.12)** |
-| **Writing** | **Skill — same decision (§9.17)**, plus two non-competency annotation axes |
+| **Writing** | **Skill — same decision (§9.17)** |
+
+🛑 **Writing's High-Score Sub-skill layer does NOT make Writing a four-level competency taxonomy.**
+It sits on a **parallel, non-competency detection axis** (§9.20). Writing Competency remains
+`Domain → Category → Skill`, with no Micro-skill.
 
 🛑 A domain stopping at Skill is **not** an incomplete taxonomy, and is **not** an invitation to fill
 in the missing level. Depth follows what the domain actually needs to diagnose.
@@ -1052,7 +1056,7 @@ conceptually separate axes**, and 🛑 **they must never be merged into one**:
 |---|---|---|---|
 | **A · Writing Competency** | *Which writing ability is strong or weak?* | 5 Categories · **23 Skills** | ✅ DECIDED v1 |
 | **B · Writing Error** | *What specific mistakes did the student make?* | **16 Error Tags** | ✅ DECIDED v1 |
-| **C · High-Score Feature** | *Which advanced techniques worth crediting did the student use?* | 5 Categories · **29 Features** | ✅ DECIDED v1 |
+| **C · High-Score Feature** | *Which advanced techniques worth crediting did the student use?* | 5 Categories · **29 Features** · **140 Sub-skills** | ✅ DECIDED v1 · Sub-skill layer **ACTIVE INTERNAL v1** |
 
 > 🛑 **Only axis A is part of the competency hierarchy of §5.** B and C are **annotation vocabularies
 > over evidence** — they describe what was found in a piece of writing. An Error Tag is not a Skill;
@@ -1104,15 +1108,102 @@ Error:                  WRITE_ERR_RUN_ON
 | **H5** | 內容發展與思維技巧 | Content & Idea Craft | 6 |
 | | | **Total** | **29** |
 
-🛑 **The taxonomy stops at 29 Main Features.** The Sub-skills listed under each — simile, metaphor,
-analogy, extended metaphor, personification under H4-4; words, phrases, clauses, paired structures,
-`not only…but also`, `both…and` under H1-1 — are **detection criteria / subtypes for an AI or a
-teacher**, not taxonomy nodes. 🛑 **Do not create `H4-4-1`, `H4-4-2` or any similar level.**
+**The High-Score axis has three levels:**
+
+```
+High-Score Category  →  High-Score Feature  →  High-Score Sub-skill
+        H4                    H4-4                  Simile
+   修辭與風格          Figurative Comparison        Metaphor
+                                                    Analogy
+                                                    Extended Metaphor
+                                                    Personification
+```
+
+> ⚠️ **This supersedes the previous ruling.** An earlier revision recorded Sub-skills as *detection
+> criteria only, not taxonomy nodes*. **The owner changed that on 2026-08-30.** Sub-skills are now
+> **formal internal taxonomy nodes** with stable identity — `H4-4-1`, `H4-4-2` … exist and are
+> correct.
+
+🛑 **What a Sub-skill is NOT**, and this list is the whole point of calling it *internal*:
+
+| 🛑 Not a | |
+|---|---|
+| Writing **Competency** Skill | It is on axis C, not axis A |
+| Writing Competency **Micro-skill** | Writing Competency remains three levels (§9.3) |
+| **Grammar** Micro-skill | Different domain, different axis |
+| **Learner mastery dimension** | See §9.20.2 — this one matters most |
+
+#### 9.20.1 Visibility and existence are separate concerns
+
+> 🛑 **"Not shown yet" is not the same as "does not exist yet."** Sub-skills have **stable identity
+> now**, so opening them up later changes a **visibility flag** — never a taxonomy rebuild, and never
+> a migration of historical findings.
+
+Each Sub-skill carries four behaviour attributes. **v1 defaults, applied to all 140:**
+
+| Attribute | v1 value |
+|---|---|
+| `status` | **`ACTIVE`** (or `NEEDS_OWNER_REVIEW` — §9.20.3) |
+| `visibility` | **`OWNER_ONLY`** |
+| `detection_enabled` | **`true`** |
+| `mastery_enabled` | **`false`** |
+
+`visibility` may later evolve through `OWNER_ONLY` → `TEACHER_VISIBLE` → `STUDENT_VISIBLE` →
+`PUBLIC`. 🛑 In v1 **every** Sub-skill is `OWNER_ONLY`. This is a **conceptual** definition — 🛑 no
+database enum or table is created this round.
+
+**Display strategy:**
+
+| Audience | v1 | Later |
+|---|---|---|
+| **Owner** | Category → Feature → Sub-skill → evidence → quality → reason | — |
+| **Teacher** | 🛑 Sub-skills hidden | may be opened |
+| **Student** | 🛑 Sub-skills hidden — **High-Score Feature stays the positive-feedback unit** | may be opened |
+
+#### 9.20.2 🛑 No `student × Sub-skill` mastery
+
+`mastery_enabled = false`, and it means exactly what it says:
+
+> 🛑 **Do not produce `Clause Parallelism mastery = 72%`, `Metaphor mastery = 65%`, or
+> `Inversion mastery = 41%`.** Features and Sub-skills remain a **positive-feature detection and
+> analysis** taxonomy — not a learner competency taxonomy. They take no part in competency mastery
+> roll-up.
+
+**Future capability, recorded and 🛑 not built:** technique usage frequency · technique diversity ·
+`EFFECTIVE` / `MISUSED` trends · techniques never yet attempted · teaching-material recommendation ·
+teacher analytics · advanced-writing recommendations. All of that is **analytics design**, not v1
+mastery.
+
+#### 9.20.3 How the 140 Sub-skills were derived
+
+**Source: the existing `Sub-skills / 判斷項目` column, and nothing else.** 🛑 No technique, sentence
+pattern or vocabulary concept was invented.
+
+| | |
+|---|---|
+| Split rule | Mechanically on **`；`**, the workbook's own item separator |
+| Normalization | A trailing 「等」 (*etc.*) removed from a label — it is a suffix, not part of a name |
+| Result | **140 Sub-skills** — H1 25 · H2 20 · H3 31 · H4 28 · H5 36 |
+| Codes | `WRITE_HSF_FIGURATIVE_METAPHOR` etc. 🛑 **Opaque** — never parse a code to find its parent Feature or Category (§8.3) |
+
+⚠️ **12 Sub-skills carry `status = NEEDS_OWNER_REVIEW`** — every item whose text contains an internal
+`/`, where it is genuinely unclear whether the owner intended one node or several. 🛑 **They were not
+split on a guess.** The full list is in the completion report; they are flagged individually and
+**do not** lower the status of anything else.
 
 ### 9.21 Detecting a feature is not the same as crediting it
 
 > 🛑 **A High-Score Feature finding may never be stored as `present = true`.** Every finding carries,
-> at minimum: **`feature_code` · `quality` · `evidence_span` · `reason`.**
+> at minimum: **`feature_code` · `quality` · `evidence_span` · `reason`** — plus an **optional
+> `subskill_code`** now that the Sub-skill layer exists (§9.20).
+
+```
+feature_code   WRITE_HSF_FIGURATIVE
+subskill_code  WRITE_HSF_FIGURATIVE_METAPHOR     ← optional
+quality        EFFECTIVE
+evidence_span  "…"
+reason         "…"
+```
 
 `quality` ∈ **`EFFECTIVE`** · **`PARTIALLY_EFFECTIVE`** · **`MISUSED`**, and 🛑 **only `EFFECTIVE`
 counts as positive evidence.**
@@ -1129,7 +1220,8 @@ An advanced word, an inversion, a rhetorical question, a metaphor, a complex sen
 Without the quality field, a detector would reward students for attempting difficulty rather than for
 writing well — which is precisely the behaviour that produces stilted, over-decorated prose.
 
-**Several features may share one span**, and that is not duplicate tagging when the judgements differ:
+**One span may carry several Features, several Sub-skills and Error Tags at once**, provided each
+finding has its own independent reason. That is not duplicate tagging when the judgements differ:
 
 | Span | Features | Because |
 |---|---|---|
@@ -1142,7 +1234,7 @@ writing well — which is precisely the behaviour that produces stilted, over-de
 |---|---|
 | **A Writing Grammar rubric score → Grammar Domain mastery** | Writing 70% does **not** write 70% to `Grammar → Tenses`, `→ Relative Clauses`, `→ Conditionals`. The score identifies no specific skill, so it updates none (§14.4) |
 | **A Writing Lexical judgement → Vocabulary learner-word mastery** | Misspelling *environment* produces `WRITE_ERR_SPELLING`. 🛑 It does **not** rewrite `Vocabulary → environment → Production mastery` |
-| **A High-Score Feature → a mastery axis** | 🛑 Do not create `student × H1-1 mastery`. Features are **positive diagnostic observations**, not learner competencies. Whether frequency, diversity or effectiveness trends are ever accumulated is **analytics design**, not decided here |
+| **A High-Score Feature or Sub-skill → a mastery axis** | 🛑 Do not create `student × H1-1 mastery` or `student × Metaphor mastery`. Features and Sub-skills are **positive diagnostic observations**, not learner competencies (§9.20.2) |
 | **Task Type / Genre → a Skill** | Essay · Email · Picture Writing · Chart Writing · Story · Translation · Report · Review · Narrative are `task_type` / `genre` |
 | **Task metadata → a Skill** | word limit · time limit · picture prompt · dictionary allowed · outline provided · handwritten or typed · difficulty |
 
@@ -1687,8 +1779,17 @@ rules invented.
   Source of truth: `docs/learn/writing-taxonomy/Writing_Taxonomy_v1.xlsx`
 - 🆕 🛑 **Only the Competency axis is part of the §5 hierarchy.** Error Tags and Features are
   **annotation vocabularies over evidence** — an Error Tag is not a Skill, a Feature is not a Skill
-- 🆕 **High-Score Sub-skills are detection criteria, not taxonomy nodes** — 🛑 no `H4-4-1` level, and
-  they are not Micro-skills
+- 🆕 **High-Score Sub-skill layer — ACTIVE INTERNAL v1** (2026-08-30, superseding the earlier
+  "detection criteria only" ruling). **140 Sub-skills** derived mechanically from the workbook's own
+  `Sub-skills` column — H1 25 · H2 20 · H3 31 · H4 28 · H5 36. Defaults: `status = ACTIVE`
+  (12 flagged `NEEDS_OWNER_REVIEW`) · `visibility = OWNER_ONLY` · `detection_enabled = true` ·
+  🛑 `mastery_enabled = false`
+- 🆕 🛑 **Visibility ≠ existence** — Sub-skills have stable identity now, so opening them later flips
+  a flag; it never rebuilds the taxonomy or re-processes historical findings (§9.20.1)
+- 🆕 🛑 **No `student × Sub-skill` mastery** — no `Metaphor mastery = 65%`. Sub-skills are **not**
+  Competency Skills, **not** Micro-skills, and take no part in mastery roll-up (§9.20.2)
+- 🆕 **Writing Competency is still three levels** — the Sub-skill layer is a **parallel detection
+  axis** and does **not** make Writing a four-level competency taxonomy (§9.3)
 - 🆕 **A feature finding is never `present = true`** — it carries `feature_code`, `quality`
   (`EFFECTIVE` / `PARTIALLY_EFFECTIVE` / `MISUSED`), `evidence_span`, `reason`. 🛑 **Only
   `EFFECTIVE` is positive evidence** — a `MISUSED` inversion earns nothing (§9.21)

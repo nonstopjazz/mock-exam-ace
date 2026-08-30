@@ -158,8 +158,11 @@ schema. 🛑 **Vocabulary migration work does not interrupt this line.**
 — **three separate axes, all DECIDED v1** (frozen 2026-08-30): Competency (5 Categories + **23
 Skills**), Error (**16 Tags**), High-Score Feature (5 Categories + **29 Features**) · 20 tagging
 rules. 🛑 **Only the Competency axis is a competency taxonomy** — an Error Tag is not a Skill and a
-Feature is not a Skill. 🛑 No Micro-skill; High-Score **Sub-skills are detection criteria, not
-taxonomy nodes**. 🛑 A feature finding is never `present = true` — it needs `feature_code` +
+Feature is not a Skill. 🛑 No Competency Micro-skill. 🆕 **High-Score Sub-skill layer is ACTIVE
+INTERNAL v1** (2026-08-30, superseding the earlier "detection criteria only" ruling): **140
+Sub-skills**, `visibility = OWNER_ONLY`, `detection_enabled = true`, 🛑 `mastery_enabled = false`.
+🛑 **No `student × Sub-skill` mastery**; 🛑 it does **not** make Writing Competency four levels;
+🛑 visibility ≠ existence — opening them later flips a flag, never rebuilds identity. 🛑 A feature finding is never `present = true` — it needs `feature_code` +
 `quality` (`EFFECTIVE` / `PARTIALLY_EFFECTIVE` / `MISUSED`) + `evidence_span` + `reason`, and **only
 `EFFECTIVE` is positive evidence**. 🛑 A Feature is **not** a mastery axis.
 🛑 `WRITE_ERR_GRAMMAR_OTHER` is fallback only. 🛑 **W4 ≠ Grammar Domain · Writing Lexical ≠
