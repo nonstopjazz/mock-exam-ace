@@ -1,7 +1,8 @@
 # `/learn` Learning Domain Model
 
 > **Written:** 2026-08-29 · **Revised:** 2026-08-29 — Grammar Skill Taxonomy v1, an owner ruling on
-> eight open items (§14), then Reading (§9.1), Listening (§9.7) and Speaking (§9.12) Taxonomy v1
+> eight open items (§14), then Reading (§9.1), Listening (§9.7), Speaking (§9.12) and Writing
+> (§9.17) Taxonomy v1
 > **Status:** 🟡 **DESIGN SPEC ONLY — no table, no migration, no seed data, no frontend, no
 > Production change.**
 >
@@ -29,10 +30,11 @@
 | **Vocabulary** | ✅ **DESIGN PHASE COMPLETE / TEMPORARILY CLOSED** — architecture frozen; 🛑 **off the active mainline**. `docs/learn/VOCABULARY_ARCHITECTURE.md` |
 | **Listening** | ✅ **CLOSED / DECIDED v1** — 4 Categories · 18 Skills · no Micro-skill (§9.7) |
 | **Speaking** | ✅ **CLOSED / DECIDED v1** — 4 Categories · 19 Skills · no Micro-skill (§9.12) |
-| **Writing** | 🔜 **NEXT — the active design checkpoint** |
-| **Exam / Academic Skills** | 🛑 BLOCKED — owner still designing |
+| **Writing** | ✅ **CLOSED / DECIDED v1** — 5 Categories · 23 Skills · **plus** 16 Error Tags and 29 High-Score Features on two separate axes (§9.17) |
+| **Exam / Academic Skills** | 🛑 BLOCKED — owner still designing. **The only domain left** |
 
-**Then, in order:** Learning Objective spec → Evidence / Mastery model → Competency DB schema.
+**Six of seven domains are closed.** With Exam blocked on the owner, the mainline moves on:
+🔜 **Learning Objective spec** → Evidence / Mastery Model → Competency DB schema.
 
 🛑 **Vocabulary migration work does not interrupt this line.** Everything it still needs is parked
 under **BEFORE VOCABULARY MIGRATION** in its own document, including the Stage 0 measurements, which
@@ -717,7 +719,7 @@ addition to G7. 🛑 **Do not modify the source mapping this round**, and do not
 > names, not by how much source material happens to sit under it.** Source counts measure coverage of
 > the existing materials, not whether a skill deserves to exist.
 
-## 9. Reading, Listening and Speaking taxonomies, and the remaining Domains
+## 9. Domain taxonomies — Reading · Listening · Speaking · Writing
 
 ### 9.1 Reading — Categories and Skills both DECIDED v1
 
@@ -769,6 +771,7 @@ and none is to be invented.** See §9.3 on why depth varies by domain.
 | **Reading** | **Skill — by owner decision, no Micro-skill in v1** |
 | **Listening** | **Skill — same decision (§9.7)** |
 | **Speaking** | **Skill — same decision (§9.12)** |
+| **Writing** | **Skill — same decision (§9.17)**, plus two non-competency annotation axes |
 
 🛑 A domain stopping at Skill is **not** an incomplete taxonomy, and is **not** an invitation to fill
 in the missing level. Depth follows what the domain actually needs to diagnose.
@@ -1025,7 +1028,7 @@ Two different things share the word "grammar", and conflating them would fabrica
 > `Grammar → Tenses`, 70% on `Grammar → Relative Clauses` and 70% on `Grammar → Conditionals`. The
 > rubric score identifies **no specific skill**, so it can update **none**.
 
-This is the general rule of §9.17 and §14.8, with a concrete worked case.
+This is the general rule of §9.23 and §14.8, with a concrete worked case.
 
 **What may become Grammar evidence later:** if analysis of a learner's speech identifies a *specific*
 grammar skill — a repeated tense error, subject–verb agreement failures, conditional structure use,
@@ -1034,25 +1037,136 @@ relative clause control — that is a **candidate Grammar Skill evidence**.
 🛑 **How, whether, and with what confidence such candidates update Grammar mastery belongs to the
 Evidence / Mastery Model. No algorithm is designed here** (§14.4).
 
-### 9.17 The remaining Domains — placeholders only
+### 9.17 Writing — CLOSED / DECIDED v1, on **three** axes
+
+> **Status: 🔒 CLOSED (2026-08-30).**
+>
+> 📎 **Source of truth: `docs/learn/writing-taxonomy/Writing_Taxonomy_v1.xlsx`** — 20 tagging rules
+> (TR-01 … TR-20) and every definition, Includes / Excludes and Sub-skill list. Structure and
+> principles only here.
+
+Writing is the first domain that is **not one taxonomy**. The owner uses **three complementary but
+conceptually separate axes**, and 🛑 **they must never be merged into one**:
+
+| Axis | Answers | Size | Status |
+|---|---|---|---|
+| **A · Writing Competency** | *Which writing ability is strong or weak?* | 5 Categories · **23 Skills** | ✅ DECIDED v1 |
+| **B · Writing Error** | *What specific mistakes did the student make?* | **16 Error Tags** | ✅ DECIDED v1 |
+| **C · High-Score Feature** | *Which advanced techniques worth crediting did the student use?* | 5 Categories · **29 Features** | ✅ DECIDED v1 |
+
+> 🛑 **Only axis A is part of the competency hierarchy of §5.** B and C are **annotation vocabularies
+> over evidence** — they describe what was found in a piece of writing. An Error Tag is not a Skill;
+> a High-Score Feature is not a Skill.
+
+### 9.18 A · Writing Competency — 5 Categories, 23 Skills
+
+| Code | Category (Chinese) | English | Skills |
+|---|---|---|---|
+| **W1** | 內容與任務完成 | Content & Task Fulfillment | 4 |
+| **W2** | 組織與連貫 | Organization & Coherence | 5 |
+| **W3** | 詞彙運用 | Lexical Resource | 5 |
+| **W4** | 句構與文法 | Grammar & Sentence Structure | 4 |
+| **W5** | 語體、讀者與寫作規範 | Register, Audience & Conventions | 5 |
+| | | **Total** | **23** |
+
+🛑 **No Micro-skill in v1** — and 🛑 the High-Score Feature Sub-skills are **not** Micro-skills either
+(§9.20, TR-20).
+
+**The rubric-evidence unit carries over from Speaking (§9.13)**: one essay legitimately produces
+**several** rubric evidences — content, organisation, lexis, grammar, register — and **each** carries
+exactly one Primary Skill. 🛑 It never means one essay is reduced to a single skill.
+
+### 9.19 B · Writing Error Taxonomy — 16 owner-provided v1 tags
+
+Error Tags record **what the student actually did wrong**, alongside the competency judgement rather
+than instead of it:
+
+```
+Primary Writing Skill:  WRITE_GRAMMAR_BASIC
+Error:                  WRITE_ERR_RUN_ON
+```
+
+**Two rules that keep the axis useful:**
+
+| | |
+|---|---|
+| **Fallback discipline** | 🛑 `WRITE_ERR_GRAMMAR_OTHER` is a **fallback only**. If the error resolves to ARTICLE, SV AGREEMENT, THAT, COUNTABILITY or any other specific tag, the specific tag **must** be used. A catch-all that absorbs everything measures nothing |
+| **Extensible without disturbance** | ✅ Error Tags **may keep growing** — adding one requires **no change** to the 23 Skills. That independence is the point of separating the axes |
+
+### 9.20 C · High-Score Feature Taxonomy — H1–H5, 29 Features
+
+| Code | Category (Chinese) | English | Features |
+|---|---|---|---|
+| **H1** | 句構與句式技巧 | Sentence Craft | 6 |
+| **H2** | 字彙成熟度 | Lexical Sophistication | 5 |
+| **H3** | 篇章與連貫技巧 | Discourse Craft | 6 |
+| **H4** | 修辭與風格 | Rhetoric & Style | 6 |
+| **H5** | 內容發展與思維技巧 | Content & Idea Craft | 6 |
+| | | **Total** | **29** |
+
+🛑 **The taxonomy stops at 29 Main Features.** The Sub-skills listed under each — simile, metaphor,
+analogy, extended metaphor, personification under H4-4; words, phrases, clauses, paired structures,
+`not only…but also`, `both…and` under H1-1 — are **detection criteria / subtypes for an AI or a
+teacher**, not taxonomy nodes. 🛑 **Do not create `H4-4-1`, `H4-4-2` or any similar level.**
+
+### 9.21 Detecting a feature is not the same as crediting it
+
+> 🛑 **A High-Score Feature finding may never be stored as `present = true`.** Every finding carries,
+> at minimum: **`feature_code` · `quality` · `evidence_span` · `reason`.**
+
+`quality` ∈ **`EFFECTIVE`** · **`PARTIALLY_EFFECTIVE`** · **`MISUSED`**, and 🛑 **only `EFFECTIVE`
+counts as positive evidence.**
+
+The worked case makes the point better than the rule does:
+
+> *Only when people realizes the danger can we act.*
+
+Inversion (**H1-5**) is genuinely present — and its quality is **`MISUSED`**, while the same span
+also produces **`WRITE_ERR_SV_AGREEMENT`**. **The advanced form appeared and earned nothing.**
+
+An advanced word, an inversion, a rhetorical question, a metaphor, a complex sentence must each be
+**correct · natural · functional · contextually appropriate** before it is marked `EFFECTIVE`.
+Without the quality field, a detector would reward students for attempting difficulty rather than for
+writing well — which is precisely the behaviour that produces stilted, over-decorated prose.
+
+**Several features may share one span**, and that is not duplicate tagging when the judgements differ:
+
+| Span | Features | Because |
+|---|---|---|
+| *We need courage to question, patience to listen, and wisdom to decide.* | **H1-1** Parallel Structure + **H4-2** Rhetorical Patterning | H1-1 judges syntactic parallelism; H4-2 judges rhetorical rhythm |
+| A closing paragraph | **H3-6** Callback / Structural Echo + **H4-6** Powerful Closing + **H5-6** Meaningful Closure | structural echo · rhetorical force · genuine completion of the thinking |
+
+### 9.22 What Writing evidence must not be turned into
+
+| 🛑 Never | Why |
+|---|---|
+| **A Writing Grammar rubric score → Grammar Domain mastery** | Writing 70% does **not** write 70% to `Grammar → Tenses`, `→ Relative Clauses`, `→ Conditionals`. The score identifies no specific skill, so it updates none (§14.4) |
+| **A Writing Lexical judgement → Vocabulary learner-word mastery** | Misspelling *environment* produces `WRITE_ERR_SPELLING`. 🛑 It does **not** rewrite `Vocabulary → environment → Production mastery` |
+| **A High-Score Feature → a mastery axis** | 🛑 Do not create `student × H1-1 mastery`. Features are **positive diagnostic observations**, not learner competencies. Whether frequency, diversity or effectiveness trends are ever accumulated is **analytics design**, not decided here |
+| **Task Type / Genre → a Skill** | Essay · Email · Picture Writing · Chart Writing · Story · Translation · Report · Review · Narrative are `task_type` / `genre` |
+| **Task metadata → a Skill** | word limit · time limit · picture prompt · dictionary allowed · outline provided · handwritten or typed · difficulty |
+
+**All three code families — Skill, Error, Feature — are stable opaque identifiers.** 🛑 Never parse a
+code to derive its Category or family; relationships come from the declared taxonomy only (§8.3).
+
+### 9.23 The remaining Domains — placeholders only
 
 > 🛑 **PROVISIONAL. First-level direction only. Do NOT complete, freeze, or seed these.**
 
 | Domain | First-level direction (PROVISIONAL) |
 |---|---|
-| **Writing** | Content & Task · Organization & Coherence · Lexical Resource · Grammar & Sentence Structure · Register & Audience Awareness |
 | **Vocabulary** | Two orthogonal dimensions recorded in §7; the **Category and Skill levels are not designed** |
 | **Exam / Academic Skills** | 🛑 **BLOCKED** — the owner is still designing this |
 
-> ✅ **Grammar, Reading, Listening and Speaking are the exceptions.** Grammar is decided to Skill
-> level with 234 PROVISIONAL Micro-skill candidates (§8); **Reading** (6 Categories, 25 Skills,
-> §9.1), **Listening** (4 Categories, 18 Skills, §9.7) and **Speaking** (4 Categories, 19 Skills,
-> §9.12) are each frozen as v1, none with Micro-skills.
+> ✅ **Only Exam / Academic Skills and the Vocabulary Skill level remain.** Grammar is decided to
+> Skill level with 234 PROVISIONAL Micro-skill candidates (§8); **Reading** (6 Cat, 25 Skills, §9.1),
+> **Listening** (4, 18, §9.7), **Speaking** (4, 19, §9.12) and **Writing** (5, 23 + 16 Error Tags +
+> 29 Features, §9.17) are each frozen as v1, none with Micro-skills.
 
-⚠️ **Writing → Grammar & Sentence Structure** is an *assessment criterion* within a performance
-rubric. ✅ Speaking's equivalent is settled — **S3 is its own thing, separate from the Grammar
-Domain** (§9.16). What remains open for both is **whether and how rubric evidence may ever update
-Grammar Domain mastery** (§14.4).
+✅ **Both production domains are settled at taxonomy level.** Speaking's S3 (§9.16) and Writing's W4
+(§9.22) are each their own thing, separate from the Grammar Domain. What remains open is the
+**Cross-domain Production Evidence Policy** — whether and how specific evidence extracted from speech
+or writing may ever update another Domain's mastery (§14.4).
 
 🛑 **One constraint is DECIDED regardless (owner ruling, 2026-08-29):**
 
@@ -1145,10 +1259,18 @@ Student Response  ──►  Skill Evidence  ──►  User Skill Mastery
 
 1. **Evidence follows the measured skill, not the instructional target** (§10.1). An Activity's tags
    never convert its responses into evidence wholesale.
-2. **A rubric score that resolves to no specific Skill updates no Skill** (§9.17). This applies to
+2. **A rubric score that resolves to no specific Skill updates no Skill** (§9.23). This applies to
    Speaking and Writing rubric grammar scores in particular.
 3. 🆕 **A Secondary Skill tag does not produce evidence weighted equally with the Primary** (§10.2).
    Until the mastery algorithm is frozen, secondaries are metadata and a future evidence candidate.
+4. 🆕 🛑 **UNMEASURED ≠ WEAK.** A Skill a task never elicited must be represented as **not measured**
+   — never as weak, zero, or low mastery.
+
+> Ruled by the owner for **Speaking** (interaction evidence, §9.15) and **Writing** (any un-elicited
+> skill, §9.17), and it plainly holds wherever a skill can go un-elicited. A 50-word birthday card
+> gives no evidence about *Complex Structure Control*; recording that as weakness would penalise the
+> learner for a **task the teacher chose**. The absence of a High-Score Feature likewise says nothing
+> about ability — features are **positive observations, not a per-essay checklist.**
 
 **The load-bearing property is that responses are immutable while everything downstream is
 derived.** Taxonomies get revised; questions get re-tagged; scoring models improve. If mastery were
@@ -1221,6 +1343,9 @@ it returns nothing useful.
 | `learning_objective` | A lesson-specific observable outcome | belongs to `lesson`; references many `skill` |
 | `question_skill_tag` | Primary / secondary skill tagging for a question asset | joins `content_asset` (question) ↔ `skill`, with a primary flag |
 | `skill_source_mapping` | Provenance: which source-material topic a skill came from, and the action taken (KEEP/MERGE/ADD/REMAP/CROSS-TAG/MOVE) — §8.11 | references `skill`; the audit trail for taxonomy revisions |
+| `error_tag` 🆕 | An **annotation vocabulary**, not a competency. Writing's 16 v1 tags; extensible without touching the Skill taxonomy (§9.19) | referenced by an error finding on a `student_response` |
+| `high_score_feature` 🆕 | An **annotation vocabulary** of creditable techniques. Writing's H1–H5 / 29 Features (§9.20) | referenced by a feature finding |
+| `feature_finding` 🆕 | One detected feature **with its judgement** — 🛑 never `present = true`. Carries `feature_code`, `quality` (`EFFECTIVE` / `PARTIALLY_EFFECTIVE` / `MISUSED`), `evidence_span`, `reason` (§9.21). 🛑 **Not** a mastery axis | `student_response` ↔ `high_score_feature` |
 
 ### 13.3 People, entitlement, work
 
@@ -1418,30 +1543,39 @@ before `enrollment` is designed.
 
 ### 🛑 Still blocked
 
-#### 14.4 May Speaking / Writing rubric evidence ever update Grammar Domain mastery?
+#### 14.4 Cross-domain Production Evidence Policy
 
-> ⚠️ **Reframed 2026-08-29 — this is no longer a taxonomy question.**
+> ⚠️ **Renamed and re-scoped 2026-08-30. This is not, and is no longer, a taxonomy question.**
 >
-> It used to read "are these rubric dimensions or Grammar Skills, and both taxonomies are
-> PROVISIONAL". **Speaking is now DECIDED v1** (§9.12), and its S3 *Grammatical Range & Accuracy* is
-> settled as **its own thing, separate from the Grammar Domain** (§9.16). 🛑 **This blocker must not
-> be used to hold the Speaking taxonomy in PROVISIONAL.**
+> It began as "Speaking / Writing rubric ↔ Grammar Skills", implying both taxonomies were undecided.
+> **Both are now DECIDED v1** — Speaking (§9.12) and Writing (§9.17) — and each production domain's
+> grammar dimension is settled as **its own thing**: Speaking S3 (§9.16), Writing W4 (§9.22).
+>
+> 🛑 **This item must never again be used to hold the Speaking or Writing taxonomy in PROVISIONAL.**
 
-**What actually remains open** is an **Evidence / Mastery Model** question:
+**The question that actually remains:**
 
-> **If analysis of a learner's speech or writing identifies a *specific* Grammar Skill — a repeated
-> tense error, subject–verb agreement failures, conditional structure use, relative clause control —
-> may that become Grammar Domain evidence, and with what confidence and weight?**
+> **When analysis of a learner's speech or writing identifies *specific* evidence belonging to
+> another Domain — a repeated tense error, subject–verb agreement failures, conditional structure
+> use, relative clause control, a misspelled canonical word — may that update the other Domain's
+> mastery, and if so when, with what confidence, and at what weight?**
 
-The constraint that holds meanwhile is unchanged and DECIDED (§14.8): 🛑 **a rubric score resolvable
-to no specific Skill updates no Skill.** 70% on Speaking grammar writes nothing to
-`Grammar → Tenses`.
+It spans two directions, both open:
 
-🛑 No algorithm designed here. Belongs with the mastery algorithm, and is scheduled after the
-remaining domain taxonomies.
+| Production evidence | Candidate target |
+|---|---|
+| Speech / writing showing a specific grammar skill | **Grammar Domain** mastery |
+| Writing showing a specific word's spelling or usage | **Vocabulary** learner × word mastery |
 
-**Writing's half is still genuinely open at taxonomy level** — its first-level list is PROVISIONAL
-(§9.17) — so this entry stays blocked until Writing is decided too.
+**What holds meanwhile — DECIDED, and not waiting on anything:**
+
+- 🛑 **A rubric score resolvable to no specific Skill updates no Skill** (§14.8). 70% on Speaking or
+  Writing grammar writes nothing to `Grammar → Tenses`.
+- 🛑 `WRITE_ERR_SPELLING` on *environment* does **not** rewrite
+  `Vocabulary → environment → Production mastery`.
+
+🛑 **No algorithm is designed here.** Status: **BLOCKED / DEFERRED until the Evidence & Mastery
+Model.**
 
 #### 14.10 Guardian access rules
 
@@ -1546,6 +1680,23 @@ rules invented.
 - 🆕 **Speaking S3 ≠ Grammar Domain** — a 70% speaking grammar score writes nothing to
   `Grammar → Tenses` (§9.16)
 
+**Writing**
+
+- 🆕 **CLOSED / DECIDED v1** on **three separate axes** — Competency (5 Categories, **23 Skills**),
+  Error (**16 Tags**), High-Score Feature (5 Categories, **29 Features**). No Micro-skill.
+  Source of truth: `docs/learn/writing-taxonomy/Writing_Taxonomy_v1.xlsx`
+- 🆕 🛑 **Only the Competency axis is part of the §5 hierarchy.** Error Tags and Features are
+  **annotation vocabularies over evidence** — an Error Tag is not a Skill, a Feature is not a Skill
+- 🆕 **High-Score Sub-skills are detection criteria, not taxonomy nodes** — 🛑 no `H4-4-1` level, and
+  they are not Micro-skills
+- 🆕 **A feature finding is never `present = true`** — it carries `feature_code`, `quality`
+  (`EFFECTIVE` / `PARTIALLY_EFFECTIVE` / `MISUSED`), `evidence_span`, `reason`. 🛑 **Only
+  `EFFECTIVE` is positive evidence** — a `MISUSED` inversion earns nothing (§9.21)
+- 🆕 **Several features may share one span** when the judgements genuinely differ
+- 🆕 🛑 **A High-Score Feature is not a mastery axis** — no `student × H1-1 mastery`
+- 🆕 🛑 `WRITE_ERR_GRAMMAR_OTHER` is **fallback only**; Error Tags extend without touching the Skills
+- 🆕 🛑 **Writing W4 ≠ Grammar Domain · Writing Lexical ≠ Vocabulary learner-word mastery** (§9.22)
+
 **Vocabulary**
 
 - 🆕 Word Level and Recognition / Production are **orthogonal dimensions, not taxonomy nodes** (§7)
@@ -1577,7 +1728,6 @@ rules invented.
 ### 🟡 PROVISIONAL / RECOMMENDED — do not freeze, do not build against
 
 - **Program distribution authorization** — the recommended model in §4.5 awaits owner confirmation
-- Writing first-level list (§9.17)
 - Vocabulary's **Skill** level — real vocabulary competencies are still undesigned (§7)
 - Grammar **Micro-skill** level — **234 candidates supplied, covering all 51 Skills**, not yet frozen
   item by item (§8.13). ✅ Usable for tagging · 🛑 not DECIDED, and do not invent additions
@@ -1589,7 +1739,7 @@ rules invented.
 |---|---|---|
 | 1 | **Exam / Academic Skills taxonomy** — owner still designing | that Domain entirely |
 | 2 | **Mastery algorithm** — scale, decay, thresholds, weighting, roll-up (§11) | `user_skill_mastery` |
-| 3 | **Speaking / Writing rubric ↔ Grammar Skills** (§14.4) | those two domains' scoring |
+| 3 | **Cross-domain Production Evidence Policy** (§14.4) — may specific evidence from speech/writing update Grammar or Vocabulary mastery, and at what weight? ⚠️ **Not a taxonomy blocker** | cross-domain evidence only |
 | 4 | **Guardian access rules** (§14.10) | any parent-facing view |
 | 5 | Reconciling the **two existing vocabulary mastery models** (9.10, `docs/BACKLOG.md`) | Vocabulary competency |
 

@@ -42,25 +42,27 @@
   progress stays untouched; the Stage 0 measurements and the runtime key verification are
   **owner-deprioritised** into a **BEFORE VOCABULARY MIGRATION** checkpoint — 🛑 they are not a
   reason to interrupt taxonomy design or to start Production debugging.
-- 🔜 **The active design checkpoint is the WRITING taxonomy.** Domain order: Grammar ✅ · Reading ✅ ·
-  Vocabulary ✅ (temporarily closed) · Listening ✅ · Speaking ✅ · **Writing ← NEXT** · Exam. Then
-  Learning Objective spec → Evidence / Mastery model → Competency DB schema.
+- 🔜 **Six of seven domains are CLOSED.** Grammar ✅ · Reading ✅ · Vocabulary ✅ (temporarily closed) ·
+  Listening ✅ · Speaking ✅ · Writing ✅ · **Exam 🛑 BLOCKED on the owner**. Mainline moves to
+  **Learning Objective spec** → Evidence / Mastery Model → Competency DB schema.
   `docs/learn/LEARNING_DOMAIN_MODEL.md` §0.
 - 📘 **The `/learn` product & competency model is specified (2026-08-29):**
   `docs/learn/LEARNING_DOMAIN_MODEL.md` — Program→Module→Lesson→Activity, Content Assets outside the
   hierarchy, Relationship/Enrollment/Assignment kept separate, and the Domain→Category→Skill→
   Micro-skill competency axis. **Grammar is decided to Skill level — 10 categories, 51 coded skills,
-  plus 234 PROVISIONAL Micro-skill candidates; Reading, Listening and Speaking decided to Skill level
-  with no Micro-skill
+  plus 234 PROVISIONAL Micro-skill candidates; Reading, Listening, Speaking and Writing decided to
+  Skill level with no Micro-skill
   — with `docs/learn/grammar-taxonomy/Grammar_Skill_Taxonomy_v1.xlsx` as its detailed source of
   truth; every other taxonomy is PROVISIONAL or BLOCKED — do not complete them.** Design spec only:
   no table, no migration, no seed data. An owner ruling on 2026-08-29 closed four open items
   (direct teacher–student relationship, vocabulary dimensions, tag precedence, asset versioning) and
   settled naming; a Grammar Micro-skill blocker was then withdrawn as a bad export rather than a
-  missing decision; **Reading (6 Categories + 25 Skills), Listening (4 + 18) and Speaking (4 + 19)
-  Taxonomy v1 are all frozen as DECIDED v1**, none with Micro-skills, with exactly one Primary Skill
-  per assessable item — for Speaking, per **rubric evidence** rather than per recording — and Skill
-  codes treated as opaque identifiers that must never be parsed. 🛑 **Five blocked decisions remain** in its §15; ✅ none of them blocks the next design
+  missing decision; **Reading (6 Cat + 25 Skills), Listening (4 + 18), Speaking (4 + 19) and Writing
+  (5 + 23, plus 16 Error Tags and 29 High-Score Features on two separate annotation axes) Taxonomy v1
+  are all frozen as DECIDED v1**, none with Micro-skills, with exactly one Primary Skill per
+  assessable item — for the production domains, per **rubric evidence** rather than per response —
+  and Skill / Error / Feature codes treated as opaque identifiers that must never be parsed.
+  🛑 **UNMEASURED ≠ WEAK.** 🛑 **Five blocked decisions remain** in its §15; ✅ none of them blocks the next design
   stage. ⚠️ The deployed spine still cannot
   represent a direct teacher–student relationship, which is now a decided requirement awaiting its
   own deployment.

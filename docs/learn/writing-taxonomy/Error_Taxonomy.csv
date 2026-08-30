@@ -1,0 +1,17 @@
+Error Code,錯誤中文,Error English,Primary Writing Skill,定義 / 判斷,Boundary / Note,Status
+WRITE_ERR_RUN_ON,Run-on 冗長句,Run-on Sentence,WRITE_GRAMMAR_BASIC,兩個以上獨立子句未以適當標點或連接方式分隔，形成不合法或失控的句界。,若只是句子很長但文法完整，不算 Run-on；可同時有 punctuation evidence。,DECIDED v1
+WRITE_ERR_FRAGMENT,Fragment 不完整句,Sentence Fragment,WRITE_GRAMMAR_BASIC,缺少必要主詞、謂語或獨立句核心，使片段無法構成完整句。,有意識的文體片段需依 genre/context 判斷，不可機械判錯。,DECIDED v1
+WRITE_ERR_NUMBER,單複數錯誤,Number Error,WRITE_GRAMMAR_BASIC,名詞單複數、數量搭配或相關形式錯誤。,若主要是 subject–verb agreement，另標 SV_AGREEMENT。,DECIDED v1
+WRITE_ERR_ARTICLE,未加冠詞,Missing / Incorrect Article,WRITE_GRAMMAR_BASIC,需要冠詞時遺漏，或 a/an/the/零冠詞選擇不當。,不等同所有 determiner error；此 tag 聚焦 article usage。,DECIDED v1
+WRITE_ERR_COUNTABILITY,不可數名詞用錯,Countability Error,WRITE_GRAMMAR_BASIC,將不可數名詞錯當可數使用，或 count/non-count 搭配錯誤。,例如 informations / many advice。,DECIDED v1
+WRITE_ERR_WORD_BOUNDARY,連寫或分開寫錯誤,Word Boundary Error,WRITE_LEXICAL_FORM,本應連寫、分寫或固定形式的字詞邊界處理錯誤。,與一般 spelling error 分開，可處理 everyday/every day 等類型。,DECIDED v1
+WRITE_ERR_SV_AGREEMENT,SV 一致,Subject–Verb Agreement Error,WRITE_GRAMMAR_BASIC,主詞與動詞在人稱或單複數一致關係上錯誤。,屬具體 Grammar error；未來可成為 Grammar candidate evidence，但不可自動更新 mastery。,DECIDED v1
+WRITE_ERR_TRANSITIVITY,Vt 與 Vi 用錯,Transitivity Error,WRITE_GRAMMAR_BASIC,及物／不及物動詞的受詞、介係詞或結構使用錯誤。,例如 discuss about、arrive the station 等需依實際句法判定。,DECIDED v1
+WRITE_ERR_GRAMMAR_OTHER,文法錯誤,Other Grammar Error,WRITE_GRAMMAR_BASIC,明確存在文法錯誤，但無法落入目前更具體的 Error Tag。,Fallback only；若可判為 SV、article、that 等，應優先使用具體 tag。,DECIDED v1
+WRITE_ERR_PREP_CLAUSE,介係詞誤接句子,Preposition–Clause Error,WRITE_GRAMMAR_BASIC,介係詞後誤接完整子句或使用不合句法的 clause complement。,需與一般 lexical preposition/collocation error 區分。,DECIDED v1
+WRITE_ERR_WORD_CLASS,詞類誤用,Word Class Error,WRITE_LEXICAL_FORM,名詞、動詞、形容詞、副詞等詞類或派生形式選用錯誤。,若核心是 sentence syntax 而非 word form，Primary Writing Skill 可依實際改歸 W4；Error Tag 可維持。,DECIDED v1
+WRITE_ERR_CHINGLISH,中式英文,Chinese-transfer / Chinglish Expression,WRITE_LEXICAL_COLLOCATION,受中文直譯、搭配或表達習慣影響，形成不自然或錯誤的英語表達。,不可把『不像母語者』就標成 Chinglish；需有可辨識的 transfer / unnatural expression evidence。,DECIDED v1
+WRITE_ERR_SPELLING,拼寫錯誤,Spelling Error,WRITE_LEXICAL_FORM,單字字母拼寫錯誤。,Writing evidence 不自動等同 Vocabulary Production mastery。,DECIDED v1
+WRITE_ERR_PUNCTUATION,標點符號,Punctuation Error,WRITE_REGISTER_MECHANICS,逗號、句號、分號、冒號、apostrophe 等標點使用錯誤。,若造成 Run-on / Fragment，可同時標具體 sentence-boundary error。,DECIDED v1
+WRITE_ERR_THAT,that 誤用,That-usage Error,WRITE_GRAMMAR_BASIC / WRITE_GRAMMAR_COMPLEX,that 在名詞子句、關係子句、指示詞或其他結構中遺漏、贅用或位置不當。,Primary Writing Skill 依實際句法複雜度選 Basic 或 Complex；不可僅因出現 that 就貼標。,DECIDED v1
+WRITE_ERR_DISCOURSE_STRUCTURE,未符合篇章結構概念,Discourse Structure Error,WRITE_ORG_OVERALL,文章未依預期篇章結構組織，例如缺少必要開頭／主旨、段落功能混亂、支持與中心不一致等。,此為較高層 Error Tag；未來可再擴充 missing thesis、poor paragraph structure 等子標籤，但 v1 不另建 Micro-skill。,DECIDED v1

@@ -121,10 +121,16 @@ These are not backlog items. They are constraints on everything built from here.
 **The `/learn` product & competency model is specified:** `docs/learn/LEARNING_DOMAIN_MODEL.md`
 (2026-08-29, revised the same day after an owner ruling on eight open items). 🛑 Its §15 carries
 **five** BLOCKED decisions and marks every taxonomy except Grammar, Reading, Listening and Speaking
-as PROVISIONAL. ⚠️ The **Speaking / Writing ↔ Grammar** blocker was **reframed** on 2026-08-29: it is
-no longer "is the Speaking taxonomy decided" (it is) but "**may rubric evidence ever update Grammar
-Domain mastery, and with what weight**" — an Evidence / Mastery Model question. 🛑 It must not be
-used to hold the Speaking taxonomy in PROVISIONAL.
+as PROVISIONAL. ⚠️ The old **Speaking / Writing ↔ Grammar** blocker is now the **Cross-domain
+Production Evidence Policy** (renamed 2026-08-30): *may specific evidence extracted from speech or
+writing update Grammar or Vocabulary mastery, and if so when, with what confidence and weight?*
+🛑 **It is not a taxonomy blocker and must never be used to hold the Speaking or Writing taxonomy in
+PROVISIONAL.** Standing rule meanwhile: a rubric score resolvable to no specific Skill updates no
+Skill.
+
+🆕 **UNMEASURED ≠ WEAK** — a Skill a task never elicited is **not measured**, never weak / zero /
+low. A 50-word birthday card says nothing about *Complex Structure Control*; an absent High-Score
+Feature says nothing about ability.
 ✅ **None of them blocks the next design stage** — each gates a specific later capability. **Do not complete a
 taxonomy, seed skill data, or build an entity whose governing decision is still blocked.**
 
@@ -142,10 +148,22 @@ Standing rules that now bind all `/learn` work:
 | **Skill codes** | 🆕 🛑 **Opaque identifiers — never parse a code to derive its Category.** `GRAM_G7_…` embedding `G7` is a mnemonic, not relational data. Use the declared taxonomy relationship |
 | **Vocabulary v1** | 🆕 **Item-centric, architecture frozen 2026-08-29** (`VOCABULARY_ARCHITECTURE.md` §1.2). Canonical identity is a **headword** (no sense ontology); `level_words` is the evolution starting point, 🛑 **never a parallel canonical system**; one Collection concept for all set types; mastery is `learner × canonical_word` with `Recognition` / `Production` only; SRS gives **one due date per word** regardless of collections; 🛑 Practice Type is event metadata, never a mastery axis; 🛑 normalization is trim / case / Unicode only — **no silent morphological merge** |
 
-🔜 **The active design checkpoint is the Writing taxonomy.** Domain order: Grammar ✅ · Reading ✅ ·
-Vocabulary ✅ (architecture temporarily closed) · Listening ✅ · Speaking ✅ · **Writing ← NEXT** ·
-Exam / Academic Skills. Then Learning Objective spec → Evidence / Mastery model → Competency DB
+🔜 **Six of seven domains are closed.** Grammar ✅ · Reading ✅ · Vocabulary ✅ (architecture
+temporarily closed) · Listening ✅ · Speaking ✅ · Writing ✅ · **Exam / Academic Skills 🛑 BLOCKED on
+the owner — the only domain left.** The mainline therefore moves to **Learning Objective spec** →
+Evidence / Mastery Model → Competency DB schema. Then Learning Objective spec → Evidence / Mastery model → Competency DB
 schema. 🛑 **Vocabulary migration work does not interrupt this line.**
+
+**Writing taxonomy source of truth:** `docs/learn/writing-taxonomy/Writing_Taxonomy_v1.xlsx`
+— **three separate axes, all DECIDED v1** (frozen 2026-08-30): Competency (5 Categories + **23
+Skills**), Error (**16 Tags**), High-Score Feature (5 Categories + **29 Features**) · 20 tagging
+rules. 🛑 **Only the Competency axis is a competency taxonomy** — an Error Tag is not a Skill and a
+Feature is not a Skill. 🛑 No Micro-skill; High-Score **Sub-skills are detection criteria, not
+taxonomy nodes**. 🛑 A feature finding is never `present = true` — it needs `feature_code` +
+`quality` (`EFFECTIVE` / `PARTIALLY_EFFECTIVE` / `MISUSED`) + `evidence_span` + `reason`, and **only
+`EFFECTIVE` is positive evidence**. 🛑 A Feature is **not** a mastery axis.
+🛑 `WRITE_ERR_GRAMMAR_OTHER` is fallback only. 🛑 **W4 ≠ Grammar Domain · Writing Lexical ≠
+Vocabulary learner-word mastery.**
 
 **Speaking taxonomy source of truth:** `docs/learn/speaking-taxonomy/Speaking_Taxonomy_v1.xlsx`
 — **4 Categories (S1–S4) + 19 Skills, both DECIDED v1** (frozen 2026-08-29) · 12 tagging rules.

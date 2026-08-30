@@ -1,0 +1,24 @@
+Category Code,Category 中文,Skill Code,Skill 中文,Skill English,Definition,Includes / Typical Evidence,Excludes / Boundary Rule,Status
+W1,內容與任務完成,WRITE_CONTENT_TASK,任務回應與完成度,Task Fulfillment,能完整回應題目或寫作任務中明確要求的內容、功能與限制。,回答所有 prompt parts；描述問題並提出解法；完成指定功能,未被題目要求的元素不應因缺少而扣分；task requirement 必須先明確,DECIDED v1
+W1,內容與任務完成,WRITE_CONTENT_FOCUS,聚焦與相關性,Focus & Relevance,能持續聚焦題目與中心目的，避免離題、偏題或加入與任務無關的內容。,on-topic content；relevance；maintain focus,若內容相關但展開不足，優先標 Idea Development / Support,DECIDED v1
+W1,內容與任務完成,WRITE_CONTENT_DEVELOP,觀點與內容發展,Idea Development,能將核心想法進一步解釋、延伸與發展，而非停留在未展開的短句或口號。,why/how/result；develop claims；expand ideas,若主要問題是缺少例子、證據或具體細節，可標 Support & Elaboration,DECIDED v1
+W1,內容與任務完成,WRITE_CONTENT_SUPPORT,支持與具體化,Support & Elaboration,能以理由、例子、證據、細節或說明支持主要想法，使論述具體充分。,examples；reasons；evidence；details；explanation,如果該 task 不要求支持性論述，應標 UNMEASURED 而不是 weak,DECIDED v1
+W2,組織與連貫,WRITE_ORG_OVERALL,整體組織,Overall Organization,能依任務建立清楚且合宜的全文架構，使讀者理解內容如何展開。,opening-development-conclusion；task-appropriate macro structure,具體段落內部問題優先標 Paragraph Structure,DECIDED v1
+W2,組織與連貫,WRITE_ORG_PARAGRAPH,段落結構,Paragraph Structure,能建立有清楚中心與支持內容的段落，並合理劃分段落邊界。,topic focus；supporting details；paragraph unity,若問題是跨段順序或全文推進，優先標 Logical Progression,DECIDED v1
+W2,組織與連貫,WRITE_ORG_LOGIC,邏輯推進,Logical Progression,能以合理順序安排想法與論證，使前後關係自然推進。,cause-effect；problem-solution；general-specific；chronology,只堆疊 transition words 不等於具有邏輯推進,DECIDED v1
+W2,組織與連貫,WRITE_ORG_COHESION,銜接與連接,Cohesion & Linking,能運用連接語、代名詞、詞彙重現與其他 cohesion devices 建立句段間連結。,however；therefore；for example；conjunctions；reference,若連接語文法本身錯誤，可另外加 Error Tag 或 Grammar candidate evidence,DECIDED v1
+W2,組織與連貫,WRITE_ORG_FLOW,資訊流與指涉連貫,Reference & Information Flow,能使新舊資訊、指涉對象與主題延續清楚，避免讀者無法辨認 this/they/such 等所指。,clear antecedents；given-new flow；reference chains,純 Grammar pronoun form 錯誤不一定屬本 Skill；重點是 written discourse clarity,DECIDED v1
+W3,詞彙運用,WRITE_LEXICAL_RANGE,詞彙範圍,Vocabulary Range,能使用足夠範圍的詞彙完成寫作任務，避免因詞彙不足而過度重複或限制表達。,breadth of vocabulary；topic coverage；avoid excessive repetition,不以艱深字彙數量作為能力高低判準,DECIDED v1
+W3,詞彙運用,WRITE_LEXICAL_PRECISION,用字準確與精確,Word Choice & Precision,能選用語意正確且足夠精確的詞彙，使意思清楚且符合欲表達概念。,semantic accuracy；precision；specific word choice,若問題主要是固定搭配不自然，優先標 Collocation & Natural Usage,DECIDED v1
+W3,詞彙運用,WRITE_LEXICAL_COLLOCATION,搭配與自然用法,Collocation & Natural Usage,能使用自然的搭配、慣用組合與符合英語習慣的詞彙表達。,make a decision；heavy rain；natural phrasing；idiomatic combinations,Chinglish / literal translation 可用 Error Tag 補充，不需建立新 Skill,DECIDED v1
+W3,詞彙運用,WRITE_LEXICAL_FLEXIBILITY,改述與詞彙彈性,Paraphrase & Lexical Flexibility,能用不同但準確的方式改述概念，減少機械重複並維持語意一致。,paraphrase；synonym choice；lexical variation,不鼓勵為了換字而使用不自然或語意偏移的艱深詞彙,DECIDED v1
+W3,詞彙運用,WRITE_LEXICAL_FORM,詞形與拼字控制,Word Form & Spelling Control,能控制詞形、詞類與拼寫，使字詞形式符合句法與書寫需求。,success/successful/successfully；derivation；spelling；word boundaries,作文中的拼字/詞形表現不自動等同 Vocabulary learner-word mastery,DECIDED v1
+W4,句構與文法,WRITE_GRAMMAR_BASIC,基本句構準確度,Basic Sentence Accuracy,能建立完整且基本正確的句子，控制高頻句法與基礎文法關係。,sentence completeness；agreement；basic tense；articles；basic clauses,Run-on / Fragment / SV agreement 等具體錯誤應另外加 Error Tag,DECIDED v1
+W4,句構與文法,WRITE_GRAMMAR_RANGE,文法結構範圍,Grammatical Range,能依表意需求使用多樣文法結構，而不侷限於重複的簡單句型。,tense/aspect；modals；passive；clauses；conditionals；relative clauses,文法結構越複雜不代表越好；需同時考量控制與適切性,DECIDED v1
+W4,句構與文法,WRITE_GRAMMAR_COMPLEX,複雜句構控制,Complex Structure Control,能正確組織與控制從屬、關係、條件、分詞等複雜句法結構。,subordination；relative clauses；participial structures；conditionals,若只是不斷使用簡單句，主要是 Range；若使用複雜句但失控，才屬 Control,DECIDED v1
+W4,句構與文法,WRITE_GRAMMAR_VARIETY,句式多樣性與節奏,Sentence Variety & Style,能有意識地變化句長、句首、協調與從屬結構，使文字避免機械重複並保持可讀性。,sentence length variation；openings；coordination/subordination balance,不是鼓勵刻意複雜化；Variety 必須服務 clarity 與 style,DECIDED v1
+W5,語體、讀者與寫作規範,WRITE_REGISTER_FORMALITY,語體與正式度,Register & Formality,能依任務情境選擇合宜的正式度、禮貌程度與書面語體。,formal/informal；politeness；academic/conversational register,不應要求所有寫作一律正式；依 target context 評量,DECIDED v1
+W5,語體、讀者與寫作規範,WRITE_REGISTER_AUDIENCE,讀者意識,Audience Awareness,能依預期讀者調整背景說明、措辭、資訊量與表達方式。,friend；teacher；customer；public；academic audience,如果 task 未指定讀者且無法合理推定，應避免過度評分,DECIDED v1
+W5,語體、讀者與寫作規範,WRITE_REGISTER_VOICE,語氣與作者聲音,Tone & Voice,能維持與寫作目的相符且前後一致的語氣、立場與 writer voice。,persuasive；objective；reflective；critical；friendly,不要把單一情緒詞彙直接等同整體 Tone,DECIDED v1
+W5,語體、讀者與寫作規範,WRITE_REGISTER_GENRE,文類與任務慣例,Genre & Task Conventions,能依不同文類遵循相應的結構、格式與溝通慣例。,email；essay；report；review；story；chart description conventions,Email / Essay / Report 本身是 task_type / genre，不是 Skill,DECIDED v1
+W5,語體、讀者與寫作規範,WRITE_REGISTER_MECHANICS,標點與書寫規範,Punctuation & Mechanics,能控制標點、大小寫、句界、apostrophe 與基本書面格式，使文字清楚可讀。,punctuation；capitalization；sentence boundaries；apostrophe；mechanics,Run-on / Fragment 的核心若是句構問題，Primary Skill 仍可歸 W4 Basic Sentence Accuracy，並加相應 Error Tag,DECIDED v1
