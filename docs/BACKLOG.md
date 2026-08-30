@@ -159,8 +159,10 @@ schema. 🛑 **Vocabulary migration work does not interrupt this line.**
 Skills**), Error (**16 Tags**), High-Score Feature (5 Categories + **29 Features**) · 20 tagging
 rules. 🛑 **Only the Competency axis is a competency taxonomy** — an Error Tag is not a Skill and a
 Feature is not a Skill. 🛑 No Competency Micro-skill. 🆕 **High-Score Sub-skill layer is ACTIVE
-INTERNAL v1** (2026-08-30, superseding the earlier "detection criteria only" ruling): **140
-Sub-skills**, `visibility = OWNER_ONLY`, `detection_enabled = true`, 🛑 `mastery_enabled = false`.
+INTERNAL v1** (2026-08-30, superseding the earlier "detection criteria only" ruling): **146
+Sub-skills** (H1 27 · H2 20 · H3 31 · H4 32 · H5 36), `visibility = OWNER_ONLY`,
+`detection_enabled = true`, 🛑 `mastery_enabled = false`. ✅ All 12 ambiguous splits resolved by the
+owner; **no `NEEDS_OWNER_REVIEW` remains**.
 🛑 **No `student × Sub-skill` mastery**; 🛑 it does **not** make Writing Competency four levels;
 🛑 visibility ≠ existence — opening them later flips a flag, never rebuilds identity. 🛑 A feature finding is never `present = true` — it needs `feature_code` +
 `quality` (`EFFECTIVE` / `PARTIALLY_EFFECTIVE` / `MISUSED`) + `evidence_span` + `reason`, and **only

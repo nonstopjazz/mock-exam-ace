@@ -58,7 +58,7 @@
   (direct teacher–student relationship, vocabulary dimensions, tag precedence, asset versioning) and
   settled naming; a Grammar Micro-skill blocker was then withdrawn as a bad export rather than a
   missing decision; **Reading (6 Cat + 25 Skills), Listening (4 + 18), Speaking (4 + 19) and Writing
-  (5 + 23, plus 16 Error Tags and 29 High-Score Features / 140 owner-only internal Sub-skills on two
+  (5 + 23, plus 16 Error Tags and 29 High-Score Features / 146 owner-only internal Sub-skills on two
   separate annotation axes) Taxonomy v1
   are all frozen as DECIDED v1**, none with Micro-skills, with exactly one Primary Skill per
   assessable item — for the production domains, per **rubric evidence** rather than per response —

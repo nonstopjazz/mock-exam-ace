@@ -1056,7 +1056,7 @@ conceptually separate axes**, and 🛑 **they must never be merged into one**:
 |---|---|---|---|
 | **A · Writing Competency** | *Which writing ability is strong or weak?* | 5 Categories · **23 Skills** | ✅ DECIDED v1 |
 | **B · Writing Error** | *What specific mistakes did the student make?* | **16 Error Tags** | ✅ DECIDED v1 |
-| **C · High-Score Feature** | *Which advanced techniques worth crediting did the student use?* | 5 Categories · **29 Features** · **140 Sub-skills** | ✅ DECIDED v1 · Sub-skill layer **ACTIVE INTERNAL v1** |
+| **C · High-Score Feature** | *Which advanced techniques worth crediting did the student use?* | 5 Categories · **29 Features** · **146 Sub-skills** | ✅ DECIDED v1 · Sub-skill layer **ACTIVE INTERNAL v1** |
 
 > 🛑 **Only axis A is part of the competency hierarchy of §5.** B and C are **annotation vocabularies
 > over evidence** — they describe what was found in a piece of writing. An Error Tag is not a Skill;
@@ -1183,13 +1183,45 @@ pattern or vocabulary concept was invented.
 |---|---|
 | Split rule | Mechanically on **`；`**, the workbook's own item separator |
 | Normalization | A trailing 「等」 (*etc.*) removed from a label — it is a suffix, not part of a name |
-| Result | **140 Sub-skills** — H1 25 · H2 20 · H3 31 · H4 28 · H5 36 |
+| Initial result | 140 Sub-skills, of which **12 were flagged for owner adjudication** |
+| After the owner's rulings (2026-08-30) | **146 Sub-skills** — H1 27 · H2 20 · H3 31 · H4 32 · H5 36 |
 | Codes | `WRITE_HSF_FIGURATIVE_METAPHOR` etc. 🛑 **Opaque** — never parse a code to find its parent Feature or Category (§8.3) |
 
-⚠️ **12 Sub-skills carry `status = NEEDS_OWNER_REVIEW`** — every item whose text contains an internal
-`/`, where it is genuinely unclear whether the owner intended one node or several. 🛑 **They were not
-split on a guess.** The full list is in the completion report; they are flagged individually and
-**do not** lower the status of anything else.
+#### 9.20.4 ✅ The 12 ambiguous splits — all resolved
+
+The mechanical split left **12 items containing an internal `/`**, where it was genuinely unclear
+whether one node or several was intended. 🛑 They were **not** split on a guess; they were flagged
+`NEEDS_OWNER_REVIEW`. **The owner ruled on all 12 on 2026-08-30**, and none remains.
+
+**Split — 2 items became 8 nodes:**
+
+| Was | Became | Reason given |
+|---|---|---|
+| `H1-1` *words / phrases / clauses 的平行* | **Word Parallelism · Phrase Parallelism · Clause Parallelism** | three different structural levels, independently detectable, each with teaching value |
+| `H4-5` *visual / auditory / tactile / olfactory / gustatory imagery* | **Visual · Auditory · Tactile · Olfactory · Gustatory Imagery** | five distinct sensory modalities, independently detectable |
+
+**Kept as single nodes — 10 items**, each given the owner's concept name:
+
+`Sentence-type Variation` · `Word-class / Lexical Variation` · `Demonstrative Reference` ·
+`Pronoun Reference` · `Former/Latter Reference` · `Superordinate / Subordinate Lexical Relation` ·
+`So/Such Inversion` · `Appropriate Modifier Choice` · `Before/After Contrast` ·
+`Light/Dark Contrast`
+
+> The distinction the owner drew is worth keeping in mind for future splits: **the feature is the
+> variation itself, not the members it varies between.** `simple / compound / complex variation` is
+> one skill — *varying sentence type* — not three. Whereas parallelism at word, phrase and clause
+> level really are three different things a writer can do.
+
+**Count check:** 140 + 2 + 4 = **146** ✅
+
+**Code stability across the change:** 138 of the 140 codes are **byte-identical** to before. Only the
+two split parents' codes were retired, and 8 new ones added
+(`WRITE_HSF_PARALLEL_WORD/_PHRASE/_CLAUSE`, `WRITE_HSF_IMAGERY_VISUAL/_AUDITORY/_TACTILE/
+_OLFACTORY/_GUSTATORY`). ⚠️ Positional Sub-skill **IDs** shifted inside those two features — *paired
+structures* moved from `H1-1-2` to `H1-1-4` — but its **code is unchanged**, which is the whole point
+of the code being the identity (§8.3).
+
+✅ **No `NEEDS_OWNER_REVIEW` remains anywhere in the Writing taxonomy.**
 
 ### 9.21 Detecting a feature is not the same as crediting it
 
@@ -1780,9 +1812,10 @@ rules invented.
 - 🆕 🛑 **Only the Competency axis is part of the §5 hierarchy.** Error Tags and Features are
   **annotation vocabularies over evidence** — an Error Tag is not a Skill, a Feature is not a Skill
 - 🆕 **High-Score Sub-skill layer — ACTIVE INTERNAL v1** (2026-08-30, superseding the earlier
-  "detection criteria only" ruling). **140 Sub-skills** derived mechanically from the workbook's own
-  `Sub-skills` column — H1 25 · H2 20 · H3 31 · H4 28 · H5 36. Defaults: `status = ACTIVE`
-  (12 flagged `NEEDS_OWNER_REVIEW`) · `visibility = OWNER_ONLY` · `detection_enabled = true` ·
+  "detection criteria only" ruling). **146 Sub-skills** — H1 27 · H2 20 · H3 31 · H4 32 · H5 36 —
+  derived mechanically from the workbook's own `Sub-skills` column, with the **12 ambiguous splits
+  all resolved by the owner on 2026-08-30** (§9.20.4). ✅ **No `NEEDS_OWNER_REVIEW` remains.**
+  Defaults: `status = ACTIVE` · `visibility = OWNER_ONLY` · `detection_enabled = true` ·
   🛑 `mastery_enabled = false`
 - 🆕 🛑 **Visibility ≠ existence** — Sub-skills have stable identity now, so opening them later flips
   a flag; it never rebuilds the taxonomy or re-processes historical findings (§9.20.1)
