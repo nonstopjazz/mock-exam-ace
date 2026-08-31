@@ -46,6 +46,13 @@
   Listening ✅ · Speaking ✅ · Writing ✅ · **Exam 🛑 BLOCKED on the owner**. Mainline moves to
   **Learning Objective spec** → Evidence / Mastery Model → Competency DB schema.
   `docs/learn/LEARNING_DOMAIN_MODEL.md` §0.
+- 🧱 **Lesson composition and content production are specified (2026-08-31), documentation only:**
+  `docs/learn/teaching-blocks/Teaching_Block_Types_v1.md` — **18 Teaching Block Types**, a
+  lesson-composition vocabulary. 🛑 **Not a Skill, not a Domain, not a new tier in
+  Program→Module→Lesson→Activity, and its storage is deliberately undecided.**
+  `docs/learn/content-factory/Digital_Content_Types_v1.md` — **9 core Digital Content Types** and the
+  rule that shapes them: 🛑 **content creation and delivery are separate**, bulk generation is
+  first-class, and a Content Asset is **referenced, never copied per Lesson**.
 - 📘 **The `/learn` product & competency model is specified (2026-08-29):**
   `docs/learn/LEARNING_DOMAIN_MODEL.md` — Program→Module→Lesson→Activity, Content Assets outside the
   hierarchy, Relationship/Enrollment/Assignment kept separate, and the Domain→Category→Skill→

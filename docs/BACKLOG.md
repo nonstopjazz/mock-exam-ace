@@ -184,6 +184,16 @@ never Skills. 🛑 **Accent is not a target** · 🛑 fluency ≠ speed · 🛑 
 🛑 No Micro-skill. 🛑 **Accent, speech speed, audio length, speaker count and noise level are
 stimulus / difficulty metadata — never Skills.** Stated in the audio → L2; must be inferred → L3.
 
+**Lesson composition & content production (2026-08-31, documentation only):**
+`docs/learn/teaching-blocks/Teaching_Block_Types_v1.md` — 18 Teaching Block Types. 🛑 A Block is
+**not** a Skill, **not** a Domain, and **not** a tier inside `Program→Module→Lesson→Activity`;
+🛑 its storage is **deliberately undecided**, and 🛑 **Progressive Complexity** applies — no
+dozen-field Block, no mandatory teacher metadata.
+`docs/learn/content-factory/Digital_Content_Types_v1.md` — 9 core Content Types. 🛑 **Creation and
+delivery are separate**; 🛑 an asset is **referenced, never copied per Lesson**; 🛑 bulk generation
+is first-class; 🛑 Content Type ≠ Question Type; ⚠️ a *Review / SRS Set* is **content, not a second
+SRS scheduler**.
+
 **Reading taxonomy source of truth:** `docs/learn/reading-taxonomy/Reading_Taxonomy_v1.xlsx`
 — **6 Categories + 25 Skills, both DECIDED v1** (frozen 2026-08-29) · 10 tagging rules. 🛑 Reading v1
 has **no Micro-skill** — do not create any. **Question Type ≠ Skill**: Best Title / EXCEPT /

@@ -115,6 +115,14 @@ Activity kinds recorded by the owner:
 `fill-in-the-blank` · `matching` · `spelling` · `listening` · `shadowing` · `speaking recording` ·
 `writing` · `exam practice`
 
+⚠️ **This list is a record of what the owner named, not a closed enum.** It contains no
+`translation` entry, while *Translation Practice* is Teaching Block type 1 and *Translation Set* is
+core Content Type 6. 🛑 Recorded as an observation — the list is **not** amended here.
+
+📎 **How a teacher composes a Lesson out of these** is a separate, deliberately non-hierarchical
+concept: `docs/learn/teaching-blocks/Teaching_Block_Types_v1.md`. 🛑 A Teaching Block is **not** a
+new tier between Lesson and Activity.
+
 🛑 **`exam practice` is a boundary.** The `/exam` domain (`exams`, `exam_attempts`,
 `exam_user_answers`, and the five question tables) is **RESERVED**. A `/learn` exam-practice Activity
 may *link to* or *launch* that domain, but must not extend, restyle, or write to its schema. See
@@ -131,6 +139,16 @@ may *link to* or *launch* that domain, but must not extend, restyle, or write to
 
 Asset kinds recorded: `article` · `video` · `vocabulary list` · `question` · `question set` ·
 `grammar note` · `infographic` · `audio` · `image` · `writing prompt`.
+
+📎 **The nine core Digital Content Types elaborate this list** —
+`docs/learn/content-factory/Digital_Content_Types_v1.md`. ⚠️ That document names four kinds absent
+above (**Translation Set · Listening Material · Model Answer / Sample Response · Review / SRS Set**);
+this list is a record, not a closed enum, and is **not** amended here.
+
+🛑 **Content creation and content delivery are separate concerns**, and bulk generation — hundreds of
+assets from one specification — is a **first-class** use case, not an edge case. The Content Factory
+document is the authority on that; this section remains the authority on where an asset sits in the
+model.
 
 **The reuse requirement is the whole point.** One asset must be referenceable from many Programs,
 Lessons and Activities. Therefore:
