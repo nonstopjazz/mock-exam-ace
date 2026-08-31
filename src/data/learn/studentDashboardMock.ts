@@ -100,6 +100,13 @@ export const PROGRESS_LEVEL_STEP: Record<ProgressLevel, number> = {
 
 export type ProgressTrend = "up" | "flat" | "down";
 
+/** 首頁的近期亮點 / 本週重點，只有兩則，不是六技能報表 */
+export interface ProgressHighlight {
+  skill: SkillKey;
+  headline: string;
+  detail: string;
+}
+
 export interface ProgressRow {
   skill: SkillKey;
   /** null = 最近沒有足夠紀錄。🛑 尚未測得不等於能力弱 */
@@ -113,9 +120,11 @@ export interface ProgressRow {
 
 /* ---------- Learning Rhythm ---------- */
 
+export const WEEKDAY_LABELS = ["一", "二", "三", "四", "五", "六", "日"];
+
 export interface RhythmTrack {
   label: string;
-  /** true = 當天有完成 */
+  /** 固定七格，週一到週日。true = 當天有完成 */
   days: boolean[];
   /** 這一週的目標次數 */
   target: number;
@@ -125,12 +134,16 @@ export interface RhythmTrack {
 
 /* ---------- My Vocabulary（既有字卡系統的摘要） ---------- */
 
+/** 形狀刻意對齊既有的 UserPack，讓 Dashboard 直接餵給共用的 PackCard */
 export interface VocabPackSummary {
-  id: string;
+  pack_id: string;
   title: string;
-  /** 對應既有 packs.skill_type 的中文標籤 */
-  kindLabel: string;
-  collected: number;
+  theme: string | null;
+  skill_type: string | null;
+  difficulty: string | null;
+  word_count: number;
+  progress: number;
+  cover_image_url: string | null;
   /** 這一包裡已經熟悉的項目數 */
   familiar: number;
 }
@@ -167,14 +180,22 @@ export interface FeedbackItem {
 
 export interface StudentScenario {
   id: StudentId;
+  /** 0 = 週一。用來在 habit grid 上標出今天 */
+  todayIndex: number;
   switchLabel: string;
   name: string;
   initials: string;
   grade: string;
   className: string;
   nextClass: { dateLabel: string; timeLabel: string };
+  /** 距離下一堂課還有幾天 */
+  daysUntil: number;
   tasks: ClassTask[];
   practice: PracticeItem[];
+  /** 首頁摘要 */
+  highlight: ProgressHighlight;
+  focus: ProgressHighlight;
+  /** 完整六技能，收在「查看完整學習表現」裡 */
   progress: ProgressRow[];
   rhythm: RhythmTrack[];
   vocabulary: VocabularySummary;
@@ -186,12 +207,14 @@ export interface StudentScenario {
 
 const amy: StudentScenario = {
   id: "amy",
+  todayIndex: 2,
   switchLabel: "Amy",
   name: "Amy Chen",
   initials: "A",
   grade: "高二",
   className: "高二英文 A班",
   nextClass: { dateLabel: "9 月 3 日（三）", timeLabel: "18:30" },
+  daysUntil: 3,
   tasks: [
     {
       id: "t1", kind: "paper", title: "翻譯題本 P.20–25",
@@ -246,6 +269,16 @@ const amy: StudentScenario = {
       mode: "paper", scheduledToday: true, done: false, doneSource: null,
     },
   ],
+  highlight: {
+    skill: "reading",
+    headline: "最近明顯進步",
+    detail: "長句理解比上個月穩定，細節題幾乎都對。",
+  },
+  focus: {
+    skill: "vocabulary",
+    headline: "先從這裡開始",
+    detail: "完成 5 次單字複習，閱讀速度會更穩。",
+  },
   progress: [
     { skill: "reading", level: "steady", trend: "up",
       nextAction: "繼續練推論題，這是目前唯一還會猶豫的題型", sources: ["TEACHER", "AUTO"] },
@@ -263,17 +296,20 @@ const amy: StudentScenario = {
   ],
   rhythm: [
     { label: "單字複習", days: [true, true, true, false, true, true, false], target: 7, source: "auto" },
-    { label: "閱讀練習", days: [true, true, false], target: 3, source: "auto" },
-    { label: "聽力練習", days: [true, false], target: 2, source: "auto" },
-    { label: "紙本練習", days: [true, true], target: 2, source: "self" },
+    { label: "閱讀練習", days: [true, false, true, false, false, false, false], target: 3, source: "auto" },
+    { label: "聽力練習", days: [false, true, false, false, false, false, false], target: 2, source: "auto" },
+    { label: "紙本練習", days: [true, false, true, false, false, false, false], target: 2, source: "self" },
   ],
   vocabulary: {
     collected: 1284, familiar: 742, learning: 410, reviewDue: 18, unseen: 132,
     streakDays: 6,
     packs: [
-      { id: "vp1", title: "課本字卡包 · Unit 5", kindLabel: "單字", collected: 180, familiar: 122 },
-      { id: "vp2", title: "寫作高分表達", kindLabel: "寫作", collected: 96, familiar: 41 },
-      { id: "vp3", title: "學測高頻字彙", kindLabel: "單字", collected: 520, familiar: 318 },
+      { pack_id: "vp1", title: "課本字卡包 · Unit 5", theme: "課本", skill_type: "vocabulary",
+        difficulty: "中級", word_count: 180, progress: 68, cover_image_url: null, familiar: 122 },
+      { pack_id: "vp3", title: "學測高頻字彙", theme: "學測", skill_type: "vocabulary",
+        difficulty: "進階", word_count: 520, progress: 61, cover_image_url: null, familiar: 318 },
+      { pack_id: "vp2", title: "寫作高分表達", theme: "高分句型", skill_type: "writing",
+        difficulty: "進階", word_count: 96, progress: 43, cover_image_url: null, familiar: 41 },
     ],
   },
   results: [
@@ -295,12 +331,14 @@ const amy: StudentScenario = {
 
 const brian: StudentScenario = {
   id: "brian",
+  todayIndex: 2,
   switchLabel: "Brian",
   name: "Brian Wu",
   initials: "B",
   grade: "高二",
   className: "高二英文 A班",
   nextClass: { dateLabel: "9 月 3 日（三）", timeLabel: "18:30" },
+  daysUntil: 3,
   tasks: [
     {
       id: "t1", kind: "paper", title: "翻譯題本 P.20–25",
@@ -354,6 +392,16 @@ const brian: StudentScenario = {
       mode: "paper", scheduledToday: true, done: false, doneSource: null,
     },
   ],
+  highlight: {
+    skill: "listening",
+    headline: "最近有進步",
+    detail: "這個月的聽力練習正確率往上走，維持每週兩次就會更穩。",
+  },
+  focus: {
+    skill: "vocabulary",
+    headline: "先從這裡開始",
+    detail: "先把 34 個待複習的字清掉，閱讀速度會跟著改善。",
+  },
   progress: [
     { skill: "reading", level: "building", trend: "up",
       nextAction: "細節題已經穩了，接下來練主旨與推論", sources: ["TEACHER", "AUTO"] },
@@ -369,17 +417,19 @@ const brian: StudentScenario = {
       nextAction: "累積幾次口說練習後，這裡就會出現你的進度", sources: [] },
   ],
   rhythm: [
-    { label: "單字複習", days: [true, true, false, false, true, false, false], target: 7, source: "auto" },
-    { label: "閱讀練習", days: [true, false, false], target: 3, source: "auto" },
-    { label: "聽力練習", days: [false, false], target: 2, source: "auto" },
-    { label: "紙本練習", days: [true, false], target: 2, source: "self" },
+    { label: "單字複習", days: [true, true, true, false, false, false, false], target: 7, source: "auto" },
+    { label: "閱讀練習", days: [true, false, false, false, false, false, false], target: 3, source: "auto" },
+    { label: "聽力練習", days: [false, false, false, false, false, false, false], target: 2, source: "auto" },
+    { label: "紙本練習", days: [true, false, false, false, false, false, false], target: 2, source: "self" },
   ],
   vocabulary: {
     collected: 806, familiar: 318, learning: 352, reviewDue: 34, unseen: 136,
     streakDays: 2,
     packs: [
-      { id: "vp1", title: "課本字卡包 · Unit 5", kindLabel: "單字", collected: 180, familiar: 64 },
-      { id: "vp3", title: "學測高頻字彙", kindLabel: "單字", collected: 520, familiar: 219 },
+      { pack_id: "vp1", title: "課本字卡包 · Unit 5", theme: "課本", skill_type: "vocabulary",
+        difficulty: "中級", word_count: 180, progress: 36, cover_image_url: null, familiar: 64 },
+      { pack_id: "vp3", title: "學測高頻字彙", theme: "學測", skill_type: "vocabulary",
+        difficulty: "進階", word_count: 520, progress: 42, cover_image_url: null, familiar: 219 },
     ],
   },
   results: [
