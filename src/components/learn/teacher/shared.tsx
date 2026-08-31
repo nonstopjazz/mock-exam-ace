@@ -152,7 +152,7 @@ export const RatingBadge = ({ rating }: { rating: SkillRating }) => (
 
 /** source 是溯源資訊：要一眼認得出來，但不能搶走 assessment 標題的主體 */
 export const SourceBadge = ({ source }: { source: AssessmentSource }) => (
-  <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-foreground/70">
+  <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold leading-4 tracking-wider text-muted-foreground">
     {source}
   </span>
 );

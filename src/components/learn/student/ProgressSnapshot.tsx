@@ -11,7 +11,7 @@ import {
 } from "@/data/learn/studentDashboardMock";
 import { TrendIcon } from "@/components/learn/parent/shared";
 import { SourceBadge } from "@/components/learn/teacher/shared";
-import { LevelSteps } from "./shared";
+import { LevelSteps, SURFACE, TYPE } from "./shared";
 import type { StudentDashboard } from "@/hooks/learn/useStudentDashboard";
 
 const TREND_LABEL = { up: "在進步", flat: "持平", down: "最近較不穩" } as const;
@@ -20,16 +20,18 @@ const Item = ({
   item, icon: Icon, iconClass, eyebrow,
 }: { item: ProgressHighlight; icon: typeof Target; iconClass: string; eyebrow: string }) => (
   <div className="flex gap-3">
-    <div className="p-2 rounded-lg bg-muted shrink-0 h-fit">
+    <div className="h-8 w-8 grid place-items-center rounded-lg bg-muted/70 shrink-0">
       <Icon className={`h-4 w-4 ${iconClass}`} />
     </div>
     <div className="min-w-0">
-      <p className="text-xs text-muted-foreground">{eyebrow}</p>
-      <p className="font-semibold text-foreground mt-0.5">
-        {SKILL_LABEL[item.skill]}
-        <span className="ml-2 text-sm font-normal text-muted-foreground">{item.headline}</span>
+      <p className="text-[11px] font-medium tracking-[0.06em] text-muted-foreground uppercase">
+        {eyebrow}
       </p>
-      <p className="text-sm text-foreground/80 leading-relaxed mt-1">{item.detail}</p>
+      <p className="mt-1">
+        <span className="text-base font-semibold text-foreground">{SKILL_LABEL[item.skill]}</span>
+        <span className="ml-2 text-sm text-muted-foreground">{item.headline}</span>
+      </p>
+      <p className={`${TYPE.body} mt-1`}>{item.detail}</p>
     </div>
   </div>
 );
@@ -44,15 +46,15 @@ export const ProgressSnapshot = ({ sd }: { sd: StudentDashboard }) => {
 
   return (
     <>
-      <Card className="p-5 h-full flex flex-col">
-        <h2 className="text-base font-semibold text-foreground mb-4">我最近的學習</h2>
+      <Card className="p-5 h-full flex flex-col bg-card border-border/70">
+        <h2 className={`${TYPE.sectionHeading} mb-4`}>我最近的學習</h2>
         <div className="space-y-5 flex-1">
           <Item item={highlight} icon={ArrowUpRight} iconClass="text-success" eyebrow="近期亮點" />
           <Item item={focus} icon={Target} iconClass="text-accent" eyebrow="本週重點" />
         </div>
         <Button
           variant="ghost"
-          className="mt-4 justify-start -ml-2 text-muted-foreground"
+          className="mt-5 justify-start -ml-2 h-8 text-muted-foreground hover:text-foreground"
           onClick={() => setOpen(true)}
         >
           查看完整學習表現

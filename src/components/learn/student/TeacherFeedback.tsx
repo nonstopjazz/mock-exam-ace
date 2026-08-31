@@ -4,7 +4,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { MessageSquareQuote } from "lucide-react";
-import { StudentSection } from "./shared";
+import { QuietPanel, TYPE } from "./shared";
 import type { StudentDashboard } from "@/hooks/learn/useStudentDashboard";
 
 /** 只顯示最近、有意義的兩則；其餘收在「查看更多」裡 */
@@ -15,16 +15,15 @@ export const TeacherFeedback = ({ sd }: { sd: StudentDashboard }) => {
 
   return (
     <>
-      <StudentSection
+      <QuietPanel
         icon={MessageSquareQuote}
         title="老師的話"
-        hint="最近的課堂觀察"
-        action={
+        aside={
           all.length > recent.length && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-muted-foreground"
+              className="h-8 px-2 text-muted-foreground hover:text-foreground"
               onClick={() => setOpen(true)}
             >
               查看更多
@@ -32,17 +31,17 @@ export const TeacherFeedback = ({ sd }: { sd: StudentDashboard }) => {
           )
         }
       >
-        <div className="space-y-3">
+        <div className="space-y-4">
           {recent.map((f) => (
-            <div key={f.id}>
-              <p className="text-sm text-foreground leading-relaxed">{f.body}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {f.teacherName} · {f.dateLabel}
+            <div key={f.id} className="border-l-2 border-border/70 pl-3">
+              <p className="text-sm text-foreground/90 leading-[1.7]">「{f.body}」</p>
+              <p className={`${TYPE.micro} mt-1.5`}>
+                <span className="font-medium text-foreground/70">{f.teacherName}</span> · {f.dateLabel}
               </p>
             </div>
           ))}
         </div>
-      </StudentSection>
+      </QuietPanel>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
@@ -52,10 +51,10 @@ export const TeacherFeedback = ({ sd }: { sd: StudentDashboard }) => {
           </DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto">
             {all.map((f) => (
-              <div key={f.id} className="border-b border-border pb-3 last:border-0">
-                <p className="text-sm text-foreground leading-relaxed">{f.body}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {f.teacherName} · {f.dateLabel}
+              <div key={f.id} className="border-l-2 border-border/70 pl-3">
+                <p className="text-sm text-foreground/90 leading-[1.7]">「{f.body}」</p>
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  <span className="font-medium text-foreground/70">{f.teacherName}</span> · {f.dateLabel}
                 </p>
               </div>
             ))}

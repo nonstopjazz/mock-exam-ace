@@ -1,8 +1,34 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { BookOpen, Tag } from "lucide-react";
+import { BookOpen, PenLine, Sparkles, Tag } from "lucide-react";
 import { skillTypeLabel, type PackCardData } from "./packMeta";
+
+/**
+ * 沒有上傳封面時的預設封面。
+ * 真實封面來自 pack_images.image_url；這裡是同一張卡在沒有圖時的樣子，
+ * 依 skill_type 給不同色調與圖徽，讓一排字卡包不會全部長一樣。
+ */
+const COVER_STYLE: Record<string, { field: string; glyph: string; icon: typeof BookOpen }> = {
+  vocabulary: { field: "from-secondary/35 via-secondary/15 to-card", glyph: "text-secondary/35", icon: Sparkles },
+  writing: { field: "from-accent/35 via-accent/15 to-card", glyph: "text-accent/35", icon: PenLine },
+  reading: { field: "from-primary/35 via-primary/15 to-card", glyph: "text-primary/35", icon: BookOpen },
+};
+const DEFAULT_COVER = { field: "from-muted via-muted/60 to-card", glyph: "text-muted-foreground/30", icon: BookOpen };
+
+const CoverFallback = ({ pack, compact }: { pack: PackCardData; compact: boolean }) => {
+  const c = COVER_STYLE[pack.skill_type ?? ""] ?? DEFAULT_COVER;
+  const Glyph = c.icon;
+  return (
+    <div className={`relative h-full w-full overflow-hidden bg-gradient-to-br ${c.field}`}>
+      <div className="absolute -left-6 -top-8 h-24 w-24 rounded-full bg-card/40 blur-xl" />
+      <Glyph
+        className={`absolute -bottom-3 -right-2 ${compact ? "h-20 w-20" : "h-28 w-28"} ${c.glyph} -rotate-12`}
+        strokeWidth={1.25}
+      />
+    </div>
+  );
+};
 
 /**
  * 字卡包卡片 —— 全站唯一的 pack 視覺。
@@ -29,19 +55,20 @@ export const PackCard = ({
   const compact = variant === "compact";
 
   return (
-    <Card className="transition-all duration-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 flex flex-col">
+    <Card className="group flex flex-col overflow-hidden border-border shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
       {/* Cover Image */}
-      {pack.cover_image_url ? (
-        <div className={`${compact ? "aspect-[16/7]" : "aspect-video xl:aspect-[4/3]"} bg-muted overflow-hidden`}>
-          <img src={pack.cover_image_url} alt={pack.title} className="w-full h-full object-cover" />
-        </div>
-      ) : (
-        <div
-          className={`${compact ? "aspect-[16/7]" : "aspect-video xl:aspect-[4/3]"} bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center`}
-        >
-          <BookOpen className={compact ? "h-8 w-8 text-primary/40" : "h-12 w-12 xl:h-8 xl:w-8 text-primary/40"} />
-        </div>
-      )}
+      <div className={`${compact ? "aspect-[16/7]" : "aspect-video xl:aspect-[4/3]"} overflow-hidden`}>
+        {pack.cover_image_url ? (
+          <img
+            src={pack.cover_image_url}
+            alt={pack.title}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          />
+        ) : (
+          <CoverFallback pack={pack} compact={compact} />
+        )}
+      </div>
 
       <div className={`${compact ? "p-4 space-y-3" : "p-6 xl:p-4 space-y-4 xl:space-y-3"} flex flex-col flex-1`}>
         {/* Header */}
@@ -112,7 +139,7 @@ export const PackCard = ({
           </Button>
           <Button
             size="sm"
-            className={compact ? "flex-1 text-xs h-8" : "flex-1 xl:text-xs xl:h-8"}
+            className={`${compact ? "flex-1 text-xs h-8" : "flex-1 xl:text-xs xl:h-8"} transition-shadow hover:shadow-button active:translate-y-px`}
             onClick={onStartReview}
           >
             開始複習

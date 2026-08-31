@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import {
-  Check, ChevronDown, Circle, Clock, ExternalLink, FileText, Laptop, Triangle, Undo2,
-} from "lucide-react";
+import { ChevronDown, ExternalLink, FileText, Laptop, Undo2 } from "lucide-react";
 import { isTaskReady, type ClassTask } from "@/data/learn/studentDashboardMock";
+import { SURFACE, TYPE, TaskState } from "./shared";
 import type { StudentDashboard } from "@/hooks/learn/useStudentDashboard";
 
 const KIND_ICON = { paper: FileText, external: ExternalLink, digital: Laptop } as const;
@@ -20,71 +19,37 @@ const KIND_ICON = { paper: FileText, external: ExternalLink, digital: Laptop } a
 const ReadinessRing = ({
   verified, selfReported, total,
 }: { verified: number; selfReported: number; total: number }) => {
-  const R = 46, C = 2 * Math.PI * R;
+  const R = 47, C = 2 * Math.PI * R;
   const seg = (n: number) => (total ? (n / total) * C : 0);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(t);
+  }, []);
+  const arc = (n: number) => `${shown ? seg(n) : 0} ${C}`;
+
   return (
-    <div className="relative h-32 w-32 shrink-0">
+    <div className="relative h-[104px] w-[104px] shrink-0" role="img"
+      aria-label={`準備度 ${verified + selfReported} / ${total}，其中老師已確認 ${verified} 項`}>
       <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-        <circle cx="60" cy="60" r={R} fill="none" strokeWidth="10"
-          className="stroke-muted" />
-        {/* 自行標記（含已確認）—— 較淺，虛線代表尚未有結論 */}
-        <circle cx="60" cy="60" r={R} fill="none" strokeWidth="10" strokeLinecap="round"
-          className="stroke-secondary/35"
-          strokeDasharray={`${seg(verified + selfReported)} ${C}`} />
+        <circle cx="60" cy="60" r={R} fill="none" strokeWidth="7" className="stroke-border" />
+        {/* 自行標記（含已確認）—— 較淺，代表還沒有結論 */}
+        <circle cx="60" cy="60" r={R} fill="none" strokeWidth="7" strokeLinecap="round"
+          className="stroke-secondary/30 transition-[stroke-dasharray] duration-700 ease-out"
+          strokeDasharray={arc(verified + selfReported)} />
         {/* 老師已確認 —— 實心 */}
-        <circle cx="60" cy="60" r={R} fill="none" strokeWidth="10" strokeLinecap="round"
-          className="stroke-secondary"
-          strokeDasharray={`${seg(verified)} ${C}`} />
+        <circle cx="60" cy="60" r={R} fill="none" strokeWidth="7" strokeLinecap="round"
+          className="stroke-secondary transition-[stroke-dasharray] duration-700 ease-out delay-100"
+          strokeDasharray={arc(verified)} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold text-foreground tabular-nums leading-none">
+        <span className="text-[11px] text-muted-foreground leading-none">準備度</span>
+        <span className="text-xl font-bold text-foreground tabular-nums leading-none mt-1">
           {verified + selfReported}
-          <span className="text-lg text-muted-foreground font-semibold">/{total}</span>
+          <span className="text-sm text-muted-foreground font-semibold"> / {total}</span>
         </span>
-        <span className="text-xs text-muted-foreground mt-1">準備度</span>
       </div>
     </div>
-  );
-};
-
-/** 狀態列：用 icon + 排版分辨，而不是一排彩色 pill */
-const StatusLine = ({ task }: { task: ClassTask }) => {
-  if (task.teacherCheck) {
-    const { status, percent } = task.teacherCheck;
-    if (status === "done")
-      return (
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-success">
-          <Check className="h-3.5 w-3.5" />老師已確認
-        </span>
-      );
-    if (status === "partial")
-      return (
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-warning">
-          <Triangle className="h-3.5 w-3.5" />老師檢查：完成 {percent}%
-        </span>
-      );
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Circle className="h-3.5 w-3.5" />老師檢查：尚未完成
-      </span>
-    );
-  }
-  if (task.kind === "digital" && task.autoCompleted)
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-success">
-        <Check className="h-3.5 w-3.5" />已完成 · 平台記錄
-      </span>
-    );
-  if (task.studentReported)
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-secondary">
-        <Clock className="h-3.5 w-3.5" />我已完成 · 待老師確認
-      </span>
-    );
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-      <Circle className="h-3.5 w-3.5" />尚未完成
-    </span>
   );
 };
 
@@ -93,35 +58,37 @@ const TaskRow = ({
 }: { task: ClassTask; onSelfReport: () => void; onStartDigital: () => void; dim?: boolean }) => {
   const Icon = KIND_ICON[task.kind];
   return (
-    <div className={`flex items-start gap-3 py-2.5 ${dim ? "opacity-70" : ""}`}>
-      <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${dim ? "text-muted-foreground" : "text-secondary"}`} />
+    <div className={`flex items-start gap-3 py-3 ${dim ? "opacity-60" : ""}`}>
+      <span className="w-5 flex justify-center pt-0.5 shrink-0">
+        <Icon className={`h-4 w-4 ${dim ? "text-muted-foreground" : "text-secondary/80"}`} />
+      </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground leading-snug">{task.title}</p>
-        {task.detail && <p className="text-xs text-muted-foreground mt-0.5">{task.detail}</p>}
-        <div className="mt-1 flex items-center gap-3 flex-wrap">
-          <StatusLine task={task} />
+        {task.detail && <p className={`${TYPE.micro} mt-0.5`}>{task.detail}</p>}
+        <div className="mt-1.5 flex items-center gap-2.5 flex-wrap">
+          <TaskState task={task} />
           {task.sourceName && (
-            <span className="text-xs text-muted-foreground">· {task.sourceName}</span>
+            <span className={TYPE.micro}>· {task.sourceName}</span>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
         {task.kind === "external" && task.externalUrl && (
-          <Button variant="ghost" size="sm" className="h-8" asChild>
+          <Button variant="ghost" size="sm" className="h-8 px-2.5" asChild>
             <a href={task.externalUrl} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-3.5 w-3.5" />開啟
             </a>
           </Button>
         )}
         {task.kind === "digital" && !task.autoCompleted && (
-          <Button size="sm" className="h-8" onClick={onStartDigital}>開始</Button>
+          <Button size="sm" className="h-8 px-3.5 transition-shadow hover:shadow-button" onClick={onStartDigital}>開始</Button>
         )}
         {/* 🛑 老師檢查過的項目沒有這顆按鈕，學生無法把自己的勾變成已確認 */}
         {task.kind !== "digital" && !task.teacherCheck && (
           <Button
             variant={task.studentReported ? "ghost" : "outline"}
             size="sm"
-            className={`h-8 ${task.studentReported ? "text-muted-foreground" : ""}`}
+            className={`h-8 px-3 ${task.studentReported ? "text-muted-foreground" : ""}`}
             onClick={onSelfReport}
           >
             {task.studentReported ? <Undo2 className="h-3.5 w-3.5" /> : null}
@@ -151,60 +118,61 @@ export const NextClassHero = ({ sd }: { sd: StudentDashboard }) => {
 
   return (
     <>
-      <Card className="overflow-hidden border-primary/20">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,22rem)_1fr]">
+      <Card className="overflow-hidden border-primary/25 shadow-card">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,23.5rem)_1fr]">
           {/* 左：日期與準備度 */}
-          <div className="bg-gradient-to-br from-primary/12 to-accent/12 p-6 lg:p-7 border-b lg:border-b-0 lg:border-r border-primary/20">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground">下一堂課</p>
-            <p className="text-3xl md:text-4xl font-bold text-foreground mt-1 leading-tight">
+          <div className="bg-gradient-to-br from-primary/12 to-accent/10 p-6 lg:p-7 border-b lg:border-b-0 lg:border-r border-primary/20">
+            <p className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+              下一堂課
+            </p>
+            <p className="text-3xl md:text-[2.5rem] font-bold text-foreground mt-1.5 leading-[1.1] tracking-tight whitespace-nowrap">
               {scenario.nextClass.dateLabel}
             </p>
-            <p className="text-lg font-semibold text-foreground/80 mt-0.5">
+            <p className="text-base font-semibold text-foreground/75 mt-2">
               {scenario.nextClass.timeLabel}
               <span className="ml-2 text-sm font-normal text-muted-foreground">
                 {scenario.className}
               </span>
             </p>
-            <p className="inline-flex items-center gap-1.5 mt-3 rounded-full bg-card/70 border border-primary/25 px-3 py-1 text-sm font-medium text-foreground">
+            <p className="inline-flex items-center gap-1.5 mt-3 rounded-full bg-card border border-primary/30 px-3 py-1 text-sm font-semibold text-foreground shadow-sm">
               還有 {scenario.daysUntil} 天
             </p>
 
-            <div className="flex items-center gap-5 mt-6">
+            <div className="flex items-center gap-5 mt-6 pt-5 border-t border-primary/15">
               <ReadinessRing verified={verified} selfReported={awaiting} total={readiness.total} />
-              <div className="space-y-2 min-w-0">
-                <p className="flex items-center gap-2 text-sm">
-                  <span className="h-2.5 w-2.5 rounded-full bg-secondary shrink-0" />
-                  <span className="font-semibold text-foreground tabular-nums">{verified}</span>
-                  <span className="text-muted-foreground">項老師已確認</span>
-                </p>
-                <p className="flex items-center gap-2 text-sm">
-                  <span className="h-2.5 w-2.5 rounded-full bg-secondary/35 shrink-0" />
-                  <span className="font-semibold text-foreground tabular-nums">{awaiting}</span>
-                  <span className="text-muted-foreground">項待老師確認</span>
-                </p>
-                <p className="flex items-center gap-2 text-sm">
-                  <span className="h-2.5 w-2.5 rounded-full bg-muted border border-border shrink-0" />
-                  <span className="font-semibold text-foreground tabular-nums">{pending.length}</span>
-                  <span className="text-muted-foreground">項待完成</span>
-                </p>
-              </div>
+              <ul className="space-y-1.5 min-w-0">
+                {[
+                  { n: verified, label: "項老師已確認", dot: "bg-secondary" },
+                  { n: awaiting, label: "項待老師確認", dot: "bg-secondary/30" },
+                  { n: pending.length, label: "項待完成", dot: "bg-muted border border-border" },
+                ].map((r) => (
+                  <li key={r.label} className="flex items-center gap-2 text-[13px]">
+                    <span className={`h-2 w-2 rounded-full shrink-0 ${r.dot}`} />
+                    <span className="font-semibold text-foreground tabular-nums w-3 text-right">
+                      {r.n}
+                    </span>
+                    <span className="text-muted-foreground">{r.label}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
           {/* 右：待辦清單 */}
-          <div className="p-6 lg:p-7">
-            <h2 className="text-base font-semibold text-foreground mb-1">
-              還要完成
-              <span className="ml-2 text-sm font-normal text-muted-foreground tabular-nums">
-                {pending.length} 項
+          <div className="p-6 lg:p-7 min-w-0 flex flex-col">
+            <h2 className="flex items-baseline gap-2 mb-1">
+              <span className="text-2xl font-bold text-foreground tabular-nums leading-none">
+                {pending.length}
               </span>
+              <span className="text-base font-semibold text-foreground">項還要完成</span>
+              <span className={`${TYPE.micro} ml-auto`}>上課前</span>
             </h2>
             {pending.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4">
                 上課前的項目都完成了，剩下的老師會在課堂上檢查。
               </p>
             ) : (
-              <div className="divide-y divide-border/60">
+              <div className="divide-y divide-border/50">
                 {pending.map((t) => (
                   <TaskRow
                     key={t.id}
@@ -217,7 +185,7 @@ export const NextClassHero = ({ sd }: { sd: StudentDashboard }) => {
             )}
 
             {done.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-border">
+              <div className="mt-auto pt-4 border-t border-border/70">
                 <button
                   type="button"
                   onClick={() => setShowDone((v) => !v)}
@@ -228,7 +196,7 @@ export const NextClassHero = ({ sd }: { sd: StudentDashboard }) => {
                   <ChevronDown className={`h-4 w-4 transition-transform ${showDone ? "rotate-180" : ""}`} />
                 </button>
                 {showDone && (
-                  <div className="divide-y divide-border/60 mt-1">
+                  <div className="divide-y divide-border/50 mt-1">
                     {done.map((t) => (
                       <TaskRow
                         key={t.id}

@@ -38,10 +38,10 @@ const StudentDashboard = () => {
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <h1 className="text-xl md:text-2xl font-bold text-foreground truncate">
+                <h1 className="text-xl md:text-[1.6rem] font-bold text-foreground truncate leading-tight">
                   嗨，{sd.scenario.name}
                 </h1>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-[11px] text-muted-foreground truncate">
                   {sd.scenario.grade} · {sd.scenario.className}
                 </p>
               </div>
@@ -61,30 +61,31 @@ const StudentDashboard = () => {
           <NextClassHero sd={sd} />
 
           {/* 2. Action zone —— 今天要做什麼 */}
-          <div className="mt-8">
+          <div className="mt-10">
             <TodayLauncher sd={sd} />
           </div>
 
           {/* 3–4. 摘要與節奏：兩欄，密度比上面高、份量比上面輕 */}
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] gap-4 items-stretch">
+          <div className="mt-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] gap-4 items-stretch">
             <ProgressSnapshot sd={sd} />
             <LearningRhythm sd={sd} />
           </div>
 
           {/* 5. 字卡收藏 */}
-          <div className="mt-8">
+          <div className="mt-10">
             <MyVocabulary sd={sd} />
           </div>
 
           {/* 6–7. 次要資訊 */}
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-            <RecentResults sd={sd} />
-            <TeacherFeedback sd={sd} />
+          <div className="mt-10 -mx-4 px-4 py-8 border-t border-border/60 bg-muted/20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+              <RecentResults sd={sd} />
+              <TeacherFeedback sd={sd} />
+            </div>
+            <p className="text-center text-[11px] text-muted-foreground mt-8">
+              本頁為設計原型，所有資料皆為示範用途，未連接後端。
+            </p>
           </div>
-
-          <p className="text-center text-xs text-muted-foreground mt-8">
-            本頁為設計原型，所有資料皆為示範用途，未連接後端。
-          </p>
         </div>
       </div>
     </Layout>

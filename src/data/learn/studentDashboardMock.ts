@@ -122,6 +122,9 @@ export interface ProgressRow {
 
 export const WEEKDAY_LABELS = ["一", "二", "三", "四", "五", "六", "日"];
 
+/** 本週的日期標籤，只給 habit tracker 的 tooltip 用 */
+export const WEEK_DATES = ["8/25", "8/26", "8/27", "8/28", "8/29", "8/30", "8/31"];
+
 export interface RhythmTrack {
   label: string;
   /** 固定七格，週一到週日。true = 當天有完成 */

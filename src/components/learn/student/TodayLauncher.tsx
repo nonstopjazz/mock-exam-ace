@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { BookOpen, Check, FileText, Headphones, Play, Sparkles } from "lucide-react";
+import { BookOpen, FileText, Headphones, Play, Sparkles } from "lucide-react";
 import type { PracticeItem } from "@/data/learn/studentDashboardMock";
+import { SURFACE, TYPE, SectionHead, PracticeDone } from "./shared";
 import type { StudentDashboard } from "@/hooks/learn/useStudentDashboard";
 
 const ICON_FOR = (title: string) =>
@@ -20,36 +21,46 @@ const Tile = ({
 
   return (
     <div
-      className={`flex flex-col rounded-lg border p-4 transition-all ${
+      className={`group flex flex-col rounded-lg border p-5 transition-all duration-200 ${
         item.done
-          ? "border-border bg-muted/30"
-          : "border-secondary/25 bg-secondary/5 hover:border-secondary/45 hover:shadow-md"
+          ? "border-border/60 bg-muted/25"
+          : `${SURFACE.raised} border hover:-translate-y-0.5 hover:shadow-lg`
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className={`p-2 rounded-lg shrink-0 ${item.done ? "bg-muted" : "bg-secondary/15"}`}>
+        <div
+          className={`h-10 w-10 grid place-items-center rounded-lg shrink-0 transition-colors ${
+            item.done ? "bg-muted" : "bg-secondary/12 group-hover:bg-secondary/18"
+          }`}
+        >
           <Icon className={`h-5 w-5 ${item.done ? "text-muted-foreground" : "text-secondary"}`} />
         </div>
         <div className="min-w-0">
-          <p className="font-semibold text-foreground leading-snug">{item.title}</p>
-          <p className="text-sm text-muted-foreground mt-0.5">{count}</p>
-          {time && <p className="text-xs text-muted-foreground">{time}</p>}
+          <p className={`${TYPE.cardTitle} leading-snug`}>{item.title}</p>
+          <p className="text-sm text-foreground/70 mt-1 tabular-nums">{count}</p>
+          {time && <p className={TYPE.micro}>{time}</p>}
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
         {item.done ? (
-          <p className="flex items-center gap-1.5 text-sm font-medium text-success">
-            <Check className="h-4 w-4" />
-            {item.doneSource === "self" ? "已標記完成" : "已完成"}
-          </p>
+          <div className="h-10 flex items-center">
+            <PracticeDone source={item.doneSource} />
+          </div>
         ) : item.mode === "online" ? (
-          <Button className="w-full" onClick={onStart}>
-            <Play className="h-4 w-4" />
+          <Button
+            className="w-full h-10 transition-all hover:shadow-button active:translate-y-px"
+            onClick={onStart}
+          >
+            <Play className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             開始
           </Button>
         ) : (
-          <Button variant="outline" className="w-full" onClick={onSelfReport}>
+          <Button
+            variant="outline"
+            className="w-full h-10 active:translate-y-px"
+            onClick={onSelfReport}
+          >
             我完成了
           </Button>
         )}
@@ -70,12 +81,14 @@ export const TodayLauncher = ({ sd }: { sd: StudentDashboard }) => {
 
   return (
     <section id="section-today">
-      <div className="flex items-baseline justify-between gap-3 mb-3">
-        <h2 className="text-xl font-semibold text-foreground">今天要做的練習</h2>
-        <p className="text-sm text-muted-foreground">
-          {remaining > 0 ? `還有 ${remaining} 項 · 約 ${remaining * 10} 分鐘` : "今天都完成了"}
-        </p>
-      </div>
+      <SectionHead
+        title="今天要做的練習"
+        aside={
+          <p className={TYPE.actionMeta}>
+            {remaining > 0 ? `還有 ${remaining} 項` : "今天都完成了"}
+          </p>
+        }
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {todayPractice.map((p) => (
@@ -89,7 +102,7 @@ export const TodayLauncher = ({ sd }: { sd: StudentDashboard }) => {
       </div>
 
       {notToday.length > 0 && (
-        <p className="text-xs text-muted-foreground mt-3">
+        <p className={`${TYPE.micro} mt-3`}>
           今日無安排：{notToday.map((p) => p.title).join("、")}
         </p>
       )}
