@@ -29,6 +29,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import ClaimPack from "./pages/ClaimPack";
+import ParentDashboard from "./pages/learn/ParentDashboard";
 import ExamList from "./pages/ExamList";
 import ExamNew from "./pages/ExamNew";
 import ExamResult from "./pages/ExamResult";
@@ -105,6 +106,9 @@ const App = () => (
 
             {/* Claim pack route */}
             <Route path="/claim/:token" element={<ClaimPack />} />
+
+          {/* /learn 家長儀表板（設計原型，mock data） */}
+          <Route path="/learn/parent" element={<ParentDashboard />} />
 
           {/* Phase 2: Exam routes (gated by backend phase) */}
           <Route path="/exams" element={<PhaseGate requiredPhase={2} title="學測模考" description="模考功能即將推出，敬請期待！"><ExamList /></PhaseGate>} />
