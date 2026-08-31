@@ -26,6 +26,8 @@ export interface DomainOverview {
   value: number | null;
   trend: Trend;
   standing: Standing | null;
+  /** 給家長的一句話解讀，讓數字不只是數字 */
+  note: string;
 }
 
 export interface HeatmapDay {
@@ -46,6 +48,7 @@ export const parentDashboardMock = {
       dateLabel: "10 月 14 日",
       daysLeft: 23,
     },
+    teacherName: "林老師",
     teacherWeeklySummary:
       "這週長句拆解的速度明顯變快，翻譯的句型選擇也更穩定。接下來會把重點放在時態一致與閱讀推論。",
   },
@@ -103,13 +106,19 @@ export const parentDashboardMock = {
   },
 
   abilityOverview: [
-    { key: "reading", label: "閱讀", value: 74, trend: "up", standing: "improving" },
-    { key: "vocabulary", label: "單字", value: 81, trend: "flat", standing: "stable" },
-    { key: "grammar", label: "文法", value: 66, trend: "up", standing: "focus" },
-    { key: "listening", label: "聽力", value: 70, trend: "flat", standing: "stable" },
-    { key: "writing", label: "寫作", value: 63, trend: "up", standing: "focus" },
+    { key: "reading", label: "閱讀", value: 74, trend: "up", standing: "improving",
+      note: "主旨與細節都很穩，推論題還在追。" },
+    { key: "vocabulary", label: "單字", value: 81, trend: "flat", standing: "stable",
+      note: "目前六大能力中最穩定的一項。" },
+    { key: "grammar", label: "文法", value: 66, trend: "up", standing: "focus",
+      note: "句構掌握不錯，時態一致仍在調整。" },
+    { key: "listening", label: "聽力", value: 70, trend: "flat", standing: "stable",
+      note: "聽得懂細節，推論類題目較吃力。" },
+    { key: "writing", label: "寫作", value: 63, trend: "up", standing: "focus",
+      note: "四個月持續上升，是本月的優先項目。" },
     // 口說目前沒有足夠的線上練習紀錄 → 必須顯示「尚無足夠資料」
-    { key: "speaking", label: "口說", value: null, trend: "flat", standing: null },
+    { key: "speaking", label: "口說", value: null, trend: "flat", standing: null,
+      note: "已完成 4 次練習，次數還不足以做分析。" },
   ] as DomainOverview[],
 
   reading: {
@@ -118,7 +127,7 @@ export const parentDashboardMock = {
       { label: "掌握主旨", value: 82, trend: "up" },
       { label: "擷取細節", value: 85, trend: "up", note: "本月 +12" },
       { label: "理解語境", value: 76, trend: "flat" },
-      { label: "推論引申", value: 58, trend: "flat", note: "優先加強" },
+      { label: "推論引申", value: 58, trend: "flat", note: "連續兩個月持平" },
       { label: "篇章結構", value: 71, trend: "up" },
       { label: "作者意圖與風格", value: 68, trend: "flat" },
     ] as ScoreItem[],
@@ -126,6 +135,7 @@ export const parentDashboardMock = {
 
   vocabulary: {
     summary: "第 4 級的字正在累積中，第 5、6 級才剛開始接觸。",
+    /** API 仍以級距為單位回傳；UI 收斂成下面三個學習階段呈現 */
     levels: [
       { label: "第 1 級", learned: 1180, total: 1200 },
       { label: "第 2 級", learned: 1050, total: 1100 },
@@ -133,6 +143,11 @@ export const parentDashboardMock = {
       { label: "第 4 級", learned: 610, total: 1100 },
       { label: "第 5 級", learned: 240, total: 1100 },
       { label: "第 6 級", learned: 60, total: 1000 },
+    ],
+    stages: [
+      { label: "已穩固", range: "第 1–2 級", learned: 2230, total: 2300 },
+      { label: "建立中", range: "第 3–4 級", learned: 1530, total: 2200 },
+      { label: "拓展中", range: "第 5–6 級", learned: 300, total: 2100 },
     ],
     stats: {
       learned: 4060,

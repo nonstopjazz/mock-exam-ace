@@ -6,20 +6,22 @@ import {
 export const RadarPanel = ({
   data,
   color = "hsl(var(--secondary))",
+  className = "h-[300px] md:h-[340px]",
 }: {
   data: { short: string; value: number }[];
   color?: string;
+  className?: string;
 }) => (
-  <div className="h-[240px] w-full overflow-hidden">
+  <div className={`w-full overflow-hidden ${className}`}>
     <ResponsiveContainer width="100%" height="100%">
-      <RadarChart data={data} outerRadius="72%">
+      <RadarChart data={data} outerRadius="78%">
         <PolarGrid stroke="hsl(var(--border))" />
         <PolarAngleAxis
           dataKey="short"
-          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 13 }}
         />
         <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-        <Radar dataKey="value" stroke={color} fill={color} fillOpacity={0.25} strokeWidth={2} />
+        <Radar dataKey="value" stroke={color} fill={color} fillOpacity={0.22} strokeWidth={2} />
       </RadarChart>
     </ResponsiveContainer>
   </div>
@@ -36,15 +38,20 @@ export const MiniTrend = ({
   const max = Math.max(...data.map((d) => d.value), 1);
   return (
     <div>
-      <p className="text-sm font-semibold text-foreground mb-3">{label}</p>
-      <div className="flex items-end gap-2 h-24">
-        {data.map((d) => (
+      <p className="text-xs text-muted-foreground mb-3">{label}</p>
+      <div className="flex items-end gap-2">
+        {data.map((d, i) => (
           <div key={d.label} className="flex-1 flex flex-col items-center gap-1 min-w-0">
             <span className="text-xs text-muted-foreground tabular-nums">{d.value}</span>
-            <div
-              className="w-full rounded-t-sm bg-primary/70"
-              style={{ height: `${(d.value / max) * 100}%` }}
-            />
+            {/* 固定高度的軌道，百分比才有可解析的參考值 */}
+            <div className="h-20 w-full flex items-end">
+              <div
+                className={`w-full rounded-t-sm ${
+                  i === data.length - 1 ? "bg-secondary" : "bg-muted-foreground/30"
+                }`}
+                style={{ height: `${(d.value / max) * 100}%` }}
+              />
+            </div>
             <span className="text-xs text-muted-foreground truncate w-full text-center">
               {d.label}
             </span>

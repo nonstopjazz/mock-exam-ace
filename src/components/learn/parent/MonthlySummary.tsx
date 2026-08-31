@@ -2,39 +2,57 @@ import { Card } from "@/components/ui/card";
 import { ArrowUpRight, CheckCircle2, Target, Flag } from "lucide-react";
 import type { ParentDashboardData } from "@/data/learn/parentDashboardMock";
 
-/** 家長最先看到的一區：四句結論，不是圖表 */
+/**
+ * 本月解讀 —— 一塊有結構的敘述，而不是四張等重的卡片。
+ * 三則觀察用分隔線串起來，「老師下一步」刻意做得比較重。
+ */
 export const MonthlySummary = ({ data }: { data: ParentDashboardData["monthlySummary"] }) => {
-  const items = [
-    { ...data.improved, icon: ArrowUpRight, tint: "from-success/10 to-secondary/10 border-success/20", iconClass: "text-success" },
-    { ...data.stable, icon: CheckCircle2, tint: "from-secondary/10 to-explorer/10 border-secondary/20", iconClass: "text-secondary" },
-    { ...data.focus, icon: Target, tint: "from-accent/10 to-treasure/10 border-accent/20", iconClass: "text-accent" },
-    { ...data.nextStep, icon: Flag, tint: "from-primary/10 to-accent/10 border-primary/20", iconClass: "text-primary" },
+  const insights = [
+    { ...data.improved, icon: ArrowUpRight, iconClass: "text-success" },
+    { ...data.stable, icon: CheckCircle2, iconClass: "text-muted-foreground" },
+    { ...data.focus, icon: Target, iconClass: "text-accent" },
   ];
 
   return (
-    <section className="mb-8">
-      <div className="flex items-baseline gap-2 mb-4">
-        <h2 className="text-xl font-semibold text-foreground">{data.monthLabel}學習總結</h2>
-        <span className="text-sm text-muted-foreground">四件事看懂這個月</span>
+    <Card className="p-6 md:p-8 mb-8">
+      <div className="mb-6">
+        <p className="text-xs text-muted-foreground mb-1">本月解讀</p>
+        <h2 className="text-2xl font-bold text-foreground">
+          {data.monthLabel}的學習，三件事看懂
+        </h2>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {items.map((item) => {
+
+      <div className="divide-y divide-border">
+        {insights.map((item) => {
           const Icon = item.icon;
           return (
-            <Card
-              key={item.title}
-              className={`p-6 bg-gradient-to-br ${item.tint} transition-all duration-300 hover:shadow-lg hover:-translate-y-1`}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <Icon className={`h-5 w-5 shrink-0 ${item.iconClass}`} />
-                <h3 className="font-semibold text-foreground">{item.title}</h3>
+            <div key={item.title} className="flex gap-4 py-4 first:pt-0">
+              <Icon className={`h-5 w-5 shrink-0 mt-0.5 ${item.iconClass}`} />
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <p className="font-semibold text-foreground">{item.title}</p>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {item.detail}
+                  </span>
+                </div>
+                <p className="text-sm text-foreground/80 leading-relaxed mt-1">{item.body}</p>
               </div>
-              <p className="text-sm text-foreground/90 leading-relaxed">{item.body}</p>
-              <p className="text-xs text-muted-foreground mt-3">{item.detail}</p>
-            </Card>
+            </div>
           );
         })}
       </div>
-    </section>
+
+      {/* 下一步：這一頁唯一需要家長「知道接下來會發生什麼」的地方 */}
+      <div className="mt-6 flex gap-4 rounded-lg bg-primary/5 border border-primary/20 p-4 md:p-5">
+        <Flag className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+        <div className="min-w-0">
+          <div className="flex items-baseline gap-2 flex-wrap mb-1">
+            <p className="font-semibold text-foreground">{data.nextStep.title}</p>
+            <span className="text-xs text-muted-foreground">{data.nextStep.detail}</span>
+          </div>
+          <p className="text-sm text-foreground/80 leading-relaxed">{data.nextStep.body}</p>
+        </div>
+      </div>
+    </Card>
   );
 };
