@@ -26,7 +26,13 @@ const scrollTo = (id: string) =>
  * Quick Add —— 上課途中用的入口，放在永遠看得到的 sticky bar 上。
  * 每一種都控制在 3 個欄位以內。
  */
-export const QuickAdd = ({ ws }: { ws: SessionWorkspace }) => {
+export const QuickAdd = ({
+  ws,
+  size = "lg",
+}: {
+  ws: SessionWorkspace;
+  size?: "sm" | "lg";
+}) => {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("menu");
   const students = ws.scenario.students;
@@ -103,7 +109,7 @@ export const QuickAdd = ({ ws }: { ws: SessionWorkspace }) => {
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="lg">
+        <Button variant="outline" size={size}>
           <Zap className="h-4 w-4" />
           快速新增
         </Button>

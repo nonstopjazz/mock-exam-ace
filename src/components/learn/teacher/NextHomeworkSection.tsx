@@ -9,8 +9,8 @@ import type { SessionWorkspace } from "@/hooks/learn/useSessionWorkspace";
 
 /**
  * 次堂作業 —— Quick Add first。
- * 老師只要打一行就完成，Due 預設「次堂課」，其他欄位收在「更多選項」裡。
- * 小團班採 class default → individual override，不會產生 N 份作業。
+ * 小團班刻意把「一份 class default + 少數 override」的語意寫在畫面上，
+ * 讓老師不會以為系統要建立 N 份作業。
  */
 export const NextHomeworkSection = ({ ws }: { ws: SessionWorkspace }) => {
   const { scenario, state, updateNextHomework, upsertHomeworkException, removeHomeworkException } = ws;
@@ -18,114 +18,137 @@ export const NextHomeworkSection = ({ ws }: { ws: SessionWorkspace }) => {
   const isGroup = scenario.students.length > 1;
 
   const [more, setMore] = useState(false);
+  const [addingEx, setAddingEx] = useState(false);
   const [exStudent, setExStudent] = useState("");
   const [exText, setExText] = useState("");
+
+  const dueLabel =
+    hw.dueMode === "next_class"
+      ? `次堂課 · ${scenario.nextClassLabel}`
+      : hw.dueMode === "custom"
+        ? (hw.customDue || "自訂日期")
+        : "不設期限";
 
   const addException = () => {
     if (!exStudent || !exText.trim()) return;
     upsertHomeworkException(exStudent, exText.trim());
     setExStudent("");
     setExText("");
+    setAddingEx(false);
   };
 
   return (
-    <WorkspaceSection
-      id="section-homework"
-      icon={BookOpen}
-      title="次堂作業"
-      hint={`預設繳交時間：次堂課 · ${scenario.nextClassLabel}`}
-    >
-      <div>
-        <label htmlFor="next-hw" className="text-sm font-medium text-foreground mb-1.5 block">
-          {isGroup ? "班級預設" : "作業內容"}
-        </label>
+    <WorkspaceSection id="section-homework" icon={BookOpen} title="次堂作業" level="active">
+      <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <p className="text-xs text-muted-foreground mb-1.5">
+          {isGroup ? "班級預設 · 全班共用一份" : "作業內容"}
+        </p>
         <Input
           id="next-hw"
           value={hw.classDefault}
           placeholder="例如：講義 P.26–30"
           onChange={(e) => updateNextHomework({ classDefault: e.target.value })}
-          className="h-10"
+          className="h-9 bg-card"
+          aria-label="次堂作業內容"
         />
-        <p className="text-xs text-muted-foreground mt-1.5">
-          打一行就完成，不需要再設定日期。
-        </p>
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          <span className="text-xs text-muted-foreground">繳交：{dueLabel}</span>
+          <Collapsible open={more} onOpenChange={setMore} className="ml-auto">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground">
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${more ? "rotate-180" : ""}`} />
+                更多選項
+              </Button>
+            </CollapsibleTrigger>
+          </Collapsible>
+        </div>
+
+        <Collapsible open={more} onOpenChange={setMore}>
+          <CollapsibleContent className="pt-3 space-y-3 border-t border-border mt-2">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1.5">繳交時間</p>
+              <DueSelect
+                mode={hw.dueMode}
+                customDue={hw.customDue}
+                onModeChange={(m) => updateNextHomework({ dueMode: m })}
+                onCustomChange={(v) => updateNextHomework({ customDue: v })}
+              />
+            </div>
+            <div>
+              <label htmlFor="hw-note" className="text-xs text-muted-foreground mb-1.5 block">
+                給學生的說明（選填）
+              </label>
+              <Textarea
+                id="hw-note"
+                value={hw.teacherNote}
+                onChange={(e) => updateNextHomework({ teacherNote: e.target.value })}
+                className="min-h-[56px] resize-y bg-card"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              {hw.attachmentName ? (
+                <>
+                  <span className="flex items-center gap-1.5 text-sm text-foreground">
+                    <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    {hw.attachmentName}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground"
+                    aria-label="移除附件"
+                    onClick={() => updateNextHomework({ attachmentName: "" })}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => updateNextHomework({ attachmentName: "講義_Unit5.pdf" })}
+                >
+                  <Paperclip className="h-4 w-4" />
+                  加入附件
+                </Button>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
-      <Collapsible open={more} onOpenChange={setMore} className="mt-4">
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-muted-foreground -ml-2">
-            <ChevronDown className={`h-4 w-4 transition-transform ${more ? "rotate-180" : ""}`} />
-            更多選項
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pt-4 space-y-4">
-          <div>
-            <p className="text-sm font-medium text-foreground mb-1.5">繳交時間</p>
-            <DueSelect
-              mode={hw.dueMode}
-              customDue={hw.customDue}
-              onModeChange={(m) => updateNextHomework({ dueMode: m })}
-              onCustomChange={(v) => updateNextHomework({ customDue: v })}
-            />
-          </div>
-          <div>
-            <label htmlFor="hw-note" className="text-sm font-medium text-foreground mb-1.5 block">
-              給學生的說明
-            </label>
-            <Textarea
-              id="hw-note"
-              value={hw.teacherNote}
-              placeholder="選填"
-              onChange={(e) => updateNextHomework({ teacherNote: e.target.value })}
-              className="min-h-[64px] resize-y"
-            />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground mb-1.5">附件</p>
-            {hw.attachmentName ? (
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 text-sm text-foreground">
-                  <Paperclip className="h-4 w-4 text-muted-foreground" />
-                  {hw.attachmentName}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground"
-                  aria-label="移除附件"
-                  onClick={() => updateNextHomework({ attachmentName: "" })}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
+      {isGroup && (
+        <div className="mt-3">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">
+              {hw.exceptions.length > 0
+                ? `例外（${hw.exceptions.length}）`
+                : `全部 ${scenario.students.length} 位學生使用同一份`}
+            </p>
+            {!addingEx && (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                onClick={() => updateNextHomework({ attachmentName: "講義_Unit5.pdf" })}
+                className="h-7 px-2 ml-auto text-muted-foreground"
+                onClick={() => setAddingEx(true)}
               >
-                <Paperclip className="h-4 w-4" />
-                加入附件
+                <Plus className="h-3.5 w-3.5" />
+                新增例外
               </Button>
             )}
-            <p className="text-xs text-muted-foreground mt-1.5">原型階段：點一下會加入一個示範檔名。</p>
           </div>
-        </CollapsibleContent>
-      </Collapsible>
-
-      {isGroup && (
-        <div className="mt-5 pt-5 border-t border-border">
-          <p className="text-sm font-medium text-foreground mb-3">個別例外</p>
 
           {hw.exceptions.length > 0 && (
-            <div className="space-y-2 mb-3">
+            <div className="mt-1.5 divide-y divide-border/60">
               {hw.exceptions.map((ex) => {
                 const s = scenario.students.find((x) => x.id === ex.studentId);
                 if (!s) return null;
                 return (
-                  <div key={ex.studentId} className="flex items-center gap-2.5">
-                    <StudentAvatar student={s} className="h-7 w-7" />
-                    <span className="text-sm text-foreground w-16 shrink-0 truncate">{s.name}</span>
+                  <div key={ex.studentId} className="flex items-center gap-2 py-1.5">
+                    <StudentAvatar student={s} className="h-6 w-6" />
+                    <span className="text-sm text-foreground w-14 shrink-0 truncate">{s.name}</span>
+                    <span className="text-muted-foreground text-sm shrink-0">→</span>
                     <Input
                       value={ex.text}
                       onChange={(e) => upsertHomeworkException(ex.studentId, e.target.value)}
@@ -147,28 +170,30 @@ export const NextHomeworkSection = ({ ws }: { ws: SessionWorkspace }) => {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-2">
-            <StudentSelect
-              students={scenario.students}
-              value={exStudent}
-              onChange={setExStudent}
-              exclude={hw.exceptions.map((e) => e.studentId)}
-            />
-            <Input
-              value={exText}
-              placeholder="例如：P.26–28"
-              onChange={(e) => setExText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addException()}
-              className="h-9 flex-1 min-w-[160px]"
-            />
-            <Button variant="outline" size="sm" onClick={addException} disabled={!exStudent || !exText.trim()}>
-              <Plus className="h-4 w-4" />
-              加入例外
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            全班共用同一份作業，只有例外的學生會被覆寫。
-          </p>
+          {addingEx && (
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <StudentSelect
+                students={scenario.students}
+                value={exStudent}
+                onChange={setExStudent}
+                exclude={hw.exceptions.map((e) => e.studentId)}
+                className="h-8 w-[120px]"
+              />
+              <Input
+                value={exText}
+                placeholder="例如：P.26–28"
+                onChange={(e) => setExText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addException()}
+                className="h-8 flex-1 min-w-[150px]"
+              />
+              <Button variant="outline" size="sm" className="h-8" onClick={addException} disabled={!exStudent || !exText.trim()}>
+                加入
+              </Button>
+              <Button variant="ghost" size="sm" className="h-8" onClick={() => setAddingEx(false)}>
+                取消
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </WorkspaceSection>

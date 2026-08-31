@@ -15,6 +15,20 @@ import { RATING_ACTIVE, type SegmentOption } from "./pickerOptions";
 
 /* ---------- 版面 ---------- */
 
+/**
+ * 三層視覺層級。刻意不靠顏色區分，只用 padding / 字級 / 圖示重量 / 底色。
+ *   active      —— 老師這堂課最可能要動的（今日表現、次堂作業、線上任務）
+ *   review      —— 確認與補充（上次作業、評量與成績）
+ *   maintenance —— 多數課堂不需要修改（常態練習）
+ */
+export type SectionLevel = "active" | "review" | "maintenance";
+
+const LEVEL_STYLE: Record<SectionLevel, { card: string; head: string; title: string }> = {
+  active: { card: "p-6", head: "mb-5", title: "text-lg" },
+  review: { card: "p-5", head: "mb-4", title: "text-base" },
+  maintenance: { card: "p-4 bg-muted/20", head: "mb-3", title: "text-base" },
+};
+
 export const WorkspaceSection = ({
   icon: Icon,
   title,
@@ -22,6 +36,7 @@ export const WorkspaceSection = ({
   action,
   children,
   id,
+  level = "active",
 }: {
   icon: LucideIcon;
   title: string;
@@ -29,23 +44,31 @@ export const WorkspaceSection = ({
   action?: ReactNode;
   children: ReactNode;
   id?: string;
-}) => (
-  <Card id={id} className="p-6 scroll-mt-24">
-    <div className="flex items-start justify-between gap-3 mb-5">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="p-2 rounded-lg bg-secondary/10 shrink-0">
-          <Icon className="h-5 w-5 text-secondary" />
+  level?: SectionLevel;
+}) => {
+  const st = LEVEL_STYLE[level];
+  return (
+    <Card id={id} className={`${st.card} scroll-mt-24`}>
+      <div className={`flex items-start justify-between gap-3 ${st.head}`}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          {level === "active" ? (
+            <div className="p-2 rounded-lg bg-secondary/10 shrink-0">
+              <Icon className="h-5 w-5 text-secondary" />
+            </div>
+          ) : (
+            <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+          )}
+          <div className="min-w-0">
+            <h2 className={`${st.title} font-semibold text-foreground truncate`}>{title}</h2>
+            {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+          </div>
         </div>
-        <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-foreground truncate">{title}</h2>
-          {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
-        </div>
+        {action && <div className="shrink-0 flex items-center gap-2">{action}</div>}
       </div>
-      {action && <div className="shrink-0 flex items-center gap-2">{action}</div>}
-    </div>
-    {children}
-  </Card>
-);
+      {children}
+    </Card>
+  );
+};
 
 /** 「班級預設 → 個別例外」的預設區塊 */
 export const DefaultBlock = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -127,21 +150,11 @@ export const RatingBadge = ({ rating }: { rating: SkillRating }) => (
 
 /* ---------- Assessment source ---------- */
 
-const SOURCE_CLASS: Record<AssessmentSource, string> = {
-  TEACHER: "bg-muted text-muted-foreground border-border",
-  AUTO: "bg-muted text-muted-foreground border-border",
-  AI: "bg-muted text-muted-foreground border-border",
-  IMPORTED: "bg-muted text-muted-foreground border-border",
-};
-
-/** 刻意低調：source 是溯源資訊，不是重點 */
+/** source 是溯源資訊：要一眼認得出來，但不能搶走 assessment 標題的主體 */
 export const SourceBadge = ({ source }: { source: AssessmentSource }) => (
-  <Badge
-    variant="outline"
-    className={`text-[10px] font-medium tracking-wide px-1.5 py-0 ${SOURCE_CLASS[source]}`}
-  >
+  <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-foreground/70">
     {source}
-  </Badge>
+  </span>
 );
 
 /* ---------- Due date ---------- */

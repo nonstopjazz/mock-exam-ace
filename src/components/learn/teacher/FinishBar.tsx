@@ -18,25 +18,28 @@ export const FinishBar = ({
   const { summary, state, saveState, savedAt, finishSession, reopenSession } = ws;
   const done = state.status === "completed";
 
+  // 🛑 這些只是本堂記錄的摘要，不是完成度檢查。0 是合法狀態，不標示為警告。
   const items = [
-    { n: summary.observations, label: "則學生觀察" },
-    { n: summary.assessments, label: "份評量" },
-    { n: summary.nextHomework, label: "項次堂作業" },
-    { n: summary.recurring, label: "項常態練習" },
-    { n: summary.digital, label: "項線上任務" },
+    { n: summary.observations, label: "觀察" },
+    { n: summary.assessments, label: "評量" },
+    { n: summary.nextHomework, label: "作業" },
+    { n: summary.recurring, label: "常態練習" },
+    { n: summary.digital, label: "線上任務" },
   ];
 
   return (
-    <div className="sticky bottom-0 z-30 -mx-4 px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background to-transparent">
-      <div className="rounded-lg border border-border bg-card shadow-lg p-4">
+    <div className="sticky bottom-0 z-30 -mx-4 px-4 pb-3 pt-2 bg-gradient-to-t from-background via-background to-transparent">
+      <div className="rounded-lg border border-border bg-card shadow-lg px-4 py-3">
         <div className="flex flex-wrap items-center gap-4">
           <div className="shrink-0">{quickAdd}</div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-              {items.map((i) => (
-                <span key={i.label} className="tabular-nums">
-                  <span className="font-semibold text-foreground">{i.n}</span> {i.label}
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              {items.map((i, idx) => (
+                <span key={i.label} className="flex items-baseline gap-1.5">
+                  {idx > 0 && <span className="text-muted-foreground/50 mr-1">·</span>}
+                  <span className="text-base font-semibold text-foreground tabular-nums">{i.n}</span>
+                  <span className="text-xs text-muted-foreground">{i.label}</span>
                 </span>
               ))}
             </div>

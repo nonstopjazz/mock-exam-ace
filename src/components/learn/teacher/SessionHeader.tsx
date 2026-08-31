@@ -32,11 +32,11 @@ export const SessionHeader = ({
   saveState: SaveState;
   savedAt: string;
 }) => (
-  <Card className="p-6 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+  <Card className="px-6 py-4 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div className="min-w-0">
         <div className="flex items-center gap-3 flex-wrap mb-1.5">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{scenario.className}</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">{scenario.className}</h1>
           {status === "completed" ? (
             <Badge className="bg-success text-success-foreground hover:bg-success">本堂已完成收尾</Badge>
           ) : (
@@ -62,7 +62,7 @@ export const SessionHeader = ({
       </div>
       <div className="shrink-0 lg:text-right">
         <SaveIndicator saveState={saveState} savedAt={savedAt} />
-        <p className="text-xs text-muted-foreground mt-1">所有輸入都會自動儲存，不需要按儲存</p>
+        <p className="text-xs text-muted-foreground mt-0.5">所有輸入都會自動儲存</p>
       </div>
     </div>
   </Card>

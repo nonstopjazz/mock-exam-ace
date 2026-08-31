@@ -16,6 +16,7 @@ import type { SessionWorkspace } from "@/hooks/learn/useSessionWorkspace";
 const AssignmentCard = ({ ws, item }: { ws: SessionWorkspace; item: DigitalAssignment }) => {
   const { scenario, updateDigital, removeDigital, upsertDigitalException, removeDigitalException } = ws;
   const isGroup = scenario.students.length > 1;
+  const [addingEx, setAddingEx] = useState(false);
   const [exStudent, setExStudent] = useState("");
   const [exMode, setExMode] = useState<"override" | "excluded">("override");
   const [exTitle, setExTitle] = useState("");
@@ -30,10 +31,11 @@ const AssignmentCard = ({ ws, item }: { ws: SessionWorkspace; item: DigitalAssig
     });
     setExStudent("");
     setExTitle("");
+    setAddingEx(false);
   };
 
   return (
-    <div className="rounded-lg border border-border p-4">
+    <div className="rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -42,8 +44,8 @@ const AssignmentCard = ({ ws, item }: { ws: SessionWorkspace; item: DigitalAssig
               {item.kindLabel}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {isGroup ? "指派給全班" : `指派給 ${scenario.students[0].name}`}
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {isGroup ? "班級預設 · 指派給全班" : `指派給 ${scenario.students[0].name}`}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -66,23 +68,42 @@ const AssignmentCard = ({ ws, item }: { ws: SessionWorkspace; item: DigitalAssig
       </div>
 
       {isGroup && (
-        <div className="mt-3 pt-3 border-t border-border">
+        <div className="mt-2.5 pt-2.5 border-t border-border">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">
+              {item.exceptions.length > 0
+                ? `例外（${item.exceptions.length}）`
+                : `全部 ${scenario.students.length} 位學生使用同一份`}
+            </p>
+            {!addingEx && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 ml-auto text-muted-foreground"
+                onClick={() => setAddingEx(true)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                新增例外
+              </Button>
+            )}
+          </div>
+
           {item.exceptions.length > 0 && (
-            <div className="space-y-2 mb-2">
+            <div className="mt-1.5 divide-y divide-border/60">
               {item.exceptions.map((ex) => {
                 const s = scenario.students.find((x) => x.id === ex.studentId);
                 if (!s) return null;
                 return (
-                  <div key={ex.studentId} className="flex items-center gap-2.5">
-                    <StudentAvatar student={s} className="h-7 w-7" />
-                    <span className="text-sm text-foreground w-16 shrink-0 truncate">{s.name}</span>
+                  <div key={ex.studentId} className="flex items-center gap-2 py-1.5">
+                    <StudentAvatar student={s} className="h-6 w-6" />
+                    <span className="text-sm text-foreground w-14 shrink-0 truncate">{s.name}</span>
                     {ex.mode === "excluded" ? (
                       <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <Ban className="h-3.5 w-3.5" />
                         不指派
                       </span>
                     ) : (
-                      <span className="text-sm text-foreground min-w-0 truncate">改為：{ex.title}</span>
+                      <span className="text-sm text-foreground min-w-0 truncate">→ {ex.title}</span>
                     )}
                     <Button
                       variant="ghost"
@@ -98,37 +119,42 @@ const AssignmentCard = ({ ws, item }: { ws: SessionWorkspace; item: DigitalAssig
               })}
             </div>
           )}
-          <div className="flex flex-wrap items-center gap-2">
-            <StudentSelect
-              students={scenario.students}
-              value={exStudent}
-              onChange={setExStudent}
-              exclude={item.exceptions.map((e) => e.studentId)}
-              className="h-8 w-[130px]"
-            />
-            <Select value={exMode} onValueChange={(v) => setExMode(v as "override" | "excluded")}>
-              <SelectTrigger className="h-8 w-[110px] text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="override" className="text-xs">換一份</SelectItem>
-                <SelectItem value="excluded" className="text-xs">不指派</SelectItem>
-              </SelectContent>
-            </Select>
-            {exMode === "override" && (
-              <Input
-                value={exTitle}
-                placeholder="例如：Reading Quiz #13B"
-                onChange={(e) => setExTitle(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addException()}
-                className="h-8 flex-1 min-w-[170px]"
+
+          {addingEx && (
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <StudentSelect
+                students={scenario.students}
+                value={exStudent}
+                onChange={setExStudent}
+                exclude={item.exceptions.map((e) => e.studentId)}
+                className="h-8 w-[120px]"
               />
-            )}
-            <Button variant="ghost" size="sm" onClick={addException} disabled={!exStudent}>
-              <Plus className="h-4 w-4" />
-              例外
-            </Button>
-          </div>
+              <Select value={exMode} onValueChange={(v) => setExMode(v as "override" | "excluded")}>
+                <SelectTrigger className="h-8 w-[100px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="override" className="text-xs">換一份</SelectItem>
+                  <SelectItem value="excluded" className="text-xs">不指派</SelectItem>
+                </SelectContent>
+              </Select>
+              {exMode === "override" && (
+                <Input
+                  value={exTitle}
+                  placeholder="例如：Reading Quiz #13B"
+                  onChange={(e) => setExTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addException()}
+                  className="h-8 flex-1 min-w-[160px]"
+                />
+              )}
+              <Button variant="outline" size="sm" className="h-8" onClick={addException} disabled={!exStudent}>
+                加入
+              </Button>
+              <Button variant="ghost" size="sm" className="h-8" onClick={() => setAddingEx(false)}>
+                取消
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -157,14 +183,14 @@ export const DigitalAssignmentSection = ({ ws }: { ws: SessionWorkspace }) => {
         id="section-digital"
         icon={Laptop}
         title="線上任務"
-        hint="預設繳交時間為次堂課，可個別修改"
+        level="active"
         action={
           <>
-            <Button variant="outline" size="sm" onClick={() => setPicker(true)}>
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setPicker(true)}>
               <Library className="h-4 w-4" />
               從平台挑選
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setCreating((v) => !v)}>
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setCreating((v) => !v)}>
               <Plus className="h-4 w-4" />
               自建簡單任務
             </Button>
@@ -193,10 +219,9 @@ export const DigitalAssignmentSection = ({ ws }: { ws: SessionWorkspace }) => {
         )}
 
         {ws.state.digital.length === 0 && !creating ? (
-          <div className="text-center py-10 text-muted-foreground">
-            <p>這堂課還沒有指派線上任務</p>
-            <p className="text-sm mt-2">可以從平台既有活動挑選，或自建一個簡單任務</p>
-          </div>
+          <p className="text-sm text-muted-foreground py-1">
+            尚未指派線上任務。可從右上角挑選平台活動，或自建一個簡單任務。
+          </p>
         ) : (
           <div className="space-y-3">
             {ws.state.digital.map((d) => (

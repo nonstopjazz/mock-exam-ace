@@ -57,13 +57,15 @@ const TeacherSessionWorkspace = () => {
                   <TabsTrigger value="group">{SCENARIOS.group.switchLabel}</TabsTrigger>
                 </TabsList>
               </Tabs>
+              {/* 上課途中不用捲到頁面底部才能快速新增 */}
+              <QuickAdd ws={ws} size="sm" />
               <Badge variant="outline" className="text-xs text-muted-foreground">
                 示範資料
               </Badge>
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* 1. Session header */}
             <SessionHeader
               scenario={ws.scenario}
@@ -96,7 +98,7 @@ const TeacherSessionWorkspace = () => {
           </div>
 
           {/* 8. Sticky finish bar（含 Quick Add） */}
-          <FinishBar ws={ws} quickAdd={<QuickAdd ws={ws} />} />
+          <FinishBar ws={ws} quickAdd={<QuickAdd ws={ws} size="lg" />} />
 
           <p className="text-center text-xs text-muted-foreground pb-2">
             本頁為設計原型，所有資料皆為示範用途，未連接後端。

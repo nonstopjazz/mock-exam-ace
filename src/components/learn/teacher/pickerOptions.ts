@@ -37,3 +37,12 @@ const HOMEWORK_ACTIVE: Record<HomeworkStatus, string> = {
 export const homeworkOptions: SegmentOption<HomeworkStatus>[] = (
   ["done", "partial", "not_done"] as HomeworkStatus[]
 ).map((s) => ({ value: s, label: HOMEWORK_LABEL[s], activeClass: HOMEWORK_ACTIVE[s] }));
+
+/** compact 列表用：只上文字色，比 badge 輕 */
+export const RATING_TEXT: Record<SkillRating, string> = {
+  strong: "text-success",
+  solid: "text-secondary",
+  developing: "text-foreground",
+  needs_support: "text-accent",
+  not_observed: "text-muted-foreground",
+};
