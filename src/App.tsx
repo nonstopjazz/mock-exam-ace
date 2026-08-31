@@ -31,6 +31,7 @@ import AuthCallback from "./pages/AuthCallback";
 import ClaimPack from "./pages/ClaimPack";
 import ParentDashboard from "./pages/learn/ParentDashboard";
 import TeacherSessionWorkspace from "./pages/learn/TeacherSessionWorkspace";
+import StudentDashboard from "./pages/learn/StudentDashboard";
 import ExamList from "./pages/ExamList";
 import ExamNew from "./pages/ExamNew";
 import ExamResult from "./pages/ExamResult";
@@ -113,6 +114,9 @@ const App = () => (
 
           {/* /learn 老師課堂工作區（設計原型，mock data） */}
           <Route path="/learn/teacher/session" element={<TeacherSessionWorkspace />} />
+
+          {/* /learn 學生首頁（設計原型，mock data；字彙區導向既有字卡系統） */}
+          <Route path="/learn/student" element={<StudentDashboard />} />
 
           {/* Phase 2: Exam routes (gated by backend phase) */}
           <Route path="/exams" element={<PhaseGate requiredPhase={2} title="學測模考" description="模考功能即將推出，敬請期待！"><ExamList /></PhaseGate>} />
