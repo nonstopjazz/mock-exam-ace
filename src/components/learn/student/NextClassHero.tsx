@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ChevronDown, ExternalLink, FileText, Laptop, Undo2 } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, FileText, Laptop, Undo2 } from "lucide-react";
 import { isTaskReady, type ClassTask } from "@/data/learn/studentDashboardMock";
 import { SURFACE, TYPE, TaskState } from "./shared";
 import type { StudentDashboard } from "@/hooks/learn/useStudentDashboard";
@@ -106,6 +107,7 @@ const TaskRow = ({
  */
 export const NextClassHero = ({ sd }: { sd: StudentDashboard }) => {
   const { scenario, tasks, readiness, toggleSelfReport, completeDigital } = sd;
+  const navigate = useNavigate();
   const [starting, setStarting] = useState<ClassTask | null>(null);
   const [showDone, setShowDone] = useState(false);
 
@@ -185,7 +187,7 @@ export const NextClassHero = ({ sd }: { sd: StudentDashboard }) => {
             )}
 
             {done.length > 0 && (
-              <div className="mt-auto pt-4 border-t border-border/70">
+              <div className="mt-auto pt-4 border-t border-border/70 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setShowDone((v) => !v)}
@@ -195,6 +197,15 @@ export const NextClassHero = ({ sd }: { sd: StudentDashboard }) => {
                   已完成 {done.length} 項
                   <ChevronDown className={`h-4 w-4 transition-transform ${showDone ? "rotate-180" : ""}`} />
                 </button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 ml-auto text-muted-foreground hover:text-foreground"
+                  onClick={() => navigate("/learn/student/tasks")}
+                >
+                  查看所有任務
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
                 {showDone && (
                   <div className="divide-y divide-border/50 mt-1">
                     {done.map((t) => (

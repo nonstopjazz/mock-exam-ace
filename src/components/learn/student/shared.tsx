@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
 import type { ClassTask, CompletionSource } from "@/data/learn/studentDashboardMock";
-import { TASK_STATE, taskStateOf } from "./studentTokens";
+import { TASK_STATE, taskStateOf, type TaskStateKey } from "./studentTokens";
 
 /* ---------- Surface hierarchy ----------
  * 品牌色不動；層次靠 elevation + border 濃度做，讓整頁不再是一片奶油色。
@@ -71,9 +71,15 @@ export const QuietPanel = ({
 /* ---------- 完成狀態：全站一套 ----------
  * 🛑 顏色不是唯一的辨識方式 —— 每一種狀態都有專屬 icon 與文字。
  */
-export const TaskState = ({ task }: { task: ClassTask }) => {
-  const { key, label } = taskStateOf(task);
-  const S = TASK_STATE[key];
+/** 狀態列：任何形狀的任務都用同一組 icon / 色彩角色 / 字級 */
+export const StateLine = ({
+  stateKey,
+  label,
+}: {
+  stateKey: TaskStateKey;
+  label: string;
+}) => {
+  const S = TASK_STATE[stateKey];
   const Icon = S.icon;
   return (
     <span className={`inline-flex items-center gap-1.5 ${TYPE.status} ${S.className}`}>
@@ -81,6 +87,11 @@ export const TaskState = ({ task }: { task: ClassTask }) => {
       {label}
     </span>
   );
+};
+
+export const TaskState = ({ task }: { task: ClassTask }) => {
+  const { key, label } = taskStateOf(task);
+  return <StateLine stateKey={key} label={label} />;
 };
 
 /** 練習完成狀態沿用同一組 icon / 色彩角色 */
