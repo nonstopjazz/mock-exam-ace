@@ -1,17 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, ExternalLink, FileText, Laptop, Undo2 } from "lucide-react";
-import { isTaskReady, type ClassTask } from "@/data/learn/studentDashboardMock";
-import { SURFACE, TYPE, TaskState } from "./shared";
+import type { StudentTask } from "@/data/learn/taskCenterMock";
+import { TYPE } from "./shared";
+import { TaskRow, type TaskActions } from "./tasks/TaskRow";
+import { TaskDetailDrawer } from "./tasks/TaskDetailDrawer";
 import type { StudentDashboard } from "@/hooks/learn/useStudentDashboard";
-
-const KIND_ICON = { paper: FileText, external: ExternalLink, digital: Laptop } as const;
 
 /**
  * 準備度圓環：外圈是老師已確認的，內側較淺的是自行標記待確認的。
@@ -34,11 +32,9 @@ const ReadinessRing = ({
       aria-label={`準備度 ${verified + selfReported} / ${total}，其中老師已確認 ${verified} 項`}>
       <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
         <circle cx="60" cy="60" r={R} fill="none" strokeWidth="7" className="stroke-border" />
-        {/* 自行標記（含已確認）—— 較淺，代表還沒有結論 */}
         <circle cx="60" cy="60" r={R} fill="none" strokeWidth="7" strokeLinecap="round"
           className="stroke-secondary/30 transition-[stroke-dasharray] duration-700 ease-out"
           strokeDasharray={arc(verified + selfReported)} />
-        {/* 老師已確認 —— 實心 */}
         <circle cx="60" cy="60" r={R} fill="none" strokeWidth="7" strokeLinecap="round"
           className="stroke-secondary transition-[stroke-dasharray] duration-700 ease-out delay-100"
           strokeDasharray={arc(verified)} />
@@ -54,69 +50,35 @@ const ReadinessRing = ({
   );
 };
 
-const TaskRow = ({
-  task, onSelfReport, onStartDigital, dim,
-}: { task: ClassTask; onSelfReport: () => void; onStartDigital: () => void; dim?: boolean }) => {
-  const Icon = KIND_ICON[task.kind];
-  return (
-    <div className={`flex items-start gap-3 py-3 ${dim ? "opacity-60" : ""}`}>
-      <span className="w-5 flex justify-center pt-0.5 shrink-0">
-        <Icon className={`h-4 w-4 ${dim ? "text-muted-foreground" : "text-secondary/80"}`} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-foreground leading-snug">{task.title}</p>
-        {task.detail && <p className={`${TYPE.micro} mt-0.5`}>{task.detail}</p>}
-        <div className="mt-1.5 flex items-center gap-2.5 flex-wrap">
-          <TaskState task={task} />
-          {task.sourceName && (
-            <span className={TYPE.micro}>· {task.sourceName}</span>
-          )}
-        </div>
-      </div>
-      <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-        {task.kind === "external" && task.externalUrl && (
-          <Button variant="ghost" size="sm" className="h-8 px-2.5" asChild>
-            <a href={task.externalUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-3.5 w-3.5" />開啟
-            </a>
-          </Button>
-        )}
-        {task.kind === "digital" && !task.autoCompleted && (
-          <Button size="sm" className="h-8 px-3.5 transition-shadow hover:shadow-button" onClick={onStartDigital}>開始</Button>
-        )}
-        {/* 🛑 老師檢查過的項目沒有這顆按鈕，學生無法把自己的勾變成已確認 */}
-        {task.kind !== "digital" && !task.teacherCheck && (
-          <Button
-            variant={task.studentReported ? "ghost" : "outline"}
-            size="sm"
-            className={`h-8 px-3 ${task.studentReported ? "text-muted-foreground" : ""}`}
-            onClick={onSelfReport}
-          >
-            {task.studentReported ? <Undo2 className="h-3.5 w-3.5" /> : null}
-            {task.studentReported ? "取消" : "我完成了"}
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-};
-
 /**
- * Next Class Hero —— 整頁唯一的主視覺，也是學生登入的第一個問題：
- * 下次上課前，我還要做什麼？
+ * Next Class Hero —— 整頁唯一的主視覺，回答：下次上課前，我還要做什麼？
+ *
+ * v1.3：任務列改用與任務原型共用的 TaskRow / TaskDetailDrawer，
+ * 因此紙本、線上、外部三種任務在這裡就能走完完整的狀態流程，
+ * 不需要另一個獨立的任務頁面。Hero 的結構本身沒有改變。
  */
 export const NextClassHero = ({ sd }: { sd: StudentDashboard }) => {
-  const { scenario, tasks, readiness, toggleSelfReport, completeDigital } = sd;
-  const navigate = useNavigate();
-  const [starting, setStarting] = useState<ClassTask | null>(null);
-  const [showDone, setShowDone] = useState(false);
+  const {
+    scenario, tasks, readiness,
+    toggleSelfReport, startDigital, completeDigital, chooseFollowUp, submitFollowUp,
+  } = sd;
+  const [detail, setDetail] = useState<StudentTask | null>(null);
+  const [digital, setDigital] = useState<StudentTask | null>(null);
 
-  const pending = tasks.filter((t) => !isTaskReady(t));
-  const done = tasks.filter(isTaskReady);
-  const verified = tasks.filter(
-    (t) => t.teacherCheck?.status === "done" || (t.kind === "digital" && t.autoCompleted),
-  ).length;
-  const awaiting = tasks.filter((t) => !t.teacherCheck && t.kind !== "digital" && t.studentReported).length;
+  const actions: TaskActions = {
+    onSelfReport: toggleSelfReport,
+    onOpenDigital: (t) => setDigital(t),
+    onFollowUp: (id) => { chooseFollowUp(id); toast.success("已加入補完，完成後記得標記"); },
+    onSubmitFollowUp: (id) => { submitFollowUp(id); toast.success("已送出，等待老師再次確認"); },
+    onOpenDetail: (t) => setDetail(t),
+  };
+
+  /** §8 的摘要：先講還要處理什麼，readiness 留在圓環裡當佐證 */
+  const summaryLines = [
+    { n: readiness.needAction, label: "項需要處理" },
+    { n: readiness.partial, label: "項部分完成" },
+    { n: readiness.awaiting, label: "項待老師確認" },
+  ].filter((r) => r.n > 0);
 
   return (
     <>
@@ -141,12 +103,16 @@ export const NextClassHero = ({ sd }: { sd: StudentDashboard }) => {
             </p>
 
             <div className="flex items-center gap-5 mt-6 pt-5 border-t border-primary/15">
-              <ReadinessRing verified={verified} selfReported={awaiting} total={readiness.total} />
+              <ReadinessRing
+                verified={readiness.verified}
+                selfReported={readiness.awaiting}
+                total={readiness.total}
+              />
               <ul className="space-y-1.5 min-w-0">
                 {[
-                  { n: verified, label: "項老師已確認", dot: "bg-secondary" },
-                  { n: awaiting, label: "項待老師確認", dot: "bg-secondary/30" },
-                  { n: pending.length, label: "項待完成", dot: "bg-muted border border-border" },
+                  { n: readiness.verified, label: "項老師已確認", dot: "bg-secondary" },
+                  { n: readiness.awaiting, label: "項待老師確認", dot: "bg-secondary/30" },
+                  { n: readiness.total - readiness.verified - readiness.awaiting, label: "項尚待處理", dot: "bg-muted border border-border" },
                 ].map((r) => (
                   <li key={r.label} className="flex items-center gap-2 text-[13px]">
                     <span className={`h-2 w-2 rounded-full shrink-0 ${r.dot}`} />
@@ -160,94 +126,82 @@ export const NextClassHero = ({ sd }: { sd: StudentDashboard }) => {
             </div>
           </div>
 
-          {/* 右：待辦清單 */}
+          {/* 右：這一堂課的完整任務清單 */}
           <div className="p-6 lg:p-7 min-w-0 flex flex-col">
-            <h2 className="flex items-baseline gap-2 mb-1">
-              <span className="text-2xl font-bold text-foreground tabular-nums leading-none">
-                {pending.length}
-              </span>
-              <span className="text-base font-semibold text-foreground">項還要完成</span>
+            <div className="flex items-baseline gap-2 flex-wrap mb-3">
+              {summaryLines.length > 0 ? (
+                summaryLines.map((r, i) => (
+                  <span key={r.label} className="flex items-baseline gap-1.5">
+                    {i > 0 && <span className="text-muted-foreground/50 mr-1">·</span>}
+                    <span
+                      className={
+                        i === 0
+                          ? "text-2xl font-bold text-foreground tabular-nums leading-none"
+                          : "text-base font-semibold text-foreground tabular-nums"
+                      }
+                    >
+                      {r.n}
+                    </span>
+                    <span className={i === 0 ? "text-base font-semibold text-foreground" : "text-sm text-muted-foreground"}>
+                      {r.label}
+                    </span>
+                  </span>
+                ))
+              ) : (
+                <span className="text-base font-semibold text-foreground">
+                  上課前的項目都處理完了
+                </span>
+              )}
               <span className={`${TYPE.micro} ml-auto`}>上課前</span>
-            </h2>
-            {pending.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4">
-                上課前的項目都完成了，剩下的老師會在課堂上檢查。
-              </p>
-            ) : (
-              <div className="divide-y divide-border/50">
-                {pending.map((t) => (
-                  <TaskRow
-                    key={t.id}
-                    task={t}
-                    onSelfReport={() => toggleSelfReport(t.id)}
-                    onStartDigital={() => setStarting(t)}
-                  />
-                ))}
-              </div>
-            )}
+            </div>
 
-            {done.length > 0 && (
-              <div className="mt-auto pt-4 border-t border-border/70 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowDone((v) => !v)}
-                  aria-expanded={showDone}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground rounded-md px-1 py-1 -ml-1 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  已完成 {done.length} 項
-                  <ChevronDown className={`h-4 w-4 transition-transform ${showDone ? "rotate-180" : ""}`} />
-                </button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-2 ml-auto text-muted-foreground hover:text-foreground"
-                  onClick={() => navigate("/learn/student/tasks")}
-                >
-                  查看所有任務
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Button>
-                {showDone && (
-                  <div className="divide-y divide-border/50 mt-1">
-                    {done.map((t) => (
-                      <TaskRow
-                        key={t.id}
-                        task={t}
-                        dim
-                        onSelfReport={() => toggleSelfReport(t.id)}
-                        onStartDigital={() => setStarting(t)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* 🛑 已完成的項目留在清單裡但安靜下來 —— 學生要看得到老師這週交代了什麼 */}
+            <div className="space-y-2.5">
+              {tasks.map((t) => (
+                <TaskRow key={t.id} task={t} actions={actions} />
+              ))}
+            </div>
           </div>
         </div>
       </Card>
 
-      <Dialog open={!!starting} onOpenChange={(o) => !o && setStarting(null)}>
+      <TaskDetailDrawer task={detail} onClose={() => setDetail(null)} actions={actions} />
+
+      {/* 線上任務：作答本身在既有活動頁面，原型用這個對話框模擬狀態轉換 */}
+      <Dialog open={!!digital} onOpenChange={(o) => !o && setDigital(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{starting?.title}</DialogTitle>
+            <DialogTitle>{digital?.title}</DialogTitle>
             <DialogDescription>
-              這裡之後會開啟平台內的作答畫面。原型階段可以直接模擬完成，
-              完成後由系統記錄，不需要你自己標記。
+              正式版會開啟平台既有的作答頁面。原型階段可以在這裡模擬進度與完成，
+              完成後由平台自動記錄，不需要你自己標記。
             </DialogDescription>
           </DialogHeader>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
+            {digital && !digital.progress?.done && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  startDigital(digital.id);
+                  toast("已模擬作答到一半");
+                  setDigital(null);
+                }}
+              >
+                模擬做到一半
+              </Button>
+            )}
             <Button
-              className="flex-1"
               onClick={() => {
-                if (starting) {
-                  completeDigital(starting.id);
-                  toast.success(`${starting.title} 已完成`);
+                if (digital) {
+                  completeDigital(digital.id, 86);
+                  toast.success(`${digital.title} 已完成 · 86 分`);
                 }
-                setStarting(null);
+                setDigital(null);
               }}
             >
               模擬完成
             </Button>
-            <Button variant="outline" onClick={() => setStarting(null)}>關閉</Button>
+            <Button variant="ghost" onClick={() => setDigital(null)}>關閉</Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -24,6 +24,13 @@ const VIEWS: { value: TaskView; label: string }[] = [
 ];
 
 /**
+ * ⚠️ Prototype retained for internal reference; not part of current student IA.
+ *
+ * 這個獨立任務頁在 v1 完成，但產品範圍已收斂：學生的任務體驗回到
+ * Student Dashboard 的 Next Class 區塊（v1.3）。這裡的路由僅供內部/開發參考，
+ * 不出現在任何學生導覽或首頁入口，也不再繼續開發。
+ * 其中的 TaskRow / TaskDetailDrawer / taskCenterMock 已被 Dashboard 重用。
+ *
  * Student Task Center — prototype v1
  * 🛑 全部為 mock data。Dashboard 負責摘要，這裡負責管理完整的 assignment lifecycle。
  * 🛑 Recurring Practice 不進主清單，只留一行參考連回 Today Practice。

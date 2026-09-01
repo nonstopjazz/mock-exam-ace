@@ -1,5 +1,4 @@
 import { Check, CheckCheck, Circle, Clock, LucideIcon, PlayCircle, RotateCw, Triangle } from "lucide-react";
-import type { ClassTask } from "@/data/learn/studentDashboardMock";
 
 /* ---------- 完成狀態：全站一套 ----------
  * 🛑 顏色不是唯一的辨識方式 —— 每一種狀態都有專屬 icon 與文字。
@@ -28,18 +27,3 @@ export const TASK_STATE: Record<
   followup: { icon: RotateCw, className: "text-warning", label: "準備補完" },
   resubmitted: { icon: CheckCheck, className: "text-secondary", label: "我已補完 · 待老師再次確認" },
 };
-
-export const taskStateOf = (task: ClassTask): { key: TaskStateKey; label: string } => {
-  if (task.teacherCheck) {
-    const { status, percent } = task.teacherCheck;
-    if (status === "done") return { key: "verified", label: TASK_STATE.verified.label };
-    if (status === "partial")
-      return { key: "partial", label: `${TASK_STATE.partial.label}：完成 ${percent}%` };
-    return { key: "unchecked", label: TASK_STATE.unchecked.label };
-  }
-  if (task.kind === "digital" && task.autoCompleted)
-    return { key: "verified", label: "已完成 · 平台記錄" };
-  if (task.studentReported) return { key: "self", label: TASK_STATE.self.label };
-  return { key: "none", label: TASK_STATE.none.label };
-};
-

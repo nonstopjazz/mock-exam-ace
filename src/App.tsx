@@ -119,7 +119,8 @@ const App = () => (
           {/* /learn 學生首頁（設計原型，mock data；字彙區導向既有字卡系統） */}
           <Route path="/learn/student" element={<StudentDashboard />} />
 
-          {/* /learn 學生任務中心（設計原型，mock data） */}
+          {/* ⚠️ Prototype retained for internal reference; not part of current student IA.
+              未連結於任何學生導覽，僅供內部參考 */}
           <Route path="/learn/student/tasks" element={<StudentTasks />} />
 
           {/* Phase 2: Exam routes (gated by backend phase) */}

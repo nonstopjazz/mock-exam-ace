@@ -8,7 +8,7 @@
  * 字彙的熟悉度桶則沿用既有 vocabularyStore 的定義（new / learning / reviewing / mastered），
  * 不在這裡重新發明。
  */
-import type { HomeworkStatus, AssessmentSource, SkillKey } from "./teacherSessionMock";
+import type { AssessmentSource, SkillKey } from "./teacherSessionMock";
 
 export type StudentId = "amy" | "brian";
 
@@ -18,46 +18,11 @@ export type StudentId = "amy" | "brian";
  * 🛑 三種「完成」在產品語意上不同，UI 不可以混為一談：
  *   auto     —— 平台內完成，系統直接記錄
  *   self     —— 學生自行標記紙本 / 外部作業完成，尚待老師檢查
- *   teacher  —— 老師實際檢查後的結論（可能是 done / partial / not_done）
+ *   teacher  —— 老師實際檢查後的結論
+ *
+ * 課堂任務本身的模型定義在 taskCenterMock.ts，全站只有一套。
  */
 export type CompletionSource = "auto" | "self" | "teacher";
-
-export type TaskKind = "paper" | "external" | "digital";
-
-export const TASK_KIND_LABEL: Record<TaskKind, string> = {
-  paper: "紙本",
-  external: "外部連結",
-  digital: "線上任務",
-};
-
-export interface TeacherCheck {
-  status: HomeworkStatus;
-  /** 只有 partial 才有意義 */
-  percent?: number;
-}
-
-export interface ClassTask {
-  id: string;
-  title: string;
-  kind: TaskKind;
-  /** 老師指定的細節，例如「請完成第 1–3 大題」 */
-  detail?: string;
-  /** kind === "external" 時的來源與連結 */
-  sourceName?: string;
-  externalUrl?: string;
-  /** 學生自己標記完成（紙本 / 外部）。digital 不使用這個欄位 */
-  studentReported: boolean;
-  /** 平台自動記錄完成（只有 digital 會用） */
-  autoCompleted: boolean;
-  /** 老師下次上課檢查後的結論；null = 尚未檢查 */
-  teacherCheck: TeacherCheck | null;
-}
-
-/** 這一項在「下次上課前」是否算準備好了 */
-export const isTaskReady = (t: ClassTask) => {
-  if (t.teacherCheck) return t.teacherCheck.status === "done";
-  return t.kind === "digital" ? t.autoCompleted : t.studentReported;
-};
 
 /* ---------- Today's Practice（Recurring Practice 的今日視圖） ---------- */
 
@@ -193,7 +158,6 @@ export interface StudentScenario {
   nextClass: { dateLabel: string; timeLabel: string };
   /** 距離下一堂課還有幾天 */
   daysUntil: number;
-  tasks: ClassTask[];
   practice: PracticeItem[];
   /** 首頁摘要 */
   highlight: ProgressHighlight;
@@ -218,40 +182,6 @@ const amy: StudentScenario = {
   className: "高二英文 A班",
   nextClass: { dateLabel: "9 月 3 日（三）", timeLabel: "18:30" },
   daysUntil: 3,
-  tasks: [
-    {
-      id: "t1", kind: "paper", title: "翻譯題本 P.20–25",
-      detail: "第 1–3 大題，寫在題本上帶來",
-      studentReported: true, autoCompleted: false, teacherCheck: null,
-    },
-    {
-      id: "t2", kind: "paper", title: "單字表 Unit 5",
-      studentReported: true, autoCompleted: false,
-      teacherCheck: { status: "done" },
-    },
-    {
-      id: "t3", kind: "digital", title: "Listening Quiz #4",
-      detail: "聽完後作答，平台會自動記錄",
-      studentReported: false, autoCompleted: true, teacherCheck: null,
-    },
-    {
-      id: "t4", kind: "paper", title: "課堂講義訂正",
-      detail: "把上週錯的題目訂正完",
-      studentReported: true, autoCompleted: false, teacherCheck: null,
-    },
-    {
-      id: "t5", kind: "paper", title: "克漏字 Unit 6",
-      detail: "整份寫完",
-      studentReported: false, autoCompleted: false, teacherCheck: null,
-    },
-    {
-      id: "t6", kind: "external", title: "竹北高中第二次段考考題",
-      detail: "老師指定：只要寫「閱讀測驗」那一大題",
-      sourceName: "Google Classroom",
-      externalUrl: "https://classroom.google.com/",
-      studentReported: false, autoCompleted: false, teacherCheck: null,
-    },
-  ],
   practice: [
     {
       id: "p1", title: "每日單字複習", meta: "18 個待複習 · 約 15 分鐘",
@@ -342,40 +272,6 @@ const brian: StudentScenario = {
   className: "高二英文 A班",
   nextClass: { dateLabel: "9 月 3 日（三）", timeLabel: "18:30" },
   daysUntil: 3,
-  tasks: [
-    {
-      id: "t1", kind: "paper", title: "翻譯題本 P.20–25",
-      detail: "第 1–3 大題",
-      studentReported: true, autoCompleted: false,
-      // 老師已經檢查過，結論是部分完成
-      teacherCheck: { status: "partial", percent: 60 },
-    },
-    {
-      id: "t2", kind: "paper", title: "克漏字 Unit 6",
-      detail: "整份寫完",
-      studentReported: true, autoCompleted: false, teacherCheck: null,
-    },
-    {
-      id: "t3", kind: "paper", title: "單字表 Unit 5",
-      studentReported: false, autoCompleted: false,
-      teacherCheck: { status: "not_done" },
-    },
-    {
-      id: "t4", kind: "external", title: "竹北高中第二次段考考題",
-      detail: "老師指定：只要寫「閱讀測驗」那一大題",
-      sourceName: "Google Classroom",
-      externalUrl: "https://classroom.google.com/",
-      studentReported: false, autoCompleted: false, teacherCheck: null,
-    },
-    {
-      id: "t5", kind: "digital", title: "Reading Quiz #13",
-      studentReported: false, autoCompleted: false, teacherCheck: null,
-    },
-    {
-      id: "t6", kind: "digital", title: "Listening Quiz #4",
-      studentReported: false, autoCompleted: false, teacherCheck: null,
-    },
-  ],
   practice: [
     {
       id: "p1", title: "每日單字複習", meta: "今天已完成 · 20 個",

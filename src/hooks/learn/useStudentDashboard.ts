@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  STUDENT_SCENARIOS, isTaskReady,
-  type ClassTask, type PracticeItem, type StudentId, type StudentScenario,
+  STUDENT_SCENARIOS,
+  type PracticeItem, type StudentId, type StudentScenario,
 } from "@/data/learn/studentDashboardMock";
+import {
+  TASK_SCENARIOS, needsAction, sortTasks, taskStateOf, type StudentTask,
+} from "@/data/learn/taskCenterMock";
 
 interface DashboardState {
-  tasks: ClassTask[];
+  /** 任務模型與 Next Class 區塊共用同一份定義，全站只有一套 task model */
+  tasks: StudentTask[];
   practice: PracticeItem[];
 }
 
 const seedFrom = (s: StudentScenario): DashboardState => ({
-  tasks: structuredClone(s.tasks),
+  tasks: structuredClone(TASK_SCENARIOS[s.id].tasks),
   practice: structuredClone(s.practice),
 });
 
@@ -27,27 +31,42 @@ export const useStudentDashboard = (studentId: StudentId) => {
     setState(seedFrom(STUDENT_SCENARIOS[studentId]));
   }, [studentId]);
 
-  /** 學生自行標記 / 取消標記紙本或外部作業。不會動到 teacherCheck */
-  const toggleSelfReport = useCallback((taskId: string) => {
+  const patchTask = useCallback((id: string, fn: (t: StudentTask) => StudentTask) => {
     setState((prev) => ({
       ...prev,
-      tasks: prev.tasks.map((t) =>
-        t.id === taskId && t.kind !== "digital"
-          ? { ...t, studentReported: !t.studentReported }
-          : t,
-      ),
+      tasks: prev.tasks.map((t) => (t.id === id ? fn(structuredClone(t)) : t)),
     }));
   }, []);
 
-  /** 平台內任務完成 —— 由系統記錄，不是學生自述 */
-  const completeDigital = useCallback((taskId: string) => {
-    setState((prev) => ({
-      ...prev,
-      tasks: prev.tasks.map((t) =>
-        t.id === taskId && t.kind === "digital" ? { ...t, autoCompleted: true } : t,
-      ),
-    }));
-  }, []);
+  /** 紙本 / 外部：學生自行標記。🛑 永遠碰不到 teacherCheck */
+  const toggleSelfReport = useCallback((id: string) => {
+    patchTask(id, (t) => (t.teacherCheck ? t : { ...t, studentReported: !t.studentReported }));
+  }, [patchTask]);
+
+  /** 線上任務做到一半 —— 由平台記錄，不是學生自述 */
+  const startDigital = useCallback((id: string) => {
+    patchTask(id, (t) => {
+      const total = t.progress?.total ?? 10;
+      return { ...t, progress: { done: Math.max(1, Math.round(total / 2)), total } };
+    });
+  }, [patchTask]);
+
+  /** 線上任務完成 —— 同樣由平台記錄 */
+  const completeDigital = useCallback((id: string, value = 86) => {
+    patchTask(id, (t) => {
+      const total = t.progress?.total ?? 10;
+      return { ...t, autoCompleted: true, progress: { done: total, total }, score: { value, total: 100 } };
+    });
+  }, [patchTask]);
+
+  /** 🛑 部分完成只有一個正向出口：我要補完 */
+  const chooseFollowUp = useCallback((id: string) => {
+    patchTask(id, (t) => ({ ...t, followUp: "chosen" }));
+  }, [patchTask]);
+
+  const submitFollowUp = useCallback((id: string) => {
+    patchTask(id, (t) => ({ ...t, followUp: "submitted" }));
+  }, [patchTask]);
 
   const togglePracticeDone = useCallback((itemId: string) => {
     setState((prev) => ({
@@ -62,9 +81,24 @@ export const useStudentDashboard = (studentId: StudentId) => {
     }));
   }, []);
 
+  /** 依「還需行動 → 不需立即行動 → 已完成」排序，同狀態再看急迫度 */
+  const orderedTasks = useMemo(() => sortTasks(state.tasks), [state.tasks]);
+
+  /** Next Class 摘要。readiness 仍是次要資訊，不是大型分析區塊 */
   const readiness = useMemo(() => {
-    const ready = state.tasks.filter(isTaskReady).length;
-    return { ready, total: state.tasks.length };
+    const count = (k: string) => state.tasks.filter((t) => taskStateOf(t).key === k).length;
+    const ready = state.tasks.filter((t) => {
+      const k = taskStateOf(t).key;
+      return k === "verified" || k === "self" || k === "resubmitted";
+    }).length;
+    return {
+      ready,
+      total: state.tasks.length,
+      needAction: state.tasks.filter(needsAction).length,
+      partial: count("partial"),
+      awaiting: count("self") + count("resubmitted"),
+      verified: count("verified"),
+    };
   }, [state.tasks]);
 
   const todayPractice = useMemo(
@@ -74,12 +108,15 @@ export const useStudentDashboard = (studentId: StudentId) => {
 
   return {
     scenario,
-    tasks: state.tasks,
+    tasks: orderedTasks,
     practice: state.practice,
     todayPractice,
     readiness,
     toggleSelfReport,
+    startDigital,
     completeDigital,
+    chooseFollowUp,
+    submitFollowUp,
     togglePracticeDone,
   };
 };

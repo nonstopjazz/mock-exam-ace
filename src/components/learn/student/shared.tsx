@@ -1,8 +1,8 @@
 import { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
-import type { ClassTask, CompletionSource } from "@/data/learn/studentDashboardMock";
-import { TASK_STATE, taskStateOf, type TaskStateKey } from "./studentTokens";
+import type { CompletionSource } from "@/data/learn/studentDashboardMock";
+import { TASK_STATE, type TaskStateKey } from "./studentTokens";
 
 /* ---------- Surface hierarchy ----------
  * 品牌色不動；層次靠 elevation + border 濃度做，讓整頁不再是一片奶油色。
@@ -87,11 +87,6 @@ export const StateLine = ({
       {label}
     </span>
   );
-};
-
-export const TaskState = ({ task }: { task: ClassTask }) => {
-  const { key, label } = taskStateOf(task);
-  return <StateLine stateKey={key} label={label} />;
 };
 
 /** 練習完成狀態沿用同一組 icon / 色彩角色 */
