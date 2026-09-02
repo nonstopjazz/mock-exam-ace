@@ -15,7 +15,7 @@ import type {
  * student_id 條件，資料庫也只會回傳呼叫者自己的資料。
  */
 
-/** 一篇作文可能有多筆 essay_text（append-only），最新的一筆才是目前的文字。 */
+/** 一篇作文可能有多筆 writing_texts（append-only），最新的一筆才是目前的文字。 */
 function latestText<T extends { created_at: string }>(rows: T[] | null | undefined): T | null {
   if (!rows || rows.length === 0) return null;
   return [...rows].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
@@ -38,8 +38,8 @@ export function useEssayList() {
     setError(null);
 
     const { data, error: queryError } = await supabase
-      .from("essay_submissions")
-      .select("*, essay_text(char_count, created_at)")
+      .from("writing_submissions")
+      .select("*, writing_texts(char_count, created_at)")
       .order("essay_date", { ascending: false })
       .order("created_at", { ascending: false });
 
@@ -50,10 +50,10 @@ export function useEssayList() {
     } else {
       setEssays(
         (data ?? []).map((row) => {
-          const { essay_text, ...essay } = row as EssaySubmission & {
-            essay_text: { char_count: number; created_at: string }[] | null;
+          const { writing_texts, ...essay } = row as EssaySubmission & {
+            writing_texts: { char_count: number; created_at: string }[] | null;
           };
-          return { ...essay, charCount: latestText(essay_text)?.char_count ?? null };
+          return { ...essay, charCount: latestText(writing_texts)?.char_count ?? null };
         }),
       );
     }
@@ -87,8 +87,8 @@ export function useEssay(essayId: string | undefined) {
     setNotFound(false);
 
     const { data, error: queryError } = await supabase
-      .from("essay_submissions")
-      .select("*, essay_text(*)")
+      .from("writing_submissions")
+      .select("*, writing_texts(*)")
       .eq("id", essayId)
       .maybeSingle();
 
@@ -99,11 +99,11 @@ export function useEssay(essayId: string | undefined) {
       // RLS 下「別人的作文」與「不存在的作文」回傳結果相同，這是刻意的。
       setNotFound(true);
     } else {
-      const { essay_text, ...submission } = data as EssaySubmission & {
-        essay_text: EssayText[] | null;
+      const { writing_texts, ...submission } = data as EssaySubmission & {
+        writing_texts: EssayText[] | null;
       };
       setEssay(submission);
-      setText(latestText(essay_text));
+      setText(latestText(writing_texts));
     }
 
     setLoading(false);
@@ -119,11 +119,11 @@ export function useEssay(essayId: string | undefined) {
 /**
  * 送出文字作文。
  *
- * 走 submit_text_essay() RPC，讓「建立草稿 → 寫入正規文字 → 標記送出」
+ * 走 submit_writing_essay() RPC，讓「建立草稿 → 寫入正規文字 → 標記送出」
  * 在單一交易內完成。拆成三次 client 呼叫的話，中途失敗會留下半完成的作文。
  */
 export async function submitTextEssay(input: SubmitTextEssayInput): Promise<string> {
-  const { data, error } = await supabase.rpc("submit_text_essay", {
+  const { data, error } = await supabase.rpc("submit_writing_essay", {
     p_title: input.title,
     p_content: input.content,
     p_essay_topic: input.essayTopic ?? null,

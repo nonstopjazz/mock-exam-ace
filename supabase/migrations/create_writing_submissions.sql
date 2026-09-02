@@ -1,9 +1,25 @@
 -- =====================================================
--- Migration: 建立 essay_submissions 表（寫作系統 Phase 1）
+-- Migration: 建立 writing_submissions 表（寫作系統 Phase 1）
 --
 -- Phase 1 只收「文字作文」。圖片提交、OCR、AI 分析都不在此階段。
 -- submission_type 的 CHECK 在 Phase 1 只允許 'text'，Phase 2 才放寬 —— 這讓
 -- Phase 1 在結構上不可能收下圖片作文，也就不可能重演舊系統丟棄原圖的問題。
+--
+--
+-- ⚠️ 為什麼是 writing_ 前綴，不是 essay_
+--
+-- 正式環境的 Supabase 專案（ytzspnjmkvrkbztnaomm）是 mock 與 iLearn 共用的。
+-- iLearn 在同一個資料庫裡已經有 essay_submissions 這張表，以及
+-- 「Students can view own essays」「Admins can view all essays」
+-- 「Students can insert own essays」這三個同名的 RLS 政策。
+--
+-- 若沿用 essay_ 命名，把這份 migration 套到正式專案會「安靜地跑完而不報錯」，
+-- 結果是：mock 的表根本沒被建立（CREATE TABLE IF NOT EXISTS 略過），
+-- 而後續的索引、trigger 與 RLS 政策全部落到 iLearn 的正式資料表上，
+-- 並覆蓋掉它既有的政策。已在本機 PostgreSQL 16 重現確認。
+--
+-- 因此寫作系統的所有物件一律使用 writing_ 前綴，政策名稱一律加上
+-- 「Writing:」開頭。請不要把它們改回 essay_。
 --
 -- 設計依據：Essay Data Architecture rev 4
 --   · 送出後的提交紀錄不可變（requirement 4）
@@ -12,7 +28,7 @@
 --   · 沒有 total_score 欄位（L10）：總分於讀取／呈現時推導，不存、不用 trigger。
 -- =====================================================
 
-CREATE TABLE IF NOT EXISTS essay_submissions (
+CREATE TABLE IF NOT EXISTS writing_submissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
@@ -32,22 +48,22 @@ CREATE TABLE IF NOT EXISTS essay_submissions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-  CONSTRAINT essay_submissions_submitted_has_timestamp CHECK (
+  CONSTRAINT writing_submissions_submitted_has_timestamp CHECK (
     (status = 'SUBMITTED' AND submitted_at IS NOT NULL)
     OR (status = 'DRAFT' AND submitted_at IS NULL)
   )
 );
 
-CREATE INDEX IF NOT EXISTS idx_essay_submissions_student
-  ON essay_submissions (student_id, essay_date DESC, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_essay_submissions_status
-  ON essay_submissions (student_id, status);
+CREATE INDEX IF NOT EXISTS idx_writing_submissions_student
+  ON writing_submissions (student_id, essay_date DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_writing_submissions_status
+  ON writing_submissions (student_id, status);
 
-COMMENT ON TABLE essay_submissions IS
+COMMENT ON TABLE writing_submissions IS
   '學生作文提交紀錄。送出（SUBMITTED）之後即為不可變，內容修改一律以新的一篇提交處理。';
-COMMENT ON COLUMN essay_submissions.submission_type IS
+COMMENT ON COLUMN writing_submissions.submission_type IS
   'Phase 1 僅允許 text。Phase 2 放寬為 image 時，同時新增 essay_assets 與 OCR 資料表。';
-COMMENT ON COLUMN essay_submissions.status IS
+COMMENT ON COLUMN writing_submissions.status IS
   'DRAFT = 撰寫中，可修改可刪除；SUBMITTED = 已送出，不可變。批改與發布狀態不在這裡，屬於 Phase 4 的 teacher_assessment。';
 
 -- =====================================================
@@ -57,7 +73,7 @@ COMMENT ON COLUMN essay_submissions.status IS
 -- 因此用 trigger 補上。RLS 擋的是「誰」，trigger 擋的是「什麼時候」。
 -- =====================================================
 
-CREATE OR REPLACE FUNCTION essay_submissions_guard_immutable()
+CREATE OR REPLACE FUNCTION writing_submissions_guard_immutable()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
@@ -81,11 +97,11 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS trg_essay_submissions_guard_immutable ON essay_submissions;
-CREATE TRIGGER trg_essay_submissions_guard_immutable
-  BEFORE UPDATE ON essay_submissions
+DROP TRIGGER IF EXISTS trg_writing_submissions_guard_immutable ON writing_submissions;
+CREATE TRIGGER trg_writing_submissions_guard_immutable
+  BEFORE UPDATE ON writing_submissions
   FOR EACH ROW
-  EXECUTE FUNCTION essay_submissions_guard_immutable();
+  EXECUTE FUNCTION writing_submissions_guard_immutable();
 
 -- =====================================================
 -- RLS
@@ -95,32 +111,32 @@ CREATE TRIGGER trg_essay_submissions_guard_immutable
 -- 給出沒有人需要的權限只會擴大暴露面。
 -- =====================================================
 
-ALTER TABLE essay_submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE writing_submissions ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Students can view own essays" ON essay_submissions;
-CREATE POLICY "Students can view own essays"
-  ON essay_submissions FOR SELECT
+DROP POLICY IF EXISTS "Writing: students view own submissions" ON writing_submissions;
+CREATE POLICY "Writing: students view own submissions"
+  ON writing_submissions FOR SELECT
   USING (auth.uid() = student_id);
 
-DROP POLICY IF EXISTS "Admins can view all essays" ON essay_submissions;
-CREATE POLICY "Admins can view all essays"
-  ON essay_submissions FOR SELECT
+DROP POLICY IF EXISTS "Writing: admins view all submissions" ON writing_submissions;
+CREATE POLICY "Writing: admins view all submissions"
+  ON writing_submissions FOR SELECT
   USING (is_admin());
 
-DROP POLICY IF EXISTS "Students can insert own essays" ON essay_submissions;
-CREATE POLICY "Students can insert own essays"
-  ON essay_submissions FOR INSERT
+DROP POLICY IF EXISTS "Writing: students insert own submissions" ON writing_submissions;
+CREATE POLICY "Writing: students insert own submissions"
+  ON writing_submissions FOR INSERT
   WITH CHECK (auth.uid() = student_id);
 
 -- USING 限定只有 DRAFT 可以被更新；WITH CHECK 允許新值為 SUBMITTED，
 -- 也就是「送出」這個轉換。送出後這條政策就再也選不到該列。
-DROP POLICY IF EXISTS "Students can update own drafts" ON essay_submissions;
-CREATE POLICY "Students can update own drafts"
-  ON essay_submissions FOR UPDATE
+DROP POLICY IF EXISTS "Writing: students update own drafts" ON writing_submissions;
+CREATE POLICY "Writing: students update own drafts"
+  ON writing_submissions FOR UPDATE
   USING (auth.uid() = student_id AND status = 'DRAFT')
   WITH CHECK (auth.uid() = student_id);
 
-DROP POLICY IF EXISTS "Students can delete own drafts" ON essay_submissions;
-CREATE POLICY "Students can delete own drafts"
-  ON essay_submissions FOR DELETE
+DROP POLICY IF EXISTS "Writing: students delete own drafts" ON writing_submissions;
+CREATE POLICY "Writing: students delete own drafts"
+  ON writing_submissions FOR DELETE
   USING (auth.uid() = student_id AND status = 'DRAFT');
