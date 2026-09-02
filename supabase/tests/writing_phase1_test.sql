@@ -1,6 +1,14 @@
 -- =====================================================
 -- 寫作系統 Phase 1 資料層測試
 --
+-- ⚠️ 這個檔案是 psql 專用（使用 \set / \echo / \ir 等反斜線指令）。
+--    不要貼進 Supabase SQL Editor —— 那裡送出的是純 SQL，反斜線指令會回報
+--      ERROR: 42601: syntax error at or near "\"
+--    要在 Supabase 上執行的是這兩支純 SQL 腳本：
+--      supabase/tests/writing_phase1_preflight.sql
+--      supabase/tests/writing_phase1_staging_smoke.sql
+--
+--
 -- 這些斷言涵蓋 Phase 1 真正的風險：跨學生的資料隔離、送出後的不可變性、
 -- writing_texts 的 append-only 保證，以及 Phase 1 只收文字作文的結構性限制。
 -- 快樂路徑通過並不能證明什麼；負面測試才是重點。
