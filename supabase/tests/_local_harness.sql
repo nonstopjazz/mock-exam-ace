@@ -12,12 +12,18 @@ CREATE SCHEMA IF NOT EXISTS auth;
 
 CREATE TABLE IF NOT EXISTS auth.users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE
+  email TEXT UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 與正式 Supabase 一致：優先讀 request.jwt.claims 的 sub。
+-- 保留 app.uid 作為後備，讓既有測試不需要改寫。
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS UUID
 LANGUAGE sql STABLE AS $$
-  SELECT nullif(current_setting('app.uid', true), '')::uuid;
+  SELECT coalesce(
+    nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub',
+    nullif(current_setting('app.uid', true), '')
+  )::uuid;
 $$;
 
 CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN
@@ -29,7 +35,14 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
     CREATE ROLE authenticated NOLOGIN;
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
+    CREATE ROLE anon NOLOGIN;
+  END IF;
 END $$;
 
-GRANT USAGE ON SCHEMA public, auth TO authenticated;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;
+-- storage.buckets 的替身，讓 preflight 腳本能在本機驗證
+CREATE SCHEMA IF NOT EXISTS storage;
+CREATE TABLE IF NOT EXISTS storage.buckets (id TEXT PRIMARY KEY, public BOOLEAN DEFAULT false);
+
+GRANT USAGE ON SCHEMA public, auth TO authenticated, anon;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated, anon;
