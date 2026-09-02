@@ -105,6 +105,26 @@ export const FEATURES: Record<string, FeatureConfig> = {
   },
 
   // ═══════════════════════════════════════════
+  // 寫作系統（mock-native writing system）
+  //
+  // 每個階段一個開關，是回退的槓桿：關掉 writing_submission，
+  // 路由就消失，資料表與既有資料原封不動。
+  // AI 批改沿用上面既有的 `essay` 旗標，不另外開一個。
+  // ═══════════════════════════════════════════
+  writing_submission: {
+    status: 'enabled',
+    phase: 1,
+    label: '作文提交',
+    description: '目前僅支援文字作文',
+  },
+  writing_images: {
+    status: 'coming_soon',
+    phase: 2,
+    label: '作文拍照上傳',
+    description: '需與原圖保存、OCR 持久化一同上線',
+  },
+
+  // ═══════════════════════════════════════════
   // Future (hidden for now)
   // ═══════════════════════════════════════════
   courses: {
