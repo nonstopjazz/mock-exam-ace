@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/galaxy/AppSidebar";
 import { Navbar } from "./components/layout/Navbar";
 import { LockedPage } from "./components/gates/LockedPage";
 import { PhaseGate } from "./components/gates/PhaseGate";
+import { FeatureGate } from "./components/gates/FeatureGate";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { RequireAdmin } from "./components/auth/RequireAdmin";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -33,6 +34,9 @@ import ParentDashboard from "./pages/learn/ParentDashboard";
 import TeacherSessionWorkspace from "./pages/learn/TeacherSessionWorkspace";
 import StudentDashboard from "./pages/learn/StudentDashboard";
 import StudentTasks from "./pages/learn/StudentTasks";
+import StudentWriting from "./pages/learn/StudentWriting";
+import EssayCompose from "./pages/learn/EssayCompose";
+import EssayDetail from "./pages/learn/EssayDetail";
 import ExamList from "./pages/ExamList";
 import ExamNew from "./pages/ExamNew";
 import ExamResult from "./pages/ExamResult";
@@ -122,6 +126,12 @@ const App = () => (
           {/* ⚠️ Prototype retained for internal reference; not part of current student IA.
               未連結於任何學生導覽，僅供內部參考 */}
           <Route path="/learn/student/tasks" element={<StudentTasks />} />
+
+          {/* /learn 寫作系統 Phase 1 —— 真實資料，需登入。
+              目前只收文字作文；圖片提交、OCR、AI 分析屬於 Phase 2 之後。 */}
+          <Route path="/learn/student/writing" element={<FeatureGate featureId="writing_submission"><ProtectedRoute><StudentWriting /></ProtectedRoute></FeatureGate>} />
+          <Route path="/learn/student/writing/new" element={<FeatureGate featureId="writing_submission"><ProtectedRoute><EssayCompose /></ProtectedRoute></FeatureGate>} />
+          <Route path="/learn/student/writing/:essayId" element={<FeatureGate featureId="writing_submission"><ProtectedRoute><EssayDetail /></ProtectedRoute></FeatureGate>} />
 
           {/* Phase 2: Exam routes (gated by backend phase) */}
           <Route path="/exams" element={<PhaseGate requiredPhase={2} title="學測模考" description="模考功能即將推出，敬請期待！"><ExamList /></PhaseGate>} />
