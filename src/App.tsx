@@ -112,9 +112,9 @@ const App = () => (
 
           {/* /learn 寫作系統 Phase 1 —— 真實資料，需登入。
               目前只收文字作文；圖片提交、OCR、AI 分析屬於 Phase 2 之後。 */}
-          <Route path="/learn/student/writing" element={<FeatureGate featureId="writing_submission"><ProtectedRoute><StudentWriting /></ProtectedRoute></FeatureGate>} />
-          <Route path="/learn/student/writing/new" element={<FeatureGate featureId="writing_submission"><ProtectedRoute><EssayCompose /></ProtectedRoute></FeatureGate>} />
-          <Route path="/learn/student/writing/:essayId" element={<FeatureGate featureId="writing_submission"><ProtectedRoute><EssayDetail /></ProtectedRoute></FeatureGate>} />
+          <Route path="/learn/student/writing" element={<FeatureGate featureId="writing_submission" title="作文提交" description="作文功能暫時關閉，稍後會再開放。"><ProtectedRoute><StudentWriting /></ProtectedRoute></FeatureGate>} />
+          <Route path="/learn/student/writing/new" element={<FeatureGate featureId="writing_submission" title="作文提交" description="作文功能暫時關閉，稍後會再開放。"><ProtectedRoute><EssayCompose /></ProtectedRoute></FeatureGate>} />
+          <Route path="/learn/student/writing/:essayId" element={<FeatureGate featureId="writing_submission" title="作文提交" description="作文功能暫時關閉，稍後會再開放。"><ProtectedRoute><EssayDetail /></ProtectedRoute></FeatureGate>} />
 
           {/* Phase 2: Exam routes (gated by backend phase) */}
           <Route path="/exams" element={<PhaseGate requiredPhase={2} title="學測模考" description="模考功能即將推出，敬請期待！"><ExamList /></PhaseGate>} />
