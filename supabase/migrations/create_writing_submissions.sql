@@ -109,6 +109,17 @@ CREATE TRIGGER trg_writing_submissions_guard_immutable
 -- 依賴 create_user_profiles_table.sql 建立的 is_admin()。
 -- Phase 1 不開放 admin 的 UPDATE／DELETE —— 此階段還沒有老師這個角色，
 -- 給出沒有人需要的權限只會擴大暴露面。
+--
+-- 為什麼用 is_admin() 而不是 iLearn 那套 users.role = 'admin'：
+--   共用的正式專案裡，兩套授權其實是在「不同層」執行的。
+--   實測正式環境的 essay_submissions 只有 3 條政策，全部是學生政策 ——
+--   iLearn 的 016 定義的三條管理員政策並不存在，而且沒有人發現，
+--   因為 iLearn 的作文 API 一律走 service-role client 繞過 RLS，
+--   再於應用程式碼裡用 isAdmin() 自行判斷。
+--
+--   寫作系統刻意走相反的路：授權寫在 RLS 裡。路由寫錯不會外洩別人的作文。
+--   兩層並存這件事本身要由 Phase 4 的 Staff identity checkpoint 收斂，
+--   在那之前不要為了「一致」而把任何一邊改成另一邊。
 -- =====================================================
 
 ALTER TABLE writing_submissions ENABLE ROW LEVEL SECURITY;
