@@ -1,6 +1,14 @@
 -- =====================================================
 -- 共存測試：寫作系統的 migration 不得碰到 iLearn 的既有資料表
 --
+-- ⚠️ 這個檔案是 psql 專用（使用 \set / \echo / \ir 等反斜線指令）。
+--    不要貼進 Supabase SQL Editor —— 那裡送出的是純 SQL，反斜線指令會回報
+--      ERROR: 42601: syntax error at or near "\"
+--    要在 Supabase 上執行的是這兩支純 SQL 腳本：
+--      supabase/tests/writing_phase1_preflight.sql
+--      supabase/tests/writing_phase1_staging_smoke.sql
+--
+--
 -- 正式環境的 Supabase 專案（ytzspnjmkvrkbztnaomm）是 mock 與 iLearn 共用的。
 -- 這份測試建立一張仿 iLearn 的 essay_submissions（含它真正用過的三個
 -- 同名 RLS 政策），套用寫作系統的 migration，然後驗證 iLearn 那邊
