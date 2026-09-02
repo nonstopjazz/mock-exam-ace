@@ -121,7 +121,7 @@ export async function requireEssayAccess(
   });
 
   const { data: essay, error: essayError } = await admin
-    .from("essay_submissions")
+    .from("writing_submissions")
     .select("id, student_id, submission_type, status")
     .eq("id", essayId)
     .maybeSingle();
