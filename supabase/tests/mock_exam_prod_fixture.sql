@@ -134,7 +134,9 @@ CREATE INDEX idx_answers_attempt ON exam_user_answers (attempt_id);
 -- 原始的自動判分器（migration 會取代它）
 CREATE OR REPLACE FUNCTION public.auto_grade_choice_answer()
 RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $function$
-DECLARE correct TEXT; q_score NUMERIC(4,2);
+DECLARE
+  correct TEXT;
+  q_score NUMERIC(4,2);
 BEGIN
   IF NEW.vocabulary_question_id IS NOT NULL THEN
     SELECT correct_answer, score INTO correct, q_score
@@ -148,7 +150,8 @@ BEGIN
     NEW.score_earned := CASE WHEN NEW.is_correct THEN q_score ELSE 0 END;
   END IF;
   RETURN NEW;
-END; $function$;
+END;
+$function$;
 
 CREATE TRIGGER trigger_auto_grade
   BEFORE INSERT OR UPDATE ON public.exam_user_answers

@@ -1,0 +1,258 @@
+# mock 模考基礎 schema 指紋 —— 期望值（golden）
+#
+# 產生方式（本機 PostgreSQL 16）：
+#   1. supabase/tests/_local_harness.sql 的 auth 替身（或 Supabase 平台本身）
+#   2. supabase/migrations/bootstrap_mock_exam_base_schema.sql
+#   3. supabase/tests/mock_exam_schema_fingerprint.sql
+#
+# 用法：在正式環境 ytzspnjmkvrkbztnaomm 執行 fingerprint，把輸出存成檔案，
+#       與本檔（去掉開頭 # 註解行）逐行 diff。
+#
+# 已知會不同、且不算 drift 的行：
+#   · ILN(env) —— legacy iLearn 表在正式環境存在、在 staging 不存在。
+#   · GRA … | service_role —— Supabase 的預設權限可能多授權給 service_role；
+#     本 golden 由本機替身產生，沒有這個角色。
+#   · GRA … | postgres —— owner 名稱依專案而異。
+#
+# 其他任何一行不同，都是真正的 drift，必須先修正 bootstrap 再套用。
+TAB essay_questions = present
+TAB exam_attempts = present
+TAB exam_user_answers = present
+TAB exams = present
+TAB group_questions = present
+TAB question_groups = present
+TAB translation_questions = present
+TAB vocabulary_questions = present
+COL essay_questions.id | uuid | NOT NULL | default=gen_random_uuid() | generated=- | identity=-
+COL essay_questions.exam_id | uuid | NULL | default=- | generated=- | identity=-
+COL essay_questions.question_number | integer | NULL | default=- | generated=- | identity=-
+COL essay_questions.score | numeric | NULL | default=- | generated=- | identity=-
+COL exam_attempts.id | uuid | NOT NULL | default=gen_random_uuid() | generated=- | identity=-
+COL exam_attempts.user_id | uuid | NOT NULL | default=- | generated=- | identity=-
+COL exam_attempts.exam_id | uuid | NULL | default=- | generated=- | identity=-
+COL exam_attempts.started_at | timestamp with time zone | NULL | default=now() | generated=- | identity=-
+COL exam_attempts.submitted_at | timestamp with time zone | NULL | default=- | generated=- | identity=-
+COL exam_attempts.time_spent_seconds | integer | NULL | default=- | generated=- | identity=-
+COL exam_attempts.status | text | NULL | default='in_progress'::text | generated=- | identity=-
+COL exam_attempts.vocabulary_score | numeric | NULL | default=- | generated=- | identity=-
+COL exam_attempts.cloze_score | numeric | NULL | default=- | generated=- | identity=-
+COL exam_attempts.contextual_score | numeric | NULL | default=- | generated=- | identity=-
+COL exam_attempts.structure_score | numeric | NULL | default=- | generated=- | identity=-
+COL exam_attempts.reading_score | numeric | NULL | default=- | generated=- | identity=-
+COL exam_attempts.mixed_score | numeric | NULL | default=- | generated=- | identity=-
+COL exam_attempts.translation_score | numeric | NULL | default=- | generated=- | identity=-
+COL exam_attempts.essay_score | numeric | NULL | default=- | generated=- | identity=-
+COL exam_attempts.total_score | numeric | NULL | default=- | generated=- | identity=-
+COL exam_user_answers.id | uuid | NOT NULL | default=gen_random_uuid() | generated=- | identity=-
+COL exam_user_answers.attempt_id | uuid | NOT NULL | default=- | generated=- | identity=-
+COL exam_user_answers.vocabulary_question_id | uuid | NULL | default=- | generated=- | identity=-
+COL exam_user_answers.group_question_id | uuid | NULL | default=- | generated=- | identity=-
+COL exam_user_answers.translation_question_id | uuid | NULL | default=- | generated=- | identity=-
+COL exam_user_answers.essay_question_id | uuid | NULL | default=- | generated=- | identity=-
+COL exam_user_answers.user_answer | text | NULL | default=- | generated=- | identity=-
+COL exam_user_answers.is_correct | boolean | NULL | default=- | generated=- | identity=-
+COL exam_user_answers.score_earned | numeric | NULL | default=0 | generated=- | identity=-
+COL exam_user_answers.grader_feedback | text | NULL | default=- | generated=- | identity=-
+COL exam_user_answers.graded_by | uuid | NULL | default=- | generated=- | identity=-
+COL exam_user_answers.graded_at | timestamp with time zone | NULL | default=- | generated=- | identity=-
+COL exam_user_answers.created_at | timestamp with time zone | NULL | default=now() | generated=- | identity=-
+COL exam_user_answers.updated_at | timestamp with time zone | NULL | default=now() | generated=- | identity=-
+COL exam_user_answers.time_spent_seconds | integer | NULL | default=0 | generated=- | identity=-
+COL exams.id | uuid | NOT NULL | default=gen_random_uuid() | generated=- | identity=-
+COL exams.title | text | NULL | default=- | generated=- | identity=-
+COL exams.year | integer | NULL | default=- | generated=- | identity=-
+COL exams.status | exam_status | NULL | default='draft'::exam_status | generated=- | identity=-
+COL exams.total_score | numeric | NULL | default=- | generated=- | identity=-
+COL exams.created_by | uuid | NULL | default=- | generated=- | identity=-
+COL group_questions.id | uuid | NOT NULL | default=gen_random_uuid() | generated=- | identity=-
+COL group_questions.group_id | uuid | NULL | default=- | generated=- | identity=-
+COL group_questions.question_number | integer | NULL | default=- | generated=- | identity=-
+COL group_questions.question_text | text | NULL | default=- | generated=- | identity=-
+COL group_questions.correct_answer | text | NOT NULL | default=- | generated=- | identity=-
+COL group_questions.score | numeric | NULL | default=- | generated=- | identity=-
+COL group_questions.grammar_large | text | NULL | default=- | generated=- | identity=-
+COL group_questions.grammar_medium | text | NULL | default=- | generated=- | identity=-
+COL group_questions.grammar_small | text | NULL | default=- | generated=- | identity=-
+COL group_questions.level_tag | integer | NULL | default=- | generated=- | identity=-
+COL question_groups.id | uuid | NOT NULL | default=gen_random_uuid() | generated=- | identity=-
+COL question_groups.exam_id | uuid | NULL | default=- | generated=- | identity=-
+COL question_groups.title | text | NULL | default=- | generated=- | identity=-
+COL question_groups.group_type | text | NULL | default=- | generated=- | identity=-
+COL question_groups.group_order | integer | NULL | default=- | generated=- | identity=-
+COL translation_questions.id | uuid | NOT NULL | default=gen_random_uuid() | generated=- | identity=-
+COL translation_questions.exam_id | uuid | NULL | default=- | generated=- | identity=-
+COL translation_questions.question_number | integer | NULL | default=- | generated=- | identity=-
+COL translation_questions.grammar_tags | text[] | NULL | default=- | generated=- | identity=-
+COL translation_questions.score | numeric | NULL | default=- | generated=- | identity=-
+COL translation_questions.level_tag | integer | NULL | default=- | generated=- | identity=-
+COL vocabulary_questions.id | uuid | NOT NULL | default=gen_random_uuid() | generated=- | identity=-
+COL vocabulary_questions.exam_id | uuid | NULL | default=- | generated=- | identity=-
+COL vocabulary_questions.question_number | integer | NULL | default=- | generated=- | identity=-
+COL vocabulary_questions.correct_answer | character(1) | NOT NULL | default=- | generated=- | identity=-
+COL vocabulary_questions.score | numeric | NULL | default=- | generated=- | identity=-
+COL vocabulary_questions.level_tag | integer | NULL | default=- | generated=- | identity=-
+CON essay_questions | essay_questions_exam_id_fkey | f | FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
+CON essay_questions | essay_questions_exam_id_question_number_key | u | UNIQUE (exam_id, question_number)
+CON essay_questions | essay_questions_pkey | p | PRIMARY KEY (id)
+CON exam_attempts | exam_attempts_exam_id_fkey | f | FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
+CON exam_attempts | exam_attempts_pkey | p | PRIMARY KEY (id)
+CON exam_attempts | exam_attempts_status_check | c | CHECK ((status = ANY (ARRAY['in_progress'::text, 'submitted'::text, 'graded'::text])))
+CON exam_attempts | exam_attempts_user_id_fkey | f | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+CON exam_user_answers | exam_user_answers_attempt_id_fkey | f | FOREIGN KEY (attempt_id) REFERENCES exam_attempts(id) ON DELETE CASCADE
+CON exam_user_answers | exam_user_answers_essay_question_id_fkey | f | FOREIGN KEY (essay_question_id) REFERENCES essay_questions(id) ON DELETE CASCADE
+CON exam_user_answers | exam_user_answers_graded_by_fkey | f | FOREIGN KEY (graded_by) REFERENCES auth.users(id)
+CON exam_user_answers | exam_user_answers_group_question_id_fkey | f | FOREIGN KEY (group_question_id) REFERENCES group_questions(id) ON DELETE CASCADE
+CON exam_user_answers | exam_user_answers_pkey | p | PRIMARY KEY (id)
+CON exam_user_answers | exam_user_answers_translation_question_id_fkey | f | FOREIGN KEY (translation_question_id) REFERENCES translation_questions(id) ON DELETE CASCADE
+CON exam_user_answers | exam_user_answers_vocabulary_question_id_fkey | f | FOREIGN KEY (vocabulary_question_id) REFERENCES vocabulary_questions(id) ON DELETE CASCADE
+CON exam_user_answers | single_question_source | c | CHECK (((((
+CASE
+    WHEN (vocabulary_question_id IS NOT NULL) THEN 1
+    ELSE 0
+END +
+CASE
+    WHEN (group_question_id IS NOT NULL) THEN 1
+    ELSE 0
+END) +
+CASE
+    WHEN (translation_question_id IS NOT NULL) THEN 1
+    ELSE 0
+END) +
+CASE
+    WHEN (essay_question_id IS NOT NULL) THEN 1
+    ELSE 0
+END) = 1))
+CON exams | exams_created_by_fkey | f | FOREIGN KEY (created_by) REFERENCES auth.users(id)
+CON exams | exams_pkey | p | PRIMARY KEY (id)
+CON group_questions | group_questions_group_id_fkey | f | FOREIGN KEY (group_id) REFERENCES question_groups(id) ON DELETE CASCADE
+CON group_questions | group_questions_group_id_question_number_key | u | UNIQUE (group_id, question_number)
+CON group_questions | group_questions_level_tag_check | c | CHECK (((level_tag >= 1) AND (level_tag <= 6)))
+CON group_questions | group_questions_pkey | p | PRIMARY KEY (id)
+CON question_groups | question_groups_exam_id_fkey | f | FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
+CON question_groups | question_groups_exam_id_group_type_group_order_key | u | UNIQUE (exam_id, group_type, group_order)
+CON question_groups | question_groups_pkey | p | PRIMARY KEY (id)
+CON translation_questions | translation_questions_exam_id_fkey | f | FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
+CON translation_questions | translation_questions_exam_id_question_number_key | u | UNIQUE (exam_id, question_number)
+CON translation_questions | translation_questions_level_tag_check | c | CHECK (((level_tag >= 1) AND (level_tag <= 6)))
+CON translation_questions | translation_questions_pkey | p | PRIMARY KEY (id)
+CON vocabulary_questions | vocabulary_questions_correct_answer_check | c | CHECK ((correct_answer = ANY (ARRAY['A'::bpchar, 'B'::bpchar, 'C'::bpchar, 'D'::bpchar])))
+CON vocabulary_questions | vocabulary_questions_exam_id_fkey | f | FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
+CON vocabulary_questions | vocabulary_questions_exam_id_question_number_key | u | UNIQUE (exam_id, question_number)
+CON vocabulary_questions | vocabulary_questions_level_tag_check | c | CHECK (((level_tag >= 1) AND (level_tag <= 6)))
+CON vocabulary_questions | vocabulary_questions_pkey | p | PRIMARY KEY (id)
+IDX essay_questions | essay_questions_exam_id_question_number_key | CREATE UNIQUE INDEX essay_questions_exam_id_question_number_key ON public.essay_questions USING btree (exam_id, question_number) | nulls_not_distinct=false
+IDX essay_questions | essay_questions_pkey | CREATE UNIQUE INDEX essay_questions_pkey ON public.essay_questions USING btree (id) | nulls_not_distinct=false
+IDX exam_attempts | exam_attempts_pkey | CREATE UNIQUE INDEX exam_attempts_pkey ON public.exam_attempts USING btree (id) | nulls_not_distinct=false
+IDX exam_attempts | idx_attempts_exam | CREATE INDEX idx_attempts_exam ON public.exam_attempts USING btree (exam_id) | nulls_not_distinct=false
+IDX exam_attempts | idx_attempts_status | CREATE INDEX idx_attempts_status ON public.exam_attempts USING btree (status) | nulls_not_distinct=false
+IDX exam_attempts | idx_attempts_user | CREATE INDEX idx_attempts_user ON public.exam_attempts USING btree (user_id) | nulls_not_distinct=false
+IDX exam_user_answers | exam_user_answers_pkey | CREATE UNIQUE INDEX exam_user_answers_pkey ON public.exam_user_answers USING btree (id) | nulls_not_distinct=false
+IDX exam_user_answers | idx_answers_attempt | CREATE INDEX idx_answers_attempt ON public.exam_user_answers USING btree (attempt_id) | nulls_not_distinct=false
+IDX exams | exams_pkey | CREATE UNIQUE INDEX exams_pkey ON public.exams USING btree (id) | nulls_not_distinct=false
+IDX group_questions | group_questions_group_id_question_number_key | CREATE UNIQUE INDEX group_questions_group_id_question_number_key ON public.group_questions USING btree (group_id, question_number) | nulls_not_distinct=false
+IDX group_questions | group_questions_pkey | CREATE UNIQUE INDEX group_questions_pkey ON public.group_questions USING btree (id) | nulls_not_distinct=false
+IDX group_questions | idx_group_questions_group | CREATE INDEX idx_group_questions_group ON public.group_questions USING btree (group_id) | nulls_not_distinct=false
+IDX question_groups | question_groups_exam_id_group_type_group_order_key | CREATE UNIQUE INDEX question_groups_exam_id_group_type_group_order_key ON public.question_groups USING btree (exam_id, group_type, group_order) | nulls_not_distinct=false
+IDX question_groups | question_groups_pkey | CREATE UNIQUE INDEX question_groups_pkey ON public.question_groups USING btree (id) | nulls_not_distinct=false
+IDX translation_questions | translation_questions_exam_id_question_number_key | CREATE UNIQUE INDEX translation_questions_exam_id_question_number_key ON public.translation_questions USING btree (exam_id, question_number) | nulls_not_distinct=false
+IDX translation_questions | translation_questions_pkey | CREATE UNIQUE INDEX translation_questions_pkey ON public.translation_questions USING btree (id) | nulls_not_distinct=false
+IDX vocabulary_questions | vocabulary_questions_exam_id_question_number_key | CREATE UNIQUE INDEX vocabulary_questions_exam_id_question_number_key ON public.vocabulary_questions USING btree (exam_id, question_number) | nulls_not_distinct=false
+IDX vocabulary_questions | vocabulary_questions_pkey | CREATE UNIQUE INDEX vocabulary_questions_pkey ON public.vocabulary_questions USING btree (id) | nulls_not_distinct=false
+RLS essay_questions | enabled=true | forced=false
+RLS exam_attempts | enabled=true | forced=false
+RLS exam_user_answers | enabled=true | forced=false
+RLS exams | enabled=true | forced=false
+RLS group_questions | enabled=true | forced=false
+RLS question_groups | enabled=true | forced=false
+RLS translation_questions | enabled=true | forced=false
+RLS vocabulary_questions | enabled=true | forced=false
+POL essay_questions | Essay questions viewable for published exams | SELECT | permissive=PERMISSIVE | roles=public | using=(EXISTS ( SELECT 1
+   FROM exams
+  WHERE ((exams.id = essay_questions.exam_id) AND (exams.status = 'published'::exam_status)))) | check=-
+POL exam_attempts | Users create own attempts | INSERT | permissive=PERMISSIVE | roles=public | using=- | check=(user_id = auth.uid())
+POL exam_attempts | Users update own attempts | UPDATE | permissive=PERMISSIVE | roles=public | using=(user_id = auth.uid()) | check=-
+POL exam_attempts | Users view own attempts | SELECT | permissive=PERMISSIVE | roles=public | using=(user_id = auth.uid()) | check=-
+POL exam_user_answers | Users create own answers | INSERT | permissive=PERMISSIVE | roles=public | using=- | check=(EXISTS ( SELECT 1
+   FROM exam_attempts
+  WHERE ((exam_attempts.id = exam_user_answers.attempt_id) AND (exam_attempts.user_id = auth.uid()))))
+POL exam_user_answers | Users update own answers | UPDATE | permissive=PERMISSIVE | roles=public | using=(EXISTS ( SELECT 1
+   FROM exam_attempts
+  WHERE ((exam_attempts.id = exam_user_answers.attempt_id) AND (exam_attempts.user_id = auth.uid())))) | check=-
+POL exam_user_answers | Users view own answers | SELECT | permissive=PERMISSIVE | roles=public | using=(EXISTS ( SELECT 1
+   FROM exam_attempts
+  WHERE ((exam_attempts.id = exam_user_answers.attempt_id) AND (exam_attempts.user_id = auth.uid())))) | check=-
+POL exams | Published exams viewable by all | SELECT | permissive=PERMISSIVE | roles=public | using=(status = 'published'::exam_status) | check=-
+POL group_questions | Group questions viewable for published exams | SELECT | permissive=PERMISSIVE | roles=public | using=(EXISTS ( SELECT 1
+   FROM (question_groups qg
+     JOIN exams e ON ((e.id = qg.exam_id)))
+  WHERE ((qg.id = group_questions.group_id) AND (e.status = 'published'::exam_status)))) | check=-
+POL question_groups | Question groups viewable for published exams | SELECT | permissive=PERMISSIVE | roles=public | using=(EXISTS ( SELECT 1
+   FROM exams
+  WHERE ((exams.id = question_groups.exam_id) AND (exams.status = 'published'::exam_status)))) | check=-
+POL translation_questions | Translation questions viewable for published exams | SELECT | permissive=PERMISSIVE | roles=public | using=(EXISTS ( SELECT 1
+   FROM exams
+  WHERE ((exams.id = translation_questions.exam_id) AND (exams.status = 'published'::exam_status)))) | check=-
+POL vocabulary_questions | Vocab questions viewable for published exams | SELECT | permissive=PERMISSIVE | roles=public | using=(EXISTS ( SELECT 1
+   FROM exams
+  WHERE ((exams.id = vocabulary_questions.exam_id) AND (exams.status = 'published'::exam_status)))) | check=-
+TRG exam_user_answers | trigger_auto_grade | CREATE TRIGGER trigger_auto_grade BEFORE INSERT OR UPDATE ON public.exam_user_answers FOR EACH ROW EXECUTE FUNCTION auto_grade_choice_answer() | enabled=O
+FUN auto_grade_choice_answer() | returns=trigger | volatility=v | security_definer=false | config=search_path=public | body_md5=012665421201d669da09fb0e3a43d5ac
+SRC auto_grade_choice_answer >>>CREATE OR REPLACE FUNCTION public.auto_grade_choice_answer()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  correct TEXT;
+  q_score NUMERIC(4,2);
+BEGIN
+  IF NEW.vocabulary_question_id IS NOT NULL THEN
+    SELECT correct_answer, score INTO correct, q_score
+    FROM vocabulary_questions WHERE id = NEW.vocabulary_question_id;
+    NEW.is_correct := (UPPER(NEW.user_answer) = correct);
+    NEW.score_earned := CASE WHEN NEW.is_correct THEN q_score ELSE 0 END;
+  ELSIF NEW.group_question_id IS NOT NULL THEN
+    SELECT correct_answer, score INTO correct, q_score
+    FROM group_questions WHERE id = NEW.group_question_id;
+    NEW.is_correct := (UPPER(NEW.user_answer) = UPPER(correct));
+    NEW.score_earned := CASE WHEN NEW.is_correct THEN q_score ELSE 0 END;
+  END IF;
+  RETURN NEW;
+END;
+$function$
+<<<
+ENU exam_status = draft,published,archived
+GRA essay_questions | anon | SELECT
+GRA essay_questions | authenticated | SELECT
+GRA essay_questions | postgres | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
+GRA exam_attempts | anon | DELETE,INSERT,SELECT,UPDATE
+GRA exam_attempts | authenticated | DELETE,INSERT,SELECT,UPDATE
+GRA exam_attempts | postgres | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
+GRA exam_user_answers | anon | DELETE,INSERT,SELECT,UPDATE
+GRA exam_user_answers | authenticated | DELETE,INSERT,SELECT,UPDATE
+GRA exam_user_answers | postgres | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
+GRA exams | anon | SELECT
+GRA exams | authenticated | SELECT
+GRA exams | postgres | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
+GRA group_questions | anon | SELECT
+GRA group_questions | authenticated | SELECT
+GRA group_questions | postgres | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
+GRA question_groups | anon | SELECT
+GRA question_groups | authenticated | SELECT
+GRA question_groups | postgres | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
+GRA translation_questions | anon | SELECT
+GRA translation_questions | authenticated | SELECT
+GRA translation_questions | postgres | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
+GRA vocabulary_questions | anon | SELECT
+GRA vocabulary_questions | authenticated | SELECT
+GRA vocabulary_questions | postgres | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
+ACL essay_questions | 有明確欄位級授權的欄位數 = 0
+ACL exam_attempts | 有明確欄位級授權的欄位數 = 0
+ACL exam_user_answers | 有明確欄位級授權的欄位數 = 0
+ACL exams | 有明確欄位級授權的欄位數 = 0
+ACL group_questions | 有明確欄位級授權的欄位數 = 0
+ACL question_groups | 有明確欄位級授權的欄位數 = 0
+ACL translation_questions | 有明確欄位級授權的欄位數 = 0
+ACL vocabulary_questions | 有明確欄位級授權的欄位數 = 0
+ILN 範圍內的八張表對 legacy 表有外鍵參照數 = 0
+ILN(env) legacy 表存在狀況（僅供對照，本檔不碰它）：exam_records=absent exam_types=absent
