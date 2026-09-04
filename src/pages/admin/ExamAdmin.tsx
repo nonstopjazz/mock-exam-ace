@@ -18,11 +18,13 @@ import {
   BookOpen, FileText, PenTool, Languages
 } from "lucide-react";
 import { toast } from "sonner";
-import { useExams, useExamStatistics, useExamAdmin, type Exam, type DifficultyLevel, type ExamStatus } from "@/hooks/useExam";
+import { useAdminExams, useExamStatistics, useExamAdmin, type Exam, type DifficultyLevel, type ExamStatus } from "@/hooks/useExam";
 import * as XLSX from 'xlsx';
 
 const ExamAdmin = () => {
-  const { exams, loading: examsLoading, error: examsError } = useExams();
+  // 管理端必須看得到 draft 與 notes，那是學生欄位級 GRANT 不給的，
+  // 所以走 SECURITY DEFINER 的 admin RPC，而不是直接查表。
+  const { exams, loading: examsLoading, error: examsError } = useAdminExams();
   const { statistics } = useExamStatistics();
   const {
     loading: adminLoading,

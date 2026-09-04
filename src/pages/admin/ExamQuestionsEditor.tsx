@@ -16,13 +16,15 @@ import {
   BookOpen, FileText, PenTool, Trash2, Eye, X
 } from "lucide-react";
 import { toast } from "sonner";
-import { useExam, useExamAdmin, type QuestionGroup, type GroupQuestion, type EssayQuestion } from "@/hooks/useExam";
+import { useAdminExam, useExamAdmin, type QuestionGroup, type GroupQuestion, type EssayQuestion } from "@/hooks/useExam";
 import { supabase } from "@/lib/supabase";
 
 const ExamQuestionsEditor = () => {
   const { examId } = useParams<{ examId: string }>();
   const navigate = useNavigate();
-  const { exam, loading, error } = useExam(examId);
+  // 題目編輯器需要 correct_answer / explanation 等教師欄位，
+  // 學生路徑的欄位級 GRANT 不給，所以走 admin RPC。
+  const { exam, loading, error } = useAdminExam(examId);
   const { updateQuestionGroup, updateGroupQuestion, updateEssayQuestion, loading: saving } = useExamAdmin();
 
   // Dialog states

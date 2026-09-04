@@ -304,7 +304,12 @@ export function useExams(options?: { status?: ExamStatus; year?: number }) {
       setLoading(true);
       setError(null);
 
-      let query = supabase.from('exams').select('*').order('year', { ascending: false });
+      // 學生可見欄位（內容權限硬化之後 select('*') 會 42501）。
+      // notes / created_by 是教師欄位，管理端請改用 useAdminExams()。
+      let query = supabase
+        .from('exams')
+        .select('id,title,year,month,difficulty,total_score,duration_minutes,status')
+        .order('year', { ascending: false });
 
       if (options?.status) {
         query = query.eq('status', options.status);
@@ -352,7 +357,7 @@ export function useExam(examId: string | undefined) {
         // 1. 取得試卷基本資訊
         const { data: examData, error: examError } = await supabase
           .from('exams')
-          .select('*')
+          .select('id,title,year,month,difficulty,total_score,duration_minutes,status')
           .eq('id', examId)
           .single();
 
@@ -361,7 +366,7 @@ export function useExam(examId: string | undefined) {
         // 2. 取得單字題
         const { data: vocabData } = await supabase
           .from('vocabulary_questions')
-          .select('*')
+          .select('id,exam_id,question_number,question_text,option_a,option_b,option_c,option_d,score')
           .eq('exam_id', examId)
           .order('question_number');
 
@@ -369,8 +374,15 @@ export function useExam(examId: string | undefined) {
         const { data: groupsData } = await supabase
           .from('question_groups')
           .select(`
-            *,
-            group_questions (*)
+            id,exam_id,group_type,group_order,title,content,
+            option_count,option_list,
+            structure_option_a,structure_option_b,structure_option_c,
+            structure_option_d,structure_option_e,
+            article_type,chart_description,content_image,
+            group_questions (
+              id,group_id,question_number,blank_number,question_text,
+              option_a,option_b,option_c,option_d,mixed_type,options_type,score
+            )
           `)
           .eq('exam_id', examId)
           .order('group_order');
@@ -378,14 +390,14 @@ export function useExam(examId: string | undefined) {
         // 4. 取得翻譯題
         const { data: translationData } = await supabase
           .from('translation_questions')
-          .select('*')
+          .select('id,exam_id,question_number,chinese_text,score')
           .eq('exam_id', examId)
           .order('question_number');
 
         // 5. 取得作文題
         const { data: essayData } = await supabase
           .from('essay_questions')
-          .select('*')
+          .select('id,exam_id,question_number,prompt,essay_type,word_count_requirement,prompt_image,score')
           .eq('exam_id', examId)
           .order('question_number');
 
@@ -400,6 +412,89 @@ export function useExam(examId: string | undefined) {
         setExam(fullExam);
       } catch (err: any) {
         setError(err.message);
+      }
+      setLoading(false);
+    }
+
+    fetchExam();
+  }, [examId]);
+
+  return { exam, loading, error };
+}
+
+// =============================================
+// Hook: useAdminExams / useAdminExam — 管理端讀取路徑
+//
+// 為什麼不直接查表：內容權限硬化用欄位級 GRANT 把 correct_answer、
+// reference_answer、sample_essay、scoring_criteria、notes 等對
+// authenticated 關掉，而管理員在 Supabase 裡也是 authenticated——
+// 欄位級授權分不出 admin 與學生。這兩個 hook 走 SECURITY DEFINER RPC，
+// 由資料庫端的 is_admin() 判斷授權。
+//
+// 非管理員呼叫會拿到 42501，anon 連 EXECUTE 權限都沒有。
+// =============================================
+export function useAdminExams() {
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchExams() {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: rpcError } = await supabase.rpc('mock_content_admin_list_exams');
+
+      if (rpcError) {
+        setError(rpcError.message);
+      } else {
+        setExams(((data as any[]) || []).map(transformExam));
+      }
+      setLoading(false);
+    }
+
+    fetchExams();
+  }, []);
+
+  return { exams, loading, error };
+}
+
+export function useAdminExam(examId: string | undefined) {
+  const [exam, setExam] = useState<FullExam | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!examId) {
+      setLoading(false);
+      return;
+    }
+
+    async function fetchExam() {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: rpcError } = await supabase.rpc(
+        'mock_content_admin_fetch_exam',
+        { p_exam_id: examId }
+      );
+
+      if (rpcError) {
+        setError(rpcError.message);
+        setExam(null);
+      } else if (!data) {
+        // RPC 對不存在的考卷回傳 null（不是例外）
+        setError('找不到這份試卷');
+        setExam(null);
+      } else {
+        const d = data as any;
+        setExam({
+          ...transformExam(d),
+          vocabularyQuestions: (d.vocabulary_questions || []).map(transformVocabularyQuestion),
+          questionGroups: (d.question_groups || []).map(transformQuestionGroup),
+          translationQuestions: (d.translation_questions || []).map(transformTranslationQuestion),
+          essayQuestions: (d.essay_questions || []).map(transformEssayQuestion),
+        });
       }
       setLoading(false);
     }
@@ -469,7 +564,7 @@ export function useExamAdmin() {
     setLoading(true);
     setError(null);
 
-    const { data, error: createError } = await supabase
+    const { error: createError } = await supabase
       .from('exams')
       .insert({
         id: exam.id,
@@ -481,16 +576,14 @@ export function useExamAdmin() {
         duration_minutes: exam.durationMinutes,
         notes: exam.notes,
         status: exam.status,
-      })
-      .select()
-      .single();
+      });
 
     setLoading(false);
     if (createError) {
       setError(createError.message);
       return null;
     }
-    return transformExam(data);
+    return true;
   }, []);
 
   // 更新試卷
@@ -509,19 +602,17 @@ export function useExamAdmin() {
     if (updates.status !== undefined) updateData.status = updates.status;
     updateData.updated_at = new Date().toISOString();
 
-    const { data, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from('exams')
       .update(updateData)
-      .eq('id', examId)
-      .select()
-      .single();
+      .eq('id', examId);
 
     setLoading(false);
     if (updateError) {
       setError(updateError.message);
       return null;
     }
-    return transformExam(data);
+    return true;
   }, []);
 
   // 刪除試卷
@@ -557,7 +648,7 @@ export function useExamAdmin() {
     setLoading(true);
     setError(null);
 
-    const { data, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('vocabulary_questions')
       .insert({
         exam_id: question.examId,
@@ -572,16 +663,14 @@ export function useExamAdmin() {
         level_tag: question.levelTag,
         topic_tags: question.topicTags,
         score: question.score,
-      })
-      .select()
-      .single();
+      });
 
     setLoading(false);
     if (insertError) {
       setError(insertError.message);
       return null;
     }
-    return transformVocabularyQuestion(data);
+    return true;
   }, []);
 
   // 批次新增單字題
@@ -604,17 +693,16 @@ export function useExamAdmin() {
       score: q.score,
     }));
 
-    const { data, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('vocabulary_questions')
-      .insert(insertData)
-      .select();
+      .insert(insertData);
 
     setLoading(false);
     if (insertError) {
       setError(insertError.message);
       return null;
     }
-    return (data || []).map(transformVocabularyQuestion);
+    return true;
   }, []);
 
   // 新增題組
@@ -622,7 +710,7 @@ export function useExamAdmin() {
     setLoading(true);
     setError(null);
 
-    const { data, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('question_groups')
       .insert({
         id: `${group.groupType.toUpperCase()}_G${group.groupOrder}`,
@@ -643,16 +731,14 @@ export function useExamAdmin() {
         article_type: group.articleType,
         chart_description: group.chartDescription,
         topic_tags: group.topicTags,
-      })
-      .select()
-      .single();
+      });
 
     setLoading(false);
     if (insertError) {
       setError(insertError.message);
       return null;
     }
-    return transformQuestionGroup(data);
+    return true;
   }, []);
 
   // 新增題組內題目
@@ -660,7 +746,7 @@ export function useExamAdmin() {
     setLoading(true);
     setError(null);
 
-    const { data, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('group_questions')
       .insert({
         group_id: question.groupId,
@@ -682,16 +768,14 @@ export function useExamAdmin() {
         phrase_tag: question.phraseTag,
         question_type_tag: question.questionTypeTag,
         score: question.score,
-      })
-      .select()
-      .single();
+      });
 
     setLoading(false);
     if (insertError) {
       setError(insertError.message);
       return null;
     }
-    return transformGroupQuestion(data);
+    return true;
   }, []);
 
   // 新增翻譯題
@@ -699,7 +783,7 @@ export function useExamAdmin() {
     setLoading(true);
     setError(null);
 
-    const { data, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('translation_questions')
       .insert({
         exam_id: question.examId,
@@ -713,16 +797,14 @@ export function useExamAdmin() {
         phrase_tag: question.phraseTag,
         topic_tags: question.topicTags,
         score: question.score,
-      })
-      .select()
-      .single();
+      });
 
     setLoading(false);
     if (insertError) {
       setError(insertError.message);
       return null;
     }
-    return transformTranslationQuestion(data);
+    return true;
   }, []);
 
   // 新增作文題
@@ -730,7 +812,7 @@ export function useExamAdmin() {
     setLoading(true);
     setError(null);
 
-    const { data, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('essay_questions')
       .insert({
         exam_id: question.examId,
@@ -745,16 +827,14 @@ export function useExamAdmin() {
         error_type_tags: question.errorTypeTags,
         topic_tags: question.topicTags,
         score: question.score,
-      })
-      .select()
-      .single();
+      });
 
     setLoading(false);
     if (insertError) {
       setError(insertError.message);
       return null;
     }
-    return transformEssayQuestion(data);
+    return true;
   }, []);
 
   // 更新題組（含圖片）
@@ -771,19 +851,17 @@ export function useExamAdmin() {
     if (updates.chartDescription !== undefined) updateData.chart_description = updates.chartDescription;
     if (updates.topicTags !== undefined) updateData.topic_tags = updates.topicTags;
 
-    const { data, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from('question_groups')
       .update(updateData)
-      .eq('id', groupId)
-      .select()
-      .single();
+      .eq('id', groupId);
 
     setLoading(false);
     if (updateError) {
       setError(updateError.message);
       return null;
     }
-    return transformQuestionGroup(data);
+    return true;
   }, []);
 
   // 更新題組內題目（含選項圖片）
@@ -801,19 +879,17 @@ export function useExamAdmin() {
     if (updates.correctAnswer !== undefined) updateData.correct_answer = updates.correctAnswer;
     if (updates.explanation !== undefined) updateData.explanation = updates.explanation;
 
-    const { data, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from('group_questions')
       .update(updateData)
-      .eq('id', questionId)
-      .select()
-      .single();
+      .eq('id', questionId);
 
     setLoading(false);
     if (updateError) {
       setError(updateError.message);
       return null;
     }
-    return transformGroupQuestion(data);
+    return true;
   }, []);
 
   // 更新作文題（含圖片）
@@ -830,19 +906,17 @@ export function useExamAdmin() {
     if (updates.sampleEssay !== undefined) updateData.sample_essay = updates.sampleEssay;
     if (updates.writingTips !== undefined) updateData.writing_tips = updates.writingTips;
 
-    const { data, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from('essay_questions')
       .update(updateData)
-      .eq('id', questionId)
-      .select()
-      .single();
+      .eq('id', questionId);
 
     setLoading(false);
     if (updateError) {
       setError(updateError.message);
       return null;
     }
-    return transformEssayQuestion(data);
+    return true;
   }, []);
 
   return {
