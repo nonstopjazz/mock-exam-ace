@@ -35,9 +35,9 @@ INSERT INTO pv (id, result, detail)
 SELECT 'COLCOUNT ' || e.t,
        CASE WHEN coalesce(a.n, 0) = e.n THEN 'PASS' ELSE 'FAIL' END,
        '欄位數 ' || coalesce(a.n, 0) || '（預期 ' || e.n || '）'
-FROM (VALUES ('exams', 6), ('question_groups', 5), ('group_questions', 10),
-             ('vocabulary_questions', 6), ('translation_questions', 6),
-             ('essay_questions', 4), ('exam_attempts', 16), ('exam_user_answers', 15)
+FROM (VALUES ('exams', 12), ('question_groups', 20), ('group_questions', 22),
+             ('vocabulary_questions', 15), ('translation_questions', 14),
+             ('essay_questions', 15), ('exam_attempts', 18), ('exam_user_answers', 15)
      ) AS e(t, n)
 LEFT JOIN (
   SELECT table_name, count(*) AS n FROM information_schema.columns
@@ -49,15 +49,19 @@ INSERT INTO pv (id, result, detail)
 SELECT 'CON ' || e.t || ' ' || e.ct,
        CASE WHEN coalesce(a.n, 0) = e.n THEN 'PASS' ELSE 'FAIL' END,
        e.label || ' ' || coalesce(a.n, 0) || '（預期 ' || e.n || '）'
+-- 數字全部取自正式環境指紋，不是估計值。
 FROM (VALUES
         ('exams','p',1,'主鍵'), ('exams','f',1,'外鍵'),
         ('question_groups','p',1,'主鍵'), ('question_groups','f',1,'外鍵'), ('question_groups','u',1,'唯一鍵'),
         ('group_questions','p',1,'主鍵'), ('group_questions','f',1,'外鍵'), ('group_questions','u',1,'唯一鍵'),
-        ('vocabulary_questions','p',1,'主鍵'), ('vocabulary_questions','f',1,'外鍵'), ('vocabulary_questions','u',1,'唯一鍵'),
-        ('translation_questions','p',1,'主鍵'), ('translation_questions','f',1,'外鍵'), ('translation_questions','u',1,'唯一鍵'),
+        ('group_questions','c',1,'CHECK'),
+        ('vocabulary_questions','p',1,'主鍵'), ('vocabulary_questions','f',1,'外鍵'),
+        ('vocabulary_questions','u',1,'唯一鍵'), ('vocabulary_questions','c',2,'CHECK'),
+        ('translation_questions','p',1,'主鍵'), ('translation_questions','f',1,'外鍵'),
+        ('translation_questions','u',1,'唯一鍵'), ('translation_questions','c',1,'CHECK'),
         ('essay_questions','p',1,'主鍵'), ('essay_questions','f',1,'外鍵'), ('essay_questions','u',1,'唯一鍵'),
-        ('exam_attempts','p',1,'主鍵'), ('exam_attempts','f',2,'外鍵'),
-        ('exam_user_answers','p',1,'主鍵'), ('exam_user_answers','f',6,'外鍵')
+        ('exam_attempts','p',1,'主鍵'), ('exam_attempts','f',2,'外鍵'), ('exam_attempts','c',1,'CHECK'),
+        ('exam_user_answers','p',1,'主鍵'), ('exam_user_answers','f',6,'外鍵'), ('exam_user_answers','c',1,'CHECK')
      ) AS e(t, ct, n, label)
 LEFT JOIN (
   SELECT c.relname AS t, con.contype::text AS ct, count(*) AS n
@@ -84,8 +88,24 @@ SELECT 'IDX ' || i,
                          WHERE schemaname = 'public' AND indexname = i) THEN 'PASS' ELSE 'FAIL' END,
        CASE WHEN EXISTS (SELECT 1 FROM pg_indexes
                          WHERE schemaname = 'public' AND indexname = i) THEN '存在' ELSE '缺少' END
-FROM unnest(ARRAY['idx_group_questions_group','idx_attempts_user','idx_attempts_exam',
-                  'idx_attempts_status','idx_answers_attempt']) AS i;
+FROM unnest(ARRAY[
+  'idx_exams_status','idx_exams_year',
+  'idx_groups_exam','idx_groups_type',
+  'idx_group_questions_group','idx_group_questions_number',
+  'idx_vocab_exam','idx_vocab_level',
+  'idx_translation_exam','idx_essay_exam',
+  'idx_attempts_user','idx_attempts_exam','idx_attempts_status',
+  'idx_answers_attempt']) AS i;
+
+-- 索引總數（含主鍵與唯一鍵自動產生的那些）
+INSERT INTO pv (id, result, detail)
+SELECT 'IDX 總數',
+       CASE WHEN count(*) = 27 THEN 'PASS' ELSE 'FAIL' END,
+       '八張表上共 ' || count(*) || ' 個索引（正式環境為 27）'
+FROM pg_indexes
+WHERE schemaname = 'public'
+  AND tablename IN ('exams','question_groups','group_questions','vocabulary_questions',
+                    'translation_questions','essay_questions','exam_attempts','exam_user_answers');
 
 -- ── 5. RLS 啟用狀態 ──
 INSERT INTO pv (id, result, detail)
@@ -151,14 +171,25 @@ FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
 WHERE n.nspname = 'public' AND p.proname = 'auto_grade_choice_answer';
 
 -- ── 8. ENUM ──
+-- 正式環境有五個 ENUM，其中三個使用中文標籤。
 INSERT INTO pv (id, result, detail)
-SELECT 'ENU exam_status',
-       CASE WHEN coalesce(x.labels, '') = 'draft,published,archived' THEN 'PASS' ELSE 'FAIL' END,
-       coalesce(x.labels, '缺少')
-FROM (SELECT (SELECT string_agg(e.enumlabel, ',' ORDER BY e.enumsortorder)
-                FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid
-                JOIN pg_namespace n ON n.oid = t.typnamespace
-               WHERE n.nspname = 'public' AND t.typname = 'exam_status') AS labels) x;
+SELECT 'ENU ' || e.t,
+       CASE WHEN coalesce(a.labels, '') = e.labels THEN 'PASS' ELSE 'FAIL' END,
+       coalesce(a.labels, '缺少') || '（預期 ' || e.labels || '）'
+FROM (VALUES
+        ('exam_status',         'draft,published,archived'),
+        ('difficulty_level',    '簡單,中等,困難'),
+        ('question_group_type', 'cloze,contextual,structure,reading,mixed'),
+        ('mixed_question_type', '選擇,填空,配對,排序'),
+        ('essay_type',          '記敘文,議論文,說明文')
+     ) AS e(t, labels)
+LEFT JOIN (
+  SELECT t.typname, string_agg(en.enumlabel, ',' ORDER BY en.enumsortorder) AS labels
+    FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
+    JOIN pg_enum en ON en.enumtypid = t.oid
+   WHERE n.nspname = 'public'
+   GROUP BY t.typname
+) a ON a.typname = e.t;
 
 -- ── 9. 零資料 ──
 DO $$
@@ -197,6 +228,33 @@ FROM (
     JOIN pg_namespace ns ON ns.oid = c.relnamespace
    WHERE ns.nspname = 'public' AND NOT t.tgisinternal AND tgname LIKE 'mock\_exam\_%'
 ) x;
+
+-- 最容易被誤以為「應該是 uuid」而改掉的地方，明確釘住。
+INSERT INTO pv (id, result, detail)
+SELECT 'TYPE ' || e.t || '.' || e.c,
+       CASE WHEN coalesce(a.ty, '') = e.ty THEN 'PASS' ELSE 'FAIL' END,
+       coalesce(a.ty, '缺少') || '（預期 ' || e.ty || '）'
+FROM (VALUES
+        ('exams','id','text'),
+        ('question_groups','id','text'),
+        ('question_groups','exam_id','text'),
+        ('group_questions','group_id','text'),
+        ('exam_attempts','exam_id','text'),
+        ('vocabulary_questions','question_number','integer'),
+        ('group_questions','question_number','integer'),
+        ('translation_questions','question_number','text'),
+        ('essay_questions','question_number','text'),
+        ('vocabulary_questions','correct_answer','character(1)'),
+        ('exam_user_answers','score_earned','numeric(4,2)'),
+        ('exam_attempts','total_score','numeric(5,2)'),
+        ('exams','total_score','numeric(5,2)')
+     ) AS e(t, c, ty)
+LEFT JOIN (
+  SELECT c.relname AS t, a.attname AS c, format_type(a.atttypid, a.atttypmod) AS ty
+    FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+    JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+   WHERE n.nspname = 'public'
+) a ON a.t = e.t AND a.c = e.c;
 
 INSERT INTO pv (id, result, detail)
 SELECT 'STAGE score_earned DEFAULT',

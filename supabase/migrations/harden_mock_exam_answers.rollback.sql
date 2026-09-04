@@ -17,8 +17,9 @@ DROP POLICY IF EXISTS "Users delete own in-progress answers" ON public.exam_user
 -- 6. 權限：還原為套用前的寬鬆授權
 REVOKE ALL ON public.exam_user_answers FROM authenticated, anon;
 REVOKE ALL ON public.exam_attempts     FROM authenticated, anon;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.exam_user_answers TO authenticated, anon;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.exam_attempts     TO authenticated, anon;
+-- 正式環境的硬化前狀態是 Supabase 預設權限的全套七項，不是四項。
+GRANT ALL ON public.exam_user_answers TO authenticated, anon;
+GRANT ALL ON public.exam_attempts     TO authenticated, anon;
 
 -- 5. attempts guard
 DROP TRIGGER IF EXISTS mock_exam_trg_attempts_guard ON public.exam_attempts;

@@ -32,12 +32,17 @@ FROM unnest(ARRAY['exams','question_groups','group_questions','vocabulary_questi
 -- 共用資料庫的教訓：型別、函式、索引、政策的名稱都是 schema 全域的。
 -- 名稱撞到別人的物件時，最糟的情況不是失敗，是「成功但作用在別人的表上」。
 -- ─────────────────────────────────────────────
+-- 正式環境有五個 ENUM，bootstrap 會全部建立，所以五個名稱都要沒被占用。
 INSERT INTO pf2 (section, item, value, verdict)
-SELECT 'B 名稱占用', 'type exam_status',
-       CASE WHEN count(*) = 0 THEN '未占用' ELSE '已被占用' END,
-       CASE WHEN count(*) = 0 THEN 'OK' ELSE 'STOP' END
-FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
-WHERE n.nspname = 'public' AND t.typname = 'exam_status';
+SELECT 'B 名稱占用', 'type ' || ty,
+       CASE WHEN EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
+                         WHERE n.nspname = 'public' AND t.typname = ty)
+            THEN '已被占用' ELSE '未占用' END,
+       CASE WHEN EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
+                         WHERE n.nspname = 'public' AND t.typname = ty)
+            THEN 'STOP' ELSE 'OK' END
+FROM unnest(ARRAY['exam_status','difficulty_level','question_group_type',
+                  'mixed_question_type','essay_type']) AS ty;
 
 INSERT INTO pf2 (section, item, value, verdict)
 SELECT 'B 名稱占用', 'function auto_grade_choice_answer()',
@@ -54,8 +59,11 @@ SELECT 'B 名稱占用', 'index ' || i,
        CASE WHEN EXISTS (SELECT 1 FROM pg_indexes
                          WHERE schemaname = 'public' AND indexname = i)
             THEN 'STOP' ELSE 'OK' END
-FROM unnest(ARRAY['idx_group_questions_group','idx_attempts_user','idx_attempts_exam',
-                  'idx_attempts_status','idx_answers_attempt']) AS i;
+FROM unnest(ARRAY[
+  'idx_exams_status','idx_exams_year','idx_groups_exam','idx_groups_type',
+  'idx_group_questions_group','idx_group_questions_number','idx_vocab_exam','idx_vocab_level',
+  'idx_translation_exam','idx_essay_exam','idx_attempts_user','idx_attempts_exam',
+  'idx_attempts_status','idx_answers_attempt']) AS i;
 
 -- 政策名稱只在「同一張表」內唯一，所以撞名不會出錯；
 -- 但既然目標表都不存在，出現同名政策就代表有意料之外的東西。
@@ -101,7 +109,7 @@ INSERT INTO pf2 (section, item, value, verdict)
 SELECT 'C 平台前置', 'role ' || r,
        CASE WHEN EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r) THEN '存在' ELSE '缺少' END,
        CASE WHEN EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r) THEN 'OK' ELSE 'STOP' END
-FROM unnest(ARRAY['authenticated','anon']) AS r;
+FROM unnest(ARRAY['authenticated','anon','service_role']) AS r;
 
 -- ─────────────────────────────────────────────
 -- D. iLearn legacy 現況（唯讀報告；bootstrap 完全不碰它們）

@@ -38,6 +38,9 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
     CREATE ROLE anon NOLOGIN;
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN
+    CREATE ROLE service_role NOLOGIN BYPASSRLS;
+  END IF;
 END $$;
 
 -- storage.buckets 的替身，讓 preflight 腳本能在本機驗證

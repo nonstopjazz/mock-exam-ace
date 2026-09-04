@@ -1,25 +1,14 @@
-# mock 模考基礎 schema 指紋 —— 期望值（golden）
+# 正式環境 ytzspnjmkvrkbztnaomm 的 mock 模考基礎 schema 指紋
+# 由 supabase/tests/mock_exam_schema_fingerprint.sql 產生，2026-09 取得。
 #
-# 產生方式（本機 PostgreSQL 16）：
-#   1. Supabase 平台替身（auth schema、auth.uid()、authenticated/anon/service_role）
-#   2. supabase/migrations/bootstrap_mock_exam_base_schema.sql
-#   3. supabase/tests/mock_exam_schema_fingerprint.sql
+# 這是本專案對「硬化前的正式 schema」的 source of truth。
+# bootstrap_mock_exam_base_schema.sql 依本檔逐項重建；
+# 兩者不一致時，以本檔為準。
 #
-# 對照組是 supabase/tests/mock_exam_production_fingerprint.txt
-# （ytzspnjmkvrkbztnaomm 的實際輸出，本專案的 source of truth）。
-#
-# 兩者已知、且經核可的差異只有以下幾類：
-#   · ILN(env) —— legacy iLearn 表在正式環境存在、在 staging 不存在。
-#   · GRA … | postgres —— owner 名稱依專案而異。
-#   · FUN … body_md5 與 B64 —— 正式環境的 auto_grade_choice_answer()
-#     本體含有「肉眼看不見的尾端空白」，複製貼上時會被吃掉，因此無法從
-#     貼上的指紋還原成位元組等價的原始碼。pg_get_functiondef 的 SRC 行
-#     逐字相同（邏輯、註解、縮排全部一致），只有 md5 不同。
-#     這一項對階段 2 無影響：硬化 migration 會 DROP 這個函式，
-#     改用 mock_exam_auto_grade()。若要徹底消除，把正式環境 B64 行的
-#     base64 解碼後貼回 bootstrap 即可。
-#
-# 其他任何一行不同，都是真正的 drift，必須先修正 bootstrap 再套用。
+# 注意：本檔由 Supabase SQL Editor 的輸出貼回後正規化而成，
+# 因此「行內尾端空白」無法保證保真。唯一受影響的是
+# FUN auto_grade_choice_answer() 的 body_md5，詳見 expected 檔的說明。
+# 當時的指紋腳本尚未輸出 B64 行，所以本檔沒有它。
 TAB essay_questions = present
 TAB exam_attempts = present
 TAB exam_user_answers = present
@@ -273,43 +262,22 @@ POL vocabulary_questions | Vocab questions viewable for published exams | SELECT
    FROM exams
   WHERE ((exams.id = vocabulary_questions.exam_id) AND (exams.status = 'published'::exam_status)))) | check=-
 TRG exam_user_answers | trigger_auto_grade | CREATE TRIGGER trigger_auto_grade BEFORE INSERT OR UPDATE ON public.exam_user_answers FOR EACH ROW EXECUTE FUNCTION auto_grade_choice_answer() | enabled=O
-FUN auto_grade_choice_answer() | returns=trigger | volatility=v | security_definer=false | config=search_path=public | body_md5=f8dedc4508dfa49d995dc2596f898f5a
-SRC auto_grade_choice_answer >>>CREATE OR REPLACE FUNCTION public.auto_grade_choice_answer()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO 'public'
-AS $function$
-DECLARE
-  correct TEXT;
-  q_score NUMERIC(4,2);
-BEGIN
-  -- 單字題
-  IF NEW.vocabulary_question_id IS NOT NULL THEN
-    SELECT correct_answer, score INTO correct, q_score
-    FROM vocabulary_questions WHERE id = NEW.vocabulary_question_id;
-    
-    NEW.is_correct := (UPPER(NEW.user_answer) = correct);
-    NEW.score_earned := CASE WHEN NEW.is_correct THEN q_score ELSE 0 END;
-  
-  -- 題組題目
-  ELSIF NEW.group_question_id IS NOT NULL THEN
-    SELECT correct_answer, score INTO correct, q_score
-    FROM group_questions WHERE id = NEW.group_question_id;
-    
-    NEW.is_correct := (UPPER(NEW.user_answer) = UPPER(correct));
-    NEW.score_earned := CASE WHEN NEW.is_correct THEN q_score ELSE 0 END;
-  END IF;
-  
-  RETURN NEW;
-END;
-$function$
-<<<
-B64 auto_grade_choice_answer = CkRFQ0xBUkUKICBjb3JyZWN0IFRFWFQ7CiAgcV9zY29yZSBOVU1FUklDKDQsMik7CkJFR0lOCiAgLS0g5Zau5a2X6aGMCiAgSUYgTkVXLnZvY2FidWxhcnlfcXVlc3Rpb25faWQgSVMgTk9UIE5VTEwgVEhFTgogICAgU0VMRUNUIGNvcnJlY3RfYW5zd2VyLCBzY29yZSBJTlRPIGNvcnJlY3QsIHFfc2NvcmUKICAgIEZST00gdm9jYWJ1bGFyeV9xdWVzdGlvbnMgV0hFUkUgaWQgPSBORVcudm9jYWJ1bGFyeV9xdWVzdGlvbl9pZDsKICAgIAogICAgTkVXLmlzX2NvcnJlY3QgOj0gKFVQUEVSKE5FVy51c2VyX2Fuc3dlcikgPSBjb3JyZWN0KTsKICAgIE5FVy5zY29yZV9lYXJuZWQgOj0gQ0FTRSBXSEVOIE5FVy5pc19jb3JyZWN0IFRIRU4gcV9zY29yZSBFTFNFIDAgRU5EOwogIAogIC0tIOmhjOe1hOmhjOebrgogIEVMU0lGIE5FVy5ncm91cF9xdWVzdGlvbl9pZCBJUyBOT1QgTlVMTCBUSEVOCiAgICBTRUxFQ1QgY29ycmVjdF9hbnN3ZXIsIHNjb3JlIElOVE8gY29ycmVjdCwgcV9zY29yZQogICAgRlJPTSBncm91cF9xdWVzdGlvbnMgV0hFUkUgaWQgPSBORVcuZ3JvdXBfcXVlc3Rpb25faWQ7CiAgICAKICAgIE5FVy5pc19jb3JyZWN0IDo9IChVUFBFUihORVcudXNlcl9hbnN3ZXIpID0gVVBQRVIoY29ycmVjdCkpOwogICAgTkVXLnNjb3JlX2Vhcm5lZCA6PSBDQVNFIFdIRU4gTkVXLmlzX2NvcnJlY3QgVEhFTiBxX3Njb3JlIEVMU0UgMCBFTkQ7CiAgRU5EIElGOwogIAogIFJFVFVSTiBORVc7CkVORDsK
+FUN auto_grade_choice_answer() | returns=trigger | volatility=v | security_definer=false | config=search_path=public | body_md5=5770eadfefd9ee364e850023a1422f52
 ENU difficulty_level = 簡單,中等,困難
 ENU essay_type = 記敘文,議論文,說明文
 ENU exam_status = draft,published,archived
 ENU mixed_question_type = 選擇,填空,配對,排序
 ENU question_group_type = cloze,contextual,structure,reading,mixed
+ACL essay_questions | 有明確欄位級授權的欄位數 = 0
+ACL exam_attempts | 有明確欄位級授權的欄位數 = 0
+ACL exam_user_answers | 有明確欄位級授權的欄位數 = 0
+ACL exams | 有明確欄位級授權的欄位數 = 0
+ACL group_questions | 有明確欄位級授權的欄位數 = 0
+ACL question_groups | 有明確欄位級授權的欄位數 = 0
+ACL translation_questions | 有明確欄位級授權的欄位數 = 0
+ACL vocabulary_questions | 有明確欄位級授權的欄位數 = 0
+ILN 範圍內的八張表對 legacy 表有外鍵參照數 = 0
+ILN(env) legacy 表存在狀況（僅供對照，本檔不碰它）：exam_records=present exam_types=present
 GRA essay_questions | anon | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
 GRA essay_questions | authenticated | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
 GRA essay_questions | postgres | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
@@ -342,13 +310,33 @@ GRA vocabulary_questions | anon | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCA
 GRA vocabulary_questions | authenticated | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
 GRA vocabulary_questions | postgres | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
 GRA vocabulary_questions | service_role | DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE
-ACL essay_questions | 有明確欄位級授權的欄位數 = 0
-ACL exam_attempts | 有明確欄位級授權的欄位數 = 0
-ACL exam_user_answers | 有明確欄位級授權的欄位數 = 0
-ACL exams | 有明確欄位級授權的欄位數 = 0
-ACL group_questions | 有明確欄位級授權的欄位數 = 0
-ACL question_groups | 有明確欄位級授權的欄位數 = 0
-ACL translation_questions | 有明確欄位級授權的欄位數 = 0
-ACL vocabulary_questions | 有明確欄位級授權的欄位數 = 0
-ILN 範圍內的八張表對 legacy 表有外鍵參照數 = 0
-ILN(env) legacy 表存在狀況（僅供對照，本檔不碰它）：exam_records=absent exam_types=absent
+SRC auto_grade_choice_answer >>>CREATE OR REPLACE FUNCTION public.auto_grade_choice_answer()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  correct TEXT;
+  q_score NUMERIC(4,2);
+BEGIN
+  -- 單字題
+  IF NEW.vocabulary_question_id IS NOT NULL THEN
+    SELECT correct_answer, score INTO correct, q_score
+    FROM vocabulary_questions WHERE id = NEW.vocabulary_question_id;
+    
+    NEW.is_correct := (UPPER(NEW.user_answer) = correct);
+    NEW.score_earned := CASE WHEN NEW.is_correct THEN q_score ELSE 0 END;
+  
+  -- 題組題目
+  ELSIF NEW.group_question_id IS NOT NULL THEN
+    SELECT correct_answer, score INTO correct, q_score
+    FROM group_questions WHERE id = NEW.group_question_id;
+    
+    NEW.is_correct := (UPPER(NEW.user_answer) = UPPER(correct));
+    NEW.score_earned := CASE WHEN NEW.is_correct THEN q_score ELSE 0 END;
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$
+<<<

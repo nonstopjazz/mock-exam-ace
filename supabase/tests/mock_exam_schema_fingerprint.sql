@@ -157,6 +157,23 @@ WHERE n.nspname = 'public'
     JOIN scope s ON s.t = c.relname
     WHERE nn.nspname = 'public' AND NOT t.tgisinternal);
 
+-- ── B64：函式本體的 base64
+-- 尾端空白在複製貼上時會被吃掉，SRC 於是無法保證位元組等價，
+-- 但 body_md5 會照實不同。base64 讓原始位元組可以安全地搬運與比對。
+INSERT INTO fp
+SELECT '8c:' || p.proname || ':' || p.oid::text,
+       'B64 ' || p.proname || ' = ' || replace(encode(convert_to(p.prosrc, 'UTF8'), 'base64'), chr(10), '')
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.oid IN (
+    SELECT t.tgfoid
+    FROM pg_trigger t
+    JOIN pg_class c ON c.oid = t.tgrelid
+    JOIN pg_namespace nn ON nn.oid = c.relnamespace
+    JOIN scope s ON s.t = c.relname
+    WHERE nn.nspname = 'public' AND NOT t.tgisinternal);
+
 -- ── ENU：這八張表的欄位用到的 ENUM 型別 ──
 INSERT INTO fp
 SELECT DISTINCT '9:' || tt.typname,

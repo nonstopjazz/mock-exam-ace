@@ -28,6 +28,10 @@ DROP TABLE IF EXISTS public.exams CASCADE;
 DROP FUNCTION IF EXISTS public.auto_grade_choice_answer();
 
 DROP TYPE IF EXISTS public.exam_status;
+DROP TYPE IF EXISTS public.difficulty_level;
+DROP TYPE IF EXISTS public.question_group_type;
+DROP TYPE IF EXISTS public.mixed_question_type;
+DROP TYPE IF EXISTS public.essay_type;
 
 -- 驗證：這八張表、型別與函式都不該再存在
 DO $$
@@ -40,10 +44,14 @@ BEGIN
       v_left := v_left || ('table ' || v_t);
     END IF;
   END LOOP;
-  IF EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
-             WHERE n.nspname = 'public' AND t.typname = 'exam_status') THEN
-    v_left := v_left || 'type exam_status'::text;
-  END IF;
+  FOREACH v_t IN ARRAY ARRAY[
+    'exam_status','difficulty_level','question_group_type',
+    'mixed_question_type','essay_type'] LOOP
+    IF EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
+               WHERE n.nspname = 'public' AND t.typname = v_t) THEN
+      v_left := v_left || ('type ' || v_t);
+    END IF;
+  END LOOP;
   IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
              WHERE n.nspname = 'public' AND p.proname LIKE 'mock\_exam\_%') THEN
     v_left := v_left || 'leftover mock_exam_% function(s) from the hardening stage'::text;

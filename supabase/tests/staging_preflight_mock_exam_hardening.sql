@@ -242,7 +242,8 @@ SELECT 'F schema 形狀', 'exam_attempts 缺少預期欄位',
        CASE WHEN count(*) = 0 THEN 'OK' ELSE 'STOP' END
 FROM unnest(ARRAY['id','user_id','exam_id','started_at','submitted_at','time_spent_seconds',
                   'status','vocabulary_score','cloze_score','contextual_score','structure_score',
-                  'reading_score','mixed_score','translation_score','essay_score','total_score']) AS c
+                  'reading_score','mixed_score','translation_score','essay_score','total_score',
+                  'created_at','updated_at']) AS c
 WHERE NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_schema = 'public' AND table_name = 'exam_attempts'
                     AND column_name = c);

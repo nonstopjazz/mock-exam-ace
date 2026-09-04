@@ -36,27 +36,31 @@ END $$;
 -- ── 佈置（可重複執行）────────────────────────────────
 -- 先清掉上一次的測試資料。只刪本測試自己建立的考試，
 -- cascade 會一併帶走題目、attempt 與作答。legacy 資料不在此列。
-DELETE FROM exams WHERE id = 'e0000000-0000-0000-0000-00000000000f';
+DELETE FROM exams WHERE id = 'hardening-test';
 
 -- ── 佈置 ────────────────────────────────────────────
 -- 刻意用 draft 考試：證明判分不依賴學生的閱讀權限
-INSERT INTO exams (id, title, status)
-  VALUES ('e0000000-0000-0000-0000-00000000000f','hardening test','draft');
-INSERT INTO question_groups (id, exam_id, title, group_type, group_order)
-  VALUES ('60000000-0000-0000-0000-00000000000f','e0000000-0000-0000-0000-00000000000f','cloze','cloze',1);
+-- 欄位依正式環境的實際形狀：exams.id 與 question_groups.id 是 text，
+-- 題目表有一整排 NOT NULL 欄位，翻譯與作文的 question_number 是 text。
+INSERT INTO exams (id, title, year, status)
+  VALUES ('hardening-test','hardening test',2026,'draft');
+INSERT INTO question_groups (id, exam_id, title, group_type, group_order, content)
+  VALUES ('hardening-test-g1','hardening-test','cloze','cloze',1,'A cloze passage.');
 INSERT INTO group_questions (id, group_id, question_number, correct_answer, score, grammar_large)
-  VALUES ('61000000-0000-0000-0000-000000000001','60000000-0000-0000-0000-00000000000f',1,'C',2.5,'時態與語態'),
-         ('61000000-0000-0000-0000-000000000002','60000000-0000-0000-0000-00000000000f',2,'A',2.5,'時態與語態');
-INSERT INTO vocabulary_questions (id, exam_id, question_number, correct_answer, score)
-  VALUES ('62000000-0000-0000-0000-000000000001','e0000000-0000-0000-0000-00000000000f',1,'B',1.5);
-INSERT INTO translation_questions (id, exam_id, question_number, score)
-  VALUES ('63000000-0000-0000-0000-000000000001','e0000000-0000-0000-0000-00000000000f',1,4);
-INSERT INTO essay_questions (id, exam_id, question_number, score)
-  VALUES ('64000000-0000-0000-0000-000000000001','e0000000-0000-0000-0000-00000000000f',1,20);
+  VALUES ('61000000-0000-0000-0000-000000000001','hardening-test-g1',1,'C',2.5,'時態與語態'),
+         ('61000000-0000-0000-0000-000000000002','hardening-test-g1',2,'A',2.5,'時態與語態');
+INSERT INTO vocabulary_questions
+       (id, exam_id, question_number, question_text, option_a, option_b, option_c, option_d, correct_answer, score)
+  VALUES ('62000000-0000-0000-0000-000000000001','hardening-test',1,
+          'Choose the best word.','alpha','bravo','charlie','delta','B',1.5);
+INSERT INTO translation_questions (id, exam_id, question_number, chinese_text, reference_answer, score)
+  VALUES ('63000000-0000-0000-0000-000000000001','hardening-test','1','一個句子。','A sentence.',4);
+INSERT INTO essay_questions (id, exam_id, question_number, prompt, score)
+  VALUES ('64000000-0000-0000-0000-000000000001','hardening-test','1','Write about a journey.',20);
 
 INSERT INTO exam_attempts (id, user_id, exam_id, status) VALUES
-  ('a0000000-0000-0000-0000-00000000000a','aaaaaaaa-0000-0000-0000-000000000001','e0000000-0000-0000-0000-00000000000f','in_progress'),
-  ('a0000000-0000-0000-0000-00000000000b','bbbbbbbb-0000-0000-0000-000000000002','e0000000-0000-0000-0000-00000000000f','in_progress');
+  ('a0000000-0000-0000-0000-00000000000a','aaaaaaaa-0000-0000-0000-000000000001','hardening-test','in_progress'),
+  ('a0000000-0000-0000-0000-00000000000b','bbbbbbbb-0000-0000-0000-000000000002','hardening-test','in_progress');
 
 \echo '--- A/B/E/F：客觀題自動判分 ---'
 BEGIN;
@@ -151,10 +155,10 @@ DO $$
 DECLARE
   v_cases text[][] := ARRAY[
     ARRAY['is_correct = true',            'J 學生不可設定 is_correct'],
-    ARRAY['score_earned = 999',           'K 學生不可設定 score_earned'],
+    ARRAY['score_earned = 99',           'K 學生不可設定 score_earned'],
     ARRAY['grading_method = ''TEACHER''', 'L 學生不可設定 grading_method'],
     ARRAY['grading_status = ''GRADED''',  'M 學生不可設定 grading_status'],
-    ARRAY['max_score = 999',              'M2 學生不可設定 max_score'],
+    ARRAY['max_score = 99',              'M2 學生不可設定 max_score'],
     ARRAY['graded_by = ''aaaaaaaa-0000-0000-0000-000000000001''', 'M3 學生不可設定 graded_by'],
     ARRAY['graded_at = now()',            'M4 學生不可設定 graded_at']
   ];

@@ -36,7 +36,7 @@ ALTER TABLE public.exam_user_answers
 --     「未作答」不是狀態，而是「沒有這一列」（見 1d）。
 ALTER TABLE public.exam_user_answers
   ADD COLUMN IF NOT EXISTS grading_status  text NOT NULL DEFAULT 'UNGRADED',
-  ADD COLUMN IF NOT EXISTS max_score       numeric,
+  ADD COLUMN IF NOT EXISTS max_score       numeric(4,2),
   ADD COLUMN IF NOT EXISTS grading_method  text;
 
 COMMENT ON COLUMN public.exam_user_answers.grading_status IS

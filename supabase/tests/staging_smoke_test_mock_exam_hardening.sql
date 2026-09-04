@@ -33,16 +33,17 @@ DECLARE
   v_u1 uuid;
   v_u2 uuid;
 
-  -- 固定 UUID：全部隨子交易回滾，不會留在資料庫
-  k_exam  constant uuid := 'e0000000-0000-0000-0000-00000000000f';
-  k_grp   constant uuid := '60000000-0000-0000-0000-00000000000f';
-  k_gq1   constant uuid := '61000000-0000-0000-0000-000000000001';
-  k_gq2   constant uuid := '61000000-0000-0000-0000-000000000002';
-  k_vq1   constant uuid := '62000000-0000-0000-0000-000000000001';
-  k_tq1   constant uuid := '63000000-0000-0000-0000-000000000001';
-  k_eq1   constant uuid := '64000000-0000-0000-0000-000000000001';
-  k_att_a constant uuid := 'a0000000-0000-0000-0000-00000000000a';
-  k_att_b constant uuid := 'a0000000-0000-0000-0000-00000000000b';
+  -- 固定識別碼：全部隨子交易回滾，不會留在資料庫
+  -- 注意：正式環境的 exams.id 與 question_groups.id 是 text，不是 uuid。
+  k_exam  constant text := 'hardening-smoke-test';
+  k_grp   constant text := 'hardening-smoke-test-g1';
+  k_gq1   constant uuid := '71000000-0000-0000-0000-000000000001';
+  k_gq2   constant uuid := '71000000-0000-0000-0000-000000000002';
+  k_vq1   constant uuid := '72000000-0000-0000-0000-000000000001';
+  k_tq1   constant uuid := '73000000-0000-0000-0000-000000000001';
+  k_eq1   constant uuid := '74000000-0000-0000-0000-000000000001';
+  k_att_a constant uuid := 'b0000000-0000-0000-0000-00000000000a';
+  k_att_b constant uuid := 'b0000000-0000-0000-0000-00000000000b';
 
   v_ok    boolean;
   v_msg   text;
@@ -67,17 +68,22 @@ BEGIN
     -- 佈置：刻意用 draft 考試
     -- 證明自動判分不依賴學生的閱讀權限（RLS 只放行 published）
     ---------------------------------------------------------------
-    INSERT INTO exams (id, title, status) VALUES (k_exam, 'hardening smoke test', 'draft');
-    INSERT INTO question_groups (id, exam_id, title, group_type, group_order)
-      VALUES (k_grp, k_exam, 'cloze', 'cloze', 1);
+    INSERT INTO exams (id, title, year, status)
+      VALUES (k_exam, 'hardening smoke test', 2026, 'draft');
+    INSERT INTO question_groups (id, exam_id, title, group_type, group_order, content)
+      VALUES (k_grp, k_exam, 'cloze', 'cloze', 1, 'A cloze passage.');
     INSERT INTO group_questions (id, group_id, question_number, correct_answer, score)
       VALUES (k_gq1, k_grp, 1, 'C', 2.5), (k_gq2, k_grp, 2, 'A', 2.5);
-    INSERT INTO vocabulary_questions (id, exam_id, question_number, correct_answer, score)
-      VALUES (k_vq1, k_exam, 1, 'B', 1.5);
-    INSERT INTO translation_questions (id, exam_id, question_number, score)
-      VALUES (k_tq1, k_exam, 1, 4);
-    INSERT INTO essay_questions (id, exam_id, question_number, score)
-      VALUES (k_eq1, k_exam, 1, 20);
+    INSERT INTO vocabulary_questions
+           (id, exam_id, question_number, question_text,
+            option_a, option_b, option_c, option_d, correct_answer, score)
+      VALUES (k_vq1, k_exam, 1, 'Choose the best word.',
+              'alpha', 'bravo', 'charlie', 'delta', 'B', 1.5);
+    INSERT INTO translation_questions
+           (id, exam_id, question_number, chinese_text, reference_answer, score)
+      VALUES (k_tq1, k_exam, '1', '一個句子。', 'A sentence.', 4);
+    INSERT INTO essay_questions (id, exam_id, question_number, prompt, score)
+      VALUES (k_eq1, k_exam, '1', 'Write about a journey.', 20);
     INSERT INTO exam_attempts (id, user_id, exam_id, status) VALUES
       (k_att_a, v_u1, k_exam, 'in_progress'),
       (k_att_b, v_u2, k_exam, 'in_progress');
@@ -204,10 +210,10 @@ BEGIN
     ---------------------------------------------------------------
     v_cases := ARRAY[
       ARRAY['J',  'is_correct = true',            '學生不可設定 is_correct'],
-      ARRAY['K',  'score_earned = 999',           '學生不可設定 score_earned'],
+      ARRAY['K',  'score_earned = 99',           '學生不可設定 score_earned'],
       ARRAY['L',  'grading_method = ''TEACHER''', '學生不可設定 grading_method'],
       ARRAY['M',  'grading_status = ''GRADED''',  '學生不可設定 grading_status'],
-      ARRAY['M2', 'max_score = 999',              '學生不可設定 max_score'],
+      ARRAY['M2', 'max_score = 99',              '學生不可設定 max_score'],
       ARRAY['M3', 'graded_by = NULL',             '學生不可設定 graded_by'],
       ARRAY['M4', 'graded_at = now()',            '學生不可設定 graded_at']
     ];
