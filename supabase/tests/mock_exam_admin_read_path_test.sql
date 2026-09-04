@@ -9,7 +9,6 @@
 --   psql -v ON_ERROR_STOP=1 -d arpx -f mock_exam_prod_fixture.sql
 --   psql -v ON_ERROR_STOP=1 -d arpx -f ../migrations/harden_mock_exam_answers.sql
 --   psql -v ON_ERROR_STOP=1 -d arpx -f ../migrations/bootstrap_is_admin.sql
---   psql -v ON_ERROR_STOP=1 -d arpx -f ../migrations/harden_is_admin_search_path.sql
 --   psql -v ON_ERROR_STOP=1 -d arpx -f ../migrations/create_mock_content_admin_read_rpc.sql
 --   psql -v ON_ERROR_STOP=1 -d arpx -f ../migrations/harden_mock_exam_content_permissions.sql
 --   psql -v ON_ERROR_STOP=1 -d arpx -f mock_exam_admin_read_path_test.sql

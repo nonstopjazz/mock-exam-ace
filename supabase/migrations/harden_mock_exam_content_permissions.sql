@@ -25,7 +25,7 @@
 -- 本檔的做法，與 exam_user_answers 的硬化一致：
 --   RLS 負責「哪些列」，欄位級 GRANT 負責「哪些欄」。
 --
--- 前置條件：必須先套用 harden_is_admin_search_path.sql，
+-- 前置條件：必須先套用 bootstrap_is_admin.sql，
 --           因為下面的 admin 政策以 is_admin() 為授權邊界。
 -- =====================================================
 
@@ -46,16 +46,16 @@ BEGIN
   END LOOP;
 
   IF to_regprocedure('public.is_admin()') IS NULL THEN
-    RAISE EXCEPTION '中止：找不到 public.is_admin()。請先套用 create_user_profiles_table.sql。';
+    RAISE EXCEPTION '中止：找不到 public.is_admin()。請先套用 bootstrap_is_admin.sql。';
   END IF;
 
   SELECT coalesce(array_to_string(p.proconfig, ','), '(null)') INTO v_config
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname = 'is_admin';
 
-  IF v_config NOT LIKE 'search_path=%' THEN
-    RAISE EXCEPTION '中止：public.is_admin() 尚未鎖定 search_path（proconfig = %）。'
-      '請先套用 harden_is_admin_search_path.sql —— 本檔要拿它當授權邊界，'
+  IF v_config <> 'search_path=public' THEN
+    RAISE EXCEPTION '中止：public.is_admin() 的 search_path 是 %，預期正式環境的 search_path=public。'
+      '請先套用 bootstrap_is_admin.sql —— 本檔要拿它當授權邊界，'
       '不鎖 search_path 的 SECURITY DEFINER 函式不適合擔任這個角色。', v_config;
   END IF;
 

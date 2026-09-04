@@ -7,8 +7,7 @@
 --   createdb contentx
 --   cd supabase/tests
 --   psql -v ON_ERROR_STOP=1 -d contentx -f mock_exam_prod_fixture.sql
---   psql -v ON_ERROR_STOP=1 -d contentx -f _is_admin_prehardening.sql
---   psql -v ON_ERROR_STOP=1 -d contentx -f ../migrations/harden_is_admin_search_path.sql
+--   psql -v ON_ERROR_STOP=1 -d contentx -f ../migrations/bootstrap_is_admin.sql
 --   psql -v ON_ERROR_STOP=1 -d contentx -f ../migrations/harden_mock_exam_content_permissions.sql
 --   psql -v ON_ERROR_STOP=1 -d contentx -f mock_exam_content_permissions_test.sql
 --
@@ -290,13 +289,13 @@ SELECT t_assert((SELECT prosecdef FROM pg_proc p JOIN pg_namespace n ON n.oid=p.
                  WHERE n.nspname='public' AND p.proname='is_admin'),
   '28 is_admin() 仍是 SECURITY DEFINER');
 SELECT t_assert((SELECT array_to_string(proconfig,',') FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-                 WHERE n.nspname='public' AND p.proname='is_admin') = 'search_path=""',
-  '29 is_admin() 已鎖定 search_path');
+                 WHERE n.nspname='public' AND p.proname='is_admin') = 'search_path=public',
+  '29 is_admin() 的 search_path 與正式環境一致（public）');
 SELECT t_assert((SELECT md5(regexp_replace(replace(prosrc, chr(13), ''), '[[:space:]]+', ' ', 'g'))
                  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
                  WHERE n.nspname='public' AND p.proname='is_admin')
-                = '4f2510c540d405db752d1a70d5b0cffb',
-  '30 is_admin() 的授權語意未改變（本體指紋相同）');
+                IN ('b0dc3065d87e4196524357d2d080e276', '4f2510c540d405db752d1a70d5b0cffb'),
+  '30 is_admin() 的授權語意未改變（本體指紋為已知的正式／repo 版之一）');
 
 \echo '--- service_role 不受影響 ---'
 SELECT t_assert(t_scalar('service_role', NULL,

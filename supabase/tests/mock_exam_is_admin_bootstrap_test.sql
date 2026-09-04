@@ -1,5 +1,5 @@
 -- =====================================================
--- is_admin() bootstrap 與 search_path 硬化測試
+-- is_admin() bootstrap 測試（以正式環境定義為準）
 --
 -- ⚠️ psql 專用。需要一個「乾淨」的資料庫：只有 auth 替身，
 --    沒有任何依賴 is_admin() 的政策（本測試會 DROP 它來重跑三種分支）。
@@ -29,8 +29,11 @@ SELECT t_assert(to_regprocedure('public.is_admin()') IS NOT NULL,
 SELECT t_assert((SELECT md5(regexp_replace(replace(prosrc, chr(13), ''), '[[:space:]]+', ' ', 'g'))
                  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
                  WHERE n.nspname='public' AND proname='is_admin')
-                = '4f2510c540d405db752d1a70d5b0cffb',
+                = 'b0dc3065d87e4196524357d2d080e276',
   '1b 建立出來的本體與正式環境逐字等價');
+SELECT t_assert((SELECT array_to_string(proconfig,',') FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+                 WHERE n.nspname='public' AND proname='is_admin') = 'search_path=public',
+  '1c 建立時就帶著正式環境的 search_path=public（不需要第二份 migration）');
 
 \echo '--- 2 已存在但不同 → 大聲中止，且不覆蓋 ---'
 CREATE OR REPLACE FUNCTION public.is_admin() RETURNS boolean
@@ -44,20 +47,48 @@ LANGUAGE sql SECURITY DEFINER AS $$ SELECT true $$;
 SELECT t_assert((SELECT md5(regexp_replace(replace(prosrc, chr(13), ''), '[[:space:]]+', ' ', 'g'))
                  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
                  WHERE n.nspname='public' AND proname='is_admin')
-                <> '4f2510c540d405db752d1a70d5b0cffb',
+                NOT IN ('b0dc3065d87e4196524357d2d080e276','4f2510c540d405db752d1a70d5b0cffb'),
   '2  存在衝突的 is_admin() 時 bootstrap 中止，且沒有覆蓋既有定義');
 
 -- 復原成正確的定義再繼續
 DROP FUNCTION public.is_admin();
 \ir ../migrations/bootstrap_is_admin.sql
 
-\echo '--- 3-6 硬化與語意 ---'
+\echo '--- 2b repo 版（含註解行）也被接受，並補上 search_path ---'
+DROP FUNCTION public.is_admin();
+CREATE FUNCTION public.is_admin()
+RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE
+  v_user_email TEXT;
+BEGIN
+  SELECT email INTO v_user_email
+  FROM auth.users
+  WHERE id = auth.uid();
+
+  -- 只有特定 email 是 admin
+  RETURN v_user_email = 'nonstopjazz@gmail.com';
+END;
+$$;
+\ir ../migrations/bootstrap_is_admin.sql
+SELECT t_assert((SELECT array_to_string(proconfig,',') FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+                 WHERE n.nspname='public' AND proname='is_admin') = 'search_path=public',
+  '2b repo 版存在但缺 search_path 時，bootstrap 只補上 SET');
+SELECT t_assert((SELECT md5(regexp_replace(replace(prosrc, chr(13), ''), '[[:space:]]+', ' ', 'g'))
+                 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+                 WHERE n.nspname='public' AND proname='is_admin')
+                = '4f2510c540d405db752d1a70d5b0cffb',
+  '2c 補 SET 時本體一個字元都沒動');
+
+-- 回到正式環境版繼續
+DROP FUNCTION public.is_admin();
+\ir ../migrations/bootstrap_is_admin.sql
+
+\echo '--- 3-6 語意與執行環境 ---'
 INSERT INTO auth.users (id, email) VALUES
   ('cccccccc-0000-0000-0000-00000000000a', 'nonstopjazz@gmail.com'),
   ('dddddddd-0000-0000-0000-00000000000b', 'student@test.local')
 ON CONFLICT (id) DO NOTHING;
-
-\ir ../migrations/harden_is_admin_search_path.sql
 
 CREATE OR REPLACE FUNCTION t_as(p_uid text, p_sql text) RETURNS text
 LANGUAGE plpgsql AS $$
@@ -85,15 +116,15 @@ SELECT t_assert((SELECT prosecdef FROM pg_proc p JOIN pg_namespace n ON n.oid=p.
                  WHERE n.nspname='public' AND proname='is_admin'),
   '5  仍是 SECURITY DEFINER');
 SELECT t_assert((SELECT array_to_string(proconfig, ',') FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-                 WHERE n.nspname='public' AND proname='is_admin') = 'search_path=""',
-  '6  search_path 已明確鎖定為空字串');
+                 WHERE n.nspname='public' AND proname='is_admin') = 'search_path=public',
+  '6  search_path 與正式環境一致（public），沒有製造環境落差');
 SELECT t_assert((SELECT md5(regexp_replace(replace(prosrc, chr(13), ''), '[[:space:]]+', ' ', 'g'))
                  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
                  WHERE n.nspname='public' AND proname='is_admin')
-                = '4f2510c540d405db752d1a70d5b0cffb',
-  '6b 硬化後本體指紋不變（授權語意未改變）');
+                = 'b0dc3065d87e4196524357d2d080e276',
+  '6b 本體指紋＝正式環境（授權語意逐字相同）');
 
-\echo '--- 7 其他功能對 is_admin() 的依賴，語意不變 ---'
+\echo '--- 7 其他功能對 is_admin() 的依賴，行為與正式環境一致 ---'
 -- writing_submissions / writing_texts / premium_memberships 的 RLS 都是
 -- USING (is_admin())。這裡用同樣形狀的替身表，驗證 search_path 硬化
 -- 前後這類政策的判定結果完全一樣。
@@ -107,23 +138,13 @@ INSERT INTO public.t_shared_consumer VALUES (1, 's') ON CONFLICT DO NOTHING;
 
 SELECT t_assert(t_as('cccccccc-0000-0000-0000-00000000000a',
   'SELECT count(*)::text FROM public.t_shared_consumer') = '1',
-  '7a 硬化後 admin 仍讀得到 USING (is_admin()) 保護的資料');
+  '7a admin 讀得到 USING (is_admin()) 保護的資料');
 SELECT t_assert(t_as('dddddddd-0000-0000-0000-00000000000b',
   'SELECT count(*)::text FROM public.t_shared_consumer') = '0',
-  '7b 硬化後一般使用者仍讀不到');
+  '7b 一般使用者讀不到');
 SELECT t_assert(coalesce(t_as(NULL,
   'SELECT count(*)::text FROM public.t_shared_consumer'), '0') = '0',
   '7c 未登入讀不到（is_admin() 回 NULL，RLS 視為 false）');
-
--- 回到未硬化狀態再驗一次：結果必須完全相同
-\ir ../migrations/harden_is_admin_search_path.rollback.sql
-SELECT t_assert(t_as('cccccccc-0000-0000-0000-00000000000a',
-  'SELECT count(*)::text FROM public.t_shared_consumer') = '1',
-  '7d 硬化「前」admin 的判定結果相同');
-SELECT t_assert(t_as('dddddddd-0000-0000-0000-00000000000b',
-  'SELECT count(*)::text FROM public.t_shared_consumer') = '0',
-  '7e 硬化「前」一般使用者的判定結果相同');
-\ir ../migrations/harden_is_admin_search_path.sql
 
 DROP TABLE public.t_shared_consumer;
 

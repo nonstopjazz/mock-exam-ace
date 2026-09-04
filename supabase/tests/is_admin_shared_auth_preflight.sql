@@ -40,15 +40,21 @@ WHERE n.nspname = 'public' AND p.proname = 'is_admin';
 -- 2. 正規化本體指紋（移除 CR、收斂空白）
 -- 正式環境的函式是貼進 SQL Editor 建立的，本體可能含 CRLF，
 -- 直接比 md5(prosrc) 會因為換行編碼而誤判。
+-- 兩種已知本體，授權語意相同，只差一行註解：
+--   b0dc3065… 正式環境 ytzspnjmkvrkbztnaomm（無註解行）← source of truth
+--   4f2510c5… repo 的 create_user_profiles_table.sql（含「-- 只有特定 email 是 admin」）
 INSERT INTO ia (item, value, verdict)
 SELECT '2 正規化本體指紋',
        md5(regexp_replace(replace(p.prosrc, chr(13), ''), '[[:space:]]+', ' ', 'g'))
-       || CASE WHEN md5(regexp_replace(replace(p.prosrc, chr(13), ''), '[[:space:]]+', ' ', 'g'))
-                    = '4f2510c540d405db752d1a70d5b0cffb'
-               THEN '（與 repo 的 create_user_profiles_table.sql 相符）'
-               ELSE '（⚠ 與 repo 不符，預期 4f2510c540d405db752d1a70d5b0cffb）' END,
+       || CASE
+            WHEN md5(regexp_replace(replace(p.prosrc, chr(13), ''), '[[:space:]]+', ' ', 'g'))
+                 = 'b0dc3065d87e4196524357d2d080e276' THEN '（＝正式環境定義）'
+            WHEN md5(regexp_replace(replace(p.prosrc, chr(13), ''), '[[:space:]]+', ' ', 'g'))
+                 = '4f2510c540d405db752d1a70d5b0cffb' THEN '（＝repo 定義，授權語意與正式環境相同）'
+            ELSE '（⚠ 不是已知的兩種定義）' END,
        CASE WHEN md5(regexp_replace(replace(p.prosrc, chr(13), ''), '[[:space:]]+', ' ', 'g'))
-                 = '4f2510c540d405db752d1a70d5b0cffb' THEN 'OK' ELSE 'STOP' END
+                 IN ('b0dc3065d87e4196524357d2d080e276', '4f2510c540d405db752d1a70d5b0cffb')
+            THEN 'OK' ELSE 'STOP' END
 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
 WHERE n.nspname = 'public' AND p.proname = 'is_admin';
 
@@ -69,11 +75,17 @@ FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
 WHERE n.nspname = 'public' AND p.proname = 'is_admin';
 
 -- 4. search_path 狀態
+-- 正式環境是 search_path=public。相同即通過；缺少時 bootstrap 會補上。
 INSERT INTO ia (item, value, verdict)
 SELECT '4 search_path',
-       coalesce(array_to_string(p.proconfig, ','), '(未設定 —— 尚未硬化)'),
-       CASE WHEN coalesce(array_to_string(p.proconfig, ','), '') LIKE 'search_path=%'
-            THEN 'HARDENED' ELSE 'INFO' END
+       coalesce(array_to_string(p.proconfig, ','), '(未設定)')
+       || CASE WHEN coalesce(array_to_string(p.proconfig, ','), '') = 'search_path=public'
+               THEN '（與正式環境相同）'
+               WHEN p.proconfig IS NULL THEN '（bootstrap 會補上 public）'
+               ELSE '（⚠ 與正式環境的 search_path=public 不同）' END,
+       CASE WHEN coalesce(array_to_string(p.proconfig, ','), '') = 'search_path=public' THEN 'OK'
+            WHEN p.proconfig IS NULL THEN 'INFO'
+            ELSE 'STOP' END
 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
 WHERE n.nspname = 'public' AND p.proname = 'is_admin';
 
@@ -159,18 +171,18 @@ INSERT INTO ia (item, value, verdict)
 SELECT 'Z 總結',
        CASE
          WHEN to_regprocedure('public.is_admin()') IS NULL
-           THEN '沒有 is_admin()：先跑 bootstrap_is_admin.sql，再跑 harden_is_admin_search_path.sql'
+           THEN '沒有 is_admin()：跑 bootstrap_is_admin.sql 建立正式環境等價定義'
          WHEN (SELECT count(*) FROM ia WHERE verdict = 'STOP') > 0
-           THEN '有 ' || (SELECT count(*) FROM ia WHERE verdict = 'STOP')::text || ' 項異常，先查清楚'
-         WHEN EXISTS (SELECT 1 FROM ia WHERE item LIKE '4 %' AND verdict = 'HARDENED')
-           THEN '已存在且已鎖 search_path：bootstrap 與硬化都不用再跑'
-         ELSE '已存在且與 repo 一致，尚未硬化：跳過 bootstrap，直接跑 harden_is_admin_search_path.sql'
+           THEN '有 ' || (SELECT count(*) FROM ia WHERE verdict = 'STOP')::text || ' 項異常，先查清楚再說'
+         WHEN EXISTS (SELECT 1 FROM ia WHERE item LIKE '4 %' AND verdict = 'OK')
+           THEN '已存在且與正式環境一致：bootstrap 可跳過（跑了也是 no-op）'
+         ELSE '已存在但缺少 search_path：跑 bootstrap_is_admin.sql，它只會補上 SET，不動本體'
        END,
        CASE
          WHEN (SELECT count(*) FROM ia WHERE verdict = 'STOP') > 0 THEN 'STOP'
          WHEN to_regprocedure('public.is_admin()') IS NULL THEN 'ABSENT_OK'
-         WHEN EXISTS (SELECT 1 FROM ia WHERE item LIKE '4 %' AND verdict = 'HARDENED') THEN 'HARDENED'
-         ELSE 'PRESENT_OK'
+         WHEN EXISTS (SELECT 1 FROM ia WHERE item LIKE '4 %' AND verdict = 'OK') THEN 'MATCHES_PROD'
+         ELSE 'NEEDS_SEARCH_PATH'
        END;
 
 SELECT seq, item, value, verdict FROM ia ORDER BY seq;

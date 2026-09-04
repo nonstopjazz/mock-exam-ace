@@ -9,8 +9,7 @@
 -- ✅ 全部以真實角色（anon / authenticated / service_role）執行，
 --    不透過應用程式碼——「前端沒顯示」不算安全措施。
 --
--- 前置條件：bootstrap_is_admin → harden_is_admin_search_path
---           → create_mock_content_admin_read_rpc
+-- 前置條件：bootstrap_is_admin → create_mock_content_admin_read_rpc
 --           → harden_mock_exam_content_permissions 都已套用。
 --
 -- 需要 auth.users 裡有管理員帳號（nonstopjazz@gmail.com）與至少一個其他帳號。

@@ -11,8 +11,7 @@
 -- 本檔不碰：exam_attempts、exam_user_answers（作答硬化不受影響）、
 --           iLearn 的 exam_records / exam_types、writing_* 系列。
 --
--- is_admin() 的 search_path 由 harden_is_admin_search_path.rollback.sql
--- 單獨回滾；本檔不動它。
+-- is_admin() 由 bootstrap_is_admin.rollback.sql 單獨回滾；本檔不動它。
 -- =====================================================
 
 -- ── 1. 移除本次新增的 24 條政策 ──

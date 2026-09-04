@@ -24,7 +24,7 @@
 --    學生「交卷後看檢討與正解」是另一個檢查點，本檔不處理，
 --    也刻意不提供任何以學生身分取得答案鍵的路徑。
 --
--- 前置條件：harden_is_admin_search_path.sql 必須已套用。
+-- 前置條件：bootstrap_is_admin.sql 必須已套用（is_admin() 存在且 search_path=public）。
 -- =====================================================
 
 DO $guard$
@@ -38,9 +38,9 @@ BEGIN
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname = 'is_admin';
 
-  IF v_config NOT LIKE 'search_path=%' THEN
-    RAISE EXCEPTION '中止：public.is_admin() 尚未鎖定 search_path（proconfig = %）。'
-      '請先套用 harden_is_admin_search_path.sql。', v_config;
+  IF v_config <> 'search_path=public' THEN
+    RAISE EXCEPTION '中止：public.is_admin() 的 search_path 是 %，預期正式環境的 search_path=public。'
+      '請先套用 bootstrap_is_admin.sql。', v_config;
   END IF;
 
   FOREACH v_t IN ARRAY ARRAY[
