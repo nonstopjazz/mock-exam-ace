@@ -9,7 +9,9 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "generate-exam-template": "tsx scripts/generate-exam-template.ts"
+    "generate-exam-template": "tsx scripts/generate-exam-template.ts",
+    "generate:writing-taxonomy": "python3 scripts/generate-writing-taxonomy.py",
+    "verify:writing-contract": "tsx scripts/verify-writing-contract.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
