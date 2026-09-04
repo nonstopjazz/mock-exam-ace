@@ -250,9 +250,26 @@ export interface ValidationIssue {
   readonly detail: string;
 }
 
-export type PassValidation<T> =
-  | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly issues: readonly ValidationIssue[] };
+export interface ValidationOk<T> {
+  readonly ok: true;
+  readonly value: T;
+}
+
+export interface ValidationFail {
+  readonly ok: false;
+  readonly issues: readonly ValidationIssue[];
+}
+
+export type PassValidation<T> = ValidationOk<T> | ValidationFail;
+
+/**
+ * 這個專案的 tsconfig 是 strict: false（因此 strictNullChecks 也關著），
+ * 在那個設定下 `if (result.ok)` 不保證能把可辨識聯集收窄。用明確的
+ * type guard，narrowing 就與 strictNullChecks 無關。
+ */
+export function isValidationOk<T>(result: PassValidation<T>): result is ValidationOk<T> {
+  return result.ok === true;
+}
 
 const isNonEmptyString = (v: unknown): v is string =>
   typeof v === "string" && v.trim().length > 0;
