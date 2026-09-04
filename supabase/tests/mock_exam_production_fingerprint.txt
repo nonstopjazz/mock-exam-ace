@@ -5,10 +5,16 @@
 # bootstrap_mock_exam_base_schema.sql 依本檔逐項重建；
 # 兩者不一致時，以本檔為準。
 #
-# 注意：本檔由 Supabase SQL Editor 的輸出貼回後正規化而成，
-# 因此「行內尾端空白」無法保證保真。唯一受影響的是
-# FUN auto_grade_choice_answer() 的 body_md5，詳見 expected 檔的說明。
-# 當時的指紋腳本尚未輸出 B64 行，所以本檔沒有它。
+# 關於 FUN auto_grade_choice_answer() 的 body_md5 = 5770eadf…：
+# 成因已於 2026-09-04 在 staging 上查明，是 CRLF，不是尾端空白。
+# 正式環境的這個函式當初是貼進 Supabase SQL Editor 建立的，
+# 瀏覽器 textarea 把換行寫成 \r\n，所以本體含 24 個 CR。
+# 把 \r\n 換成 \n 之後的 md5 是 f8dedc4508dfa49d995dc2596f898f5a，
+# 也就是 repo 裡以 LF 儲存的 bootstrap 在本機建立時會得到的值。
+# 兩者是同一段程式碼，只有換行編碼不同。
+#
+# 下面的 B64 行是事後補上的（取得指紋時腳本尚未輸出這一行），
+# 內容取自 staging，其 md5 與正式環境的 body_md5 逐位元組相符。
 TAB essay_questions = present
 TAB exam_attempts = present
 TAB exam_user_answers = present
@@ -340,3 +346,4 @@ BEGIN
 END;
 $function$
 <<<
+B64 auto_grade_choice_answer = DQpERUNMQVJFDQogIGNvcnJlY3QgVEVYVDsNCiAgcV9zY29yZSBOVU1FUklDKDQsMik7DQpCRUdJTg0KICAtLSDllq7lrZfpoYwNCiAgSUYgTkVXLnZvY2FidWxhcnlfcXVlc3Rpb25faWQgSVMgTk9UIE5VTEwgVEhFTg0KICAgIFNFTEVDVCBjb3JyZWN0X2Fuc3dlciwgc2NvcmUgSU5UTyBjb3JyZWN0LCBxX3Njb3JlDQogICAgRlJPTSB2b2NhYnVsYXJ5X3F1ZXN0aW9ucyBXSEVSRSBpZCA9IE5FVy52b2NhYnVsYXJ5X3F1ZXN0aW9uX2lkOw0KICAgIA0KICAgIE5FVy5pc19jb3JyZWN0IDo9IChVUFBFUihORVcudXNlcl9hbnN3ZXIpID0gY29ycmVjdCk7DQogICAgTkVXLnNjb3JlX2Vhcm5lZCA6PSBDQVNFIFdIRU4gTkVXLmlzX2NvcnJlY3QgVEhFTiBxX3Njb3JlIEVMU0UgMCBFTkQ7DQogIA0KICAtLSDpoYzntYTpoYznm64NCiAgRUxTSUYgTkVXLmdyb3VwX3F1ZXN0aW9uX2lkIElTIE5PVCBOVUxMIFRIRU4NCiAgICBTRUxFQ1QgY29ycmVjdF9hbnN3ZXIsIHNjb3JlIElOVE8gY29ycmVjdCwgcV9zY29yZQ0KICAgIEZST00gZ3JvdXBfcXVlc3Rpb25zIFdIRVJFIGlkID0gTkVXLmdyb3VwX3F1ZXN0aW9uX2lkOw0KICAgIA0KICAgIE5FVy5pc19jb3JyZWN0IDo9IChVUFBFUihORVcudXNlcl9hbnN3ZXIpID0gVVBQRVIoY29ycmVjdCkpOw0KICAgIE5FVy5zY29yZV9lYXJuZWQgOj0gQ0FTRSBXSEVOIE5FVy5pc19jb3JyZWN0IFRIRU4gcV9zY29yZSBFTFNFIDAgRU5EOw0KICBFTkQgSUY7DQogIA0KICBSRVRVUk4gTkVXOw0KRU5EOw0K

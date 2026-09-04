@@ -11,13 +11,15 @@
 # 兩者已知、且經核可的差異只有以下幾類：
 #   · ILN(env) —— legacy iLearn 表在正式環境存在、在 staging 不存在。
 #   · GRA … | postgres —— owner 名稱依專案而異。
-#   · FUN … body_md5 與 B64 —— 正式環境的 auto_grade_choice_answer()
-#     本體含有「肉眼看不見的尾端空白」，複製貼上時會被吃掉，因此無法從
-#     貼上的指紋還原成位元組等價的原始碼。pg_get_functiondef 的 SRC 行
-#     逐字相同（邏輯、註解、縮排全部一致），只有 md5 不同。
-#     這一項對階段 2 無影響：硬化 migration 會 DROP 這個函式，
-#     改用 mock_exam_auto_grade()。若要徹底消除，把正式環境 B64 行的
-#     base64 解碼後貼回 bootstrap 即可。
+#   · FUN … body_md5 與 B64 —— 換行編碼不同，不是內容不同。
+#     正式環境與 staging 的 auto_grade_choice_answer() 都是貼進
+#     Supabase SQL Editor 建立的，瀏覽器 textarea 把換行寫成 \r\n，
+#     函式本體因此含 24 個 CR，body_md5 = 5770eadfefd9ee364e850023a1422f52。
+#     本檔是在本機由 LF 檔案建立的，所以是 f8dedc4508dfa49d995dc2596f898f5a。
+#     把 CRLF 換成 LF 之後兩者的 md5 完全相同 —— 同一段程式碼。
+#     實測：從 SQL Editor 貼上 bootstrap 建立的 staging，
+#     其 body_md5 與正式環境逐位元組相符（269/269）。
+#     這一項對階段 2 也無影響：硬化 migration 會 DROP 這個函式。
 #
 # 其他任何一行不同，都是真正的 drift，必須先修正 bootstrap 再套用。
 TAB essay_questions = present
