@@ -22,9 +22,10 @@
 import {
   ALL_COMPETENCY_SKILL_CODES,
   ALL_ERROR_CODES,
-  ALL_HIGH_SCORE_FEATURE_CODES,
   COMPETENCY_CATEGORIES,
+  ERROR_TAG_BY_CODE,
   HIGH_SCORE_CATEGORIES,
+  HIGH_SCORE_FEATURE_BY_CODE,
   HIGH_SCORE_SUBSKILL_BY_CODE,
   WRITING_TAXONOMY_VERSION,
 } from "./taxonomy";
@@ -163,17 +164,66 @@ export interface OverallEvaluation {
   readonly summary: string;
 }
 
-/** 第一屏的重點；只是編輯取捨，完整分析仍在下方三個矩陣裡。 */
+/**
+ * 第一屏的重點；只是編輯取捨，完整分析仍在下方三個矩陣裡。
+ * refs 是必填：每一句話都必須指得回 Stage 1 已驗證的 finding（紅線 C），
+ * 學生才點得進去看證據，綜合層也才無法自己造出新的說法。
+ */
 export interface Highlight {
   readonly text: string;
-  /** 指回產生這句話的 canonical code，讓學生點得進去看證據。 */
-  readonly refs?: readonly string[];
+  readonly refs: readonly string[];
 }
 
 /** 排序層，不是清單層：最多 3 項。 */
 export interface NextStep {
   readonly text: string;
   readonly refs?: readonly string[];
+}
+
+/**
+ * 綜合層可以引用的 canonical code 集合。
+ *
+ * 只包含 Stage 1 真的有證據的節點：有表現的 competency skill、確實出現的
+ * error code、非 UNMEASURED 的 high-score feature，加上它們所屬的類別代碼。
+ * 綜合層引用集合以外的東西 = 它在憑空發明 finding（紅線 A），驗證會擋下來。
+ */
+export function collectCitableRefs(
+  competency: CompetencyAnalysis,
+  errors: ErrorAnalysis,
+  highScore: readonly HighScoreAnalysis[],
+): Set<string> {
+  const refs = new Set<string>();
+
+  for (const category of competency.categories) {
+    let any = false;
+    for (const skill of category.skills) {
+      if (skill.state !== "UNMEASURED") {
+        refs.add(skill.code);
+        any = true;
+      }
+    }
+    if (any) refs.add(category.code);
+  }
+
+  for (const entry of errors.coverage) {
+    if (entry.count > 0) {
+      refs.add(entry.code);
+      const tag = ERROR_TAG_BY_CODE.get(entry.code);
+      for (const skill of tag?.primarySkills ?? []) refs.add(skill);
+    }
+  }
+
+  for (const pass of highScore) {
+    for (const feature of pass.features) {
+      if (feature.quality !== "UNMEASURED") {
+        refs.add(feature.code);
+        const meta = HIGH_SCORE_FEATURE_BY_CODE.get(feature.code);
+        if (meta) refs.add(meta.categoryCode);
+      }
+    }
+  }
+
+  return refs;
 }
 
 export const MAX_NEXT_STEPS = 3;
@@ -190,7 +240,9 @@ export type ValidationIssueKind =
   | "MISSING_EVIDENCE"
   | "UNEXPECTED_EVIDENCE"
   | "COUNT_MISMATCH"
-  | "TOO_MANY";
+  | "TOO_MANY"
+  | "MISSING_CITATION"
+  | "UNCITABLE_REF";
 
 export interface ValidationIssue {
   readonly kind: ValidationIssueKind;
@@ -576,7 +628,22 @@ export interface SynthesisResult {
   readonly next_steps: readonly NextStep[];
 }
 
-export function validateSynthesis(raw: unknown): PassValidation<SynthesisResult> {
+/**
+ * 綜合層驗證。
+ *
+ * @param citableRefs Stage 1 已驗證結果算出來的可引用集合（collectCitableRefs）。
+ *
+ * 這裡守住三條紅線：
+ *   A. 綜合層不得產生新的 taxonomy finding —— 型別上就沒有 competency / error /
+ *      feature 欄位，而且任何引用都必須落在 citableRefs 內。
+ *   B. 綜合層不得覆寫 Stage 1 —— 它的輸出寫進另外四個欄位，且三軸在
+ *      status = ANALYZED 之後由資料庫 trigger 凍結。
+ *   C. strengths / needs_work 必須引用已驗證的 finding —— refs 不可為空。
+ */
+export function validateSynthesis(
+  raw: unknown,
+  citableRefs: ReadonlySet<string>,
+): PassValidation<SynthesisResult> {
   const issues: ValidationIssue[] = [];
 
   if (!isRecord(raw) || !isRecord(raw.overall_evaluation)) {
@@ -602,29 +669,47 @@ export function validateSynthesis(raw: unknown): PassValidation<SynthesisResult>
     });
   }
 
-  const readList = (key: string): Highlight[] => {
+  /** refs 必須全部落在 Stage 1 的可引用集合裡，否則就是綜合層自己發明的。 */
+  const readRefs = (item: Record<string, unknown>, path: string, required: boolean): string[] => {
+    const refs = Array.isArray(item.refs)
+      ? item.refs.filter((r): r is string => typeof r === "string")
+      : [];
+    if (required && refs.length === 0) {
+      issues.push({
+        kind: "MISSING_CITATION",
+        path,
+        detail: "必須引用至少一個 Stage 1 已驗證的 finding",
+      });
+    }
+    for (const ref of refs) {
+      if (!citableRefs.has(ref)) {
+        issues.push({
+          kind: "UNCITABLE_REF",
+          path,
+          detail: `引用了 Stage 1 沒有證據的節點：${ref}（綜合層不得自行產生 finding）`,
+        });
+      }
+    }
+    return refs;
+  };
+
+  const readList = (key: string, requireRefs: boolean) => {
     const arr = Array.isArray((raw as Record<string, unknown>)[key])
       ? ((raw as Record<string, unknown>)[key] as unknown[])
       : [];
     return arr.flatMap((item, i) => {
+      const path = `synthesis.${key}[${i}]`;
       if (!isRecord(item) || !isNonEmptyString(item.text)) {
-        issues.push({
-          kind: "MALFORMED",
-          path: `synthesis.${key}[${i}]`,
-          detail: "每一項都必須有 text",
-        });
+        issues.push({ kind: "MALFORMED", path, detail: "每一項都必須有 text" });
         return [];
       }
-      const refs = Array.isArray(item.refs)
-        ? item.refs.filter((r): r is string => typeof r === "string")
-        : undefined;
-      return [{ text: item.text, refs: refs && refs.length > 0 ? refs : undefined }];
+      return [{ text: item.text, refs: readRefs(item, path, requireRefs) }];
     });
   };
 
-  const strengths = readList("strengths");
-  const needs_work = readList("needs_work");
-  const next_steps = readList("next_steps");
+  const strengths = readList("strengths", true);
+  const needs_work = readList("needs_work", true);
+  const next_steps = readList("next_steps", false);
 
   // 摘要可以短，分析必須完整——上限只加在排序層。
   if (next_steps.length === 0 || next_steps.length > MAX_NEXT_STEPS) {
@@ -646,7 +731,10 @@ export function validateSynthesis(raw: unknown): PassValidation<SynthesisResult>
       },
       strengths,
       needs_work,
-      next_steps,
+      next_steps: next_steps.map((n) => ({
+        text: n.text,
+        refs: n.refs.length > 0 ? n.refs : undefined,
+      })),
     },
   };
 }

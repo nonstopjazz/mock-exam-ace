@@ -15,6 +15,41 @@
 --   不存在任何一張表裡，也不會有一個欄位同時代表兩件事。
 --
 --
+-- 一之二、分析內部又分成兩個階段，而且兩階段的失敗不可混為一談
+--
+--   Stage 1（四支平行、各自獨立驗證）
+--     Pass 1  Writing Competency        全 23 個 skill
+--     Pass 2  Writing Error             全 16 個 code
+--     Pass 3a High-Score Feature H1–H3  全 17 個 feature
+--     Pass 3b High-Score Feature H4–H5  全 12 個 feature
+--
+--   Stage 2（四支全部通過驗證之後才跑）
+--     Pass 5  Synthesis  只產出 overall_evaluation / strengths / needs_work / next_steps
+--
+--   status           = Stage 1 的軸線分析生命週期
+--     QUEUED → ANALYZING → ANALYZED → COMPLETED
+--                        ↘ FAILED            ↘ FAILED
+--     ANALYZED  = 四軸全部驗證通過並已寫入，但綜合層還沒完成
+--     COMPLETED = 四軸 + 綜合都完成，學生報告才算 ready
+--
+--   synthesis_status = Stage 2 的生命週期，刻意獨立
+--     PENDING → RUNNING → COMPLETED
+--                       ↘ FAILED → RUNNING（可重試）
+--
+--   為什麼要拆開：Stage 1 是昂貴的四支呼叫，Stage 2 只是一支輕量摘要。
+--   綜合層失敗【不得】丟掉四軸已驗證的結果，老師也不該為了重跑摘要而付
+--   四支分析的代價。因此軸線資料在進入 ANALYZED 的那一刻就被資料庫凍結，
+--   之後只有綜合層那四個欄位可以再被寫入。
+--
+--   綜合層的三條紅線（由 trigger 與 analysisContract.ts 共同守住）：
+--     A. 綜合層不得產生任何新的 taxonomy finding
+--     B. 綜合層不得覆寫或重新詮釋 Stage 1 的 canonical 結果
+--     C. strengths / needs_work 必須引用 Stage 1 已驗證的 finding
+--
+--   綜合層失敗時，學生端看到的是「尚未完成、可重試」，
+--   絕不會看到一個機械湊出來的假摘要。
+--
+--
 -- 二、為什麼 COMPLETED 之後不可修改
 --
 --   分析結果裡的每一段 evidence 都逐字引用 writing_texts 當下的內容。
@@ -41,7 +76,9 @@
 --   UNMEASURED。validation_issues 保存失敗當下的完整缺漏清單，讓「AI 忘了分析」
 --   永遠查得出來、而且永遠不會被誤讀成「學生沒有表現出來」。
 --
---   任何一支 pass 驗證失敗 → 整筆分析標 FAILED，不得以 COMPLETED 發佈半套報告。
+--   Stage 1 任何一支 pass 驗證失敗 → status = FAILED，不得以 COMPLETED 發佈半套報告。
+--   Stage 2 驗證失敗 → status 停在 ANALYZED、synthesis_status = FAILED。
+--   四軸資料原封不動保留，老師可以只重跑綜合層，不必再付四支分析的代價。
 --
 --
 -- 四、權限模型
@@ -79,8 +116,9 @@ CREATE TABLE IF NOT EXISTS writing_analyses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   essay_id UUID NOT NULL REFERENCES writing_submissions(id) ON DELETE CASCADE,
 
+  -- Stage 1 的生命週期。ANALYZED = 四軸都過了，但綜合層還沒完成。
   status TEXT NOT NULL DEFAULT 'QUEUED'
-    CHECK (status IN ('QUEUED', 'ANALYZING', 'COMPLETED', 'FAILED')),
+    CHECK (status IN ('QUEUED', 'ANALYZING', 'ANALYZED', 'COMPLETED', 'FAILED')),
 
   -- 誰按下「開始分析」。只可能是老師／管理員。
   requested_by UUID NOT NULL REFERENCES auth.users(id),
@@ -111,11 +149,23 @@ CREATE TABLE IF NOT EXISTS writing_analyses (
   error_analysis               JSONB,  -- findings[] + 全 16 code 的 coverage[]
   high_score_feature_analysis  JSONB,  -- 全 29 feature
 
-  -- 摘要層。摘要可以短，分析必須完整——上限只加在 next_steps（1–3 項）。
+  -- Stage 2：綜合層。摘要可以短，分析必須完整——上限只加在 next_steps（1–3 項）。
+  -- 這四欄只有在 status = 'ANALYZED' 期間可以寫入；進入 COMPLETED 後永久凍結。
   overall_evaluation JSONB,
   strengths  JSONB,
   needs_work JSONB,
   next_steps JSONB,
+
+  -- Stage 2 的生命週期，與 status 分開。綜合層失敗不等於軸線分析失敗。
+  synthesis_status TEXT
+    CHECK (synthesis_status IS NULL
+           OR synthesis_status IN ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED')),
+  synthesis_started_at   TIMESTAMPTZ,
+  synthesis_completed_at TIMESTAMPTZ,
+  synthesis_failed_at    TIMESTAMPTZ,
+  synthesis_error_detail TEXT,
+  synthesis_validation_issues JSONB,
+  synthesis_attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (synthesis_attempt_count >= 0),
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -133,10 +183,11 @@ COMMENT ON COLUMN writing_analyses.high_score_feature_analysis IS
   '全 29 個 High-Score Feature 的 quality。只有 EFFECTIVE 是 positive evidence（TR-05）；未出現不等於弱（TR-11）。';
 
 
--- 同一篇作文同時間只能有一次分析在跑。COMPLETED / FAILED 不受限，才能保留歷次版本。
+-- 同一篇作文同時間只能有一次分析在飛行中。ANALYZED 也算在內——它還欠一個綜合層。
+-- COMPLETED / FAILED 不受限，才能保留歷次版本。
 CREATE UNIQUE INDEX IF NOT EXISTS writing_analyses_one_active_per_essay
   ON writing_analyses (essay_id)
-  WHERE status IN ('QUEUED', 'ANALYZING');
+  WHERE status IN ('QUEUED', 'ANALYZING', 'ANALYZED');
 
 -- 取某篇最新一次分析
 CREATE INDEX IF NOT EXISTS idx_writing_analyses_latest
@@ -145,7 +196,7 @@ CREATE INDEX IF NOT EXISTS idx_writing_analyses_latest
 -- 老師佇列：先看還沒跑完的
 CREATE INDEX IF NOT EXISTS idx_writing_analyses_pending
   ON writing_analyses (status, requested_at)
-  WHERE status IN ('QUEUED', 'ANALYZING');
+  WHERE status IN ('QUEUED', 'ANALYZING', 'ANALYZED');
 
 
 -- =====================================================
@@ -158,19 +209,28 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
+DECLARE
+  v_axis_frozen BOOLEAN;
 BEGIN
   -- 已完成的分析永久凍結：evidence 逐字引用當時的作文，就地改寫會讓證據與判斷脫節。
   IF OLD.status = 'COMPLETED' THEN
     RAISE EXCEPTION '已完成的分析不可修改；重新分析請插入新的一列（analysis_version + 1）'
       USING ERRCODE = '42501';
   END IF;
-
-  -- 狀態只能往前走，不能倒回去。
-  IF OLD.status = 'FAILED' AND NEW.status <> 'FAILED' THEN
+  IF OLD.status = 'FAILED' THEN
     RAISE EXCEPTION '失敗的分析不可復活；請插入新的一列重跑' USING ERRCODE = '42501';
   END IF;
-  IF OLD.status = 'ANALYZING' AND NEW.status = 'QUEUED' THEN
-    RAISE EXCEPTION '分析狀態不可從 ANALYZING 退回 QUEUED' USING ERRCODE = '42501';
+
+  -- 合法的 status 轉移，白名單。沒列出來的一律擋掉，而不是靠一條一條禁止規則。
+  IF NEW.status IS DISTINCT FROM OLD.status THEN
+    IF NOT (
+         (OLD.status = 'QUEUED'    AND NEW.status IN ('ANALYZING', 'FAILED'))
+      OR (OLD.status = 'ANALYZING' AND NEW.status IN ('ANALYZED', 'FAILED'))
+      OR (OLD.status = 'ANALYZED'  AND NEW.status IN ('COMPLETED', 'FAILED'))
+    ) THEN
+      RAISE EXCEPTION '不合法的分析狀態轉移：% → %', OLD.status, NEW.status
+        USING ERRCODE = '42501';
+    END IF;
   END IF;
 
   -- 這幾個欄位一旦寫下就是事實，不接受改寫。
@@ -180,6 +240,70 @@ BEGIN
      OR NEW.analysis_version IS DISTINCT FROM OLD.analysis_version THEN
     RAISE EXCEPTION 'essay_id / requested_by / requested_at / analysis_version 不可修改'
       USING ERRCODE = '42501';
+  END IF;
+
+  -- ── 紅線 B：綜合層不得覆寫或重新詮釋 Stage 1 的 canonical 結果 ──
+  -- 一旦進入 ANALYZED，三軸資料就凍結。之後跑綜合層時，這條規則讓
+  -- 「綜合層改寫了軸線結論」在資料庫層就不可能發生，而不是靠 prompt 拜託模型。
+  v_axis_frozen := OLD.status IN ('ANALYZED', 'COMPLETED');
+  IF v_axis_frozen AND (
+       NEW.competency_analysis IS DISTINCT FROM OLD.competency_analysis
+    OR NEW.error_analysis IS DISTINCT FROM OLD.error_analysis
+    OR NEW.high_score_feature_analysis IS DISTINCT FROM OLD.high_score_feature_analysis
+    OR NEW.taxonomy_version IS DISTINCT FROM OLD.taxonomy_version
+  ) THEN
+    RAISE EXCEPTION '四軸分析在 ANALYZED 之後即凍結；綜合層不得覆寫 canonical 結果'
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- 反過來，綜合層的產出只能在 ANALYZED 期間寫入。
+  IF OLD.status <> 'ANALYZED' AND (
+       NEW.overall_evaluation IS DISTINCT FROM OLD.overall_evaluation
+    OR NEW.strengths  IS DISTINCT FROM OLD.strengths
+    OR NEW.needs_work IS DISTINCT FROM OLD.needs_work
+    OR NEW.next_steps IS DISTINCT FROM OLD.next_steps
+  ) THEN
+    RAISE EXCEPTION '綜合層結果只能在 status = ANALYZED 時寫入（目前為 %）', OLD.status
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- 合法的 synthesis_status 轉移。FAILED → RUNNING 是刻意允許的：重試綜合層
+  -- 不需要重跑四支昂貴的分析。
+  IF NEW.synthesis_status IS DISTINCT FROM OLD.synthesis_status THEN
+    IF NOT (
+         (OLD.synthesis_status IS NULL      AND NEW.synthesis_status = 'PENDING')
+      OR (OLD.synthesis_status = 'PENDING'  AND NEW.synthesis_status IN ('RUNNING', 'FAILED'))
+      OR (OLD.synthesis_status = 'RUNNING'  AND NEW.synthesis_status IN ('COMPLETED', 'FAILED'))
+      OR (OLD.synthesis_status = 'FAILED'   AND NEW.synthesis_status = 'RUNNING')
+    ) THEN
+      RAISE EXCEPTION '不合法的綜合層狀態轉移：% → %',
+        coalesce(OLD.synthesis_status, 'NULL'), coalesce(NEW.synthesis_status, 'NULL')
+        USING ERRCODE = '42501';
+    END IF;
+  END IF;
+
+  -- ── 紅線 F：只有四軸有效【且】綜合層完成，報告才算 ready ──
+  IF NEW.status = 'COMPLETED' THEN
+    IF NEW.synthesis_status IS DISTINCT FROM 'COMPLETED' THEN
+      RAISE EXCEPTION '綜合層尚未完成，不得標記為 COMPLETED（synthesis_status = %）',
+        coalesce(NEW.synthesis_status, 'NULL') USING ERRCODE = '42501';
+    END IF;
+    IF NEW.competency_analysis IS NULL
+       OR NEW.error_analysis IS NULL
+       OR NEW.high_score_feature_analysis IS NULL
+       OR NEW.overall_evaluation IS NULL
+       OR NEW.next_steps IS NULL THEN
+      RAISE EXCEPTION '三軸與綜合層必須全部齊備才能標記為 COMPLETED' USING ERRCODE = '42501';
+    END IF;
+  END IF;
+
+  -- 進入 ANALYZED 代表四軸都通過驗證了——沒寫齊就不准宣稱。
+  IF NEW.status = 'ANALYZED' AND OLD.status <> 'ANALYZED' THEN
+    IF NEW.competency_analysis IS NULL
+       OR NEW.error_analysis IS NULL
+       OR NEW.high_score_feature_analysis IS NULL THEN
+      RAISE EXCEPTION '四軸尚未全部寫入，不得標記為 ANALYZED' USING ERRCODE = '42501';
+    END IF;
   END IF;
 
   NEW.updated_at := now();
@@ -261,27 +385,33 @@ BEGIN
     RETURN NULL;
   END IF;
 
+  -- 報告只有在四軸有效【且】綜合層完成時才算 ready。
+  -- 未 ready 時綜合層四欄一律回傳 NULL：寧可讓 UI 顯示「還在產生」，
+  -- 也不給學生看一個半套或機械湊出來的摘要。
   RETURN jsonb_build_object(
     'id',               v_row.id,
     'essay_id',         v_row.essay_id,
     'status',           v_row.status,
+    'synthesis_status', v_row.synthesis_status,
+    'report_ready',     (v_row.status = 'COMPLETED'),
     'analysis_version', v_row.analysis_version,
     'taxonomy_version', v_row.taxonomy_version,
     'requested_at',     v_row.requested_at,
     'completed_at',     v_row.completed_at,
+    -- 四軸只要通過驗證就是可信的資料，即使綜合層還沒好也照常提供。
     'competency_analysis',         v_row.competency_analysis,
     'error_analysis',              v_row.error_analysis,
     'high_score_feature_analysis', v_row.high_score_feature_analysis,
-    'overall_evaluation', v_row.overall_evaluation,
-    'strengths',          v_row.strengths,
-    'needs_work',         v_row.needs_work,
-    'next_steps',         v_row.next_steps
+    'overall_evaluation', CASE WHEN v_row.status = 'COMPLETED' THEN v_row.overall_evaluation END,
+    'strengths',          CASE WHEN v_row.status = 'COMPLETED' THEN v_row.strengths END,
+    'needs_work',         CASE WHEN v_row.status = 'COMPLETED' THEN v_row.needs_work END,
+    'next_steps',         CASE WHEN v_row.status = 'COMPLETED' THEN v_row.next_steps END
   );
 END;
 $$;
 
 COMMENT ON FUNCTION writing_student_analysis IS
-  '學生讀自己作文的最新分析。不回傳 provider / model / error_detail / validation_issues。非本人一律回傳 NULL。';
+  '學生讀自己作文的最新分析。report_ready 只有在四軸有效且綜合層完成時為 true；未 ready 時綜合層欄位一律 NULL。不回傳 provider / model / error_detail / validation_issues。非本人一律回傳 NULL。';
 
 REVOKE ALL ON FUNCTION writing_student_analysis(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION writing_student_analysis(UUID) TO authenticated, service_role;
@@ -330,7 +460,11 @@ BEGIN
         a.completed_at  AS analysis_completed_at,
         a.failed_pass,
         a.error_detail,
-        a.attempt_count
+        a.attempt_count,
+        a.synthesis_status,
+        a.synthesis_error_detail,
+        a.synthesis_attempt_count,
+        (a.status = 'COMPLETED') AS report_ready
       FROM public.writing_submissions s
       LEFT JOIN LATERAL (
         SELECT wt.char_count
@@ -431,9 +565,20 @@ BEGIN
     RAISE EXCEPTION '這篇作文沒有正規文字，無法分析：%', p_essay_id USING ERRCODE = '22023';
   END IF;
 
+  -- 卡在 ANALYZED 而綜合層已經失敗的列：不擋住重跑，但也不丟掉它的四軸資料。
+  -- 把它收成 FAILED（資料原封不動保留），再開新的一版。
+  UPDATE public.writing_analyses a
+     SET status = 'FAILED',
+         failed_at = now(),
+         failed_pass = 'synthesis',
+         error_detail = coalesce(a.synthesis_error_detail, '綜合層失敗，已由重新分析取代')
+   WHERE a.essay_id = p_essay_id
+     AND a.status = 'ANALYZED'
+     AND a.synthesis_status = 'FAILED';
+
   SELECT a.id INTO v_existing
     FROM public.writing_analyses a
-   WHERE a.essay_id = p_essay_id AND a.status IN ('QUEUED', 'ANALYZING')
+   WHERE a.essay_id = p_essay_id AND a.status IN ('QUEUED', 'ANALYZING', 'ANALYZED')
    LIMIT 1;
 
   IF v_existing IS NOT NULL THEN
@@ -457,3 +602,59 @@ COMMENT ON FUNCTION writing_enqueue_analysis IS
 
 REVOKE ALL ON FUNCTION writing_enqueue_analysis(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION writing_enqueue_analysis(UUID) TO authenticated, service_role;
+
+
+/**
+ * 只重跑綜合層，不動已驗證的四軸資料。
+ *
+ * Stage 1 是四支昂貴的呼叫，Stage 2 只是一支輕量摘要。綜合層失敗時，老師應該
+ * 能只重試那一支——這個函式把該列的 synthesis_status 推回 RUNNING，
+ * 交給 api/analyze-writing.ts 的 synthesis-only 路徑接手。
+ *
+ * 三軸資料在 ANALYZED 之後由 trigger 凍結，所以重跑綜合層在資料庫層就不可能
+ * 改寫 canonical 結果。
+ */
+CREATE OR REPLACE FUNCTION writing_retry_synthesis(p_analysis_id UUID)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_row public.writing_analyses%ROWTYPE;
+BEGIN
+  IF coalesce(public.is_admin(), false) IS NOT TRUE THEN
+    RAISE EXCEPTION 'writing_retry_synthesis：僅限管理員' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT * INTO v_row FROM public.writing_analyses a WHERE a.id = p_analysis_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION '找不到這筆分析：%', p_analysis_id USING ERRCODE = '22023';
+  END IF;
+
+  IF v_row.status <> 'ANALYZED' THEN
+    RAISE EXCEPTION '只有四軸已驗證完成（ANALYZED）的分析才能重跑綜合層，目前為 %', v_row.status
+      USING ERRCODE = '22023';
+  END IF;
+
+  IF v_row.synthesis_status NOT IN ('FAILED', 'PENDING') THEN
+    RAISE EXCEPTION '綜合層目前是 %，不需要重試', v_row.synthesis_status USING ERRCODE = '22023';
+  END IF;
+
+  UPDATE public.writing_analyses
+     SET synthesis_status = 'RUNNING',
+         synthesis_started_at = now(),
+         synthesis_attempt_count = synthesis_attempt_count + 1,
+         synthesis_error_detail = NULL,
+         synthesis_validation_issues = NULL
+   WHERE id = p_analysis_id;
+
+  RETURN p_analysis_id;
+END;
+$$;
+
+COMMENT ON FUNCTION writing_retry_synthesis IS
+  '只重跑綜合層，四軸已驗證的資料原封不動。僅限管理員。';
+
+REVOKE ALL ON FUNCTION writing_retry_synthesis(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION writing_retry_synthesis(UUID) TO authenticated, service_role;

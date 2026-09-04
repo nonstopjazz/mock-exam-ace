@@ -15,6 +15,7 @@ import {
   HIGH_SCORE_CATEGORIES,
 } from "../src/lib/writing/taxonomy";
 import {
+  collectCitableRefs,
   validateCompetencyAnalysis,
   validateErrorAnalysis,
   validateHighScoreAnalysis,
@@ -284,9 +285,38 @@ const fullHighScore = (cats: string[]) => ({
 
 /* ──────────────── 綜合層 ──────────────── */
 
-console.log("\n綜合層 — 摘要可以短，分析必須完整");
+console.log("\n綜合層 — 摘要可以短，分析必須完整；且不得自行發明 finding");
 
-const synthesis = (steps: number) => ({
+// 用一組真的通過驗證的 Stage 1 結果來算可引用集合
+const stage1Competency = validateCompetencyAnalysis(fullCompetency());
+const stage1Error = validateErrorAnalysis(fullError());
+const stage1A = validateHighScoreAnalysis(fullHighScore(H1_H3), H1_H3);
+const stage1B = validateHighScoreAnalysis(fullHighScore(H4_H5), H4_H5);
+
+if (!stage1Competency.ok || !stage1Error.ok || !stage1A.ok || !stage1B.ok) {
+  throw new Error("Stage 1 fixture 應該要通過驗證");
+}
+
+const citable = collectCitableRefs(stage1Competency.value, stage1Error.value, [
+  stage1A.value,
+  stage1B.value,
+]);
+
+check(
+  "可引用集合包含有表現的 competency skill",
+  citable.has("WRITE_ORG_PARAGRAPH") && citable.has("W2"),
+);
+check(
+  "可引用集合包含實際出現的 error code",
+  citable.has("WRITE_ERR_SV_AGREEMENT"),
+);
+check(
+  "可引用集合【不】包含 UNMEASURED 的 high-score feature",
+  !citable.has("WRITE_HSF_INVERSION"),
+  "fixture 裡全部 feature 都是 UNMEASURED",
+);
+
+const synthesis = (steps: number, overrides: Record<string, unknown> = {}) => ({
   overall_evaluation: {
     level: "SOLID",
     headline: "你的想法有支撐，但句界控制還不穩",
@@ -295,17 +325,48 @@ const synthesis = (steps: number) => ({
   strengths: [{ text: "段落分明", refs: ["WRITE_ORG_PARAGRAPH"] }],
   needs_work: [{ text: "主詞單複數", refs: ["WRITE_ERR_SV_AGREEMENT"] }],
   next_steps: Array.from({ length: steps }, (_, i) => ({ text: `動作 ${i + 1}` })),
+  ...overrides,
 });
 
-check("1 項下一步通過", validateSynthesis(synthesis(1)).ok);
-check("3 項下一步通過", validateSynthesis(synthesis(3)).ok);
-expectIssue("4 項下一步 → TOO_MANY（排序層有上限）", validateSynthesis(synthesis(4)), "TOO_MANY");
-expectIssue("0 項下一步 → TOO_MANY", validateSynthesis(synthesis(0)), "TOO_MANY");
+check("1 項下一步通過", validateSynthesis(synthesis(1), citable).ok);
+check("3 項下一步通過", validateSynthesis(synthesis(3), citable).ok);
+expectIssue("4 項下一步 → TOO_MANY（排序層有上限）", validateSynthesis(synthesis(4), citable), "TOO_MANY");
+expectIssue("0 項下一步 → TOO_MANY", validateSynthesis(synthesis(0), citable), "TOO_MANY");
+
+expectIssue(
+  "strengths 沒有引用 → MISSING_CITATION（紅線 C）",
+  validateSynthesis(synthesis(2, { strengths: [{ text: "寫得不錯" }] }), citable),
+  "MISSING_CITATION",
+);
+
+expectIssue(
+  "needs_work 沒有引用 → MISSING_CITATION（紅線 C）",
+  validateSynthesis(synthesis(2, { needs_work: [{ text: "要加強" }] }), citable),
+  "MISSING_CITATION",
+);
+
+expectIssue(
+  "引用 Stage 1 判為 UNMEASURED 的特徵 → UNCITABLE_REF（紅線 A）",
+  validateSynthesis(
+    synthesis(2, { strengths: [{ text: "倒裝用得好", refs: ["WRITE_HSF_INVERSION"] }] }),
+    citable,
+  ),
+  "UNCITABLE_REF",
+);
+
+expectIssue(
+  "引用根本不存在的 code → UNCITABLE_REF",
+  validateSynthesis(
+    synthesis(2, { strengths: [{ text: "很好", refs: ["WRITE_TOTALLY_INVENTED"] }] }),
+    citable,
+  ),
+  "UNCITABLE_REF",
+);
 
 {
   const payload = synthesis(2) as Record<string, unknown>;
   (payload.overall_evaluation as Record<string, unknown>).level = "AMAZING";
-  expectIssue("非法 overall level → INVALID_STATE", validateSynthesis(payload), "INVALID_STATE");
+  expectIssue("非法 overall level → INVALID_STATE", validateSynthesis(payload, citable), "INVALID_STATE");
 }
 
 /* ──────────────── 結論 ──────────────── */

@@ -9,6 +9,7 @@
 --      SELECT count(*) FROM writing_analyses WHERE status = 'COMPLETED';
 -- =====================================================
 
+DROP FUNCTION IF EXISTS writing_retry_synthesis(UUID);
 DROP FUNCTION IF EXISTS writing_enqueue_analysis(UUID);
 DROP FUNCTION IF EXISTS writing_admin_analysis(UUID);
 DROP FUNCTION IF EXISTS writing_admin_queue();

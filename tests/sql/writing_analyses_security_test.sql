@@ -40,6 +40,9 @@ DECLARE
   v_got       UUID;
   v_json      JSONB;
   v_int       INTEGER;
+  v_txt       TEXT;
+
+  c_axis JSONB := '{"taxonomy_version":"writing-v1"}'::jsonb;
 BEGIN
   -- ---------- 建資料 ----------
   INSERT INTO auth.users (email) VALUES ('a@test') RETURNING id INTO v_student_a;
@@ -179,7 +182,7 @@ BEGIN
   EXECUTE 'RESET ROLE';
 
   -- ==========================================================
-  -- 第三組：狀態機與不可修改保護
+  -- 第三組：Stage 1 狀態機
   -- ==========================================================
 
   UPDATE writing_analyses SET status = 'ANALYZING', started_at = now() WHERE id = v_an1;
@@ -202,29 +205,215 @@ BEGIN
     VALUES ('T13 essay_id 不可竄改', 'PASS', SQLERRM);
   END;
 
-  -- 完成它
+  -- 四軸都還沒寫進去就想宣稱 ANALYZED
+  BEGIN
+    UPDATE writing_analyses SET status = 'ANALYZED' WHERE id = v_an1;
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T14 四軸未齊備不得標記為 ANALYZED', 'FAIL', '竟然成功了');
+  EXCEPTION WHEN insufficient_privilege THEN
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T14 四軸未齊備不得標記為 ANALYZED', 'PASS', SQLERRM);
+  END;
+
+  -- 跳過 ANALYZED 直接宣稱完成
+  BEGIN
+    UPDATE writing_analyses SET status = 'COMPLETED' WHERE id = v_an1;
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T15 ANALYZING 不可直接跳到 COMPLETED', 'FAIL', '竟然成功了');
+  EXCEPTION WHEN insufficient_privilege THEN
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T15 ANALYZING 不可直接跳到 COMPLETED', 'PASS', SQLERRM);
+  END;
+
+  -- 綜合層產出不得在 ANALYZED 之前寫入
+  BEGIN
+    UPDATE writing_analyses
+       SET overall_evaluation = '{"level":"SOLID","headline":"h","summary":"s"}'::jsonb
+     WHERE id = v_an1;
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T16 綜合層結果不得在 ANALYZED 之前寫入', 'FAIL', '竟然成功了');
+  EXCEPTION WHEN insufficient_privilege THEN
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T16 綜合層結果不得在 ANALYZED 之前寫入', 'PASS', SQLERRM);
+  END;
+
+  -- ==========================================================
+  -- 第四組：Stage 1 → Stage 2 的交接，四軸凍結
+  -- ==========================================================
+
   UPDATE writing_analyses
-     SET status = 'COMPLETED',
-         completed_at = now(),
+     SET status = 'ANALYZED',
          model = 'deepseek-chat',
-         competency_analysis = '{"taxonomy_version":"writing-v1","categories":[]}'::jsonb,
-         error_analysis = '{"taxonomy_version":"writing-v1","findings":[],"coverage":[]}'::jsonb,
-         high_score_feature_analysis = '{"taxonomy_version":"writing-v1","features":[]}'::jsonb,
-         overall_evaluation = '{"level":"SOLID","headline":"h","summary":"s"}'::jsonb,
-         next_steps = '[{"text":"n"}]'::jsonb,
-         validation_issues = '[{"kind":"MISSING_NODE","path":"x","detail":"僅供診斷"}]'::jsonb
+         competency_analysis = c_axis,
+         error_analysis = c_axis,
+         high_score_feature_analysis = c_axis,
+         synthesis_status = 'PENDING'
    WHERE id = v_an1;
+
+  INSERT INTO t_result (name, verdict, detail)
+  SELECT 'T17 四軸寫齊後可進入 ANALYZED',
+         CASE WHEN a.status = 'ANALYZED' AND a.synthesis_status = 'PENDING'
+              THEN 'PASS' ELSE 'FAIL' END,
+         a.status || ' / ' || coalesce(a.synthesis_status, 'NULL')
+  FROM writing_analyses a WHERE a.id = v_an1;
+
+  -- ── 紅線 B ──
+  BEGIN
+    UPDATE writing_analyses
+       SET competency_analysis = '{"tampered":true}'::jsonb
+     WHERE id = v_an1;
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T18 進入 ANALYZED 後四軸凍結，綜合層不得覆寫（紅線 B）', 'FAIL', '竟然成功了');
+  EXCEPTION WHEN insufficient_privilege THEN
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T18 進入 ANALYZED 後四軸凍結，綜合層不得覆寫（紅線 B）', 'PASS', SQLERRM);
+  END;
+
+  -- ── 紅線 F ──
+  UPDATE writing_analyses
+     SET synthesis_status = 'RUNNING', synthesis_started_at = now(),
+         synthesis_attempt_count = 1
+   WHERE id = v_an1;
+
+  BEGIN
+    UPDATE writing_analyses SET status = 'COMPLETED' WHERE id = v_an1;
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T19 綜合層未完成不得標記為 COMPLETED（紅線 F）', 'FAIL', '竟然成功了');
+  EXCEPTION WHEN insufficient_privilege THEN
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T19 綜合層未完成不得標記為 COMPLETED（紅線 F）', 'PASS', SQLERRM);
+  END;
+
+  -- 綜合層失敗：Stage 1 的資料必須原封不動留著
+  UPDATE writing_analyses
+     SET synthesis_status = 'FAILED', synthesis_failed_at = now(),
+         synthesis_error_detail = '綜合層驗證失敗：strengths 未引用已驗證的 finding',
+         synthesis_validation_issues = '[{"kind":"MISSING_CITATION","path":"synthesis.strengths[0]","detail":"x"}]'::jsonb
+   WHERE id = v_an1;
+
+  INSERT INTO t_result (name, verdict, detail)
+  SELECT 'T20 綜合層失敗不影響 status，四軸資料完整保留（紅線 E）',
+         CASE WHEN a.status = 'ANALYZED'
+               AND a.synthesis_status = 'FAILED'
+               AND a.competency_analysis IS NOT NULL
+               AND a.error_analysis IS NOT NULL
+               AND a.high_score_feature_analysis IS NOT NULL
+              THEN 'PASS' ELSE 'FAIL' END,
+         a.status || ' / synthesis=' || a.synthesis_status
+  FROM writing_analyses a WHERE a.id = v_an1;
+
+  -- 學生端：未 ready 就不給摘要
+  EXECUTE 'SET ROLE authenticated';
+  PERFORM set_config('test.is_admin', 'false', true);
+  PERFORM set_config('request.jwt.claim.sub', v_student_a::text, true);
+  v_json := writing_student_analysis(v_essay_a);
+  EXECUTE 'RESET ROLE';
+
+  INSERT INTO t_result (name, verdict, detail)
+  VALUES ('T21 綜合層未完成時 report_ready = false，且不吐半套摘要（紅線 F）',
+          CASE WHEN (v_json ->> 'report_ready')::boolean IS FALSE
+                AND v_json ->> 'overall_evaluation' IS NULL
+                AND v_json ->> 'strengths' IS NULL
+                AND v_json ->> 'next_steps' IS NULL
+                AND v_json ->> 'competency_analysis' IS NOT NULL
+               THEN 'PASS' ELSE 'FAIL' END,
+          'report_ready=' || coalesce(v_json ->> 'report_ready', '?')
+          || ' overall=' || coalesce(v_json ->> 'overall_evaluation', 'NULL'));
+
+  -- ==========================================================
+  -- 第五組：只重跑綜合層
+  -- ==========================================================
+
+  EXECUTE 'SET ROLE authenticated';
+  PERFORM set_config('test.is_admin', 'false', true);
+  PERFORM set_config('request.jwt.claim.sub', v_student_a::text, true);
+  BEGIN
+    PERFORM writing_retry_synthesis(v_an1);
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T22 學生不能重跑綜合層', 'FAIL', '竟然成功了');
+  EXCEPTION WHEN insufficient_privilege THEN
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T22 學生不能重跑綜合層', 'PASS', SQLERRM);
+  END;
+  EXECUTE 'RESET ROLE';
+
+  EXECUTE 'SET ROLE authenticated';
+  PERFORM set_config('test.is_admin', 'true', true);
+  PERFORM set_config('request.jwt.claim.sub', v_admin::text, true);
+  PERFORM writing_retry_synthesis(v_an1);
+  EXECUTE 'RESET ROLE';
+
+  INSERT INTO t_result (name, verdict, detail)
+  SELECT 'T23 管理員可以只重跑綜合層（四軸不重跑，紅線 E）',
+         CASE WHEN a.synthesis_status = 'RUNNING'
+               AND a.synthesis_attempt_count = 2
+               AND a.synthesis_error_detail IS NULL
+               AND a.competency_analysis = c_axis
+              THEN 'PASS' ELSE 'FAIL' END,
+         'synthesis=' || a.synthesis_status || ' attempt=' || a.synthesis_attempt_count
+  FROM writing_analyses a WHERE a.id = v_an1;
+
+  -- 綜合層成功，報告才 ready
+  UPDATE writing_analyses
+     SET synthesis_status = 'COMPLETED',
+         synthesis_completed_at = now(),
+         overall_evaluation = '{"level":"SOLID","headline":"h","summary":"s"}'::jsonb,
+         strengths  = '[{"text":"段落分明","refs":["WRITE_ORG_PARAGRAPH"]}]'::jsonb,
+         needs_work = '[{"text":"主詞單複數","refs":["WRITE_ERR_SV_AGREEMENT"]}]'::jsonb,
+         next_steps = '[{"text":"檢查主詞單複數"}]'::jsonb
+   WHERE id = v_an1;
+
+  UPDATE writing_analyses SET status = 'COMPLETED', completed_at = now() WHERE id = v_an1;
+
+  EXECUTE 'SET ROLE authenticated';
+  PERFORM set_config('test.is_admin', 'false', true);
+  PERFORM set_config('request.jwt.claim.sub', v_student_a::text, true);
+  v_json := writing_student_analysis(v_essay_a);
+  EXECUTE 'RESET ROLE';
+
+  INSERT INTO t_result (name, verdict, detail)
+  VALUES ('T24 四軸有效 + 綜合層完成 → report_ready = true',
+          CASE WHEN (v_json ->> 'report_ready')::boolean IS TRUE
+                AND v_json ->> 'overall_evaluation' IS NOT NULL
+                AND v_json ->> 'next_steps' IS NOT NULL
+               THEN 'PASS' ELSE 'FAIL' END,
+          'report_ready=' || coalesce(v_json ->> 'report_ready', '?'));
+
+  INSERT INTO t_result (name, verdict, detail)
+  VALUES ('T25 學生看不到 provider / model / error_detail / validation_issues / requested_by',
+          CASE WHEN NOT (v_json ? 'provider') AND NOT (v_json ? 'model')
+                AND NOT (v_json ? 'error_detail') AND NOT (v_json ? 'validation_issues')
+                AND NOT (v_json ? 'requested_by') AND NOT (v_json ? 'failed_pass')
+                AND NOT (v_json ? 'synthesis_error_detail')
+               THEN 'PASS' ELSE 'FAIL' END,
+          array_to_string(ARRAY(SELECT jsonb_object_keys(v_json)), ','));
 
   BEGIN
     UPDATE writing_analyses SET overall_evaluation = '{"level":"STRONG"}'::jsonb WHERE id = v_an1;
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T14 已完成的分析永久凍結', 'FAIL', '竟然成功了');
+    VALUES ('T26 已完成的分析永久凍結', 'FAIL', '竟然成功了');
   EXCEPTION WHEN insufficient_privilege THEN
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T14 已完成的分析永久凍結', 'PASS', SQLERRM);
+    VALUES ('T26 已完成的分析永久凍結', 'PASS', SQLERRM);
   END;
 
-  -- 同一篇再排一次：COMPLETED 不佔 partial unique index，所以應該成功且 version = 2
+  EXECUTE 'SET ROLE authenticated';
+  PERFORM set_config('test.is_admin', 'true', true);
+  PERFORM set_config('request.jwt.claim.sub', v_admin::text, true);
+  BEGIN
+    PERFORM writing_retry_synthesis(v_an1);
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T27 已完成的分析不能再重跑綜合層', 'FAIL', '竟然成功了');
+  EXCEPTION WHEN OTHERS THEN
+    INSERT INTO t_result (name, verdict, detail)
+    VALUES ('T27 已完成的分析不能再重跑綜合層', 'PASS', SQLERRM);
+  END;
+  EXECUTE 'RESET ROLE';
+
+  -- ==========================================================
+  -- 第六組：版本與並行
+  -- ==========================================================
+
   EXECUTE 'SET ROLE authenticated';
   PERFORM set_config('test.is_admin', 'true', true);
   PERFORM set_config('request.jwt.claim.sub', v_admin::text, true);
@@ -233,61 +422,58 @@ BEGIN
 
   SELECT analysis_version INTO v_int FROM writing_analyses WHERE id = v_an2;
   INSERT INTO t_result (name, verdict, detail)
-  VALUES ('T15 重新分析建立新的一列，version + 1',
+  VALUES ('T28 重新分析建立新的一列，version + 1',
           CASE WHEN v_an2 <> v_an1 AND v_int = 2 THEN 'PASS' ELSE 'FAIL' END,
           'analysis_version = ' || v_int);
 
-  -- 同時兩筆 active 必須被擋
   BEGIN
     INSERT INTO writing_analyses (essay_id, status, requested_by, analysis_version)
     VALUES (v_essay_a, 'QUEUED', v_admin, 3);
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T16 同一篇不得同時有兩筆進行中的分析', 'FAIL', '竟然成功了');
+    VALUES ('T29 同一篇不得同時有兩筆進行中的分析', 'FAIL', '竟然成功了');
   EXCEPTION WHEN unique_violation THEN
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T16 同一篇不得同時有兩筆進行中的分析', 'PASS', SQLERRM);
+    VALUES ('T29 同一篇不得同時有兩筆進行中的分析', 'PASS', SQLERRM);
   END;
 
+  -- 讓 v2 停在「四軸過了但綜合層永久失敗」的狀態
+  UPDATE writing_analyses SET status = 'ANALYZING', started_at = now() WHERE id = v_an2;
   UPDATE writing_analyses
-     SET status = 'FAILED', failed_at = now(), failed_pass = 'competency',
-         error_detail = '完整覆蓋驗證失敗'
+     SET status = 'ANALYZED',
+         competency_analysis = c_axis, error_analysis = c_axis,
+         high_score_feature_analysis = c_axis,
+         synthesis_status = 'PENDING'
+   WHERE id = v_an2;
+  UPDATE writing_analyses
+     SET synthesis_status = 'FAILED', synthesis_failed_at = now(),
+         synthesis_error_detail = '連續失敗'
    WHERE id = v_an2;
 
-  BEGIN
-    UPDATE writing_analyses SET status = 'ANALYZING' WHERE id = v_an2;
-    INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T17 失敗的分析不可復活', 'FAIL', '竟然成功了');
-  EXCEPTION WHEN insufficient_privilege THEN
-    INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T17 失敗的分析不可復活', 'PASS', SQLERRM);
-  END;
-
-  -- ==========================================================
-  -- 第四組：讀取路徑
-  -- ==========================================================
-
+  -- 重新分析：把卡住的 v2 收成 FAILED（資料保留），另開 v3
   EXECUTE 'SET ROLE authenticated';
-  PERFORM set_config('test.is_admin', 'false', true);
-  PERFORM set_config('request.jwt.claim.sub', v_student_a::text, true);
-  v_json := writing_student_analysis(v_essay_a);
+  PERFORM set_config('test.is_admin', 'true', true);
+  PERFORM set_config('request.jwt.claim.sub', v_admin::text, true);
+  v_got := writing_enqueue_analysis(v_essay_a);
   EXECUTE 'RESET ROLE';
 
+  SELECT status || ' / ' || coalesce(failed_pass, 'NULL')
+         || ' / axis=' || (competency_analysis IS NOT NULL)::text
+    INTO v_txt
+    FROM writing_analyses WHERE id = v_an2;
   INSERT INTO t_result (name, verdict, detail)
-  VALUES ('T18 學生讀得到自己作文的最新一次分析',
-          CASE WHEN v_json ->> 'status' = 'FAILED'
-                AND (v_json ->> 'analysis_version')::int = 2
-               THEN 'PASS' ELSE 'FAIL' END,
-          coalesce(v_json ->> 'status', 'NULL') || ' v' || coalesce(v_json ->> 'analysis_version', '?'));
+  VALUES ('T30 綜合層永久失敗的舊版本被收束為 FAILED，但四軸資料不被丟棄',
+          CASE WHEN v_txt = 'FAILED / synthesis / axis=true' THEN 'PASS' ELSE 'FAIL' END,
+          v_txt);
 
+  SELECT analysis_version INTO v_int FROM writing_analyses WHERE id = v_got;
   INSERT INTO t_result (name, verdict, detail)
-  VALUES ('T19 學生看不到 provider / model / error_detail / validation_issues / requested_by',
-          CASE WHEN NOT (v_json ? 'provider') AND NOT (v_json ? 'model')
-                AND NOT (v_json ? 'error_detail') AND NOT (v_json ? 'validation_issues')
-                AND NOT (v_json ? 'requested_by') AND NOT (v_json ? 'failed_pass')
-               THEN 'PASS' ELSE 'FAIL' END,
-          array_to_string(ARRAY(SELECT jsonb_object_keys(v_json)), ','));
+  VALUES ('T31 重新分析開出 version 3',
+          CASE WHEN v_int = 3 THEN 'PASS' ELSE 'FAIL' END, 'version = ' || v_int);
 
-  -- 別人的作文
+  -- ==========================================================
+  -- 第七組：讀取路徑的授權
+  -- ==========================================================
+
   EXECUTE 'SET ROLE authenticated';
   PERFORM set_config('test.is_admin', 'false', true);
   PERFORM set_config('request.jwt.claim.sub', v_student_b::text, true);
@@ -295,61 +481,57 @@ BEGIN
   EXECUTE 'RESET ROLE';
 
   INSERT INTO t_result (name, verdict, detail)
-  VALUES ('T20 學生讀不到別人作文的分析',
+  VALUES ('T32 學生讀不到別人作文的分析',
           CASE WHEN v_json IS NULL THEN 'PASS' ELSE 'FAIL' END,
           coalesce(v_json::text, 'NULL'));
 
-  -- 未登入
   EXECUTE 'SET ROLE authenticated';
   PERFORM set_config('request.jwt.claim.sub', '', true);
   BEGIN
     PERFORM writing_student_analysis(v_essay_a);
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T21 未登入無法讀取分析', 'FAIL', '竟然成功了');
+    VALUES ('T33 未登入無法讀取分析', 'FAIL', '竟然成功了');
   EXCEPTION WHEN insufficient_privilege THEN
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T21 未登入無法讀取分析', 'PASS', SQLERRM);
+    VALUES ('T33 未登入無法讀取分析', 'PASS', SQLERRM);
   END;
   EXECUTE 'RESET ROLE';
 
-  -- 佇列：非管理員
   EXECUTE 'SET ROLE authenticated';
   PERFORM set_config('test.is_admin', 'false', true);
   PERFORM set_config('request.jwt.claim.sub', v_student_a::text, true);
   BEGIN
     PERFORM writing_admin_queue();
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T22 學生讀不到批改佇列', 'FAIL', '竟然成功了');
+    VALUES ('T34 學生讀不到批改佇列', 'FAIL', '竟然成功了');
   EXCEPTION WHEN insufficient_privilege THEN
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T22 學生讀不到批改佇列', 'PASS', SQLERRM);
+    VALUES ('T34 學生讀不到批改佇列', 'PASS', SQLERRM);
   END;
 
   BEGIN
     PERFORM writing_admin_analysis(v_essay_a);
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T23 學生讀不到管理員的完整分析（含診斷欄位）', 'FAIL', '竟然成功了');
+    VALUES ('T35 學生讀不到管理員的完整分析（含診斷欄位）', 'FAIL', '竟然成功了');
   EXCEPTION WHEN insufficient_privilege THEN
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T23 學生讀不到管理員的完整分析（含診斷欄位）', 'PASS', SQLERRM);
+    VALUES ('T35 學生讀不到管理員的完整分析（含診斷欄位）', 'PASS', SQLERRM);
   END;
   EXECUTE 'RESET ROLE';
 
-  -- 佇列：未登入（is_admin() = NULL）
   EXECUTE 'SET ROLE authenticated';
   PERFORM set_config('test.is_admin', '', true);
   PERFORM set_config('request.jwt.claim.sub', '', true);
   BEGIN
     PERFORM writing_admin_queue();
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T24 未登入讀不到批改佇列（is_admin() = NULL）', 'FAIL', '竟然成功了');
+    VALUES ('T36 未登入讀不到批改佇列（is_admin() = NULL）', 'FAIL', '竟然成功了');
   EXCEPTION WHEN insufficient_privilege THEN
     INSERT INTO t_result (name, verdict, detail)
-    VALUES ('T24 未登入讀不到批改佇列（is_admin() = NULL）', 'PASS', SQLERRM);
+    VALUES ('T36 未登入讀不到批改佇列（is_admin() = NULL）', 'PASS', SQLERRM);
   END;
   EXECUTE 'RESET ROLE';
 
-  -- 佇列：管理員
   EXECUTE 'SET ROLE authenticated';
   PERFORM set_config('test.is_admin', 'true', true);
   PERFORM set_config('request.jwt.claim.sub', v_admin::text, true);
@@ -357,7 +539,7 @@ BEGIN
   EXECUTE 'RESET ROLE';
 
   INSERT INTO t_result (name, verdict, detail)
-  VALUES ('T25 管理員看得到全部已送出作文（含尚未分析的）',
+  VALUES ('T37 管理員看得到全部已送出作文（含尚未分析的）',
           CASE WHEN jsonb_array_length(v_json) = 3 THEN 'PASS' ELSE 'FAIL' END,
           jsonb_array_length(v_json) || ' 篇');
 
@@ -365,9 +547,16 @@ BEGIN
     FROM jsonb_array_elements(v_json) e
    WHERE e ->> 'analysis_status' IS NULL;
   INSERT INTO t_result (name, verdict, detail)
-  VALUES ('T26 沒分析過的作文 analysis_status 為 NULL（不是假裝跑過）',
+  VALUES ('T38 沒分析過的作文 analysis_status 為 NULL（不是假裝跑過）',
           CASE WHEN v_int = 2 THEN 'PASS' ELSE 'FAIL' END,
           v_int || ' 篇未分析');
+
+  SELECT count(*) INTO v_int
+    FROM jsonb_array_elements(v_json) e
+   WHERE e ? 'synthesis_status' AND e ? 'report_ready';
+  INSERT INTO t_result (name, verdict, detail)
+  VALUES ('T39 批改佇列帶出綜合層狀態與 report_ready',
+          CASE WHEN v_int = 3 THEN 'PASS' ELSE 'FAIL' END, v_int || ' 筆');
 
   EXECUTE 'SET ROLE authenticated';
   PERFORM set_config('test.is_admin', 'true', true);
@@ -375,12 +564,17 @@ BEGIN
   v_json := writing_admin_analysis(v_essay_a);
   EXECUTE 'RESET ROLE';
 
+  -- 依 analysis_version DESC 排序，所以 [1] 是 v2，也就是綜合層永久失敗那一版。
   INSERT INTO t_result (name, verdict, detail)
-  VALUES ('T27 管理員讀得到歷次分析與 validation_issues',
-          CASE WHEN jsonb_array_length(v_json) = 2
-                AND (v_json -> 1 ->> 'validation_issues') IS NOT NULL
+  VALUES ('T40 管理員讀得到歷次分析與診斷欄位',
+          CASE WHEN jsonb_array_length(v_json) = 3
+                AND (v_json -> 1 ->> 'analysis_version') = '2'
+                AND (v_json -> 1 ->> 'error_detail') = '連續失敗'
+                AND (v_json -> 1 ->> 'failed_pass') = 'synthesis'
+                AND (v_json -> 1 ? 'validation_issues')
                THEN 'PASS' ELSE 'FAIL' END,
-          jsonb_array_length(v_json) || ' 次');
+          jsonb_array_length(v_json) || ' 次；v2 failed_pass = '
+          || coalesce(v_json -> 1 ->> 'failed_pass', 'NULL'));
 
   -- ---------- 清乾淨 ----------
   DELETE FROM writing_analyses
