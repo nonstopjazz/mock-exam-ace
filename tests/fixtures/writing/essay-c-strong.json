@@ -1,0 +1,20 @@
+{
+  "profile": "C｜強",
+  "title": "The Quiet Cost of Convenience",
+  "topic": "Convenience stores are everywhere in Taiwan. Discuss their impact. Write an essay of about 200 words.",
+  "content": "At two in the morning, the convenience store on my street is the only lit window on the block. Its glow spills onto the wet pavement like a small, patient moon. For a country that never quite sleeps, this is comfort.\n\nBut convenience has a quiet price. Because everything is available at every hour, we have slowly forgotten how to wait. My grandmother once spent an entire afternoon simmering broth; I now buy it heated, sealed, and forgettable, in ninety seconds. What we gained in speed, we lost in attention.\n\nNot only do these stores reshape our habits, but they also reshape our streets. Family-run shops, unable to match such hours and prices, close one after another. The neighborhood becomes efficient and interchangeable, and something that cannot be restocked disappears with them.\n\nI am not arguing that we should close them. Having grown up beside one, I would miss its light. What I am arguing is that convenience should be a choice we make, not a habit we inherit. The store will still be open at two in the morning. The question is whether we still remember why we walked there.",
+  "expectations": [
+    "高分特徵應該有數個真正的 EFFECTIVE，若全部 UNMEASURED 代表模型漏看：",
+    "  H1-5 倒裝：Not only do these stores reshape... but they also...",
+    "  H1-4 分詞／簡化：Having grown up beside one / unable to match such hours",
+    "  H4-4 比喻：like a small, patient moon",
+    "  H4-5 意象：glow spills onto the wet pavement",
+    "  H3-6 前後呼應：開頭的 two in the morning 在結尾回扣",
+    "  H4-6 有力收束：The question is whether we still remember why we walked there.",
+    "  H4-1 對比：gained in speed / lost in attention",
+    "  H1-1 平行：efficient and interchangeable；heated, sealed, and forgettable",
+    "  H5-5 洞察：convenience should be a choice we make, not a habit we inherit",
+    "錯誤：應該非常少。若模型硬找出一堆錯誤，代表它在湊數",
+    "W 能力：多項應為 STRONG"
+  ]
+}

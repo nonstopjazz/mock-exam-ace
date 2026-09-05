@@ -1,0 +1,16 @@
+{
+  "profile": "B｜弱",
+  "title": "My Opinion About Uniform",
+  "topic": "Some schools require students to wear uniforms. Do you agree? Write an essay of about 150 words.",
+  "content": "I think uniform is not good. Because every student look same. We can not show our personality, this is very bad for us.\n\nMany student thinks the policy are unfair. My friend she want to wear her own clothes but teacher always say no. The school say uniform is cheap but actually my mother spend a lot of money to buy two set of uniform, and also we need buy sport clothes. So it is not cheap.\n\nAnother problem. In summer the uniform is very hot and unconfortable. Some student open the TV in classroom because too hot. Teacher get angry.\n\nI think school should let student decide by themself. If student want wear uniform is okay, if not want also okay. This is more free and more happy for everybody. I hope school can change this rule soon because many people think like me.",
+  "expectations": [
+    "錯誤密度高：every student look same（SV）、Many student thinks（SV + 單複數）、the policy are（SV）、My friend she want（贅詞 + SV）",
+    "錯誤：unconfortable（拼字）",
+    "錯誤：open the TV（中式英文，需有可辨識的直譯證據）",
+    "錯誤：Another problem.（Fragment）",
+    "錯誤：We can not show our personality, this is very bad for us.（Run-on / comma splice）",
+    "錯誤：by themself（詞形）、two set of（單複數）、need buy（缺 to）",
+    "高分特徵：幾乎全部應為 UNMEASURED。若出現大量 EFFECTIVE 就是虛假讚美，屬嚴重問題",
+    "W 能力：多項應為 DEVELOPING，但 UNMEASURED 不可被拿來當作弱的證據"
+  ]
+}

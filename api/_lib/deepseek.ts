@@ -35,6 +35,17 @@ export class DeepSeekError extends Error {
   }
 }
 
+/** 單次呼叫的量測。給 staging 稽核用，正式執行時忽略它也不影響行為。 */
+export interface CallTelemetry {
+  latencyMs: number;
+  httpStatus: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  /** 這一次是驗證重試（把缺漏清單餵回去）還是原始呼叫 */
+  isRepair: boolean;
+}
+
 /** 呼叫一次 DeepSeek，回傳解析後的 JSON。不做任何 taxonomy 相關的判斷。 */
 export async function callDeepSeek(
   messages: DeepSeekMessage[],
@@ -44,8 +55,11 @@ export async function callDeepSeek(
     signal?: AbortSignal;
     maxTokens?: number;
     temperature?: number;
+    /** 有給就把這一次的量測寫進去。 */
+    telemetry?: CallTelemetry;
   },
 ): Promise<unknown> {
+  const startedAt = Date.now();
   const res = await fetch(DEEPSEEK_ENDPOINT, {
     method: "POST",
     headers: {
@@ -63,6 +77,11 @@ export async function callDeepSeek(
     signal: options.signal,
   });
 
+  if (options.telemetry) {
+    options.telemetry.latencyMs = Date.now() - startedAt;
+    options.telemetry.httpStatus = res.status;
+  }
+
   if (!res.ok) {
     const retriable = res.status === 429 || res.status >= 500;
     // 刻意不把 provider 的原始回應帶進錯誤訊息——它可能含有請求內容的回音。
@@ -71,7 +90,18 @@ export async function callDeepSeek(
 
   const payload = (await res.json()) as {
     choices?: { message?: { content?: string } }[];
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      total_tokens?: number;
+    };
   };
+
+  if (options.telemetry && payload.usage) {
+    options.telemetry.promptTokens = payload.usage.prompt_tokens;
+    options.telemetry.completionTokens = payload.usage.completion_tokens;
+    options.telemetry.totalTokens = payload.usage.total_tokens;
+  }
   const content = payload.choices?.[0]?.message?.content;
   if (!content) {
     throw new DeepSeekError("DeepSeek 沒有回傳內容", true);
@@ -88,6 +118,7 @@ export interface PassSuccess<T> {
   ok: true;
   value: T;
   attempts: number;
+  telemetry: CallTelemetry[];
 }
 
 export type PassOutcome<T> = PassSuccess<T> | PassFailure;
@@ -102,6 +133,7 @@ export interface PassFailure {
   issues: readonly ValidationIssue[];
   detail: string;
   attempts: number;
+  telemetry: CallTelemetry[];
 }
 
 /** 把驗證失敗的缺漏清單整理成餵回模型的修正指示。 */
@@ -147,10 +179,13 @@ export async function runValidatedPass<T>(args: {
 }): Promise<PassOutcome<T>> {
   const maxAttempts = args.maxAttempts ?? 2;
   const messages = [...args.messages];
+  const telemetry: CallTelemetry[] = [];
   let lastIssues: readonly ValidationIssue[] = [];
   let lastDetail = "";
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const call: CallTelemetry = { latencyMs: 0, httpStatus: 0, isRepair: attempt > 1 };
+    telemetry.push(call);
     let raw: unknown;
     try {
       raw = await callDeepSeek(messages, {
@@ -158,6 +193,7 @@ export async function runValidatedPass<T>(args: {
         model: args.model,
         signal: args.signal,
         maxTokens: args.maxTokens,
+        telemetry: call,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : "DeepSeek 呼叫失敗";
@@ -166,14 +202,14 @@ export async function runValidatedPass<T>(args: {
       lastIssues = [];
       // 逾時（AbortError）不重試——時間本來就是我們沒有的東西。
       if (!retriable || (err as { name?: string }).name === "AbortError") {
-        return { ok: false, issues: [], detail: lastDetail, attempts: attempt };
+        return { ok: false, issues: [], detail: lastDetail, attempts: attempt, telemetry };
       }
       continue;
     }
 
     const result = args.validate(raw);
     if (isValidationOk(result)) {
-      return { ok: true, value: result.value, attempts: attempt };
+      return { ok: true, value: result.value, attempts: attempt, telemetry };
     }
 
     lastIssues = result.issues;
@@ -187,5 +223,5 @@ export async function runValidatedPass<T>(args: {
     }
   }
 
-  return { ok: false, issues: lastIssues, detail: lastDetail, attempts: maxAttempts };
+  return { ok: false, issues: lastIssues, detail: lastDetail, attempts: maxAttempts, telemetry };
 }

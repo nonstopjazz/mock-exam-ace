@@ -12,7 +12,9 @@
     "generate-exam-template": "tsx scripts/generate-exam-template.ts",
     "generate:writing-taxonomy": "python3 scripts/generate-writing-taxonomy.py",
     "verify:writing-contract": "tsx scripts/verify-writing-contract.ts",
-    "verify:writing-passes": "tsx scripts/verify-writing-passes.ts"
+    "verify:writing-passes": "tsx scripts/verify-writing-passes.ts",
+    "audit:writing": "tsx scripts/writing-audit.ts",
+    "audit:writing:dryrun": "tsx scripts/_audit-dryrun.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

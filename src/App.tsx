@@ -26,6 +26,7 @@ import ExamQuestionsEditor from "./pages/admin/ExamQuestionsEditor";
 import SiteSettings from "./pages/admin/SiteSettings";
 import UsersAdmin from "./pages/admin/UsersAdmin";
 import AdminHome from "./pages/admin/AdminHome";
+import WritingDebug from "./pages/admin/WritingDebug";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -161,6 +162,12 @@ const App = () => (
           <Route path="/admin/blog" element={
             <RequireAdmin>
               <BlogAdmin />
+            </RequireAdmin>
+          } />
+          {/* staging 驗證用的技術工具，不是學生看的報告 UI */}
+          <Route path="/admin/writing-debug" element={
+            <RequireAdmin>
+              <WritingDebug />
             </RequireAdmin>
           } />
           <Route path="/admin/exams" element={
