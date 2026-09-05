@@ -32,6 +32,8 @@ DECLARE
   v_stage1_secs NUMERIC;
   v_stage2_secs NUMERIC;
   v_rec   RECORD;
+  v_rec2  RECORD;
+  v_rec3  RECORD;
   v_n     INTEGER;
 BEGIN
   SELECT * INTO a FROM public.writing_analyses x
@@ -142,6 +144,61 @@ BEGIN
                        || coalesce(v_rec.value ->> 'path', '') || '：'
                        || coalesce(v_rec.value ->> 'detail', ''));
   END LOOP;
+
+  -- ── 逐支、逐次量測 ────────────────────────────────────────
+  -- 這一段取代三個舊盲點：attempt_count 是常數、被中斷的呼叫 latency 歸零、
+  -- 以及最後一次的空陣列蓋掉前一次的缺漏清單。
+  IF j -> 'stage1_telemetry' IS NULL OR j ->> 'stage1_telemetry' IS NULL THEN
+    INSERT INTO d (item, value)
+    VALUES ('—— 逐支量測 ——', '此列在加入量測之前產生，或尚未跑 add_writing_analyses_telemetry.sql');
+  ELSE
+    INSERT INTO d (item, value) VALUES ('—— 逐支量測 ——', '');
+    FOR v_rec IN
+      SELECT key AS pass_label, value AS t
+        FROM jsonb_each(j -> 'stage1_telemetry')
+       ORDER BY key
+    LOOP
+      INSERT INTO d (item, value) VALUES (
+        v_rec.pass_label,
+        '嘗試 ' || (v_rec.t ->> 'attempts') || ' 次　'
+          || '總長 ' || round(((v_rec.t ->> 'totalLatencyMs')::numeric) / 1000, 1) || ' 秒　'
+          || '結局 ' || (v_rec.t ->> 'finalOutcome')
+          || CASE WHEN (v_rec.t ->> 'hitDeadline')::boolean THEN '　← 撞到我們自己的期限' ELSE '' END
+      );
+      FOR v_rec2 IN SELECT value AS a FROM jsonb_array_elements(v_rec.t -> 'records') LOOP
+        INSERT INTO d (item, value) VALUES (
+          '  ' || v_rec.pass_label || ' 第 ' || (v_rec2.a ->> 'attempt') || ' 次',
+          round(((v_rec2.a ->> 'latencyMs')::numeric) / 1000, 1) || ' 秒'
+            || '　起於 +' || round(((v_rec2.a ->> 'offsetMs')::numeric) / 1000, 1) || ' 秒'
+            || '　' || (v_rec2.a ->> 'outcome')
+            || coalesce('　HTTP ' || (v_rec2.a ->> 'httpStatus'), '')
+            || coalesce('　輸出 ' || (v_rec2.a ->> 'responseChars') || ' 字元', '')
+            || coalesce('　completion ' || (v_rec2.a ->> 'completionTokens') || ' tokens', '')
+            || coalesce('　體積 ' || (v_rec2.a ->> 'shape'), '')
+            || coalesce('　缺漏 ' || (v_rec2.a ->> 'issueCount') || ' 項', '')
+        );
+        -- 每一次嘗試自己的缺漏清單。這是「為什麼要重試」的唯一證據來源。
+        FOR v_rec3 IN
+          SELECT value AS i FROM jsonb_array_elements(coalesce(v_rec2.a -> 'issues', '[]'::jsonb))
+        LOOP
+          INSERT INTO d (item, value) VALUES (
+            '    ' || v_rec.pass_label || ' 第 ' || (v_rec2.a ->> 'attempt') || ' 次缺漏',
+            '[' || (v_rec3.i ->> 'kind') || '] ' || coalesce(v_rec3.i ->> 'path', '')
+              || '：' || coalesce(v_rec3.i ->> 'detail', '')
+          );
+        END LOOP;
+      END LOOP;
+    END LOOP;
+  END IF;
+
+  IF j ->> 'synthesis_telemetry' IS NOT NULL THEN
+    INSERT INTO d (item, value) VALUES (
+      'synthesis 量測',
+      '嘗試 ' || (j -> 'synthesis_telemetry' ->> 'attempts') || ' 次　'
+        || '總長 ' || round(((j -> 'synthesis_telemetry' ->> 'totalLatencyMs')::numeric) / 1000, 1) || ' 秒　'
+        || '結局 ' || (j -> 'synthesis_telemetry' ->> 'finalOutcome')
+    );
+  END IF;
 
   -- ── 覆蓋計數：確認四軸真的是完整的，不是半套 ──────────────
   IF a.competency_analysis IS NOT NULL THEN

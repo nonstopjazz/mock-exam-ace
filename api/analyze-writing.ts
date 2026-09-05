@@ -53,9 +53,11 @@ import {
 import {
   isPassOk,
   runValidatedPass,
+  DeadlineExceeded,
   DEFAULT_MODEL,
   type PassFailure,
   type PassOutcome,
+  type PassTelemetry,
 } from "./_lib/deepseek.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -116,6 +118,12 @@ interface Stage1Result {
   highScoreB: HighScoreAnalysis;
 }
 
+/** 數一個【尚未驗證】的回傳裡某個陣列有幾筆。形狀不對就回 -1，不丟例外。 */
+function countArray(raw: unknown, key: string): number {
+  const list = (raw as Record<string, unknown> | null | undefined)?.[key];
+  return Array.isArray(list) ? list.length : -1;
+}
+
 function fail(res: VercelLikeResponse, status: number, error: string) {
   res.status(status).json({ error });
 }
@@ -167,8 +175,15 @@ export default async function handler(req: VercelLikeRequest, res: VercelLikeRes
     return fail(res, 500, "伺服器設定不完整");
   }
 
+  // 用具名的中斷理由，不是無參數的 abort()。abort(reason) 的 reason 會原封不動
+  // 變成 fetch 的 rejection，所以下游能用 instanceof 認出「這是我們自己砍的」，
+  // 而不是收到一句對任何中斷都一樣的 "This operation was aborted"。
+  const invocationStartedAt = Date.now();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), DEADLINE_MS);
+  const timer = setTimeout(
+    () => controller.abort(new DeadlineExceeded(DEADLINE_MS, Date.now() - invocationStartedAt)),
+    DEADLINE_MS,
+  );
 
   try {
     if (mode === "synthesis") {
@@ -273,24 +288,34 @@ async function runStage1(ctx: RunContext) {
       label: "Writing Competency",
       messages: competencyMessages(essay),
       validate: (raw) => validateCompetencyAnalysis(raw, essay.content),
+      describe: (raw) => ({ categories: countArray(raw, "categories") }),
     }),
     runValidatedPass({
       ...shared,
       label: "Writing Error",
       messages: errorMessages(essay),
       validate: (raw) => validateErrorAnalysis(raw, essay.content),
+      // findings 是四支裡唯一沒有上限的輸出，而且它的長度與「作文有多少錯」
+      // 成正比。要回答「弱作文是不是因為 findings 暴增才超時」就得數它，
+      // 而且必須在驗證之前數——驗證沒過的那一次也要有數字。
+      describe: (raw) => ({
+        findings: countArray(raw, "findings"),
+        coverage: countArray(raw, "coverage"),
+      }),
     }),
     runValidatedPass({
       ...shared,
       label: "High-Score Feature H1–H3",
       messages: highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_A)),
       validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_A, essay.content),
+      describe: (raw) => ({ categories: countArray(raw, "categories") }),
     }),
     runValidatedPass({
       ...shared,
       label: "High-Score Feature H4–H5",
       messages: highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_B)),
       validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_B, essay.content),
+      describe: (raw) => ({ categories: countArray(raw, "categories") }),
     }),
   ]);
 
@@ -301,16 +326,31 @@ async function runStage1(ctx: RunContext) {
     { label: "high_score_h1_h3", pass: hsAPass },
     { label: "high_score_h4_h5", pass: hsBPass },
   ];
+  // 四支的量測不論成敗都要保留：失敗那次最需要看的往往是【成功那三支】跑了多久。
+  const stage1Telemetry: Record<string, PassTelemetry> = {};
+  for (const o of outcomes) stage1Telemetry[o.label] = o.pass.telemetry;
+
   const broken = outcomes.find((o) => !isPassOk(o.pass));
   if (broken) {
     const failure = broken.pass as PassFailure;
-    await markFailed(admin, analysisId, broken.label, failure.detail, failure.issues);
+    await markFailed(
+      admin,
+      analysisId,
+      broken.label,
+      failure.detail,
+      failure.issues,
+      stage1Telemetry,
+      totalAttempts(stage1Telemetry),
+    );
     return ctx.res.status(502).json({
       analysisId,
       status: "FAILED",
       failedPass: broken.label,
       error: failure.detail,
       issueCount: failure.issues.length,
+      // 期限中斷與模型輸出爛掉是兩回事，回應層就要分得出來。
+      hitDeadline: failure.telemetry.hitDeadline,
+      stage1: telemetrySummary(stage1Telemetry),
     });
   }
 
@@ -337,6 +377,9 @@ async function runStage1(ctx: RunContext) {
       error_analysis: stage1.errors,
       high_score_feature_analysis: mergedHighScore,
       synthesis_status: "PENDING",
+      stage1_telemetry: stage1Telemetry,
+      // 真實嘗試次數。以前這裡是寫死的 1，所有「零重試」的稽核結論都讀到常數。
+      attempt_count: totalAttempts(stage1Telemetry),
     })
     .eq("id", analysisId);
 
@@ -355,7 +398,38 @@ async function runStage1(ctx: RunContext) {
     reportReady: false,
     nextRequest: "synthesis",
     stage1LatencyMs: Date.now() - stage1StartedAt,
+    stage1: telemetrySummary(stage1Telemetry),
   });
+}
+
+/** 四支加起來真正打了幾次 DeepSeek。這是量測值。 */
+function totalAttempts(telemetry: Record<string, PassTelemetry>): number {
+  return Object.values(telemetry).reduce((sum, t) => sum + t.attempts, 0);
+}
+
+/** 回應裡給人一眼看懂的濃縮版；完整紀錄在資料庫的 stage1_telemetry。 */
+function telemetrySummary(telemetry: Record<string, PassTelemetry>) {
+  return Object.fromEntries(
+    Object.entries(telemetry).map(([label, t]) => [
+      label,
+      {
+        attempts: t.attempts,
+        totalLatencyMs: t.totalLatencyMs,
+        finalOutcome: t.finalOutcome,
+        retried: t.retried,
+        hitDeadline: t.hitDeadline,
+        perAttempt: t.records.map((r) => ({
+          attempt: r.attempt,
+          latencyMs: r.latencyMs,
+          outcome: r.outcome,
+          issueCount: r.issueCount,
+          responseChars: r.responseChars,
+          completionTokens: r.completionTokens,
+          shape: r.shape,
+        })),
+      },
+    ]),
+  );
 }
 
 /* ──────────────── 請求 B：Stage 2 綜合層 ──────────────── */
@@ -440,6 +514,10 @@ async function runSynthesisOnly(ctx: RunContext) {
     synthesisStatus: synthesis.ok ? "COMPLETED" : "FAILED",
     reportReady: synthesis.ok,
     stage2LatencyMs: Date.now() - stage2StartedAt,
+    ...(synthesis.telemetry
+      ? { stage2: telemetrySummary({ synthesis: synthesis.telemetry }).synthesis }
+      : {}),
+    ...(synthesis.telemetry?.hitDeadline ? { hitDeadline: true } : {}),
     // 綜合層失敗時明講四軸還在，老師才知道只要重跑摘要就好。
     ...(synthesis.ok
       ? {}
@@ -452,6 +530,7 @@ async function runSynthesisOnly(ctx: RunContext) {
 interface SynthesisOutcome {
   ok: boolean;
   detail: string;
+  telemetry?: PassTelemetry;
 }
 
 async function performSynthesis(args: {
@@ -499,9 +578,10 @@ async function performSynthesis(args: {
         synthesis_failed_at: new Date().toISOString(),
         synthesis_error_detail: failure.detail,
         synthesis_validation_issues: failure.issues,
+        synthesis_telemetry: failure.telemetry,
       })
       .eq("id", analysisId);
-    return { ok: false, detail: failure.detail };
+    return { ok: false, detail: failure.detail, telemetry: failure.telemetry };
   }
 
   const { error: writeError } = await admin
@@ -513,6 +593,7 @@ async function performSynthesis(args: {
       strengths: pass.value.strengths,
       needs_work: pass.value.needs_work,
       next_steps: pass.value.next_steps,
+      synthesis_telemetry: pass.telemetry,
     })
     .eq("id", analysisId);
 
@@ -532,7 +613,7 @@ async function performSynthesis(args: {
     return { ok: false, detail: "標記完成失敗" };
   }
 
-  return { ok: true, detail: "" };
+  return { ok: true, detail: "", telemetry: pass.telemetry };
 }
 
 /* ──────────────── 失敗收尾 ──────────────── */
@@ -543,6 +624,8 @@ async function markFailed(
   failedPass: PassLabel,
   detail: string,
   issues: readonly ValidationIssue[],
+  telemetry?: Record<string, PassTelemetry>,
+  attempts?: number,
 ) {
   await admin
     .from("writing_analyses")
@@ -553,7 +636,12 @@ async function markFailed(
       error_detail: detail,
       // 缺漏清單完整保留：讓「AI 忘了分析」永遠查得出來，
       // 而且永遠不會被誤讀成「學生沒有表現出來」。
+      //
+      // ⚠️ 這一欄只有【最後一次】嘗試的清單。attempt 1 驗證失敗、attempt 2 撞上
+      // 期限時，這裡會是空陣列——重試的原因在 stage1_telemetry 的逐次紀錄裡。
       validation_issues: issues,
+      ...(telemetry ? { stage1_telemetry: telemetry } : {}),
+      ...(attempts !== undefined ? { attempt_count: attempts } : {}),
     })
     .eq("id", analysisId);
 }

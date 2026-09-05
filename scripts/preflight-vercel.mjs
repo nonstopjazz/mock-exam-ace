@@ -26,7 +26,7 @@
  * 這裡【不】驗證模型品質，那是 scripts/writing-audit.ts 的工作。
  */
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -95,6 +95,17 @@ for (const rel of endpoints) {
   } catch (err) {
     check(`載入 api/${rel}`, false, err.message);
   }
+}
+
+// api/ 的型別檢查。根 tsconfig 只看 src/，所以部署上去的函式以前完全沒被檢查過。
+{
+  const tsc = spawnSync(
+    "npx",
+    ["tsc", "--noEmit", "-p", "tsconfig.check.json"],
+    { encoding: "utf8", cwd: process.cwd() },
+  );
+  const errors = (tsc.stdout ?? "").split("\n").filter((l) => l.includes("error TS"));
+  check("api/ 通過型別檢查", tsc.status === 0, errors.slice(0, 5).join(" | "));
 }
 
 const writing = loaded["analyze-writing.js"];

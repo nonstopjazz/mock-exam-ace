@@ -16,6 +16,7 @@
 import {
   runValidatedPass,
   isPassOk,
+  DeadlineExceeded,
   type PassFailure,
 } from "../api/_lib/deepseek";
 import {
@@ -63,8 +64,12 @@ interface StubResponse {
   status?: number;
   /** 直接當成 message.content 送回；物件會被 JSON.stringify */
   content?: unknown;
-  /** 設 true 時模擬 AbortError */
+  /** 設 true 時模擬「別人」中斷的通用 AbortError */
   abort?: boolean;
+  /** 設 true 時模擬【我們自己的】硬性期限中斷 */
+  deadline?: boolean;
+  /** 呼叫端量到的 completion token 數 */
+  completionTokens?: number;
 }
 
 const sentBodies: string[] = [];
@@ -79,6 +84,10 @@ function installStub(responses: StubResponse[]) {
     sentBodies.push(init?.body ?? "");
     const next = queue.shift();
     if (!next) throw new Error("替身用完了：實際呼叫次數比預期多");
+    if (next.deadline) {
+      // 真實情況是 controller.abort(reason) 讓 fetch 以 reason 本身 reject。
+      throw new DeadlineExceeded(50_000, 48_102);
+    }
     if (next.abort) {
       const err = new Error("The operation was aborted");
       err.name = "AbortError";
@@ -100,6 +109,9 @@ function installStub(responses: StubResponse[]) {
             },
           },
         ],
+        ...(next.completionTokens === undefined
+          ? {}
+          : { usage: { completion_tokens: next.completionTokens } }),
       }),
     };
   }) as unknown as typeof fetch;
@@ -278,6 +290,99 @@ console.log("\n呼叫層的錯誤分類");
   });
   restoreFetch();
   check("回傳非 JSON 時會重試", isPassOk(result) && sentBodies.length === 2);
+}
+
+/* ──────────────── 2b. 量測：失敗必須可診斷 ──────────────── */
+
+console.log("\n量測（逐支、逐次）");
+
+{
+  // 2026-09-05 偏弱作文那次的真實組合，也是舊版查不出來的那一種：
+  // attempt 1 驗證失敗 → attempt 2 撞上我們自己的 50 秒期限。
+  const partial = fullError();
+  partial.coverage = partial.coverage.slice(0, 10);   // 故意缺 6 個 code
+  installStub([{ content: partial, completionTokens: 4200 }, { deadline: true }]);
+  const result = await runValidatedPass({
+    label: "Writing Error",
+    messages: errorMessages(essay),
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+    describe: (raw) => ({
+      findings: Array.isArray((raw as any)?.findings) ? (raw as any).findings.length : -1,
+    }),
+  });
+  restoreFetch();
+
+  const t = result.telemetry;
+  check("兩次嘗試都留下紀錄", t.records.length === 2, `${t.records.length}`);
+  check("attempts 是真實次數，不是常數 1", t.attempts === 2, `${t.attempts}`);
+
+  const a1 = t.records[0];
+  const a2 = t.records[1];
+  check("attempt 1 記為 VALIDATION_FAILED", a1.outcome === "VALIDATION_FAILED", a1.outcome);
+  check(
+    "attempt 1 的缺漏清單被保留下來",
+    (a1.issues?.length ?? 0) > 0 && a1.issueCount === a1.issues?.length,
+    `${a1.issueCount} 項`,
+  );
+  check("attempt 1 記下輸出量（responseChars）", (a1.responseChars ?? 0) > 0, `${a1.responseChars}`);
+  check("attempt 1 記下 completion tokens", a1.completionTokens === 4200, `${a1.completionTokens}`);
+  check("attempt 1 記下 findings 筆數", (a1.shape?.findings ?? -1) >= 0, JSON.stringify(a1.shape));
+
+  check("attempt 2 記為 DEADLINE，不是通用的 ABORTED", a2.outcome === "DEADLINE", a2.outcome);
+  check("attempt 2 標記為驗證重試", a2.isRepair === true);
+  check("這一支被標記為撞到期限", t.hitDeadline === true);
+  check(
+    "期限訊息說得出是我們自己的碼表與第幾次嘗試",
+    Boolean(a2.detail?.includes("硬性期限") && a2.detail?.includes("第 2 次")),
+    a2.detail ?? "(無)",
+  );
+
+  // 這一條是整組量測存在的理由：舊版會用 attempt 2 的空陣列蓋掉 attempt 1 的清單。
+  const failure = result as PassFailure;
+  check("最終 issues 是空的（最後一次是呼叫層失敗）", failure.issues.length === 0);
+  check(
+    "但重試的原因沒有被 AbortError 毀掉",
+    (t.records[0].issues?.length ?? 0) > 0,
+    "attempt 1 的清單仍在",
+  );
+}
+
+{
+  // 我們自己的期限，與其他四種失敗，必須是互斥且分得開的結局。
+  const cases: { name: string; stub: any; expect: string }[] = [
+    { name: "我們自己的期限 → DEADLINE", stub: { deadline: true }, expect: "DEADLINE" },
+    { name: "別人中斷 → ABORTED", stub: { abort: true }, expect: "ABORTED" },
+    { name: "DeepSeek 非 2xx → HTTP_ERROR", stub: { status: 401 }, expect: "HTTP_ERROR" },
+    { name: "回傳不是合法 JSON → MALFORMED_JSON", stub: { content: "這不是 JSON" }, expect: "MALFORMED_JSON" },
+  ];
+  for (const c of cases) {
+    installStub([c.stub, c.stub]);
+    const result = await runValidatedPass({
+      label: "Writing Error",
+      messages: errorMessages(essay),
+      validate: (raw) => validateErrorAnalysis(raw, essay.content),
+      apiKey: "test-key-not-a-real-secret",
+    });
+    restoreFetch();
+    check(c.name, result.telemetry.records[0].outcome === c.expect, result.telemetry.records[0].outcome);
+  }
+}
+
+{
+  // 成功的那一支也要有量測——失敗診斷時最需要的往往是「成功那幾支跑了多久」。
+  installStub([{ content: fullError(), completionTokens: 900 }]);
+  const result = await runValidatedPass({
+    label: "Writing Error",
+    messages: errorMessages(essay),
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+  });
+  restoreFetch();
+  check("成功時 finalOutcome = OK", result.telemetry.finalOutcome === "OK");
+  check("成功時 retried = false", result.telemetry.retried === false);
+  check("成功時 hitDeadline = false", result.telemetry.hitDeadline === false);
+  check("成功時也記下 totalLatencyMs", typeof result.telemetry.totalLatencyMs === "number");
 }
 
 /* ──────────────── 3. prompt 真的列出全部節點 ──────────────── */

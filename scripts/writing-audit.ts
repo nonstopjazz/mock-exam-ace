@@ -33,7 +33,7 @@ import { join } from "node:path";
 import {
   runValidatedPass,
   isPassOk,
-  type CallTelemetry,
+  type PassTelemetry,
   type PassFailure,
   type PassOutcome,
 } from "../api/_lib/deepseek";
@@ -112,7 +112,7 @@ interface PassReport {
   attempts: number;
   neededRepair: boolean;
   latencyMs: number;
-  telemetry: CallTelemetry[];
+  telemetry: PassTelemetry;
   issues: readonly ValidationIssue[];
   detail?: string;
 }
@@ -183,7 +183,7 @@ function sumTokens(reports: PassReport[]) {
   let input = 0;
   let output = 0;
   for (const r of reports) {
-    for (const c of r.telemetry) {
+    for (const c of r.telemetry.records) {
       input += c.promptTokens ?? 0;
       output += c.completionTokens ?? 0;
     }
@@ -444,8 +444,8 @@ function toReport<T>(pass: PassOutcome<T>): Omit<PassReport, "label"> {
   return {
     ok: pass.ok,
     attempts: pass.attempts,
-    neededRepair: telemetry.some((t) => t.isRepair),
-    latencyMs: telemetry.reduce((n, t) => n + t.latencyMs, 0),
+    neededRepair: telemetry.retried,
+    latencyMs: telemetry.totalLatencyMs,
     telemetry,
     issues: failure?.issues ?? [],
     detail: failure?.detail,
@@ -460,8 +460,8 @@ function sumTokensAs(reports: PassReport[]) {
 function timingTable(reports: PassReport[]): string {
   const lines = ["| Pass | 結果 | 延遲 | 呼叫次數 | 缺漏重試 | input tokens | output tokens |", "|---|---|---|---|---|---|---|"];
   for (const r of reports) {
-    const inTok = r.telemetry.reduce((n, t) => n + (t.promptTokens ?? 0), 0);
-    const outTok = r.telemetry.reduce((n, t) => n + (t.completionTokens ?? 0), 0);
+    const inTok = r.telemetry.records.reduce((n, t) => n + (t.promptTokens ?? 0), 0);
+    const outTok = r.telemetry.records.reduce((n, t) => n + (t.completionTokens ?? 0), 0);
     lines.push(
       `| ${r.label} | ${r.ok ? "通過" : "**失敗**"} | ${ms(r.latencyMs)} | ${r.attempts} | ${r.neededRepair ? "是" : "否"} | ${inTok} | ${outTok} |`,
     );

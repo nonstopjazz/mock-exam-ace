@@ -29,21 +29,94 @@ export class DeepSeekError extends Error {
   constructor(
     message: string,
     readonly retriable: boolean,
+    /** 這一次失敗屬於哪一類。決定稽核報告怎麼歸類，不影響控制流。 */
+    readonly outcome: AttemptOutcome,
   ) {
     super(message);
     this.name = "DeepSeekError";
   }
 }
 
-/** 單次呼叫的量測。給 staging 稽核用，正式執行時忽略它也不影響行為。 */
-export interface CallTelemetry {
+/**
+ * 我們自己那條硬性期限的中斷理由。
+ *
+ * 用一個具名的類別而不是比對 "This operation was aborted" 字串，是因為那個字串
+ * 是 Node 對【任何】AbortSignal 中斷的通用訊息——它同樣會出現在使用者取消、
+ * 平台中斷、以及任何第三方持有 signal 的情況。2026-09-05 那次診斷之所以要
+ * 繞去看 Vercel trace，就是因為錯誤訊息看起來像是 DeepSeek 或網路出問題。
+ *
+ * abort(reason) 的 reason 會原封不動地變成 fetch 的 rejection，所以
+ * instanceof 判斷是可靠的，不必猜。
+ */
+export class DeadlineExceeded extends Error {
+  constructor(
+    /** 期限本身的長度 */
+    readonly deadlineMs: number,
+    /** 期限觸發時，這次 serverless 執行已經跑了多久 */
+    readonly elapsedMs: number,
+  ) {
+    super(`已達本次執行的 ${Math.round(deadlineMs / 1000)} 秒硬性期限（已耗時 ${elapsedMs} ms）`);
+    this.name = "DeadlineExceeded";
+  }
+}
+
+/** 一次嘗試的結局。互斥，而且每一種都指向不同的修法。 */
+export type AttemptOutcome =
+  | "OK"                 // 呼叫成功且通過驗證
+  | "VALIDATION_FAILED"  // 模型有回，但沒過完整覆蓋／格式驗證
+  | "DEADLINE"           // 被【我們自己的】硬性期限中斷
+  | "ABORTED"            // 被別人中斷的（不是我們的期限）
+  | "HTTP_ERROR"         // DeepSeek 回非 2xx
+  | "MALFORMED_JSON"     // 回的不是合法 JSON
+  | "NO_CONTENT"         // 回了 2xx 但沒有 content
+  | "NETWORK_ERROR";     // 連不上／連線中斷
+
+/**
+ * 單次嘗試的完整紀錄。
+ *
+ * 這是一個【陣列】而不是一個聚合數字：attempt 1 驗證失敗、attempt 2 撞上期限
+ * 是最需要看清楚的組合，而聚合之後那兩件事會互相蓋掉——舊版就是把 attempt 1
+ * 的缺漏清單用 attempt 2 的空陣列覆蓋掉，重試的原因因此永遠查不到。
+ */
+export interface AttemptRecord {
+  /** 第幾次嘗試，從 1 開始 */
+  attempt: number;
+  /** 這一次是驗證重試（把缺漏清單餵回去）還是原始呼叫 */
+  isRepair: boolean;
+  /** 從這一支 pass 開始算起，這次嘗試在第幾毫秒發出 */
+  offsetMs: number;
+  /** 這一次嘗試花了多久（含被中斷前跑掉的時間） */
   latencyMs: number;
-  httpStatus: number;
+  outcome: AttemptOutcome;
+  /** 給人看的一句話。期限中斷會明確寫成期限，不會留下通用的 abort 訊息。 */
+  detail?: string;
+  httpStatus?: number;
   promptTokens?: number;
   completionTokens?: number;
   totalTokens?: number;
-  /** 這一次是驗證重試（把缺漏清單餵回去）還是原始呼叫 */
-  isRepair: boolean;
+  /** 回傳 JSON 序列化後的長度。輸出量的代理指標，驗證失敗時一樣有值。 */
+  responseChars?: number;
+  /** 由呼叫端提供的體積指標，例如 error 這一支的 findings 筆數。 */
+  shape?: Record<string, number>;
+  /** 這一次的驗證缺漏數 */
+  issueCount?: number;
+  /** 這一次的驗證缺漏清單。逐次保留，後面的嘗試不會蓋掉前面的。 */
+  issues?: readonly ValidationIssue[];
+}
+
+/** 一支 pass 的完整量測。寫進 writing_analyses.stage1_telemetry。 */
+export interface PassTelemetry {
+  label: string;
+  /** 實際嘗試次數。這是量測值，不是常數。 */
+  attempts: number;
+  totalLatencyMs: number;
+  finalOutcome: AttemptOutcome;
+  /** 有沒有發生過驗證重試 */
+  retried: boolean;
+  /** 是不是被我們自己的期限砍掉的 */
+  hitDeadline: boolean;
+  detail?: string;
+  records: AttemptRecord[];
 }
 
 /** 呼叫一次 DeepSeek，回傳解析後的 JSON。不做任何 taxonomy 相關的判斷。 */
@@ -56,7 +129,7 @@ export async function callDeepSeek(
     maxTokens?: number;
     temperature?: number;
     /** 有給就把這一次的量測寫進去。 */
-    telemetry?: CallTelemetry;
+    telemetry?: AttemptRecord;
   },
 ): Promise<unknown> {
   const startedAt = Date.now();
@@ -85,7 +158,7 @@ export async function callDeepSeek(
   if (!res.ok) {
     const retriable = res.status === 429 || res.status >= 500;
     // 刻意不把 provider 的原始回應帶進錯誤訊息——它可能含有請求內容的回音。
-    throw new DeepSeekError(`DeepSeek 回應 ${res.status}`, retriable);
+    throw new DeepSeekError(`DeepSeek 回應 ${res.status}`, retriable, "HTTP_ERROR");
   }
 
   const payload = (await res.json()) as {
@@ -103,14 +176,19 @@ export async function callDeepSeek(
     options.telemetry.totalTokens = payload.usage.total_tokens;
   }
   const content = payload.choices?.[0]?.message?.content;
+  if (options.telemetry) {
+    // 輸出量的代理指標。驗證有沒有過都記得下來，這樣「弱作文的 error 這一支
+    // 到底吐了多少東西」在失敗的列上也查得到。
+    options.telemetry.responseChars = content?.length ?? 0;
+  }
   if (!content) {
-    throw new DeepSeekError("DeepSeek 沒有回傳內容", true);
+    throw new DeepSeekError("DeepSeek 沒有回傳內容", true, "NO_CONTENT");
   }
 
   try {
     return JSON.parse(content);
   } catch {
-    throw new DeepSeekError("DeepSeek 回傳的不是合法 JSON", true);
+    throw new DeepSeekError("DeepSeek 回傳的不是合法 JSON", true, "MALFORMED_JSON");
   }
 }
 
@@ -118,7 +196,7 @@ export interface PassSuccess<T> {
   ok: true;
   value: T;
   attempts: number;
-  telemetry: CallTelemetry[];
+  telemetry: PassTelemetry;
 }
 
 export type PassOutcome<T> = PassSuccess<T> | PassFailure;
@@ -129,11 +207,16 @@ export function isPassOk<T>(outcome: PassOutcome<T>): outcome is PassSuccess<T> 
 
 export interface PassFailure {
   ok: false;
-  /** 完整覆蓋／格式驗證的缺漏清單。空陣列代表是呼叫本身失敗，不是驗證失敗。 */
+  /**
+   * 最後一次驗證失敗的缺漏清單。空陣列代表【最後一次】是呼叫本身失敗。
+   *
+   * ⚠️ 這一欄會被後面的嘗試蓋掉，所以它不是完整的歷史。要看「attempt 1 為什麼
+   * 需要重試」請讀 telemetry.records[n].issues——那裡逐次保留，不會互相覆蓋。
+   */
   issues: readonly ValidationIssue[];
   detail: string;
   attempts: number;
-  telemetry: CallTelemetry[];
+  telemetry: PassTelemetry;
 }
 
 /** 把驗證失敗的缺漏清單整理成餵回模型的修正指示。 */
@@ -176,16 +259,45 @@ export async function runValidatedPass<T>(args: {
   signal?: AbortSignal;
   maxTokens?: number;
   maxAttempts?: number;
+  /**
+   * 從【尚未驗證】的原始回傳裡取出體積指標，例如 error 這一支的 findings 筆數。
+   * 驗證失敗時 value 拿不到，但體積問題往往正是失敗的原因，所以要在這裡取。
+   * 丟出例外不影響流程——量測不能反過來害死執行。
+   */
+  describe?: (raw: unknown) => Record<string, number>;
 }): Promise<PassOutcome<T>> {
   const maxAttempts = args.maxAttempts ?? 2;
   const messages = [...args.messages];
-  const telemetry: CallTelemetry[] = [];
+  const passStartedAt = Date.now();
+  const records: AttemptRecord[] = [];
   let lastIssues: readonly ValidationIssue[] = [];
   let lastDetail = "";
 
+  /** 把這一支的紀錄收成 PassTelemetry。finalOutcome 一律取最後一次的結局。 */
+  const summarise = (): PassTelemetry => {
+    const last = records[records.length - 1];
+    return {
+      label: args.label,
+      attempts: records.length,
+      totalLatencyMs: Date.now() - passStartedAt,
+      finalOutcome: last?.outcome ?? "NETWORK_ERROR",
+      retried: records.length > 1,
+      hitDeadline: records.some((r) => r.outcome === "DEADLINE"),
+      detail: lastDetail || undefined,
+      records,
+    };
+  };
+
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const call: CallTelemetry = { latencyMs: 0, httpStatus: 0, isRepair: attempt > 1 };
-    telemetry.push(call);
+    const record: AttemptRecord = {
+      attempt,
+      isRepair: attempt > 1,
+      offsetMs: Date.now() - passStartedAt,
+      latencyMs: 0,
+      outcome: "NETWORK_ERROR",
+    };
+    records.push(record);
+
     let raw: unknown;
     try {
       raw = await callDeepSeek(messages, {
@@ -193,24 +305,63 @@ export async function runValidatedPass<T>(args: {
         model: args.model,
         signal: args.signal,
         maxTokens: args.maxTokens,
-        telemetry: call,
+        telemetry: record,
       });
     } catch (err) {
+      // callDeepSeek 只在收到回應之後才填 latencyMs；中斷與連線失敗都到不了那裡，
+      // 所以這裡補上——「被砍之前跑了多久」正是我們最需要的數字。
+      if (record.latencyMs === 0) {
+        record.latencyMs = Date.now() - passStartedAt - record.offsetMs;
+      }
+
+      // 是不是【我們自己】那條期限？用具名類別判斷，不比對字串。
+      // Node 對任何 AbortSignal 中斷都給同一句 "This operation was aborted"，
+      // 光看訊息分不出是我們的碼表、平台、還是別的東西。
+      if (err instanceof DeadlineExceeded) {
+        record.outcome = "DEADLINE";
+        record.detail =
+          `${err.message}，中斷於第 ${attempt} 次嘗試` +
+          (attempt > 1 ? "（這一次是驗證重試）" : "");
+        lastDetail = `${args.label}：${record.detail}`;
+        lastIssues = [];
+        return { ok: false, issues: [], detail: lastDetail, attempts: attempt, telemetry: summarise() };
+      }
+
+      const aborted = (err as { name?: string }).name === "AbortError";
       const message = err instanceof Error ? err.message : "DeepSeek 呼叫失敗";
-      const retriable = err instanceof DeepSeekError ? err.retriable : false;
+      record.outcome = err instanceof DeepSeekError ? err.outcome : aborted ? "ABORTED" : "NETWORK_ERROR";
+      record.detail = message;
       lastDetail = `${args.label}：${message}`;
       lastIssues = [];
-      // 逾時（AbortError）不重試——時間本來就是我們沒有的東西。
-      if (!retriable || (err as { name?: string }).name === "AbortError") {
-        return { ok: false, issues: [], detail: lastDetail, attempts: attempt, telemetry };
+
+      const retriable = err instanceof DeepSeekError ? err.retriable : false;
+      // 中斷不重試——時間本來就是我們沒有的東西。
+      if (!retriable || aborted) {
+        return { ok: false, issues: [], detail: lastDetail, attempts: attempt, telemetry: summarise() };
       }
       continue;
     }
 
+    if (args.describe) {
+      try {
+        record.shape = args.describe(raw);
+      } catch {
+        // 量測失敗就不記，不能讓它影響這一支的結果。
+      }
+    }
+
     const result = args.validate(raw);
     if (isValidationOk(result)) {
-      return { ok: true, value: result.value, attempts: attempt, telemetry };
+      record.outcome = "OK";
+      return { ok: true, value: result.value, attempts: attempt, telemetry: summarise() };
     }
+
+    // 這一次的缺漏清單記在【這一次】的紀錄上。後面的嘗試寫自己的那一筆，
+    // 不會回頭覆蓋——「attempt 1 為什麼要重試」因此永遠查得到。
+    record.outcome = "VALIDATION_FAILED";
+    record.issueCount = result.issues.length;
+    record.issues = result.issues;
+    record.detail = `結構化輸出驗證失敗（${result.issues.length} 項）`;
 
     lastIssues = result.issues;
     lastDetail = `${args.label}：結構化輸出驗證失敗（${result.issues.length} 項）`;
@@ -223,5 +374,5 @@ export async function runValidatedPass<T>(args: {
     }
   }
 
-  return { ok: false, issues: lastIssues, detail: lastDetail, attempts: maxAttempts, telemetry };
+  return { ok: false, issues: lastIssues, detail: lastDetail, attempts: records.length, telemetry: summarise() };
 }

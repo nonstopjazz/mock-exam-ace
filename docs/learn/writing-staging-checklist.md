@@ -23,13 +23,16 @@ has_analyses    = false   has_is_admin = true
 | 1R | `supabase/migrations/create_writing_analyses.rollback.sql` | 回滾 | — |
 | 1b | `supabase/migrations/add_writing_analyses_analyzed_at.sql` | 純新增一欄（改 schema） | 步驟 1bR |
 | 1bR | `supabase/migrations/add_writing_analyses_analyzed_at.rollback.sql` | 回滾 | — |
+| 1c | `supabase/migrations/add_writing_analyses_telemetry.sql` | 純新增兩欄（改 schema） | 步驟 1cR |
+| 1cR | `supabase/migrations/add_writing_analyses_telemetry.rollback.sql` | 回滾 | — |
 | 2 | `tests/sql/staging_writing_analyses_verify.sql` | 唯讀 | 不適用 |
 | 3 | Preview 上 `/admin/writing-debug` 跑真實分析 | 寫入 staging 資料 | 步驟 3R |
 | 3R | 本文件的「步驟 3R」刪除語句 | 清掉測試分析列 | — |
 | 4 | `tests/sql/staging_writing_audit_report.sql` | 唯讀 | 不適用 |
+| 診斷 | `tests/sql/staging_writing_failure_probe.sql` | 唯讀（分析失敗時跑） | 不適用 |
 
-**只有步驟 1 與 1b 會改變 schema。** 步驟 3 只會在 `writing_analyses`
-新增資料列，不動 schema。已經套過步驟 1 的環境只需要補跑步驟 1b。
+**只有步驟 1、1b、1c 會改變 schema。** 步驟 3 只會在 `writing_analyses`
+新增資料列，不動 schema。已經套過步驟 1 的環境只需要補跑步驟 1b 與 1c。
 
 ---
 
@@ -104,13 +107,33 @@ SELECT
 
 ---
 
+## 步驟 1c — 套用 `add_writing_analyses_telemetry.sql`
+
+新增 `stage1_telemetry` 與 `synthesis_telemetry` 兩個 JSONB 欄位。
+
+在這之前，失敗的分析在資料庫裡查不出三件事：`attempt_count` 是寫死的常數 1，
+所以看不出有沒有發生驗證重試；被中斷的那次呼叫延遲記為 0，所以看不出它跑了多久；
+失敗時只留最後一次的 `validation_issues`，所以 attempt 1 驗證失敗、attempt 2 撞上
+期限時，重試的原因會被空陣列蓋掉。這兩欄逐支、逐次保留完整紀錄。
+
+整份貼進 SQL Editor 執行。只有一段 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`
+與兩行 `COMMENT`：不改既有欄位、不改資料、不改 RLS／grants／trigger，冪等。
+
+**預期結果：** `Success. No rows returned`
+
+### 步驟 1cR — 回滾點
+
+`add_writing_analyses_telemetry.rollback.sql`。只 DROP 那兩個量測欄位。
+
+---
+
 ## 步驟 2 — 唯讀驗證
 
 整份貼進 SQL Editor 執行：`tests/sql/staging_writing_analyses_verify.sql`
 
 **預期：`24/24　全部通過`**
 
-若「欄位數」那一項回報 32 欄，代表步驟 1b 還沒跑。
+「欄位數」那一項期望 35。回報 32／33／34 時，訊息會直接說少了哪一步。
 
 它檢查結構、索引、trigger、RLS、grants、五個函式的
 `SECURITY DEFINER` 與 `search_path`、EXECUTE 授權，
