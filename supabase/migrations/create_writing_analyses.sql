@@ -84,6 +84,8 @@
 -- 四、權限模型
 --
 --   • anon / authenticated 對這張表【沒有任何直接權限】（REVOKE ALL）
+--     —— 必須明確 REVOKE 角色，不能只 REVOKE FROM PUBLIC，因為 Supabase 的
+--        ALTER DEFAULT PRIVILEGES 是「明確授予角色」，PUBLIC 收不掉它
 --   • 學生只能透過 writing_student_analysis() 讀自己那篇的策展結果
 --     （不含 provider / model / error_detail / validation_issues 等內部欄位）
 --   • 老師／管理員透過 writing_admin_* 函式讀取與排入佇列
@@ -324,7 +326,16 @@ CREATE TRIGGER writing_analyses_guard_immutable_trigger
 
 ALTER TABLE writing_analyses ENABLE ROW LEVEL SECURITY;
 
-REVOKE ALL ON writing_analyses FROM anon, authenticated;
+-- ⚠️ 必須明確 REVOKE 這三個角色，不能只 REVOKE FROM PUBLIC。
+--
+-- Supabase 專案設有 ALTER DEFAULT PRIVILEGES，新建立的表會【明確授予】
+-- anon / authenticated / service_role 全部權限。明確授予的權限收不掉於
+-- REVOKE ... FROM PUBLIC——那只收得掉透過 PUBLIC 繼承來的。
+--
+-- service_role 也一併收回再重給：這個專案的程式碼從不刪除分析結果，
+-- 所以它不需要 DELETE / TRUNCATE。TRUNCATE 尤其危險——它繞過 RLS，
+-- 一行就能清空整張表（Mock Exam 那邊已經實測過這件事）。
+REVOKE ALL ON writing_analyses FROM anon, authenticated, service_role;
 GRANT SELECT, INSERT, UPDATE ON writing_analyses TO service_role;
 
 -- RLS 開著但刻意不給 authenticated 任何 permissive policy：
@@ -413,7 +424,7 @@ $$;
 COMMENT ON FUNCTION writing_student_analysis IS
   '學生讀自己作文的最新分析。report_ready 只有在四軸有效且綜合層完成時為 true；未 ready 時綜合層欄位一律 NULL。不回傳 provider / model / error_detail / validation_issues。非本人一律回傳 NULL。';
 
-REVOKE ALL ON FUNCTION writing_student_analysis(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION writing_student_analysis(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION writing_student_analysis(UUID) TO authenticated, service_role;
 
 
@@ -490,7 +501,7 @@ $$;
 COMMENT ON FUNCTION writing_admin_queue IS
   '老師批改佇列：已送出的作文 + 最新一次分析狀態。僅限管理員。';
 
-REVOKE ALL ON FUNCTION writing_admin_queue() FROM PUBLIC;
+REVOKE ALL ON FUNCTION writing_admin_queue() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION writing_admin_queue() TO authenticated, service_role;
 
 
@@ -521,7 +532,7 @@ $$;
 COMMENT ON FUNCTION writing_admin_analysis IS
   '管理員讀單篇作文的歷次分析（含診斷欄位）。僅限管理員。';
 
-REVOKE ALL ON FUNCTION writing_admin_analysis(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION writing_admin_analysis(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION writing_admin_analysis(UUID) TO authenticated, service_role;
 
 
@@ -600,7 +611,7 @@ $$;
 COMMENT ON FUNCTION writing_enqueue_analysis IS
   '建立一筆 QUEUED 分析。僅限管理員——學生不得觸發 AI 分析，這是資料庫層的保證。重複呼叫為冪等。';
 
-REVOKE ALL ON FUNCTION writing_enqueue_analysis(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION writing_enqueue_analysis(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION writing_enqueue_analysis(UUID) TO authenticated, service_role;
 
 
@@ -656,5 +667,5 @@ $$;
 COMMENT ON FUNCTION writing_retry_synthesis IS
   '只重跑綜合層，四軸已驗證的資料原封不動。僅限管理員。';
 
-REVOKE ALL ON FUNCTION writing_retry_synthesis(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION writing_retry_synthesis(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION writing_retry_synthesis(UUID) TO authenticated, service_role;
