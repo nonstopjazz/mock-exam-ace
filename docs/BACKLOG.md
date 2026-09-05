@@ -155,6 +155,15 @@ Evidence / Mastery Model → Competency DB schema. Then Learning Objective spec 
 schema. 🛑 **Vocabulary migration work does not interrupt this line.**
 
 **Writing taxonomy source of truth:** `docs/learn/writing-taxonomy/Writing_Taxonomy_v1.xlsx`
+
+**Writing 分析品質加固（v2，已設計未實作）：**
+`docs/learn/writing-v2-quality-hardening.md` —— Error Finding Critic 與跨軸調和兩層後處理。
+2026-09-05 產品決策：v1 不做，因為要多付 14–26 秒 AI 處理時間，而老師會在給學生看之前
+親自審閱。v1 明確接受偶發的 Error code 誤標、correction 措辭不佳、以及不影響整體有效性的
+跨軸張力。
+
+⚠️ 重新評估的觸發條件：**報告變成未經老師審閱就直接呈現給學生**。
+那三項「可接受的瑕疵」是建立在人工複核之上的，複核一旦消失，前提就不成立。
 — **three separate axes, all DECIDED v1** (frozen 2026-08-30): Competency (5 Categories + **23
 Skills**), Error (**16 Tags**), High-Score Feature (5 Categories + **29 Features**) · 20 tagging
 rules. 🛑 **Only the Competency axis is a competency taxonomy** — an Error Tag is not a Skill and a
