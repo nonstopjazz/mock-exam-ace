@@ -36,10 +36,21 @@ BEGIN
   -- A. 結構
   -- ==========================================================
 
+  -- 表不存在就直接停在這裡並說清楚。
+  -- 後面的檢查會用到 'public.writing_analyses'::regclass，那個轉型在表不存在時
+  -- 會直接丟 42P01，錯誤訊息看起來像腳本壞掉，其實只是 migration 還沒套。
+  IF to_regclass('public.writing_analyses') IS NULL THEN
+    INSERT INTO v_result (section, name, verdict, detail) VALUES
+      ('A 結構', 'writing_analyses 存在', 'FAIL', '不存在'),
+      ('A 結構', '——', 'INFO',
+       '這份是【套用後】的驗證腳本。表還不存在，代表步驟 1 尚未成功執行。'),
+      ('A 結構', '下一步', 'INFO',
+       '請先整份執行 supabase/migrations/create_writing_analyses.sql，成功後再跑這一份。');
+    RETURN;
+  END IF;
+
   INSERT INTO v_result (section, name, verdict, detail)
-  VALUES ('A 結構', 'writing_analyses 存在',
-          CASE WHEN to_regclass('public.writing_analyses') IS NOT NULL THEN 'PASS' ELSE 'FAIL' END,
-          coalesce(to_regclass('public.writing_analyses')::text, '不存在'));
+  VALUES ('A 結構', 'writing_analyses 存在', 'PASS', 'public.writing_analyses');
 
   SELECT count(*) INTO v_int
     FROM information_schema.columns
