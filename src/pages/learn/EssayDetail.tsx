@@ -4,10 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, FileQuestion } from "lucide-react";
+import { AlertCircle, ArrowLeft, FileQuestion, Loader2 } from "lucide-react";
 import { useEssay } from "@/hooks/useEssays";
+import { useWritingReport } from "@/hooks/learn/useWritingReport";
 import { EssayStatusBadge, WritingLoading } from "@/components/learn/writing/writingShared";
 import { formatEssayDate } from "@/components/learn/writing/writingFormat";
+import { WritingReportView } from "@/components/learn/writing/report/WritingReportView";
 
 /**
  * 作文詳情（寫作系統 Phase 1）
@@ -17,6 +19,7 @@ import { formatEssayDate } from "@/components/learn/writing/writingFormat";
 const EssayDetail = () => {
   const { essayId } = useParams<{ essayId: string }>();
   const { essay, text, loading, error, notFound, refetch } = useEssay(essayId);
+  const report = useWritingReport(essayId);
 
   return (
     <Layout>
@@ -95,9 +98,45 @@ const EssayDetail = () => {
               ) : null}
 
               <Separator className="my-8" />
-              <p className="text-center text-xs text-muted-foreground">
-                批改與回饋功能仍在開發中。這篇作文已經保存，之後會出現在批改結果裡。
-              </p>
+
+              {/* ── 批改結果 ────────────────────────────────────
+                  三種狀態要分得清楚，因為它們對學生的意義完全不同：
+                    還沒開始批改 / 批改進行中 / 已完成
+                  「進行中」不會顯示任何半套內容——RPC 在綜合層完成前
+                  就已經把那四欄擋成 NULL 了。 */}
+              {report.loading ? (
+                <WritingLoading label="正在載入批改結果" />
+              ) : report.error ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="flex flex-wrap items-center gap-3">
+                    <span>批改結果載入失敗：{report.error}</span>
+                    <Button variant="outline" size="sm" onClick={() => void report.refetch()}>
+                      重新載入
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              ) : report.notRequested ? (
+                <Card className="p-6">
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p>老師還沒開始批改這篇作文</p>
+                    <p className="text-sm mt-2">批改完成後，詳細分析會出現在這裡</p>
+                  </div>
+                </Card>
+              ) : report.report && !report.report.report_ready ? (
+                <Card className="p-6">
+                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">批改進行中</p>
+                    <p className="text-xs text-muted-foreground">完成後重新整理就看得到</p>
+                    <Button variant="outline" size="sm" onClick={() => void report.refetch()}>
+                      重新整理
+                    </Button>
+                  </div>
+                </Card>
+              ) : report.report ? (
+                <WritingReportView report={report.report} />
+              ) : null}
             </>
           )}
         </div>
