@@ -64,8 +64,8 @@ import {
   type ErrorAnalysis,
   type HighScoreAnalysis,
   type ValidationIssue,
-} from "../src/lib/writing/analysisContract";
-import { WRITING_TAXONOMY_VERSION } from "../src/lib/writing/taxonomy";
+} from "./_lib/analysisContract";
+import { WRITING_TAXONOMY_VERSION } from "./_lib/taxonomy";
 
 export const config = {
   maxDuration: 60,

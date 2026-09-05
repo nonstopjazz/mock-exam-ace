@@ -13,7 +13,7 @@ import {
   ALL_ERROR_CODES,
   COMPETENCY_CATEGORIES,
   HIGH_SCORE_CATEGORIES,
-} from "../src/lib/writing/taxonomy";
+} from "../api/_lib/taxonomy";
 import {
   collectCitableRefs,
   validateCompetencyAnalysis,
@@ -22,7 +22,7 @@ import {
   validateSynthesis,
   type PassValidation,
   type ValidationIssueKind,
-} from "../src/lib/writing/analysisContract";
+} from "../api/_lib/analysisContract";
 
 let passed = 0;
 const failures: string[] = [];

@@ -1,7 +1,7 @@
 /**
  * 四支分析 pass 與綜合層的 prompt
  *
- * 節點清單一律從 src/lib/writing/taxonomy.ts 產生，不手寫。這樣 CSV 改了、
+ * 節點清單一律從 api/_lib/taxonomy.ts 產生，不手寫。這樣 CSV 改了、
  * 重跑產生器之後，prompt 會跟著改，不會出現「程式碼認得 29 個特徵、
  * prompt 只列了 27 個」這種安靜的不一致。
  *
@@ -17,12 +17,12 @@ import {
   HIGH_SCORE_CATEGORIES,
   HIGH_SCORE_SUBSKILLS,
   type HighScoreCategory,
-} from "../../src/lib/writing/taxonomy";
+} from "./taxonomy";
 import type {
   CompetencyAnalysis,
   ErrorAnalysis,
   HighScoreAnalysis,
-} from "../../src/lib/writing/analysisContract";
+} from "./analysisContract";
 import type { DeepSeekMessage } from "./deepseek";
 
 export interface EssayInput {

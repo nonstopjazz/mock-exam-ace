@@ -17,7 +17,7 @@ import {
   COMPETENCY_CATEGORIES,
   ALL_ERROR_CODES,
   HIGH_SCORE_CATEGORIES,
-} from "../src/lib/writing/taxonomy";
+} from "../api/_lib/taxonomy";
 
 const OUT = "/tmp/writing-audit-dryrun";
 rmSync(OUT, { recursive: true, force: true });

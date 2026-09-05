@@ -59,13 +59,13 @@ import {
   type HighScoreAnalysis,
   type SynthesisResult,
   type ValidationIssue,
-} from "../src/lib/writing/analysisContract";
+} from "../api/_lib/analysisContract";
 import {
   COMPETENCY_CATEGORY_BY_CODE,
   COMPETENCY_SKILL_BY_CODE,
   ERROR_TAG_BY_CODE,
   HIGH_SCORE_FEATURE_BY_CODE,
-} from "../src/lib/writing/taxonomy";
+} from "../api/_lib/taxonomy";
 
 /* ──────────────── 設定 ──────────────── */
 

@@ -28,6 +28,13 @@ w("""/**
  * 所以只用純 TypeScript，不 import 任何東西、不使用 `@/` alias
  * （Vercel serverless function 沒有 Vite 的 path alias）。
  *
+ * ⚠️ 為什麼放在 api/_lib/ 而不是 src/lib/：
+ *    Vercel 的 Node builder 打包 serverless function 時，import 到 api/ 目錄
+ *    外面會讓 function 在【載入階段】就崩潰（FUNCTION_INVOCATION_FAILED，
+ *    連第一行程式都沒跑到）。2026-09-05 在 Preview 上實測確認。
+ *    因此共用模組的唯一真實來源放在 api/_lib/，前端透過
+ *    src/lib/writing/ 的 re-export 使用。反過來不行。
+ *
  * TR-19：code 是 stable opaque identifier，禁止用字串解析推導所屬 Category，
  * 一律透過這裡的 relationship 取得。
  */
@@ -150,7 +157,7 @@ export const HIGH_SCORE_CATEGORY_BY_CODE = byCode(HIGH_SCORE_CATEGORIES);
 export const HIGH_SCORE_SUBSKILL_BY_CODE = byCode(HIGH_SCORE_SUBSKILLS);
 """)
 
-with open("src/lib/writing/taxonomy.ts", "w", encoding="utf-8") as fh:
+with open("api/_lib/taxonomy.ts", "w", encoding="utf-8") as fh:
     fh.write("\n".join(out).replace("\n\n\n", "\n\n") + "\n")
 
 print("skills", len(skills), "errors", len(errs), "features", len(feats), "subskills", len(subs), "categories", len(cats))
