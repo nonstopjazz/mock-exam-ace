@@ -39,7 +39,7 @@ w("""/**
  * 一律透過這裡的 relationship 取得。
  */
 
-export const WRITING_TAXONOMY_VERSION = "writing-v1";
+export const WRITING_TAXONOMY_VERSION = "writing-v2";
 """)
 
 # ---- competency ----

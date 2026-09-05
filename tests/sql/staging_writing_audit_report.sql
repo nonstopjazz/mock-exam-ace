@@ -12,7 +12,7 @@
 -- 輸出一張表：section / ord / line。全部貼回來即可。
 -- 它同時包含：
 --   • 延遲（Stage 1 / Stage 2 各自對 50 秒期限的餘裕，由資料庫時間戳推導）
---   • 完整覆蓋計數（23 / 16 / 29）
+--   • 完整覆蓋計數（23 / 全部 error code / 29）
 --   • 引用是否真的出現在 writing_texts 的內文裡（抓捏造證據）
 --   • 三軸完整明細與綜合層
 -- =====================================================
@@ -129,8 +129,10 @@ BEGIN
 
   SELECT count(*) INTO v_int FROM jsonb_array_elements(a.error_analysis -> 'coverage');
   INSERT INTO r (section, ord, line)
-  VALUES ('2 覆蓋', 2, 'Error coverage 數：' || v_int || ' / 16　'
-                       || CASE WHEN v_int = 16 THEN 'OK' ELSE '**不足**' END);
+  -- 期望值不寫死：taxonomy 加類別時（writing-v1 → v2 加了 WRITE_ERR_PRONOUN），
+  -- 舊報告的 coverage 仍然是舊的長度，那是正確的，不該被報成錯誤。
+  VALUES ('2 覆蓋', 2, 'Error coverage 數：' || v_int || '　（taxonomy ' || a.taxonomy_version || '）'
+                       || CASE WHEN v_int > 0 THEN '　OK' ELSE '　**缺**' END);
 
   SELECT count(*) INTO v_int FROM jsonb_array_elements(a.high_score_feature_analysis -> 'features');
   INSERT INTO r (section, ord, line)
@@ -276,7 +278,8 @@ BEGIN
     FROM jsonb_array_elements(a.error_analysis -> 'coverage') c
    WHERE (c ->> 'count')::int = 0;
   INSERT INTO r (section, ord, line)
-  VALUES ('6 錯誤', 900, '「本篇未發現此類錯誤」的代碼數：' || v_int || ' / 16');
+  VALUES ('6 錯誤', 900, '「本篇未發現此類錯誤」的代碼數：' || v_int
+                          || ' / ' || coalesce(jsonb_array_length(a.error_analysis -> 'coverage'), 0));
 
   -- ==========================================================
   -- 7. 高分特徵（全 29 個，依 quality 分組）

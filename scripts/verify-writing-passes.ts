@@ -9,7 +9,7 @@
  *   2. 重試指示明確說出「省略 ≠ UNMEASURED」
  *   3. 重試後仍缺漏 → 該支 pass 失敗，issues 完整帶回
  *   4. 可重試與不可重試的錯誤分得開（429/5xx vs 401；逾時不重試）
- *   5. 四支 prompt 真的列出了全部 23 / 16 / 17 / 12 個節點
+ *   5. 四支 prompt 真的列出了全部 canonical 節點（數量由 taxonomy 推導，不寫死）
  *   6. 綜合層拿到的摘要與可引用集合是一致的
  */
 
@@ -530,7 +530,7 @@ console.log("\nprompt 的節點覆蓋");
 {
   const prompt = errorMessages(essay)[0].content;
   const missing = ALL_ERROR_CODES.filter((c) => !prompt.includes(c));
-  check("Pass 2 prompt 列出全部 16 個 error code", missing.length === 0, missing.join(","));
+  check(`Pass 2 prompt 列出全部 ${ALL_ERROR_CODES.length} 個 error code`, missing.length === 0, missing.join(","));
   check(
     "Pass 2 prompt 明講 count = 0 不代表精熟",
     prompt.includes("不代表學生已經精熟"),
@@ -549,12 +549,13 @@ console.log("\nprompt 的節點覆蓋");
   // 掃描指令與輸出格式是兩件事：拿掉 coverage 輸出【不等於】可以拿掉
   // 「16 類都要看過」。2026-09-05 把兩者一起改掉，findings 從 44 掉到 22。
   check(
-    "Pass 2 prompt 要求逐一檢查全部 16 類",
-    prompt.includes("必須逐一檢查") && prompt.includes("一類都不能跳"),
+    "Pass 2 prompt 要求逐一檢查全部類別",
+    prompt.includes(`必須逐一檢查的 ${ALL_ERROR_CODES.length} 個 error code`)
+      && prompt.includes("一類都不能跳"),
   );
   check(
-    "Pass 2 prompt 說明檢查涵蓋 16 類但輸出只放找到的",
-    prompt.includes("檢查要涵蓋 16 類，輸出只放真的找到的東西"),
+    "Pass 2 prompt 說明檢查涵蓋全部類別但輸出只放找到的",
+    prompt.includes(`檢查要涵蓋 ${ALL_ERROR_CODES.length} 類，輸出只放真的找到的東西`),
   );
   check(
     "Pass 2 prompt 禁止為了湊數硬找",
@@ -572,6 +573,10 @@ console.log("\nprompt 的節點覆蓋");
   check(
     "Pass 2 prompt 有 comma splice 的專門掃描",
     prompt.includes("comma splice") && prompt.includes("WRITE_ERR_RUN_ON"),
+  );
+  check(
+    "Pass 2 prompt 把代名詞導向 PRONOUN 而不是 fallback",
+    prompt.includes("那是 WRITE_ERR_PRONOUN"),
   );
   check(
     "Pass 2 prompt 把 GRAMMAR_OTHER 的誤放清單列出來",

@@ -1,5 +1,5 @@
 -- =====================================================
--- 任一次分析的 16 類錯誤分布（唯讀）
+-- 任一次分析的錯誤類別分布（唯讀）
 --
 -- staging_writing_failure_probe.sql 只看【最近一次】分析。要跟前幾次比較
 -- 掃描廣度時，得能指定版本——這一份就是為此存在。
@@ -49,7 +49,8 @@ BEGIN
     ('coverage 來源', coalesce(a.error_analysis ->> 'coverage_source', '（舊列，模型提供）')),
     ('有 finding 的類別數',
       (SELECT count(*)::text FROM jsonb_array_elements(a.error_analysis -> 'coverage') x
-        WHERE (x.value ->> 'count')::int > 0) || ' / 16　← 掃描廣度的主要指標');
+        WHERE (x.value ->> 'count')::int > 0) || ' / '
+      || jsonb_array_length(a.error_analysis -> 'coverage') || '　← 掃描廣度的主要指標');
 
   FOR v_rec IN
     SELECT value ->> 'code' AS code, (value ->> 'count')::int AS n

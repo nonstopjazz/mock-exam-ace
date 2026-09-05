@@ -19,7 +19,7 @@
  * 一律透過這裡的 relationship 取得。
  */
 
-export const WRITING_TAXONOMY_VERSION = "writing-v1";
+export const WRITING_TAXONOMY_VERSION = "writing-v2";
 
 /* ──────────────── Axis 1：Writing Competency（W1–W5 / 23 skills） ──────────────── */
 
@@ -276,6 +276,12 @@ export const ERROR_TAGS: readonly ErrorTag[] = [
     code: "WRITE_ERR_TRANSITIVITY",
     zh: "Vt 與 Vi 用錯",
     en: "Transitivity Error",
+    primarySkills: ["WRITE_GRAMMAR_BASIC"],
+  },
+  {
+    code: "WRITE_ERR_PRONOUN",
+    zh: "代名詞錯誤",
+    en: "Pronoun Error",
     primarySkills: ["WRITE_GRAMMAR_BASIC"],
   },
   {

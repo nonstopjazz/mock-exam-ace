@@ -282,7 +282,7 @@ BEGIN
   IF a.error_analysis IS NOT NULL THEN
     SELECT jsonb_array_length(a.error_analysis -> 'coverage') INTO v_n;
     INSERT INTO d (item, value) VALUES (
-      '錯誤 code 覆蓋數（應為 16）',
+      '錯誤 code 覆蓋數',
       coalesce(v_n::text, '?') || '　來源：'
         || coalesce(a.error_analysis ->> 'coverage_source', '（舊列，模型提供）')
     );
@@ -291,7 +291,7 @@ BEGIN
 
     -- 16 類的分布。要判斷「掃描是否涵蓋全部 16 類」就得看這個：
     -- 總筆數相同、但集中在少數幾類，跟平均散布在多類，是兩回事。
-    INSERT INTO d (item, value) VALUES ('—— 16 類錯誤分布 ——', '');
+    INSERT INTO d (item, value) VALUES ('—— 錯誤類別分布 ——', '');
     FOR v_rec IN
       SELECT value ->> 'code' AS code, (value ->> 'count')::int AS n
         FROM jsonb_array_elements(a.error_analysis -> 'coverage')
@@ -306,7 +306,8 @@ BEGIN
     INSERT INTO d (item, value) VALUES (
       '有 finding 的類別數',
       (SELECT count(*)::text FROM jsonb_array_elements(a.error_analysis -> 'coverage') x
-        WHERE (x.value ->> 'count')::int > 0) || ' / 16'
+        WHERE (x.value ->> 'count')::int > 0) || ' / '
+        || jsonb_array_length(a.error_analysis -> 'coverage')
     );
   END IF;
   IF a.high_score_feature_analysis IS NOT NULL THEN

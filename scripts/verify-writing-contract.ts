@@ -150,7 +150,7 @@ console.log("\nPass 1 — Writing Competency（全 23 個 skill）");
 
 /* ──────────────── Pass 2：Writing Error ──────────────── */
 
-console.log("\nPass 2 — Writing Error（全 16 個 code）");
+console.log(`\nPass 2 — Writing Error（全 ${ALL_ERROR_CODES.length} 個 code）`);
 
 const fullError = () => ({
   findings: [
@@ -172,9 +172,9 @@ const fullError = () => ({
   const r = validateErrorAnalysis(fullError(), ESSAY);
   check("完整覆蓋通過驗證", r.ok);
   if (r.ok) {
-    check("coverage 列出全部 16 個 code", r.value.coverage.length === 16, `${r.value.coverage.length}`);
+    check("coverage 列出全部 canonical code", r.value.coverage.length === ALL_ERROR_CODES.length, `${r.value.coverage.length} / ${ALL_ERROR_CODES.length}`);
     const zero = r.value.coverage.filter((c) => c.count === 0).length;
-    check("count = 0 的 code 明確保留（本篇未發現此類錯誤）", zero === 15, `${zero}`);
+    check("count = 0 的 code 明確保留（本篇未發現此類錯誤）", zero === ALL_ERROR_CODES.length - 1, `${zero}`);
   }
 }
 
@@ -185,7 +185,7 @@ const fullError = () => ({
   const r = validateErrorAnalysis(payload, ESSAY);
   check("模型不送 coverage 也能通過（伺服器自己算）", isValidationOk(r));
   if (isValidationOk(r)) {
-    check("伺服器推導出 16 筆 coverage", r.value.coverage.length === ALL_ERROR_CODES.length,
+    check("伺服器推導出完整 coverage", r.value.coverage.length === ALL_ERROR_CODES.length,
       `${r.value.coverage.length}`);
     check("coverage 標記為伺服器推導", r.value.coverage_source === "SERVER_DERIVED");
     const sv = r.value.coverage.find((c) => c.code === "WRITE_ERR_SV_AGREEMENT");

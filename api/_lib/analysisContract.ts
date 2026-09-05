@@ -655,35 +655,45 @@ export function validateErrorAnalysis(
   const findings: ErrorFinding[] = [];
   raw.findings.forEach((item, i) => {
     const path = `error.findings[${i}]`;
-    if (
-      !isRecord(item) ||
-      !isNonEmptyString(item.code) ||
-      !isNonEmptyString(item.quote) ||
-      !isNonEmptyString(item.reason) ||
-      !isNonEmptyString(item.correction) ||
-      !isNonEmptyString(item.primary_skill)
-    ) {
+    if (!isRecord(item)) {
+      issues.push({ kind: "MALFORMED", path, detail: "這一筆不是物件" });
+      return;
+    }
+    // 缺哪一欄要講出來。2026-09-05 v7 那次 31 筆全部 MALFORMED，訊息只說
+    // 「必須有 code / quote / reason / correction / primary_skill」，於是既無法
+    // 知道模型漏了哪一欄，重試指示也只能把同一句話重複 31 次。
+    // 點名缺漏的欄位，診斷與修正指示同時變得有用。
+    const required = ["code", "quote", "reason", "correction", "primary_skill"] as const;
+    const missing = required.filter((k) => !isNonEmptyString(item[k]));
+    if (missing.length > 0) {
       issues.push({
         kind: "MALFORMED",
         path,
-        detail: "每一筆錯誤都必須有 code / quote / reason / correction / primary_skill",
+        detail: `缺少必填欄位：${missing.join("、")}（每一筆都必須有 ${required.join(" / ")}）`,
       });
       return;
     }
-    if (!ALL_ERROR_CODES.includes(item.code)) {
-      issues.push({ kind: "UNKNOWN_NODE", path, detail: `未知的 error code：${item.code}` });
+    // 上面的 filter 不會讓 TS 收窄 item 的欄位型別（repo 的 strictNullChecks 是關的，
+    // 收窄本來就不可靠），所以這裡明確取出來。
+    const code = item.code as string;
+    const quote = item.quote as string;
+    const reason = item.reason as string;
+    const correction = item.correction as string;
+    const primarySkill = item.primary_skill as string;
+    if (!ALL_ERROR_CODES.includes(code)) {
+      issues.push({ kind: "UNKNOWN_NODE", path, detail: `未知的 error code：${code}` });
       return;
     }
-    if (!quoteAppearsInEssay(essay, item.quote)) {
+    if (!quoteAppearsInEssay(essay, quote)) {
       issues.push({
         kind: "QUOTE_NOT_IN_ESSAY",
         path,
-        detail: `這段引用在作文原文裡找不到：「${item.quote}」`,
+        detail: `這段引用在作文原文裡找不到：「${quote}」`,
       });
       return;
     }
     // correction 必須是改寫後的句子，不是給學生的指令。
-    if (item.correction.trim() === item.quote.trim()) {
+    if (correction.trim() === quote.trim()) {
       issues.push({
         kind: "MALFORMED",
         path,
@@ -693,7 +703,7 @@ export function validateErrorAnalysis(
     }
     // fallback 要付舉證責任。寫不出「為什麼其他 15 類都不適用」，
     // 通常就代表有更具體的類別可以用——那正是我們要擋的情況。
-    if (item.code === ERROR_FALLBACK_CODE && !isNonEmptyString(item.fallback_rationale)) {
+    if (code === ERROR_FALLBACK_CODE && !isNonEmptyString(item.fallback_rationale)) {
       issues.push({
         kind: "MISSING_JUSTIFICATION",
         path,
@@ -705,12 +715,12 @@ export function validateErrorAnalysis(
     }
 
     findings.push({
-      code: item.code,
-      quote: item.quote,
-      reason: item.reason,
-      correction: item.correction,
-      primary_skill: item.primary_skill,
-      ...(item.code === ERROR_FALLBACK_CODE
+      code,
+      quote,
+      reason,
+      correction,
+      primary_skill: primarySkill,
+      ...(code === ERROR_FALLBACK_CODE
         ? { fallback_rationale: item.fallback_rationale as string }
         : {}),
     });

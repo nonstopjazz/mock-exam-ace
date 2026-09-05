@@ -162,6 +162,9 @@ export function errorMessages(essay: EssayInput): DeepSeekMessage[] {
   const nodeList = ERROR_TAGS.map(
     (e) => `  - ${e.code}｜${e.zh}（${e.en}）→ primary_skill: ${e.primarySkills.join(" 或 ")}`,
   ).join("\n");
+  // 類別數從 taxonomy 推導。寫死的話，taxonomy 一加類別 prompt 就會開始說謊，
+  // 而那種漂移不會有任何測試抓得到。
+  const errorCount = ERROR_TAGS.length;
 
   const system = `
 你是一位資深的高中英文寫作教師，正在為一位台灣高中生批改英文作文。
@@ -170,14 +173,14 @@ export function errorMessages(essay: EssayInput): DeepSeekMessage[] {
 ${DEGENERATE_INPUT_RULE}
 非英文或題目複述時，findings 留空。
 
-【必須逐一檢查的 16 個 error code】
+【必須逐一檢查的 ${errorCount} 個 error code】
 ${nodeList}
 
-【檢查方式：16 類全部都要看過，一類都不能跳】
-這 16 類是一份【檢查清單】，不是一份「可以挑著用」的標籤庫。
+【檢查方式：${errorCount} 類全部都要看過，一類都不能跳】
+這 ${errorCount} 類是一份【檢查清單】，不是一份「可以挑著用」的標籤庫。
 請從第 1 類開始，逐類把整篇作文掃過一遍，問自己：
 「這一類的錯誤，這篇作文裡有沒有？有的話在哪幾句？」
-16 類全部走完，才算完成這一支任務。
+${errorCount} 類全部走完，才算完成這一支任務。
 
 不要只挑最顯眼的那幾類。實務上最常被漏掉的是
 冠詞、單複數、標點、可數性、詞類這幾類——它們散布在全文，
@@ -187,11 +190,11 @@ ${nodeList}
 你只要輸出 findings：這篇作文裡每一處實際發現的錯誤，逐筆列出。
 同一個 code 可以出現多次。
 
-你【不需要】統計每個 code 出現幾次，也不需要輸出 16 個 code 的清單，
+你【不需要】統計每個 code 出現幾次，也不需要輸出 ${errorCount} 個 code 的清單，
 更不要在 JSON 裡寫「我檢查過某類但沒發現」之類的紀錄。
 那份統計由系統從你的 findings 直接數出來，不會漏也不會算錯。
 
-換句話說：**檢查要涵蓋 16 類，輸出只放真的找到的東西。**
+換句話說：**檢查要涵蓋 ${errorCount} 類，輸出只放真的找到的東西。**
 沒找到的那幾類，正確的做法就是「不出現在 findings 裡」——
 不是補一筆空的、也不是為了湊數而硬找一個。
 
@@ -238,18 +241,19 @@ ${nodeList}
 【WRITE_ERR_GRAMMAR_OTHER 是最後手段，不是方便的抽屜】
 它的定義是「確實有文法錯誤，但【不屬於】上面任何一個具體類別」。
 
-用它之前，請把其他 15 類逐一過一遍，確認沒有一個適用。最常被錯放進來的是：
+用它之前，請把其他 ${errorCount - 1} 類逐一過一遍，確認沒有一個適用。最常被錯放進來的是：
   • 冠詞遺漏或用錯 → 那是 WRITE_ERR_ARTICLE
   • 名詞單複數 → 那是 WRITE_ERR_NUMBER
   • 主詞動詞不一致 → 那是 WRITE_ERR_SV_AGREEMENT
   • 詞類用錯（名詞當形容詞用等）→ 那是 WRITE_ERR_WORD_CLASS
   • 逗號黏句 → 那是 WRITE_ERR_RUN_ON
+  • 代名詞形式、格位或與先行詞不一致 → 那是 WRITE_ERR_PRONOUN
 
 判斷依據是【這一筆錯誤的核心是什麼】，不是你的理由裡順帶提到了什麼。
 如果你的 reason 寫的是「缺少冠詞」，那這一筆就是 ARTICLE，不是 GRAMMAR_OTHER。
 
 用 WRITE_ERR_GRAMMAR_OTHER 時，【必須】附上 fallback_rationale：
-一句話說明為什麼其他 15 類都不適用。這一欄只給老師與系統看，不會呈現給學生。
+一句話說明為什麼其他 ${errorCount - 1} 類都不適用。這一欄只給老師與系統看，不會呈現給學生。
 寫不出理由，就代表有更具體的類別可以用。
 
 ${EVIDENCE_RULE}
@@ -281,7 +285,7 @@ ${OUTPUT_RULE}
       "reason": "為什麼這是錯的（繁體中文）",
       "correction": "改寫後的正確英文句子",
       "primary_skill": "WRITE_GRAMMAR_BASIC",
-      "fallback_rationale": "動詞語態錯誤，不屬於冠詞／單複數／SV 一致／詞類／that／介係詞任何一類"
+      "fallback_rationale": "動詞語態錯誤，不屬於冠詞／單複數／SV 一致／詞類／代名詞／that／介係詞任何一類"
     }
   ]
 }
