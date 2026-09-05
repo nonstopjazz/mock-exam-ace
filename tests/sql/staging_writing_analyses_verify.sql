@@ -1,8 +1,11 @@
 -- =====================================================
 -- writing_analyses —— staging 套用後的驗證（唯讀）
 --
--- 在 Supabase SQL Editor 執行。純 SQL，沒有 \ir / \echo / \set，
--- 結果累積到暫存表後一次 SELECT。
+-- 在 Supabase SQL Editor 執行。純 SQL，沒有 \ir / \echo / \set。
+--
+-- ⚠️ SQL Editor 只顯示【最後一個 SELECT】的結果，所以這份腳本從頭到尾
+--    只有一個 SELECT：所有檢查、總結、對照數字全部先累積進暫存表。
+--    多寫一個 SELECT 就會把前面的結果蓋掉。
 --
 -- ⚠️ 這份腳本【不寫入任何資料】。它只讀系統目錄，加上兩次刻意觸發的
 --    授權例外（那兩個函式在把關失敗前就 RAISE，碰不到任何資料表）。
@@ -277,21 +280,24 @@ BEGIN
 END;
 $outer$;
 
-SELECT seq, section, name, verdict, left(coalesce(detail, ''), 80) AS detail
-  FROM v_result
- ORDER BY seq;
-
-SELECT
-  count(*) FILTER (WHERE verdict = 'PASS') || '/' ||
-  count(*) FILTER (WHERE verdict <> 'INFO') AS "通過",
-  CASE WHEN count(*) FILTER (WHERE verdict = 'FAIL') = 0
-       THEN '全部通過' ELSE '有失敗項目' END AS "結論"
+-- 總結與對照數字一律併進同一張暫存表，因為 SQL Editor 只顯示最後一個 SELECT。
+INSERT INTO v_result (section, name, verdict, detail)
+SELECT 'Z 總結', '通過項目',
+       CASE WHEN count(*) FILTER (WHERE verdict = 'FAIL') = 0 THEN 'PASS' ELSE 'FAIL' END,
+       count(*) FILTER (WHERE verdict = 'PASS') || ' / '
+       || count(*) FILTER (WHERE verdict <> 'INFO')
+       || CASE WHEN count(*) FILTER (WHERE verdict = 'FAIL') = 0
+               THEN '　全部通過' ELSE '　有失敗項目' END
   FROM v_result;
 
--- 既有寫作物件的政策數量，僅供對照（不判定通過與否）
-SELECT tablename, count(*) AS 政策數
+-- 既有寫作物件的政策數量，僅供對照（預期 analyses 1、submissions 5、texts 3）
+INSERT INTO v_result (section, name, verdict, detail)
+SELECT 'Z 總結', '政策數 ' || tablename, 'INFO', count(*)::text
   FROM pg_policies
  WHERE schemaname = 'public'
    AND tablename IN ('writing_submissions', 'writing_texts', 'writing_analyses')
- GROUP BY tablename
- ORDER BY tablename;
+ GROUP BY tablename;
+
+SELECT seq, section, name, verdict, left(coalesce(detail, ''), 80) AS detail
+  FROM v_result
+ ORDER BY seq;
