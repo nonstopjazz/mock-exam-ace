@@ -138,7 +138,18 @@ const WritingDebug = () => {
           },
           body: JSON.stringify({ essayId, mode }),
         });
-        const body = await res.json().catch(() => ({ error: "回應不是 JSON" }));
+        // 函式在 Vercel 上崩潰時回的是 HTML 錯誤頁，不是 JSON。
+        // 把原文留下來——那裡面才有 FUNCTION_INVOCATION_FAILED 與追蹤 ID。
+        const raw = await res.text();
+        let body: unknown;
+        try {
+          body = JSON.parse(raw);
+        } catch {
+          body = {
+            error: "回應不是 JSON（函式可能在啟動或執行時崩潰）",
+            rawResponse: raw.slice(0, 4000),
+          };
+        }
         setResult({ essayId, mode, httpStatus: res.status, elapsedMs: Date.now() - startedAt, body });
         if (res.ok) {
           toast.success(`完成，耗時 ${((Date.now() - startedAt) / 1000).toFixed(1)} 秒`);
