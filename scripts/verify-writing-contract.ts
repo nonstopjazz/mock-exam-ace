@@ -16,6 +16,7 @@ import {
 } from "../api/_lib/taxonomy";
 import {
   collectCitableRefs,
+  isValidationOk,
   validateCompetencyAnalysis,
   validateErrorAnalysis,
   validateHighScoreAnalysis,
@@ -23,6 +24,13 @@ import {
   type PassValidation,
   type ValidationIssueKind,
 } from "../api/_lib/analysisContract";
+
+/** 所有 fixture 引用的原文。驗證器現在會逐字比對，引用必須真的出自這裡。 */
+const ESSAY = [
+  "Many student thinks the policy are unfair.",
+  "However, uniforms save time every morning.",
+  "Not only did he run, but he also swam.",
+].join(" ");
 
 let passed = 0;
 const failures: string[] = [];
@@ -63,7 +71,7 @@ const fullCompetency = () => ({
       code: s.code,
       state: "ADEQUATE",
       reason: `${s.zh}：本篇有對應表現`,
-      evidence: [{ quote: "Many students think the policy is unfair.", reason: "示例" }],
+      evidence: [{ quote: "Many student thinks the policy are unfair.", reason: "示例" }],
     })),
   })),
 });
@@ -71,7 +79,7 @@ const fullCompetency = () => ({
 console.log("\nPass 1 — Writing Competency（全 23 個 skill）");
 
 {
-  const r = validateCompetencyAnalysis(fullCompetency());
+  const r = validateCompetencyAnalysis(fullCompetency(), ESSAY);
   check("完整覆蓋通過驗證", r.ok);
   if (r.ok) {
     const codes = r.value.categories.flatMap((c) => c.skills.map((s) => s.code));
@@ -83,7 +91,7 @@ console.log("\nPass 1 — Writing Competency（全 23 個 skill）");
   // 核心案例：模型漏掉一個節點
   const payload = fullCompetency();
   const dropped = payload.categories[1].skills.shift()!;
-  const r = validateCompetencyAnalysis(payload);
+  const r = validateCompetencyAnalysis(payload, ESSAY);
   expectIssue("漏回傳 skill → MISSING_NODE（不得補成 UNMEASURED）", r, "MISSING_NODE", dropped.code);
   check("驗證失敗時不產出任何 value", !r.ok && !("value" in r));
 }
@@ -94,7 +102,7 @@ console.log("\nPass 1 — Writing Competency（全 23 個 skill）");
   payload.categories[0].skills[0].reason = "";
   expectIssue(
     "UNMEASURED 沒寫理由 → MISSING_REASON",
-    validateCompetencyAnalysis(payload),
+    validateCompetencyAnalysis(payload, ESSAY),
     "MISSING_REASON",
   );
 }
@@ -105,7 +113,7 @@ console.log("\nPass 1 — Writing Competency（全 23 個 skill）");
   payload.categories[0].skills[0].reason = "本篇題型沒有要求提出支持性論述";
   expectIssue(
     "UNMEASURED 卻附了證據 → UNEXPECTED_EVIDENCE",
-    validateCompetencyAnalysis(payload),
+    validateCompetencyAnalysis(payload, ESSAY),
     "UNEXPECTED_EVIDENCE",
   );
 }
@@ -115,20 +123,20 @@ console.log("\nPass 1 — Writing Competency（全 23 個 skill）");
   payload.categories[0].skills[0].state = "UNMEASURED";
   payload.categories[0].skills[0].reason = "本篇題型沒有要求提出支持性論述";
   payload.categories[0].skills[0].evidence = [];
-  const r = validateCompetencyAnalysis(payload);
+  const r = validateCompetencyAnalysis(payload, ESSAY);
   check("UNMEASURED + 理由 + 無證據 = 合法的模型判斷", r.ok);
 }
 
 {
   const payload = fullCompetency();
   payload.categories[2].skills[0].code = "WRITE_NOT_A_REAL_SKILL";
-  expectIssue("不在 taxonomy 內的 code → UNKNOWN_NODE", validateCompetencyAnalysis(payload), "UNKNOWN_NODE");
+  expectIssue("不在 taxonomy 內的 code → UNKNOWN_NODE", validateCompetencyAnalysis(payload, ESSAY), "UNKNOWN_NODE");
 }
 
 {
   const payload = fullCompetency();
   payload.categories[0].skills[1].state = "GOOD" as never;
-  expectIssue("非法 state → INVALID_STATE", validateCompetencyAnalysis(payload), "INVALID_STATE");
+  expectIssue("非法 state → INVALID_STATE", validateCompetencyAnalysis(payload, ESSAY), "INVALID_STATE");
 }
 
 /* ──────────────── Pass 2：Writing Error ──────────────── */
@@ -152,7 +160,7 @@ const fullError = () => ({
 });
 
 {
-  const r = validateErrorAnalysis(fullError());
+  const r = validateErrorAnalysis(fullError(), ESSAY);
   check("完整覆蓋通過驗證", r.ok);
   if (r.ok) {
     check("coverage 列出全部 16 個 code", r.value.coverage.length === 16, `${r.value.coverage.length}`);
@@ -166,7 +174,7 @@ const fullError = () => ({
   const dropped = payload.coverage.pop()!;
   expectIssue(
     "coverage 漏一個 code → MISSING_NODE",
-    validateErrorAnalysis(payload),
+    validateErrorAnalysis(payload, ESSAY),
     "MISSING_NODE",
     dropped.code,
   );
@@ -175,13 +183,13 @@ const fullError = () => ({
 {
   const payload = fullError();
   payload.coverage[0] = { ...payload.coverage[0], count: 3 };
-  expectIssue("coverage 與 findings 對不上 → COUNT_MISMATCH", validateErrorAnalysis(payload), "COUNT_MISMATCH");
+  expectIssue("coverage 與 findings 對不上 → COUNT_MISMATCH", validateErrorAnalysis(payload, ESSAY), "COUNT_MISMATCH");
 }
 
 {
   const payload = fullError();
   payload.findings[0] = { ...payload.findings[0], correction: "" };
-  expectIssue("錯誤沒有給修正 → MALFORMED", validateErrorAnalysis(payload), "MALFORMED");
+  expectIssue("錯誤沒有給修正 → MALFORMED", validateErrorAnalysis(payload, ESSAY), "MALFORMED");
 }
 
 /* ──────────────── Pass 3a / 3b：High-Score Feature ──────────────── */
@@ -204,13 +212,13 @@ const fullHighScore = (cats: string[]) => ({
 });
 
 {
-  const r = validateHighScoreAnalysis(fullHighScore(H1_H3), H1_H3);
+  const r = validateHighScoreAnalysis(fullHighScore(H1_H3), H1_H3, ESSAY);
   check("3a 完整覆蓋通過驗證", r.ok);
   if (r.ok) check("3a 共 17 個 feature", r.value.features.length === 17, `${r.value.features.length}`);
 }
 
 {
-  const r = validateHighScoreAnalysis(fullHighScore(H4_H5), H4_H5);
+  const r = validateHighScoreAnalysis(fullHighScore(H4_H5), H4_H5, ESSAY);
   check("3b 完整覆蓋通過驗證", r.ok);
   if (r.ok) check("3b 共 12 個 feature", r.value.features.length === 12, `${r.value.features.length}`);
 }
@@ -220,7 +228,7 @@ const fullHighScore = (cats: string[]) => ({
   const dropped = payload.features.pop()!;
   expectIssue(
     "3a 漏回傳 feature → MISSING_NODE（不得補成 UNMEASURED）",
-    validateHighScoreAnalysis(payload, H1_H3),
+    validateHighScoreAnalysis(payload, H1_H3, ESSAY),
     "MISSING_NODE",
     dropped.code,
   );
@@ -235,7 +243,7 @@ const fullHighScore = (cats: string[]) => ({
     reason: "不屬於這一支 pass",
     instances: [],
   });
-  expectIssue("3a 混入 H4 的 feature → UNKNOWN_NODE", validateHighScoreAnalysis(payload, H1_H3), "UNKNOWN_NODE");
+  expectIssue("3a 混入 H4 的 feature → UNKNOWN_NODE", validateHighScoreAnalysis(payload, H1_H3, ESSAY), "UNKNOWN_NODE");
 }
 
 {
@@ -243,7 +251,7 @@ const fullHighScore = (cats: string[]) => ({
   payload.features[0] = { ...payload.features[0], quality: "EFFECTIVE", instances: [] };
   expectIssue(
     "EFFECTIVE 卻沒引原文 → MISSING_EVIDENCE（TR-04）",
-    validateHighScoreAnalysis(payload, H1_H3),
+    validateHighScoreAnalysis(payload, H1_H3, ESSAY),
     "MISSING_EVIDENCE",
   );
 }
@@ -256,7 +264,7 @@ const fullHighScore = (cats: string[]) => ({
   };
   expectIssue(
     "UNMEASURED 卻引了原文 → UNEXPECTED_EVIDENCE",
-    validateHighScoreAnalysis(payload, H1_H3),
+    validateHighScoreAnalysis(payload, H1_H3, ESSAY),
     "UNEXPECTED_EVIDENCE",
   );
 }
@@ -275,7 +283,7 @@ const fullHighScore = (cats: string[]) => ({
       },
     ],
   };
-  const r = validateHighScoreAnalysis(payload, H1_H3);
+  const r = validateHighScoreAnalysis(payload, H1_H3, ESSAY);
   check("認不得的 sub-skill 被丟棄，pass 仍通過", r.ok);
   if (r.ok) {
     const subs = r.value.features[0].instances[0].subskills ?? [];
@@ -283,15 +291,122 @@ const fullHighScore = (cats: string[]) => ({
   }
 }
 
+/* ──────────────── 引用必須逐字出自原文 ──────────────── */
+
+console.log("\n引用查核 —— 2026-09-05 真實測試抓到的問題");
+
+{
+  const payload = fullCompetency();
+  payload.categories[0].skills[0].evidence = [
+    { quote: "這句話原文裡根本沒有出現過", reason: "捏造" },
+  ];
+  expectIssue(
+    "能力軸引用找不到出處 → QUOTE_NOT_IN_ESSAY",
+    validateCompetencyAnalysis(payload, ESSAY),
+    "QUOTE_NOT_IN_ESSAY",
+  );
+}
+
+{
+  const payload = fullError();
+  payload.findings[0] = { ...payload.findings[0], quote: "a sentence that is not there" };
+  expectIssue(
+    "錯誤引用找不到出處 → QUOTE_NOT_IN_ESSAY",
+    validateErrorAnalysis(payload, ESSAY),
+    "QUOTE_NOT_IN_ESSAY",
+  );
+}
+
+{
+  // correction 必須是改寫，不是原句照抄，更不是指令
+  const payload = fullError();
+  payload.findings[0] = {
+    ...payload.findings[0],
+    correction: payload.findings[0].quote,
+  };
+  expectIssue(
+    "correction 與原句相同 → MALFORMED",
+    validateErrorAnalysis(payload, ESSAY),
+    "MALFORMED",
+  );
+}
+
+{
+  // 真實案例：用 / 把不相鄰的兩段接成一個引用
+  const payload = fullHighScore(H1_H3);
+  payload.features[0] = {
+    ...payload.features[0],
+    quality: "EFFECTIVE",
+    reason: "首尾呼應",
+    instances: [
+      {
+        quote: "Many student thinks the policy are unfair. / However, uniforms save time every morning.",
+        reason: "接起來的假引用",
+      },
+    ],
+  };
+  expectIssue(
+    "用 / 接起兩段 → QUOTE_NOT_IN_ESSAY（應拆成多筆 instance）",
+    validateHighScoreAnalysis(payload, H1_H3, ESSAY),
+    "QUOTE_NOT_IN_ESSAY",
+  );
+}
+
+{
+  // 真實案例：詞彙清單當引用
+  const payload = fullHighScore(H1_H3);
+  payload.features[0] = {
+    ...payload.features[0],
+    quality: "EFFECTIVE",
+    reason: "詞彙多樣",
+    instances: [{ quote: "policy, uniforms, morning, time", reason: "詞彙清單" }],
+  };
+  expectIssue(
+    "詞彙清單當引用 → QUOTE_NOT_IN_ESSAY",
+    validateHighScoreAnalysis(payload, H1_H3, ESSAY),
+    "QUOTE_NOT_IN_ESSAY",
+  );
+}
+
+{
+  // 跨段證據拆成兩筆 instance —— 這是正確做法，必須通過
+  const payload = fullHighScore(H1_H3);
+  payload.features[0] = {
+    ...payload.features[0],
+    quality: "EFFECTIVE",
+    reason: "首尾呼應",
+    instances: [
+      { quote: "Many student thinks the policy are unfair.", reason: "開頭" },
+      { quote: "However, uniforms save time every morning.", reason: "結尾" },
+    ],
+  };
+  check(
+    "跨段證據拆成兩筆 instance → 通過",
+    isValidationOk(validateHighScoreAnalysis(payload, H1_H3, ESSAY)),
+  );
+}
+
+{
+  // 空白與大小寫的差異不該誤殺真實引用
+  const payload = fullCompetency();
+  payload.categories[0].skills[0].evidence = [
+    { quote: "many   student\n thinks the POLICY are unfair.", reason: "空白與大小寫不同" },
+  ];
+  check(
+    "空白與大小寫差異不誤殺真實引用",
+    isValidationOk(validateCompetencyAnalysis(payload, ESSAY)),
+  );
+}
+
 /* ──────────────── 綜合層 ──────────────── */
 
 console.log("\n綜合層 — 摘要可以短，分析必須完整；且不得自行發明 finding");
 
 // 用一組真的通過驗證的 Stage 1 結果來算可引用集合
-const stage1Competency = validateCompetencyAnalysis(fullCompetency());
-const stage1Error = validateErrorAnalysis(fullError());
-const stage1A = validateHighScoreAnalysis(fullHighScore(H1_H3), H1_H3);
-const stage1B = validateHighScoreAnalysis(fullHighScore(H4_H5), H4_H5);
+const stage1Competency = validateCompetencyAnalysis(fullCompetency(), ESSAY);
+const stage1Error = validateErrorAnalysis(fullError(), ESSAY);
+const stage1A = validateHighScoreAnalysis(fullHighScore(H1_H3), H1_H3, ESSAY);
+const stage1B = validateHighScoreAnalysis(fullHighScore(H4_H5), H4_H5, ESSAY);
 
 if (!stage1Competency.ok || !stage1Error.ok || !stage1A.ok || !stage1B.ok) {
   throw new Error("Stage 1 fixture 應該要通過驗證");

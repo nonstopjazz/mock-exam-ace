@@ -9,7 +9,9 @@
  *
  * 假回應刻意安排成：
  *   • Competency 第一次少回一個節點 → 走缺漏重試路徑
- *   • High-Score H1–H3 有一段引用是原文裡沒有的 → 觸發捏造偵測
+ *   • 所有引用都從【當篇作文】真的抓一句出來——因為驗證層現在會逐字比對，
+ *     引用找不到出處會直接讓那一支 pass 失敗（2026-09-05 真實測試後加的）。
+ *     捏造引用本身的擋下行為由 verify-writing-contract 覆蓋。
  */
 
 import { rmSync, existsSync, readdirSync, readFileSync } from "node:fs";
@@ -27,6 +29,24 @@ process.env.DEEPSEEK_API_KEY = "dryrun-not-a-real-key";
 const featuresOf = (cats: string[]) =>
   HIGH_SCORE_CATEGORIES.filter((c) => cats.includes(c.code)).flatMap((c) => c.features);
 
+/** 從送出的 prompt 裡把作文內文挖出來，取第一句當引用。 */
+function firstSentenceOf(body: string): string {
+  try {
+    const parsed = JSON.parse(body) as { messages?: { role: string; content: string }[] };
+    // 第一則 user 訊息就是 essayBlock()；重試回合的追加訊息排在後面。
+    const userMsg = parsed.messages?.find((m) => m.role === "user")?.content ?? "";
+    const marker = "內文：\n";
+    const idx = userMsg.indexOf(marker);
+    const text = idx >= 0 ? userMsg.slice(idx + marker.length) : userMsg;
+    const sentence = text.split(/(?<=[.!?。])\s/)[0] ?? text;
+    return sentence.trim().slice(0, 120);
+  } catch {
+    return "";
+  }
+}
+
+let currentQuote = "";
+
 const competency = (drop?: string) => ({
   categories: COMPETENCY_CATEGORIES.map((c) => ({
     code: c.code,
@@ -37,7 +57,7 @@ const competency = (drop?: string) => ({
         code: s.code,
         state: "ADEQUATE",
         reason: `${s.zh}有對應表現`,
-        evidence: [{ quote: "There are two reasons for this.", reason: "示例" }],
+        evidence: [{ quote: currentQuote, reason: "示例" }],
       })),
   })),
 });
@@ -46,9 +66,9 @@ const errors = () => ({
   findings: [
     {
       code: "WRITE_ERR_SV_AGREEMENT",
-      quote: "they does not understand",
-      reason: "主詞 they 是複數。",
-      correction: "they do not understand",
+      quote: currentQuote,
+      reason: "示例錯誤。",
+      correction: currentQuote + " (fixed)",
       primary_skill: "WRITE_GRAMMAR_BASIC",
     },
   ],
@@ -58,7 +78,7 @@ const errors = () => ({
   })),
 });
 
-const highScore = (cats: string[], fabricate = false) => ({
+const highScore = (cats: string[]) => ({
   features: featuresOf(cats).map((f, i) =>
     i === 0
       ? {
@@ -67,7 +87,7 @@ const highScore = (cats: string[], fabricate = false) => ({
           reason: "用得自然",
           instances: [
             {
-              quote: fabricate ? "這句話原文裡根本沒有出現過" : "There are two reasons for this.",
+              quote: currentQuote,
               reason: "示例",
             },
           ],
@@ -87,6 +107,7 @@ const synthesis = (firstFeature: string) => ({
 const seen = new Map<string, number>();
 function respondTo(body: string): unknown {
   const isRepair = body.includes("沒有通過結構驗證");
+  if (!isRepair) currentQuote = firstSentenceOf(body) || currentQuote;
   const kind = body.includes("【本次必須全部覆蓋的 23 個 skill】")
     ? "competency"
     : body.includes("【必須全部覆蓋的 16 個 error code】")
@@ -105,7 +126,7 @@ function respondTo(body: string): unknown {
     case "error":
       return errors();
     case "hsA":
-      return highScore(["H1", "H2", "H3"], true);
+      return highScore(["H1", "H2", "H3"]);
     case "hsB":
       return highScore(["H4", "H5"]);
     default:
@@ -147,9 +168,12 @@ if (existsSync(OUT)) {
   check("報告有延遲與重試表", one.includes("## 2. 延遲與重試") && one.includes("| Pass 1 Competency |"));
   check("報告記錄了缺漏重試", one.includes("| Pass 1 Competency | 通過 | ") && one.includes("| 2 | 是 |"));
   check("報告有自動查核區塊", one.includes("## 3. 自動查核"));
-  // 假回應把 essay A 的句子套用到三篇上，所以 B、C 會整片被判為找不到出處——
-// 這正好證明偵測是逐篇比對的，不是形式檢查。
-check("捏造引用被抓出來", one.includes("找不到出處的引用（疑似捏造）"));
+  // 引用現在由驗證層逐字比對，捏造的引用根本進不到報告裡
+  // （擋下行為由 verify-writing-contract 覆蓋）。這裡確認快樂路徑是乾淨的。
+  check(
+    "三篇的引用都通過查核（stub 從當篇原文取句）",
+    md.every((m) => m.includes("| 引用逐字存在於作文中 | 全部通過 |")),
+  );
   check("報告有綜合層", one.includes("## 4. 綜合層（學生會看到的第一屏）"));
   check("報告有三軸明細", one.includes("## 5. 寫作能力") && one.includes("## 6. 錯誤") && one.includes("## 7. 高分特徵"));
   check("報告有人工判讀對照表", one.includes("## 8. 人工判讀對照表"));

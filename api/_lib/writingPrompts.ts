@@ -45,9 +45,22 @@ UNMEASURED 也不代表學生弱。這篇作文沒有機會展現的能力，不
 `.trim();
 
 const EVIDENCE_RULE = `
-【引用規則】
-引用學生原文時必須逐字照抄，不可以改寫、修正拼字或補標點。
-引用的目的是讓學生認得出「這是我寫的那一句」。
+【引用規則 —— 這一項會被系統自動檢查，不符合會被退回重做】
+每一段引用都必須是【原文中一段連續、逐字照抄】的文字。
+不可以改寫、不可以修正拼字、不可以補標點、不可以調整大小寫。
+
+以下三種寫法一律不合格：
+  ✗ 用 ... 或 / 把不相鄰的兩段接成一個引用
+  ✗ 把散落各處的詞彙列成清單，例如「convenience store, its glow, the store」
+  ✗ 自己歸納出一句原文裡沒有的話
+
+如果證據橫跨文章不同位置（例如首尾呼應、段落推進、詞彙銜接），
+請拆成【多筆 instance】，每一筆各自放一段連續原文。instances 本來就是陣列。
+
+如果某個判斷的證據是「一組散布全文的詞彙」，請改為引用
+【包含其中一個詞的完整句子】，不要列詞彙清單。
+
+引用的目的是讓學生在自己的文章裡指得出那一句。找不到的引用等於沒有證據。
 `.trim();
 
 const OUTPUT_RULE = `
@@ -56,6 +69,20 @@ const OUTPUT_RULE = `
 所有給學生看的文字（reason / summary / correction 的說明）一律使用繁體中文，
 引用的英文原文與修改後的英文句子保持英文。
 語氣直接對學生說話，具體、不客套、不使用評分術語。
+`.trim();
+
+const DEGENERATE_INPUT_RULE = `
+【先判斷這是不是一次真正的寫作嘗試】
+如果提交的內容有下列任一情況——
+  • 不是用英文寫的
+  • 只是把題目或提示語複述一遍
+  • 短到不構成一次寫作嘗試（例如只有一句話）
+——那麼除了「任務回應與完成度」「聚焦與相關性」之外，其餘節點一律 UNMEASURED，
+理由寫明「本篇沒有提供可評的英文寫作內容」。
+
+特別注意：【題目與提示文字不是學生寫的】。
+不可以因為題目本身標點正確、文法正確，就給學生正面評價。
+被評的永遠只有學生自己寫的內文。
 `.trim();
 
 function essayBlock(essay: EssayInput): string {
@@ -82,6 +109,8 @@ export function competencyMessages(essay: EssayInput): DeepSeekMessage[] {
 你是一位資深的高中英文寫作教師，正在為一位台灣高中生批改英文作文。
 這一支任務只負責【寫作能力（Writing Competency）】這一個軸線。
 不要分析錯誤標籤，也不要分析高分特徵——那是另外三支任務的事。
+
+${DEGENERATE_INPUT_RULE}
 
 ${COMPLETENESS_RULE}
 
@@ -138,6 +167,9 @@ export function errorMessages(essay: EssayInput): DeepSeekMessage[] {
 你是一位資深的高中英文寫作教師，正在為一位台灣高中生批改英文作文。
 這一支任務只負責【錯誤標籤（Error Tag）】這一個軸線。
 
+${DEGENERATE_INPUT_RULE}
+非英文或題目複述時，16 個 code 全部 count = 0，findings 留空。
+
 【必須全部覆蓋的 16 個 error code】
 ${nodeList}
 
@@ -158,7 +190,15 @@ coverage 裡每個 code 的 count 必須等於 findings 裡該 code 的筆數，
   • Chinglish 必須有可辨識的中文直譯或不自然搭配證據；只是「不像母語者」不足以標記。
 
 ${EVIDENCE_RULE}
-每一筆 finding 都必須給 correction——改寫後的正確英文句子。錯誤沒有修正對學生沒有用。
+
+每一筆 finding 都必須給 correction——【改寫後的正確英文句子】。
+correction 是那一段原文修好之後的樣子，不是給學生的指示。
+  ✓ 「Many student thinks…」→「Many students think…」
+  ✗ 「Many student thinks…」→「Please write your essay in English.」
+
+也不可以把錯誤代碼拿來傳達與錯誤無關的訊息。
+如果整篇不是英文，那不是拼寫錯誤——16 個 code 全部 count = 0，
+該講的話留給能力軸的理由欄位。
 
 ${OUTPUT_RULE}
 
@@ -222,6 +262,8 @@ export function highScoreMessages(
 ${categories.map((c) => `${c.code} ${c.zh}`).join("、")}。
 不要輸出其他 category 的特徵，那是另一支任務負責的。
 
+${DEGENERATE_INPUT_RULE}
+
 ${COMPLETENESS_RULE}
 
 【本次必須全部覆蓋的 ${total} 個 feature】
@@ -238,6 +280,31 @@ ${nodeList}
 必須正確、自然、而且在這個語境裡真的有功能，才算 EFFECTIVE。
 硬塞、誤用、或造成可讀性下降，要判 MISUSED 或 PARTIALLY_EFFECTIVE。
 只有 EFFECTIVE 才是明確的正面證據。
+
+【EFFECTIVE 的門檻很高，請不要慷慨】
+判 EFFECTIVE 之前先問自己一句：把這個特徵從文章裡拿掉，文章會明顯變差嗎？
+  • 會明顯變差，而且用得自然       → EFFECTIVE
+  • 有用到、沒有錯，但可有可無     → PARTIALLY_EFFECTIVE
+  • 形式出現但用錯或反而扣分       → MISUSED
+  • 形式根本沒出現                 → UNMEASURED
+
+一般水準的正確使用是 PARTIALLY_EFFECTIVE，不是 EFFECTIVE。
+一篇作文能同時「有效」展現的特徵通常只有幾個。如果你發現自己把這一批
+特徵大多判成 EFFECTIVE，那幾乎一定是標準放太寬，請重新逐一檢視。
+
+【形式前提：沒有那個形式就是 UNMEASURED】
+有些特徵有明確的形式要件，不能靠語氣或語意去推論：
+  • 修辭問句 → 文章裡必須真的有問句（問號）。陳述句不算，即使它在提出疑問。
+  • 倒裝     → 必須真的有主詞與助動詞倒置（例如 Not only do these stores…）。
+  • 比喻     → 必須真的有 like / as 的明喻或可辨識的隱喻。
+形式不存在，就是 UNMEASURED，不可以因為「意思上有那個效果」而給分。
+
+【同一句話可以同時成立多個特徵】
+判給了 A 不代表 B 就不成立。每一個特徵都要獨立判斷一次。
+例如「Not only do these stores reshape our habits, but they also reshape our streets.」
+同時是【倒裝】（主詞助動詞倒置）與【排比】（not only…but also 的對稱），
+兩個都要各自成立、各自引用這一句。
+不要因為已經把某句話用在某個特徵上，就跳過其他特徵。
 
 【UNMEASURED 不等於弱】
 一篇 100 字的短文沒有用到延伸比喻，是題型使然，不可以據此判低。

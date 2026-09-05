@@ -242,7 +242,8 @@ export type ValidationIssueKind =
   | "COUNT_MISMATCH"
   | "TOO_MANY"
   | "MISSING_CITATION"
-  | "UNCITABLE_REF";
+  | "UNCITABLE_REF"
+  | "QUOTE_NOT_IN_ESSAY";
 
 export interface ValidationIssue {
   readonly kind: ValidationIssueKind;
@@ -269,6 +270,22 @@ export type PassValidation<T> = ValidationOk<T> | ValidationFail;
  */
 export function isValidationOk<T>(result: PassValidation<T>): result is ValidationOk<T> {
   return result.ok === true;
+}
+
+/**
+ * 引用是否真的逐字出現在學生作文裡。
+ *
+ * 2026-09-05 的真實測試顯示：模型會把 quote 欄位當成「證據摘要」用——
+ * 把不相鄰的段落用 ... 或 / 接起來，或是塞一串詞彙清單。那些字串在原文裡
+ * 根本找不到，報告一旦上線，學生會點到一段自己文章裡沒有的「原句」。
+ *
+ * 所以這件事改成驗證層強制，不只是在 prompt 裡請求。
+ * 比對前先把空白正規化並轉小寫，避免因為換行或大小寫就誤殺真實引用。
+ */
+export function quoteAppearsInEssay(essay: string, quote: string): boolean {
+  if (essay.includes(quote)) return true;
+  const norm = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
+  return norm(essay).includes(norm(quote));
 }
 
 const isNonEmptyString = (v: unknown): v is string =>
@@ -320,6 +337,7 @@ function validateEvidence(
   raw: unknown,
   path: string,
   issues: ValidationIssue[],
+  essay: string,
 ): EvidenceSpan[] {
   if (!Array.isArray(raw)) {
     issues.push({ kind: "MALFORMED", path, detail: "evidence 必須是陣列" });
@@ -335,6 +353,14 @@ function validateEvidence(
       });
       return;
     }
+    if (!quoteAppearsInEssay(essay, item.quote)) {
+      issues.push({
+        kind: "QUOTE_NOT_IN_ESSAY",
+        path: `${path}[${i}]`,
+        detail: `這段引用在作文原文裡找不到：「${item.quote}」`,
+      });
+      return;
+    }
     out.push({ quote: item.quote, reason: item.reason });
   });
   return out;
@@ -342,7 +368,10 @@ function validateEvidence(
 
 /* ---------- Pass 1 ---------- */
 
-export function validateCompetencyAnalysis(raw: unknown): PassValidation<CompetencyAnalysis> {
+export function validateCompetencyAnalysis(
+  raw: unknown,
+  essay: string,
+): PassValidation<CompetencyAnalysis> {
   const issues: ValidationIssue[] = [];
 
   if (!isRecord(raw) || !Array.isArray(raw.categories)) {
@@ -412,7 +441,7 @@ export function validateCompetencyAnalysis(raw: unknown): PassValidation<Compete
         continue;
       }
 
-      const evidence = validateEvidence(item.evidence ?? [], `${path}.evidence`, issues);
+      const evidence = validateEvidence(item.evidence ?? [], `${path}.evidence`, issues, essay);
       if (state === "UNMEASURED" && evidence.length > 0) {
         issues.push({
           kind: "UNEXPECTED_EVIDENCE",
@@ -441,7 +470,10 @@ export function validateCompetencyAnalysis(raw: unknown): PassValidation<Compete
 
 /* ---------- Pass 2 ---------- */
 
-export function validateErrorAnalysis(raw: unknown): PassValidation<ErrorAnalysis> {
+export function validateErrorAnalysis(
+  raw: unknown,
+  essay: string,
+): PassValidation<ErrorAnalysis> {
   const issues: ValidationIssue[] = [];
 
   if (!isRecord(raw) || !Array.isArray(raw.findings) || !Array.isArray(raw.coverage)) {
@@ -473,6 +505,23 @@ export function validateErrorAnalysis(raw: unknown): PassValidation<ErrorAnalysi
     }
     if (!ALL_ERROR_CODES.includes(item.code)) {
       issues.push({ kind: "UNKNOWN_NODE", path, detail: `未知的 error code：${item.code}` });
+      return;
+    }
+    if (!quoteAppearsInEssay(essay, item.quote)) {
+      issues.push({
+        kind: "QUOTE_NOT_IN_ESSAY",
+        path,
+        detail: `這段引用在作文原文裡找不到：「${item.quote}」`,
+      });
+      return;
+    }
+    // correction 必須是改寫後的句子，不是給學生的指令。
+    if (item.correction.trim() === item.quote.trim()) {
+      issues.push({
+        kind: "MALFORMED",
+        path,
+        detail: "correction 與原句相同，沒有提供任何修正",
+      });
       return;
     }
     findings.push({
@@ -537,6 +586,7 @@ export function validateErrorAnalysis(raw: unknown): PassValidation<ErrorAnalysi
 export function validateHighScoreAnalysis(
   raw: unknown,
   expectedCategoryCodes: readonly string[],
+  essay: string,
 ): PassValidation<HighScoreAnalysis> {
   const issues: ValidationIssue[] = [];
   const expected = HIGH_SCORE_CATEGORIES.filter((c) =>
@@ -605,6 +655,16 @@ export function validateHighScoreAnalysis(
             (s): s is string => typeof s === "string" && HIGH_SCORE_SUBSKILL_BY_CODE.has(s),
           )
         : undefined;
+      if (!quoteAppearsInEssay(essay, inst.quote)) {
+        issues.push({
+          kind: "QUOTE_NOT_IN_ESSAY",
+          path: ipath,
+          detail:
+            `這段引用在作文原文裡找不到：「${inst.quote}」` +
+            "（一個 instance 只能放一段連續原文，跨段證據請拆成多筆）",
+        });
+        return;
+      }
       instances.push({
         quote: inst.quote,
         reason: inst.reason,

@@ -182,7 +182,7 @@ console.log("\n完整覆蓋失敗時的重試行為");
   const result = await runValidatedPass({
     label: "Writing Competency",
     messages: competencyMessages(essay),
-    validate: validateCompetencyAnalysis,
+    validate: (raw) => validateCompetencyAnalysis(raw, essay.content),
     apiKey: "test-key-not-a-real-secret",
   });
   restoreFetch();
@@ -209,7 +209,7 @@ console.log("\n完整覆蓋失敗時的重試行為");
   const result = await runValidatedPass({
     label: "Writing Competency",
     messages: competencyMessages(essay),
-    validate: validateCompetencyAnalysis,
+    validate: (raw) => validateCompetencyAnalysis(raw, essay.content),
     apiKey: "test-key-not-a-real-secret",
   });
   restoreFetch();
@@ -232,7 +232,7 @@ console.log("\n呼叫層的錯誤分類");
   const result = await runValidatedPass({
     label: "Writing Error",
     messages: errorMessages(essay),
-    validate: validateErrorAnalysis,
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
     apiKey: "test-key-not-a-real-secret",
   });
   restoreFetch();
@@ -244,7 +244,7 @@ console.log("\n呼叫層的錯誤分類");
   const result = await runValidatedPass({
     label: "Writing Error",
     messages: errorMessages(essay),
-    validate: validateErrorAnalysis,
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
     apiKey: "test-key-not-a-real-secret",
   });
   restoreFetch();
@@ -256,7 +256,7 @@ console.log("\n呼叫層的錯誤分類");
   const result = await runValidatedPass({
     label: "Writing Error",
     messages: errorMessages(essay),
-    validate: validateErrorAnalysis,
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
     apiKey: "test-key-not-a-real-secret",
   });
   restoreFetch();
@@ -268,7 +268,7 @@ console.log("\n呼叫層的錯誤分類");
   const result = await runValidatedPass({
     label: "Writing Error",
     messages: errorMessages(essay),
-    validate: validateErrorAnalysis,
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
     apiKey: "test-key-not-a-real-secret",
   });
   restoreFetch();
@@ -284,6 +284,8 @@ console.log("\nprompt 的節點覆蓋");
   const missing = ALL_COMPETENCY_SKILL_CODES.filter((c) => !prompt.includes(c));
   check("Pass 1 prompt 列出全部 23 個 skill", missing.length === 0, missing.join(","));
   check("Pass 1 prompt 沒有混入 error code", !prompt.includes("WRITE_ERR_"));
+  check("Pass 1 prompt 有退化輸入規則", prompt.includes("題目與提示文字不是學生寫的"));
+  check("引用規則禁止用 ... 或 / 接起兩段", prompt.includes("把不相鄰的兩段接成一個引用"));
 }
 
 {
@@ -294,6 +296,11 @@ console.log("\nprompt 的節點覆蓋");
     "Pass 2 prompt 明講 count = 0 不代表精熟",
     prompt.includes("不代表學生已經精熟"),
   );
+  check(
+    "Pass 2 prompt 禁止用錯誤代碼傳達 meta 訊息",
+    prompt.includes("不可以把錯誤代碼拿來傳達與錯誤無關的訊息"),
+  );
+  check("Pass 2 prompt 有退化輸入規則", prompt.includes("16 個 code 全部 count = 0"));
 }
 
 {
@@ -311,6 +318,15 @@ console.log("\nprompt 的節點覆蓋");
     a.includes("偵測到形式不等於高分"),
   );
   check("Pass 3a prompt 帶入每個 feature 的 boundary rule", a.includes("有效與否的界線"));
+  // ↓ 以下五項對應 2026-09-05 真實測試抓到的問題（prompt v2）
+  check("Pass 3a prompt 提高 EFFECTIVE 門檻", a.includes("拿掉，文章會明顯變差嗎"));
+  check("Pass 3a prompt 警告不要大多判 EFFECTIVE", a.includes("標準放太寬"));
+  check(
+    "Pass 3a prompt 要求形式前提（問句要有問號、倒裝要真的倒置）",
+    a.includes("必須真的有問句") && a.includes("主詞與助動詞倒置"),
+  );
+  check("Pass 3a prompt 寫入 TR-08（同句可多特徵）", a.includes("同一句話可以同時成立多個特徵"));
+  check("Pass 3a prompt 有退化輸入規則", a.includes("題目與提示文字不是學生寫的"));
 }
 
 /* ──────────────── 4. 綜合層的輸入 ──────────────── */
@@ -318,13 +334,18 @@ console.log("\nprompt 的節點覆蓋");
 console.log("\n綜合層的輸入一致性");
 
 {
-  const c = validateCompetencyAnalysis(fullCompetency());
-  const e = validateErrorAnalysis(fullError());
+  const c = validateCompetencyAnalysis(fullCompetency(), essay.content);
+  const e = validateErrorAnalysis(fullError(), essay.content);
   const a = validateHighScoreAnalysis(
     fullHighScore(HIGH_SCORE_PASS_A, "WRITE_HSF_REDUCED"),
     HIGH_SCORE_PASS_A,
+    essay.content,
   );
-  const b = validateHighScoreAnalysis(fullHighScore(HIGH_SCORE_PASS_B), HIGH_SCORE_PASS_B);
+  const b = validateHighScoreAnalysis(
+    fullHighScore(HIGH_SCORE_PASS_B),
+    HIGH_SCORE_PASS_B,
+    essay.content,
+  );
 
   if (!isValidationOk(c) || !isValidationOk(e) || !isValidationOk(a) || !isValidationOk(b)) {
     throw new Error("Stage 1 fixture 應該要通過驗證");

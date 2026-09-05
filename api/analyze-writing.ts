@@ -201,25 +201,25 @@ async function runFullAnalysis(ctx: RunContext) {
       ...shared,
       label: "Writing Competency",
       messages: competencyMessages(essay),
-      validate: validateCompetencyAnalysis,
+      validate: (raw) => validateCompetencyAnalysis(raw, essay.content),
     }),
     runValidatedPass({
       ...shared,
       label: "Writing Error",
       messages: errorMessages(essay),
-      validate: validateErrorAnalysis,
+      validate: (raw) => validateErrorAnalysis(raw, essay.content),
     }),
     runValidatedPass({
       ...shared,
       label: "High-Score Feature H1–H3",
       messages: highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_A)),
-      validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_A),
+      validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_A, essay.content),
     }),
     runValidatedPass({
       ...shared,
       label: "High-Score Feature H4–H5",
       messages: highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_B)),
-      validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_B),
+      validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_B, essay.content),
     }),
   ]);
 

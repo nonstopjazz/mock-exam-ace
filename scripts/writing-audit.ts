@@ -331,19 +331,19 @@ async function auditOne(path: string): Promise<RunSummary> {
   const stage1Start = Date.now();
 
   const [c, e, ha, hb] = await Promise.all([
-    runValidatedPass({ ...shared, label: "Competency", messages: competencyMessages(essay), validate: validateCompetencyAnalysis }),
-    runValidatedPass({ ...shared, label: "Error", messages: errorMessages(essay), validate: validateErrorAnalysis }),
+    runValidatedPass({ ...shared, label: "Competency", messages: competencyMessages(essay), validate: (raw) => validateCompetencyAnalysis(raw, essay.content) }),
+    runValidatedPass({ ...shared, label: "Error", messages: errorMessages(essay), validate: (raw) => validateErrorAnalysis(raw, essay.content) }),
     runValidatedPass({
       ...shared,
       label: "High-Score H1–H3",
       messages: highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_A)),
-      validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_A),
+      validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_A, essay.content),
     }),
     runValidatedPass({
       ...shared,
       label: "High-Score H4–H5",
       messages: highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_B)),
-      validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_B),
+      validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_B, essay.content),
     }),
   ]);
   const stage1Ms = Date.now() - stage1Start;
