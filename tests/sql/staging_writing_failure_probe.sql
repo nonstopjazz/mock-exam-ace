@@ -237,13 +237,40 @@ BEGIN
     END LOOP;
   END IF;
 
+  -- 綜合層也要逐次攤開，理由跟 Stage 1 一樣：綜合層【在同一次請求裡】仍然
+  -- 允許一次修正重試（maxAttempts 預設 2），所以「嘗試 2 次但最後成功」時，
+  -- 第 1 次為什麼失敗只存在於這裡——synthesis_validation_issues 只在最終失敗時才有值。
   IF jsonb_typeof(j -> 'synthesis_telemetry') = 'object' THEN
     INSERT INTO d (item, value) VALUES (
       'synthesis 量測',
       '嘗試 ' || (j -> 'synthesis_telemetry' ->> 'attempts') || ' 次　'
         || '總長 ' || round(((j -> 'synthesis_telemetry' ->> 'totalLatencyMs')::numeric) / 1000, 1) || ' 秒　'
         || '結局 ' || (j -> 'synthesis_telemetry' ->> 'finalOutcome')
+        || CASE WHEN (j -> 'synthesis_telemetry' ->> 'attempts')::int > 1
+                THEN '　← 同一次請求內重試過' ELSE '' END
     );
+    FOR v_rec2 IN
+      SELECT value AS a FROM jsonb_array_elements(j -> 'synthesis_telemetry' -> 'records')
+    LOOP
+      INSERT INTO d (item, value) VALUES (
+        '  synthesis 第 ' || (v_rec2.a ->> 'attempt') || ' 次',
+        round(((v_rec2.a ->> 'latencyMs')::numeric) / 1000, 1) || ' 秒'
+          || '　' || (v_rec2.a ->> 'outcome')
+          || coalesce('　HTTP ' || (v_rec2.a ->> 'httpStatus'), '')
+          || coalesce('　輸出 ' || (v_rec2.a ->> 'responseChars') || ' 字元', '')
+          || coalesce('　completion ' || (v_rec2.a ->> 'completionTokens') || ' tokens', '')
+          || coalesce('　缺漏 ' || (v_rec2.a ->> 'issueCount') || ' 項', '')
+      );
+      FOR v_rec3 IN
+        SELECT value AS i FROM jsonb_array_elements(coalesce(v_rec2.a -> 'issues', '[]'::jsonb))
+      LOOP
+        INSERT INTO d (item, value) VALUES (
+          '    synthesis 第 ' || (v_rec2.a ->> 'attempt') || ' 次缺漏',
+          '[' || (v_rec3.i ->> 'kind') || '] ' || coalesce(v_rec3.i ->> 'path', '')
+            || '：' || coalesce(v_rec3.i ->> 'detail', '')
+        );
+      END LOOP;
+    END LOOP;
   END IF;
 
   -- ── 覆蓋計數：確認四軸真的是完整的，不是半套 ──────────────
