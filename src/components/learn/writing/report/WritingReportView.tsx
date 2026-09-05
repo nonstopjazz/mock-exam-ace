@@ -10,9 +10,8 @@ import {
 } from "@/lib/writing/taxonomy";
 import { ZERO_ERROR_LABEL } from "@/lib/writing/analysisContract";
 import type { WritingReport } from "@/hooks/learn/useWritingReport";
-import {
-  AiBadge, COMPETENCY_LABEL, EvidenceQuote, HIGH_SCORE_LABEL, OVERALL_LABEL, StatePill,
-} from "./reportShared";
+import { AiBadge, EvidenceQuote, StatePill } from "./reportShared";
+import { COMPETENCY_LABEL, HIGH_SCORE_LABEL, OVERALL_LABEL } from "./reportLabels";
 
 /**
  * 學生看到的作文分析報告。
