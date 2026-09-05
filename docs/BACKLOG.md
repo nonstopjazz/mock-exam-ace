@@ -162,8 +162,10 @@ schema. 🛑 **Vocabulary migration work does not interrupt this line.**
 親自審閱。v1 明確接受偶發的 Error code 誤標、correction 措辭不佳、以及不影響整體有效性的
 跨軸張力。
 
-⚠️ 重新評估的觸發條件：**報告變成未經老師審閱就直接呈現給學生**。
-那三項「可接受的瑕疵」是建立在人工複核之上的，複核一旦消失，前提就不成立。
+v1 沒有系統內的審核關卡：AI 完成後學生立即可見，老師的複核在課堂上口頭進行。
+另有一層選填的老師講評（`writing_teacher_feedback`），但那不是發布關卡。
+
+⚠️ 重新評估的觸發條件：出現**嚴重的學生端故障**，或產品定位改為「AI 報告即最終評語」。
 — **three separate axes, all DECIDED v1** (frozen 2026-08-30): Competency (5 Categories + **23
 Skills**), Error (**16 Tags**), High-Score Feature (5 Categories + **29 Features**) · 20 tagging
 rules. 🛑 **Only the Competency axis is a competency taxonomy** — an Error Tag is not a Skill and a
