@@ -1,6 +1,18 @@
 -- =====================================================
 -- writing_analyses 安全性與資料完整性測試
 --
+-- 🛑 本機專用。不要在 Supabase 專案（staging 或正式）執行。
+--
+--    原因有兩個，都是硬的：
+--      1. 它會 INSERT INTO auth.users(email) 並依賴 id 有 DEFAULT。
+--         真正的 Supabase auth.users.id 沒有 DEFAULT，這裡會直接失敗。
+--      2. 它依賴 _writing_local_harness.sql 把 is_admin() 換成讀 GUC 的替身，
+--         才能在同一個交易裡切換管理員／學生身分。真正的 is_admin() 不吃 GUC。
+--
+--    staging 請改用：
+--      tests/sql/staging_writing_analyses_verify.sql   （唯讀結構與權限驗證）
+--      tests/sql/staging_writing_audit_report.sql      （跑過分析之後的可讀報告）
+--
 -- 本機執行（PostgreSQL 16）：
 --   psql -d wtest -f tests/sql/_writing_local_harness.sql
 --   psql -d wtest -f supabase/migrations/create_writing_submissions.sql
