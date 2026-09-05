@@ -209,6 +209,55 @@ const fullError = () => ({
 }
 
 {
+  // fallback 要付舉證責任：GRAMMAR_OTHER 沒附理由就擋下來。
+  // 純 prompt 要求在 v5→v6 之間完全沒效果，所以這一條必須是驗證，不是請求。
+  const payload = fullError();
+  payload.findings.push({
+    code: "WRITE_ERR_GRAMMAR_OTHER",
+    quote: "Many student thinks the policy are unfair.",
+    reason: "語態錯誤",
+    correction: "Many students think the policy is unfair, and it should change.",
+    primary_skill: "WRITE_GRAMMAR_BASIC",
+  });
+  expectIssue(
+    "GRAMMAR_OTHER 沒附 fallback_rationale → MISSING_JUSTIFICATION",
+    validateErrorAnalysis(payload, ESSAY),
+    "MISSING_JUSTIFICATION",
+  );
+}
+
+{
+  // 附了理由就通過，而且理由要留在資料裡（老師與診斷看得到）。
+  const payload = fullError();
+  payload.findings.push({
+    code: "WRITE_ERR_GRAMMAR_OTHER",
+    quote: "Many student thinks the policy are unfair.",
+    reason: "語態錯誤",
+    correction: "Many students think the policy is unfair, and it should change.",
+    primary_skill: "WRITE_GRAMMAR_BASIC",
+    fallback_rationale: "被動語態的動詞形式錯誤，不屬於冠詞／單複數／SV 一致／詞類任何一類",
+  });
+  const r = validateErrorAnalysis(payload, ESSAY);
+  check("GRAMMAR_OTHER 附了理由就通過", isValidationOk(r));
+  if (isValidationOk(r)) {
+    const fb = r.value.findings.find((f) => f.code === "WRITE_ERR_GRAMMAR_OTHER");
+    check("fallback_rationale 保留在資料裡", Boolean(fb?.fallback_rationale));
+  }
+}
+
+{
+  // 其他 code 不需要這一欄，也不該因為沒有它而失敗。
+  const r = validateErrorAnalysis(fullError(), ESSAY);
+  check("非 fallback 的 code 不需要 fallback_rationale", isValidationOk(r));
+  if (isValidationOk(r)) {
+    check(
+      "非 fallback 的 finding 不會被塞進這一欄",
+      r.value.findings.every((f) => f.fallback_rationale === undefined),
+    );
+  }
+}
+
+{
   // 被驗證擋下來的 finding 不可以算進 count，否則捏造的證據會把數字灌水。
   const payload = fullError();
   payload.findings.push({

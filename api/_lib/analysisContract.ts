@@ -94,6 +94,16 @@ export interface CompetencyAnalysis {
 
 /* ──────────────── Pass 2：Writing Error ──────────────── */
 
+/**
+ * WRITE_ERR_GRAMMAR_OTHER 是 fallback，用它要付舉證責任。
+ *
+ * 2026-09-05 的量測：弱作文 28 筆 findings 裡有 7 筆是 GRAMMAR_OTHER，其中至少
+ * 兩筆的 reason 自己就說出了更具體的類別（「park 前缺少冠詞」＝ARTICLE、
+ * 「sight 應為 sights」＝NUMBER）。純 prompt 要求「能用具體的就用具體的」，
+ * 在 v5→v6 之間完全沒有效果——只有驗證擋得住的規則才會真的生效。
+ */
+export const ERROR_FALLBACK_CODE = "WRITE_ERR_GRAMMAR_OTHER";
+
 export interface ErrorFinding {
   readonly code: string;
   readonly quote: string;
@@ -102,6 +112,13 @@ export interface ErrorFinding {
   readonly correction: string;
   /** 掛回 Axis 1 的 Primary Writing Skill（TR-15：Run-on 仍歸 W4）。 */
   readonly primary_skill: string;
+  /**
+   * 為什麼其他 15 類都不適用。只有 GRAMMAR_OTHER 需要，而且是必填。
+   *
+   * ⚠️ 這是【內部欄位】：給老師與診斷用，不呈現給學生。
+   *    報告 UI 尚未建立；等它建立時，這一欄預設不進入學生視圖。
+   */
+  readonly fallback_rationale?: string;
 }
 
 /** 全 16 個 code 都必須出現，count = 0 也要明講。 */
@@ -674,12 +691,28 @@ export function validateErrorAnalysis(
       });
       return;
     }
+    // fallback 要付舉證責任。寫不出「為什麼其他 15 類都不適用」，
+    // 通常就代表有更具體的類別可以用——那正是我們要擋的情況。
+    if (item.code === ERROR_FALLBACK_CODE && !isNonEmptyString(item.fallback_rationale)) {
+      issues.push({
+        kind: "MISSING_JUSTIFICATION",
+        path,
+        detail:
+          `${ERROR_FALLBACK_CODE} 必須附 fallback_rationale，` +
+          "說明為什麼其他 15 個具體類別都不適用",
+      });
+      return;
+    }
+
     findings.push({
       code: item.code,
       quote: item.quote,
       reason: item.reason,
       correction: item.correction,
       primary_skill: item.primary_skill,
+      ...(item.code === ERROR_FALLBACK_CODE
+        ? { fallback_rationale: item.fallback_rationale as string }
+        : {}),
     });
   });
 

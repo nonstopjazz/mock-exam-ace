@@ -198,10 +198,59 @@ ${nodeList}
 【重要：某個 code 沒有出現在 findings 裡，不代表學生已經精熟】
 它只代表這一篇沒有偵測到這類錯誤。不要在任何文字裡把它寫成「已掌握」。
 
+【開一筆 finding 之前，先過這三關】
+每一筆都要先自問，三題都是「是」才可以寫下來：
+
+  1. 原文那個用法在【這個上下文裡】真的是錯的嗎？
+     不是「可以更好」、不是「我會換個寫法」，是文法或用字真的不成立。
+  2. 我的 correction 本身文法正確、語意也貼合原句想說的意思嗎？
+     把 correction 單獨唸一遍：它自己讀得通嗎？
+  3. 我確定嗎？
+
+【不確定原文是不是錯的，就不要開這一筆。】
+漏標一個錯誤，學生只是少學一件事；標錯一個本來正確的用法，
+學生會把對的改成錯的——後者傷害大得多。
+
+特別當心【樣式複製】：你在某一句判對了一個模式，不代表另一句長得像的地方
+也是同一個錯。每一筆都要獨立看它自己的上下文。
+例如 basis 這個字：「basis heart」是錯的（該用形容詞），
+但「the basis of happiness」是完全正確的英文（基礎），不可以照著改成 basic。
+
 【判斷規則】
-  • WRITE_ERR_GRAMMAR_OTHER 只能當 fallback。能用更具體的 tag 就必須用具體的。
   • Run-on / Fragment 的 primary_skill 仍然是 WRITE_GRAMMAR_BASIC，即使同時牽涉標點。
   • Chinglish 必須有可辨識的中文直譯或不自然搭配證據；只是「不像母語者」不足以標記。
+
+【WRITE_ERR_RUN_ON：獨立子句的邊界，一定要專門掃一遍】
+這一類最常被漏掉，因為句子讀起來「意思懂」就容易放過去。請專門檢查：
+  • 兩個以上【可以各自獨立成句】的子句，只用逗號連起來（comma splice）
+  • 一串子句之間沒有連接詞、也沒有適當標點就接下去
+  • 一個句子裡塞了多個獨立子句，句界失控
+
+判斷方法：把逗號兩邊各自拿出來唸。如果兩邊都有自己的主詞與動詞、
+都能單獨成為一個句子，那就是 comma splice，標 WRITE_ERR_RUN_ON。
+  ✓ 「take Singapore for example, it has nearly 60% of land covered, this is one of the reason」
+    → 三個獨立子句只用逗號串起來，這是 run-on
+  ✗ 「Park, a silence in the busy city, people can enjoy…」中間那段是同位語，不是獨立子句
+    → 這不是 run-on（但可能有別的錯）
+
+句子很長但文法完整，不算 run-on。同一處可以同時標 WRITE_ERR_PUNCTUATION。
+
+【WRITE_ERR_GRAMMAR_OTHER 是最後手段，不是方便的抽屜】
+它的定義是「確實有文法錯誤，但【不屬於】上面任何一個具體類別」。
+
+用它之前，請把其他 15 類逐一過一遍，確認沒有一個適用。最常被錯放進來的是：
+  • 冠詞遺漏或用錯 → 那是 WRITE_ERR_ARTICLE
+  • 名詞單複數 → 那是 WRITE_ERR_NUMBER
+  • 主詞動詞不一致 → 那是 WRITE_ERR_SV_AGREEMENT
+  • 詞類用錯（名詞當形容詞用等）→ 那是 WRITE_ERR_WORD_CLASS
+  • 逗號黏句 → 那是 WRITE_ERR_RUN_ON
+
+判斷依據是【這一筆錯誤的核心是什麼】，不是你的理由裡順帶提到了什麼。
+如果你的 reason 寫的是「缺少冠詞」，那這一筆就是 ARTICLE，不是 GRAMMAR_OTHER。
+
+用 WRITE_ERR_GRAMMAR_OTHER 時，【必須】附上 fallback_rationale：
+一句話說明為什麼其他 15 類都不適用。這一欄只給老師與系統看，不會呈現給學生。
+寫不出理由，就代表有更具體的類別可以用。
 
 ${EVIDENCE_RULE}
 
@@ -225,9 +274,18 @@ ${OUTPUT_RULE}
       "reason": "為什麼這是錯的（繁體中文）",
       "correction": "改寫後的正確英文句子",
       "primary_skill": "WRITE_GRAMMAR_BASIC"
+    },
+    {
+      "code": "WRITE_ERR_GRAMMAR_OTHER",
+      "quote": "學生原文逐字片段",
+      "reason": "為什麼這是錯的（繁體中文）",
+      "correction": "改寫後的正確英文句子",
+      "primary_skill": "WRITE_GRAMMAR_BASIC",
+      "fallback_rationale": "動詞語態錯誤，不屬於冠詞／單複數／SV 一致／詞類／that／介係詞任何一類"
     }
   ]
 }
+fallback_rationale 只有 WRITE_ERR_GRAMMAR_OTHER 需要，其他 code 不要放。
 沒有發現任何錯誤時，findings 就是空陣列。
 `.trim();
 

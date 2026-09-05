@@ -560,6 +560,29 @@ console.log("\nprompt 的節點覆蓋");
     "Pass 2 prompt 禁止為了湊數硬找",
     prompt.includes("不是為了湊數而硬找一個"),
   );
+  // 三道精確度修正，各自釘住
+  check(
+    "Pass 2 prompt 有開 finding 前的自我查核",
+    prompt.includes("先過這三關") && prompt.includes("不確定原文是不是錯的"),
+  );
+  check(
+    "Pass 2 prompt 點名樣式複製型偽陽性（basis 那一類）",
+    prompt.includes("樣式複製") && prompt.includes("the basis of happiness"),
+  );
+  check(
+    "Pass 2 prompt 有 comma splice 的專門掃描",
+    prompt.includes("comma splice") && prompt.includes("WRITE_ERR_RUN_ON"),
+  );
+  check(
+    "Pass 2 prompt 把 GRAMMAR_OTHER 的誤放清單列出來",
+    prompt.includes("最後手段，不是方便的抽屜")
+      && prompt.includes("那是 WRITE_ERR_ARTICLE")
+      && prompt.includes("那是 WRITE_ERR_NUMBER"),
+  );
+  check(
+    "Pass 2 prompt 要求 fallback_rationale 且說明不給學生看",
+    prompt.includes("fallback_rationale") && prompt.includes("不會呈現給學生"),
+  );
   check(
     "Pass 2 prompt 仍然強調『沒出現不等於精熟』",
     prompt.includes("不代表學生已經精熟"),

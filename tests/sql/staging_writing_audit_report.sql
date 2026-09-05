@@ -256,13 +256,17 @@ BEGIN
   v_ord := 0;
   FOR v_rec IN
     SELECT (f ->> 'code') AS code, (f ->> 'quote') AS quote,
-           (f ->> 'correction') AS fix, (f ->> 'reason') AS reason
+           (f ->> 'correction') AS fix, (f ->> 'reason') AS reason,
+           (f ->> 'fallback_rationale') AS fb
       FROM jsonb_array_elements(a.error_analysis -> 'findings') f
   LOOP
     v_ord := v_ord + 1;
     INSERT INTO r (section, ord, line)
     VALUES ('6 錯誤', v_ord, v_rec.code || ' ｜ 「' || v_rec.quote || '」→「'
-                             || v_rec.fix || '」 ｜ ' || v_rec.reason);
+                             || v_rec.fix || '」 ｜ ' || v_rec.reason
+                             -- fallback_rationale 是內部欄位（不給學生看），
+                             -- 但稽核時必須看得到：它是判斷 GRAMMAR_OTHER 有沒有被濫用的依據。
+                             || coalesce('　【fallback 理由】' || v_rec.fb, ''));
   END LOOP;
   IF v_ord = 0 THEN
     INSERT INTO r (section, ord, line) VALUES ('6 錯誤', 1, '本篇未找到任何已分類的錯誤。');
