@@ -25,3 +25,4 @@ dist-ssr
 
 # 真實 AI 稽核報告：含作文內容與模型輸出，逐次產生，不進版控
 docs/learn/writing-audit/
+.preflight/

@@ -14,7 +14,8 @@
     "verify:writing-contract": "tsx scripts/verify-writing-contract.ts",
     "verify:writing-passes": "tsx scripts/verify-writing-passes.ts",
     "audit:writing": "tsx scripts/writing-audit.ts",
-    "audit:writing:dryrun": "tsx scripts/_audit-dryrun.ts"
+    "audit:writing:dryrun": "tsx scripts/_audit-dryrun.ts",
+    "preflight:vercel": "node scripts/preflight-vercel.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
