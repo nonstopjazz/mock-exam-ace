@@ -17,7 +17,7 @@
  *   終端機：延遲、重試、驗證、證據查核的摘要表
  *
  * 自動查核（不需要人判斷的部分）：
- *   • 完整覆蓋：23 / 16 / 17 / 12 個節點
+ *   • 完整覆蓋：四軸的 canonical 節點（數量由 taxonomy 推導，不寫死）
  *   • 每一段引用的原文是否真的逐字出現在作文裡（抓捏造證據）
  *   • coverage 與 findings 的筆數是否一致
  *   • UNMEASURED 是否都有理由、且沒有夾帶證據
@@ -61,6 +61,8 @@ import {
   type ValidationIssue,
 } from "../api/_lib/analysisContract";
 import {
+  ALL_COMPETENCY_SKILL_CODES,
+  ALL_ERROR_CODES,
   COMPETENCY_CATEGORY_BY_CODE,
   COMPETENCY_SKILL_BY_CODE,
   ERROR_TAG_BY_CODE,
@@ -550,7 +552,7 @@ function fullReport(
     "",
     "| 查核 | 結果 |",
     "|---|---|",
-    `| 完整覆蓋 23 / 16 / 17 / 12 個節點 | ${reports.slice(0, 4).every((r) => r.ok) ? "通過" : "**未通過**"} |`,
+    `| 完整覆蓋 ${ALL_COMPETENCY_SKILL_CODES.length} / ${ALL_ERROR_CODES.length} / 17 / 12 個節點 | ${reports.slice(0, 4).every((r) => r.ok) ? "通過" : "**未通過**"} |`,
     `| 引用逐字存在於作文中 | ${data.evidence.fabricated.length === 0 ? "全部通過" : `**${data.evidence.fabricated.length} 段找不到**`} |`,
     `| coverage 與 findings 筆數一致 | 通過（驗證層強制） |`,
     `| UNMEASURED 皆有理由且未夾帶證據 | 通過（驗證層強制） |`,
