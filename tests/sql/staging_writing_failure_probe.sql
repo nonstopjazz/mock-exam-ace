@@ -142,8 +142,15 @@ BEGIN
         ('502 成因', '綜合層呼叫本身失敗：HTTP 非 2xx／回傳不是合法 JSON。四軸完好');
     END IF;
 
+  ELSIF a.status = 'COMPLETED' THEN
+    INSERT INTO d (item, value) VALUES
+      ('結果', '這一次成功了，沒有 502。逐支狀態與量測見下'),
+      ('Stage 1 請求次數（推算）',
+        '至少 ' || (SELECT max((x.value ->> 'attempts')::int)
+                      FROM jsonb_each(coalesce(j -> 'stage1_progress', '{}'::jsonb)) x) || ' 次'
+        || '　（等於嘗試次數最多那一支的次數：重試是另一次請求）');
   ELSE
-    INSERT INTO d (item, value) VALUES ('502 成因', '這一列沒有失敗紀錄——502 可能來自更早的一次嘗試');
+    INSERT INTO d (item, value) VALUES ('狀態', a.status || '：這一列還沒有結果，也沒有失敗紀錄');
   END IF;
 
   -- ── 缺漏清單原文（有才印） ────────────────────────────────
