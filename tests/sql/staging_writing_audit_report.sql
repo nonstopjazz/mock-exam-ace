@@ -68,13 +68,23 @@ BEGIN
     -- 拆成兩次請求之後，兩段各自面對 50 秒期限，所以兩段各自報餘裕。
     -- analyzed_at 是 Stage 1 落地的那一刻；舊的列沒有這一欄，會退回近似值
     -- （那個近似值把兩次請求之間的客戶端空檔算進 Stage 1，只能當參考）。
-    ('1 概況', 8, 'Stage 1 延遲：' ||
+    -- ⚠️ 這是【跨請求】的牆鐘，不是單一次 serverless 執行的長度。
+    -- Stage 1 的驗證重試是另一次請求，所以 started_at → analyzed_at 之間可能
+    -- 夾著兩次以上的請求與它們之間的客戶端往返。拿它對照 50 秒會嚴重高估壓力。
+    ('1 概況', 8, 'Stage 1 牆鐘（跨請求，含請求之間的空檔）：' ||
         coalesce(round(extract(epoch FROM (a.analyzed_at - a.started_at))::numeric, 1)::text,
                  coalesce(round(extract(epoch FROM (a.completed_at - a.started_at))::numeric
                        - coalesce(extract(epoch FROM (a.synthesis_completed_at - a.synthesis_started_at))::numeric, 0), 1)::text, '?')
                  || '（近似，此列無 analyzed_at）') || ' 秒'),
-    ('1 概況', 9, 'Stage 1 對 50 秒期限的餘裕：' ||
-        coalesce(round(50 - extract(epoch FROM (a.analyzed_at - a.started_at))::numeric, 1)::text, '?') || ' 秒'),
+    -- 真正該對照 50 秒的是【單次呼叫】的長度：一次請求的長度由它最慢的那一支決定。
+    ('1 概況', 9, 'Stage 1 最長的單次呼叫：' ||
+        coalesce((SELECT round(max((r.value ->> 'latencyMs')::numeric) / 1000, 1)::text
+                    FROM jsonb_each(a.stage1_telemetry) t,
+                         jsonb_array_elements(t.value -> 'records') r), '?')
+        || ' 秒　對 50 秒期限的餘裕：' ||
+        coalesce((SELECT round(50 - max((r.value ->> 'latencyMs')::numeric) / 1000, 1)::text
+                    FROM jsonb_each(a.stage1_telemetry) t,
+                         jsonb_array_elements(t.value -> 'records') r), '?') || ' 秒'),
     ('1 概況', 10, 'Stage 2 綜合層延遲：' ||
         coalesce(round(extract(epoch FROM (a.synthesis_completed_at - a.synthesis_started_at))::numeric, 1)::text, '?') || ' 秒'),
     ('1 概況', 11, 'Stage 2 對 50 秒期限的餘裕：' ||
