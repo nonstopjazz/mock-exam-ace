@@ -158,6 +158,11 @@ const fullHighScore = (cats: readonly string[], effective?: string) => ({
           code: f.code,
           quality: "EFFECTIVE",
           reason: "用得自然且有功能",
+          justification: {
+            criterion: "結構真正對稱",
+            effect: "讓兩個概念在同一句裡並列，對比一眼可見",
+            beyondForm: "不只是出現了那個句型，兩邊的資訊量也相當",
+          },
           instances: [
             { quote: "uniforms save time every morning", reason: "資訊壓縮得宜" },
           ],
@@ -319,11 +324,21 @@ console.log("\nprompt 的節點覆蓋");
   );
   check("Pass 3a prompt 帶入每個 feature 的 boundary rule", a.includes("有效與否的界線"));
   // ↓ 以下五項對應 2026-09-05 真實測試抓到的問題（prompt v2）
-  check("Pass 3a prompt 提高 EFFECTIVE 門檻", a.includes("拿掉，文章會明顯變差嗎"));
-  check("Pass 3a prompt 警告不要大多判 EFFECTIVE", a.includes("標準放太寬"));
+  // v3：把「請你嚴格一點」換成可強制的舉證責任
+  check("Pass 3a prompt 要求 EFFECTIVE 付舉證責任", a.includes("判 EFFECTIVE 要付舉證責任"));
   check(
-    "Pass 3a prompt 要求形式前提（問句要有問號、倒裝要真的倒置）",
-    a.includes("必須真的有問句") && a.includes("主詞與助動詞倒置"),
+    "Pass 3a prompt 明講形式存在不足以判 EFFECTIVE",
+    a.includes("「形式存在」本身【永遠不足以】判 EFFECTIVE"),
+  );
+  check(
+    "Pass 3a prompt 列出 justification 三欄",
+    a.includes("criterion") && a.includes("effect") && a.includes("beyondForm"),
+  );
+  check(
+    "Pass 3a prompt 要求形式前提（問號、段落數、倒裝）",
+    a.includes("必須真的有問號")
+      && a.includes("必須有兩段以上")
+      && a.includes("主詞與助動詞倒置"),
   );
   check("Pass 3a prompt 寫入 TR-08（同句可多特徵）", a.includes("同一句話可以同時成立多個特徵"));
   check("Pass 3a prompt 有退化輸入規則", a.includes("題目與提示文字不是學生寫的"));

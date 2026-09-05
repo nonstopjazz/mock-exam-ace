@@ -117,6 +117,44 @@ export interface ErrorAnalysis {
   readonly coverage: readonly ErrorCoverageEntry[];
 }
 
+/* ──────────────── 形式前提：只在邏輯上確實成立的地方設 ──────────────── */
+
+/**
+ * 有些高分特徵有【邏輯上必然】的形式前提。前提不成立時，那個特徵不可能有證據，
+ * 只能是 UNMEASURED——這件事不需要模型配合，程式就能判定。
+ *
+ * ⚠️ 前提是【必要條件，不是充分條件】。
+ *    作文裡有問號，不代表那個問句就是修辭問句、更不代表它有效。
+ *    前提成立時，這裡不做任何限制，判斷仍然完全交給模型。
+ *
+ * ⚠️ 刻意只列兩項。倒裝、比喻、平行結構這類特徵無法在不做句法剖析的情況下
+ *    可靠偵測，硬加守衛只會製造 false negative——那比不檢查更糟。
+ *    2026-09-05 的實測就是被漏看倒裝咬過一次，不要用另一種方式再犯。
+ */
+export interface FeaturePrerequisite {
+  readonly featureCode: string;
+  readonly isSatisfied: (essay: string) => boolean;
+  readonly detail: string;
+}
+
+export const FEATURE_PREREQUISITES: readonly FeaturePrerequisite[] = [
+  {
+    featureCode: "WRITE_HSF_RHET_QUESTION",
+    // 修辭問句必須是問句。沒有問號就沒有問句。
+    isSatisfied: (essay) => /[?？]/.test(essay),
+    detail: "作文裡沒有任何問號，因此不存在問句，修辭問句只能是 UNMEASURED",
+  },
+  {
+    featureCode: "WRITE_HSF_PARA_PROGRESSION",
+    // 只有一個段落時，不存在「段落之間」的銜接。
+    isSatisfied: (essay) =>
+      essay.trim().split(/\n\s*\n/).filter((p) => p.trim().length > 0).length >= 2,
+    detail: "作文只有一個段落，不存在段落間的銜接，只能是 UNMEASURED",
+  },
+];
+
+const PREREQUISITE_BY_CODE = new Map(FEATURE_PREREQUISITES.map((p) => [p.featureCode, p]));
+
 /* ──────────────── Pass 3a / 3b：High-Score Feature ──────────────── */
 
 export interface HighScoreInstance {
@@ -131,10 +169,31 @@ export interface HighScoreInstance {
   readonly suggestion?: string;
 }
 
+/**
+ * EFFECTIVE 的舉證。判 EFFECTIVE 必須附上這三項，缺一不可。
+ *
+ * 這不是形式主義。2026-09-05 的實測顯示，光在 prompt 裡要求模型「嚴格一點」
+ * 完全沒有作用（29 個特徵判了 28 個 EFFECTIVE）。所以改成【提高舉證成本】：
+ * 要給 EFFECTIVE，就必須逐項說出滿足了哪條判準、對這篇文章產生什麼作用、
+ * 以及為什麼不只是形式存在。做不到就降級。
+ *
+ * 這比固定配額好，因為配額會懲罰真正寫得好的文章。
+ */
+export interface EffectiveJustification {
+  /** 滿足了這個 feature 的哪一條 canonical 判準 */
+  readonly criterion: string;
+  /** 對【這一篇】作文產生了什麼具體的正面作用 */
+  readonly effect: string;
+  /** 為什麼這不只是「形式出現了」 */
+  readonly beyondForm: string;
+}
+
 export interface HighScoreFeatureFinding {
   readonly code: string;
   readonly quality: HighScoreQuality;
   readonly reason: string;
+  /** quality === "EFFECTIVE" 時必填；其他 quality 不得填寫。 */
+  readonly justification?: EffectiveJustification;
   /**
    * TR-04：High-Score Feature finding 必須記錄 evidence_span。
    * 因此 quality !== UNMEASURED 時至少要有一筆；UNMEASURED 時必須為空。
@@ -166,8 +225,20 @@ export interface OverallEvaluation {
 
 /**
  * 第一屏的重點；只是編輯取捨，完整分析仍在下方三個矩陣裡。
- * refs 是必填：每一句話都必須指得回 Stage 1 已驗證的 finding（紅線 C），
- * 學生才點得進去看證據，綜合層也才無法自己造出新的說法。
+ *
+ * ⚠️ 這個型別【沒有】任何放證據的欄位，這是刻意的。
+ *
+ *    綜合層拿不到作文全文（compressForSynthesis 只給它壓縮摘要），所以它
+ *    根本沒有能力正確引用原文。2026-09-05 的實測證實了後果：它在 text 裡
+ *    憑空生出一句中文「原文引用」，而那句話在作文裡完全不存在。
+ *
+ *    因此職責切開：
+ *      綜合層  → 只做摘要與排序，text 是【說明】，不是證據
+ *      Stage 1 → 唯一的證據來源
+ *      UI      → 靠 refs 回 Stage 1 取出真正的原句顯示給學生
+ *
+ *    text 內不得出現引號，也不得出現成串的英文——學生的作文是英文，
+ *    綜合層寫的是中文，成串英文只可能是它在引用（或編造）原文。
  */
 export interface Highlight {
   readonly text: string;
@@ -243,7 +314,10 @@ export type ValidationIssueKind =
   | "TOO_MANY"
   | "MISSING_CITATION"
   | "UNCITABLE_REF"
-  | "QUOTE_NOT_IN_ESSAY";
+  | "QUOTE_NOT_IN_ESSAY"
+  | "PREREQUISITE_NOT_MET"
+  | "MISSING_JUSTIFICATION"
+  | "SYNTHESIS_EVIDENCE";
 
 export interface ValidationIssue {
   readonly kind: ValidationIssueKind;
@@ -286,6 +360,41 @@ export function quoteAppearsInEssay(essay: string, quote: string): boolean {
   if (essay.includes(quote)) return true;
   const norm = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
   return norm(essay).includes(norm(quote));
+}
+
+/** 引號：中英日常用的都算 */
+const QUOTE_MARK = /[「」『』“”‘’"']/;
+
+/** 連續四個以上的拉丁字詞——綜合層寫中文，這種東西只可能是引文 */
+const LATIN_RUN = /(?:[A-Za-z][A-Za-z'’-]*[ \t]+){3,}[A-Za-z][A-Za-z'’-]*/;
+
+/**
+ * 綜合層的 text 不得夾帶證據。
+ *
+ * 不能只靠偵測引號——2026-09-05 那次的捏造引用【有】引號，但重點不在標點，
+ * 而在於綜合層根本沒有原文可引。所以兩條一起擋：引號，以及成串英文。
+ */
+function checkNoEmbeddedEvidence(
+  text: string,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (QUOTE_MARK.test(text)) {
+    issues.push({
+      kind: "SYNTHESIS_EVIDENCE",
+      path,
+      detail: "綜合層不得引用原文。請改成描述，並用 refs 指回 Stage 1 的 finding",
+    });
+    return;
+  }
+  const run = LATIN_RUN.exec(text);
+  if (run) {
+    issues.push({
+      kind: "SYNTHESIS_EVIDENCE",
+      path,
+      detail: `綜合層不得夾帶原文片段：「${run[0]}」。證據一律由 refs 指回 Stage 1`,
+    });
+  }
 }
 
 const isNonEmptyString = (v: unknown): v is string =>
@@ -673,6 +782,57 @@ export function validateHighScoreAnalysis(
       });
     });
 
+    // 形式前提：邏輯上不可能有證據時，只能是 UNMEASURED。
+    const prereq = PREREQUISITE_BY_CODE.get(item.code);
+    if (prereq && quality !== "UNMEASURED" && !prereq.isSatisfied(essay)) {
+      issues.push({
+        kind: "PREREQUISITE_NOT_MET",
+        path,
+        detail: `${prereq.detail}（收到 ${quality}）`,
+      });
+      return;
+    }
+
+    // EFFECTIVE 的舉證契約：要給 EFFECTIVE，就必須逐項說清楚。
+    const rawJust = isRecord(item.justification) ? item.justification : null;
+    let justification: EffectiveJustification | undefined;
+    if (quality === "EFFECTIVE") {
+      const criterion = rawJust?.criterion;
+      const effect = rawJust?.effect;
+      const beyondForm = rawJust?.beyondForm;
+      if (
+        !isNonEmptyString(criterion) ||
+        !isNonEmptyString(effect) ||
+        !isNonEmptyString(beyondForm)
+      ) {
+        issues.push({
+          kind: "MISSING_JUSTIFICATION",
+          path,
+          detail:
+            "EFFECTIVE 必須附 justification：criterion（滿足哪條判準）、" +
+            "effect（對這篇文章的具體作用）、beyondForm（為什麼不只是形式存在）",
+        });
+        return;
+      }
+      // 三句話貼同一段等於沒有舉證。
+      if (effect.trim() === beyondForm.trim() || criterion.trim() === effect.trim()) {
+        issues.push({
+          kind: "MISSING_JUSTIFICATION",
+          path,
+          detail: "justification 的三個欄位不可以填同樣的內容",
+        });
+        return;
+      }
+      justification = { criterion, effect, beyondForm };
+    } else if (rawJust) {
+      issues.push({
+        kind: "MALFORMED",
+        path,
+        detail: `只有 EFFECTIVE 才需要 justification（收到 ${quality}）`,
+      });
+      return;
+    }
+
     // TR-04：非 UNMEASURED 的 finding 一定要有 evidence_span。
     if (quality !== "UNMEASURED" && instances.length === 0) {
       issues.push({
@@ -687,7 +847,7 @@ export function validateHighScoreAnalysis(
       return;
     }
 
-    features.push({ code: item.code, quality, reason: item.reason, instances });
+    features.push({ code: item.code, quality, reason: item.reason, instances, justification });
   });
 
   issues.push(...checkCoverage(returnedCodes, expected, "high_score.features"));
@@ -744,6 +904,9 @@ export function validateSynthesis(
       path: "synthesis.overall_evaluation",
       detail: "headline 與 summary 都不可為空",
     });
+  } else {
+    checkNoEmbeddedEvidence(overall.headline, "synthesis.overall_evaluation.headline", issues);
+    checkNoEmbeddedEvidence(overall.summary, "synthesis.overall_evaluation.summary", issues);
   }
 
   /** refs 必須全部落在 Stage 1 的可引用集合裡，否則就是綜合層自己發明的。 */
@@ -780,6 +943,7 @@ export function validateSynthesis(
         issues.push({ kind: "MALFORMED", path, detail: "每一項都必須有 text" });
         return [];
       }
+      checkNoEmbeddedEvidence(item.text, path, issues);
       return [{ text: item.text, refs: readRefs(item, path, requireRefs) }];
     });
   };

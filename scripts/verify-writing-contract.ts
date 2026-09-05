@@ -32,6 +32,15 @@ const ESSAY = [
   "Not only did he run, but he also swam.",
 ].join(" ");
 
+/** 含問號、且有兩段——用來測形式前提的「滿足」那一側 */
+const ESSAY_WITH_QUESTION = "Is convenience free?\n\nIt is not.";
+
+const JUSTIFICATION = {
+  criterion: "words / phrases / clauses 的平行",
+  effect: "讓兩個對比概念在同一句裡並列，讀者一眼看出取捨",
+  beyondForm: "不只是出現 not only…but also，兩邊的資訊量與結構真的對稱",
+};
+
 let passed = 0;
 const failures: string[] = [];
 
@@ -248,7 +257,12 @@ const fullHighScore = (cats: string[]) => ({
 
 {
   const payload = fullHighScore(H1_H3);
-  payload.features[0] = { ...payload.features[0], quality: "EFFECTIVE", instances: [] };
+  payload.features[0] = {
+    ...payload.features[0],
+    quality: "EFFECTIVE",
+    justification: JUSTIFICATION,
+    instances: [],
+  };
   expectIssue(
     "EFFECTIVE 卻沒引原文 → MISSING_EVIDENCE（TR-04）",
     validateHighScoreAnalysis(payload, H1_H3, ESSAY),
@@ -275,6 +289,7 @@ const fullHighScore = (cats: string[]) => ({
   payload.features[0] = {
     ...payload.features[0],
     quality: "EFFECTIVE",
+    justification: JUSTIFICATION,
     instances: [
       {
         quote: "Not only did he run, but he also swam.",
@@ -337,6 +352,7 @@ console.log("\n引用查核 —— 2026-09-05 真實測試抓到的問題");
   payload.features[0] = {
     ...payload.features[0],
     quality: "EFFECTIVE",
+    justification: JUSTIFICATION,
     reason: "首尾呼應",
     instances: [
       {
@@ -358,6 +374,7 @@ console.log("\n引用查核 —— 2026-09-05 真實測試抓到的問題");
   payload.features[0] = {
     ...payload.features[0],
     quality: "EFFECTIVE",
+    justification: JUSTIFICATION,
     reason: "詞彙多樣",
     instances: [{ quote: "policy, uniforms, morning, time", reason: "詞彙清單" }],
   };
@@ -374,6 +391,7 @@ console.log("\n引用查核 —— 2026-09-05 真實測試抓到的問題");
   payload.features[0] = {
     ...payload.features[0],
     quality: "EFFECTIVE",
+    justification: JUSTIFICATION,
     reason: "首尾呼應",
     instances: [
       { quote: "Many student thinks the policy are unfair.", reason: "開頭" },
@@ -482,6 +500,171 @@ expectIssue(
   const payload = synthesis(2) as Record<string, unknown>;
   (payload.overall_evaluation as Record<string, unknown>).level = "AMAZING";
   expectIssue("非法 overall level → INVALID_STATE", validateSynthesis(payload, citable), "INVALID_STATE");
+}
+
+/* ──────────────── v3：形式前提、EFFECTIVE 舉證、綜合層證據邊界 ──────────────── */
+
+console.log("\nv3 —— 只靠 prompt 修不動的三件事，改成可強制");
+
+{
+  // 作文沒有問號 → 修辭問句只能 UNMEASURED
+  const payload = fullHighScore(H4_H5);
+  const idx = payload.features.findIndex((f) => f.code === "WRITE_HSF_RHET_QUESTION");
+  payload.features[idx] = {
+    ...payload.features[idx],
+    quality: "EFFECTIVE",
+    justification: JUSTIFICATION,
+    instances: [{ quote: "Not only did he run, but he also swam.", reason: "示例" }],
+  };
+  expectIssue(
+    "作文無問號卻判修辭問句 EFFECTIVE → PREREQUISITE_NOT_MET",
+    validateHighScoreAnalysis(payload, H4_H5, ESSAY),
+    "PREREQUISITE_NOT_MET",
+  );
+}
+
+{
+  // 前提是必要條件、不是充分條件：有問號時不加任何限制
+  const payload = fullHighScore(H4_H5);
+  const idx = payload.features.findIndex((f) => f.code === "WRITE_HSF_RHET_QUESTION");
+  payload.features[idx] = {
+    ...payload.features[idx],
+    quality: "UNMEASURED",
+    reason: "有問句但不是修辭性的",
+    instances: [],
+  };
+  check(
+    "有問號時仍可判 UNMEASURED（前提只是必要條件）",
+    isValidationOk(validateHighScoreAnalysis(payload, H4_H5, ESSAY_WITH_QUESTION)),
+  );
+}
+
+{
+  // 單段作文 → 段落間銜接只能 UNMEASURED
+  const payload = fullHighScore(H1_H3);
+  const idx = payload.features.findIndex((f) => f.code === "WRITE_HSF_PARA_PROGRESSION");
+  payload.features[idx] = {
+    ...payload.features[idx],
+    quality: "PARTIALLY_EFFECTIVE",
+    justification: undefined,
+    instances: [{ quote: "Many student thinks the policy are unfair.", reason: "示例" }],
+  };
+  expectIssue(
+    "單段作文卻判段落間銜接 → PREREQUISITE_NOT_MET",
+    validateHighScoreAnalysis(payload, H1_H3, ESSAY),
+    "PREREQUISITE_NOT_MET",
+  );
+}
+
+{
+  const payload = fullHighScore(H1_H3);
+  payload.features[0] = {
+    ...payload.features[0],
+    quality: "EFFECTIVE",
+    instances: [{ quote: "Not only did he run, but he also swam.", reason: "示例" }],
+  };
+  expectIssue(
+    "EFFECTIVE 沒附 justification → MISSING_JUSTIFICATION",
+    validateHighScoreAnalysis(payload, H1_H3, ESSAY),
+    "MISSING_JUSTIFICATION",
+  );
+}
+
+{
+  const payload = fullHighScore(H1_H3);
+  payload.features[0] = {
+    ...payload.features[0],
+    quality: "EFFECTIVE",
+    justification: { criterion: "平行結構", effect: "同一句話", beyondForm: "同一句話" },
+    instances: [{ quote: "Not only did he run, but he also swam.", reason: "示例" }],
+  };
+  expectIssue(
+    "justification 三欄填一樣 → MISSING_JUSTIFICATION",
+    validateHighScoreAnalysis(payload, H1_H3, ESSAY),
+    "MISSING_JUSTIFICATION",
+  );
+}
+
+{
+  const payload = fullHighScore(H1_H3);
+  payload.features[0] = {
+    ...payload.features[0],
+    quality: "PARTIALLY_EFFECTIVE",
+    justification: JUSTIFICATION,
+    instances: [{ quote: "Not only did he run, but he also swam.", reason: "示例" }],
+  };
+  expectIssue(
+    "非 EFFECTIVE 卻附 justification → MALFORMED",
+    validateHighScoreAnalysis(payload, H1_H3, ESSAY),
+    "MALFORMED",
+  );
+}
+
+{
+  // 2026-09-05 真實案例：綜合層在 text 裡編了一句中文「原文」
+  const bad = validateSynthesis(
+    {
+      overall_evaluation: { level: "STRONG", headline: "h", summary: "s" },
+      strengths: [
+        {
+          text: "結尾的修辭問句——「我們還記得自己真正想要的是什麼嗎？」——很有力",
+          refs: ["WRITE_ORG_LOGIC"],
+        },
+      ],
+      needs_work: [{ text: "主詞單複數", refs: ["WRITE_ERR_SV_AGREEMENT"] }],
+      next_steps: [{ text: "檢查主詞" }],
+    },
+    citable,
+  );
+  expectIssue("綜合層夾帶引號引文 → SYNTHESIS_EVIDENCE", bad, "SYNTHESIS_EVIDENCE");
+}
+
+{
+  // 不能只靠引號：沒有引號但夾帶成串英文，一樣是引用
+  const bad = validateSynthesis(
+    {
+      overall_evaluation: { level: "STRONG", headline: "h", summary: "s" },
+      strengths: [
+        { text: "你寫的 Not only do these stores reshape our habits 很有力量", refs: ["WRITE_ORG_LOGIC"] },
+      ],
+      needs_work: [{ text: "主詞單複數", refs: ["WRITE_ERR_SV_AGREEMENT"] }],
+      next_steps: [{ text: "檢查主詞" }],
+    },
+    citable,
+  );
+  expectIssue("綜合層夾帶成串英文（無引號）→ SYNTHESIS_EVIDENCE", bad, "SYNTHESIS_EVIDENCE");
+}
+
+{
+  // headline / summary 也要擋
+  const bad = validateSynthesis(
+    {
+      overall_evaluation: {
+        level: "STRONG",
+        headline: "你的「便利的代價」寫得很好",
+        summary: "s",
+      },
+      strengths: [{ text: "段落分明", refs: ["WRITE_ORG_LOGIC"] }],
+      needs_work: [{ text: "主詞單複數", refs: ["WRITE_ERR_SV_AGREEMENT"] }],
+      next_steps: [{ text: "檢查主詞" }],
+    },
+    citable,
+  );
+  expectIssue("headline 夾帶引文 → SYNTHESIS_EVIDENCE", bad, "SYNTHESIS_EVIDENCE");
+}
+
+{
+  // 純描述、用 refs 指回證據 —— 這是正確做法
+  const good = validateSynthesis(
+    {
+      overall_evaluation: { level: "STRONG", headline: "結構清楚，收束有力", summary: "整體達到要求。" },
+      strengths: [{ text: "結尾用修辭問句收束，讓主題留下餘韻", refs: ["WRITE_ORG_LOGIC"] }],
+      needs_work: [{ text: "主詞與動詞的一致要再檢查", refs: ["WRITE_ERR_SV_AGREEMENT"] }],
+      next_steps: [{ text: "寫完後把每個主詞圈起來檢查動詞" }],
+    },
+    citable,
+  );
+  check("純描述 + refs → 通過", isValidationOk(good));
 }
 
 /* ──────────────── 結論 ──────────────── */

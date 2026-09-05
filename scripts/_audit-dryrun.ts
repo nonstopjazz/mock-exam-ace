@@ -85,6 +85,11 @@ const highScore = (cats: string[]) => ({
           code: f.code,
           quality: "EFFECTIVE",
           reason: "用得自然",
+          justification: {
+            criterion: "結構真正對稱",
+            effect: "讓兩個概念在同一句裡並列，對比一眼可見",
+            beyondForm: "不只是出現了那個句型，兩邊的資訊量也相當",
+          },
           instances: [
             {
               quote: currentQuote,
@@ -96,7 +101,7 @@ const highScore = (cats: string[]) => ({
   ),
 });
 
-const synthesis = (firstFeature: string) => ({
+const synthesis = () => ({
   overall_evaluation: { level: "SOLID", headline: "結構清楚，但單複數要顧好", summary: "整體達到要求。" },
   strengths: [{ text: "理由安排清楚", refs: ["WRITE_ORG_LOGIC"] }],
   needs_work: [{ text: "主詞與動詞的一致", refs: ["WRITE_ERR_SV_AGREEMENT"] }],
@@ -130,7 +135,7 @@ function respondTo(body: string): unknown {
     case "hsB":
       return highScore(["H4", "H5"]);
     default:
-      return synthesis(featuresOf(["H1"])[0].code);
+      return synthesis();
   }
 }
 

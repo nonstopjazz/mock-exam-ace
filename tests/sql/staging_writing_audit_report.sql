@@ -33,6 +33,7 @@ DECLARE
   v_topic  TEXT;
   v_text   TEXT;
   v_int    INTEGER;
+  v_txt    TEXT;
   v_rec    RECORD;
   v_ord    INTEGER := 0;
 BEGIN
@@ -116,6 +117,30 @@ BEGIN
   INSERT INTO r (section, ord, line)
   VALUES ('2 覆蓋', 3, 'High-Score feature 數：' || v_int || ' / 29　'
                        || CASE WHEN v_int = 29 THEN 'OK' ELSE '**不足**' END);
+
+  -- v3 校準實驗：四值分布直接算出來，不用人工數
+  SELECT string_agg(q || ' ' || n, '　' ORDER BY q) INTO v_txt
+    FROM (SELECT (ft ->> 'quality') AS q, count(*) AS n
+            FROM jsonb_array_elements(a.high_score_feature_analysis -> 'features') ft
+           GROUP BY 1) x;
+  INSERT INTO r (section, ord, line)
+  VALUES ('2 覆蓋', 4, '高分特徵四值分布：' || coalesce(v_txt, '（無）'));
+
+  SELECT string_agg(st || ' ' || n, '　' ORDER BY st) INTO v_txt
+    FROM (SELECT (sk ->> 'state') AS st, count(*) AS n
+            FROM jsonb_array_elements(a.competency_analysis -> 'categories') c,
+                 jsonb_array_elements(c -> 'skills') sk
+           GROUP BY 1) x;
+  INSERT INTO r (section, ord, line)
+  VALUES ('2 覆蓋', 5, '能力軸四值分布：' || coalesce(v_txt, '（無）'));
+
+  SELECT count(*) INTO v_int
+    FROM jsonb_array_elements(a.high_score_feature_analysis -> 'features') ft
+   WHERE ft ->> 'quality' = 'EFFECTIVE' AND ft -> 'justification' IS NULL;
+  INSERT INTO r (section, ord, line)
+  VALUES ('2 覆蓋', 6, 'EFFECTIVE 但缺舉證的數量：' || v_int
+                       || CASE WHEN v_int = 0 THEN '　OK'
+                               ELSE '　**若這是 prompt v3 之後跑的，不該發生——驗證層應該擋掉**' END);
 
   -- ==========================================================
   -- 3. 引用查核：每一段引用是否真的出現在學生原文裡
@@ -237,7 +262,10 @@ BEGIN
   FOR v_rec IN
     SELECT (ft ->> 'quality') AS q, (ft ->> 'code') AS code, (ft ->> 'reason') AS reason,
            coalesce((SELECT string_agg('「' || (i ->> 'quote') || '」', ' ')
-                       FROM jsonb_array_elements(ft -> 'instances') i), '') AS quotes
+                       FROM jsonb_array_elements(ft -> 'instances') i), '') AS quotes,
+           -- v3：EFFECTIVE 的舉證。看得到它，才判斷得出「有效」是不是隨口給的。
+           coalesce(ft -> 'justification' ->> 'effect', '') AS effect,
+           coalesce(ft -> 'justification' ->> 'beyondForm', '') AS beyond
       FROM jsonb_array_elements(a.high_score_feature_analysis -> 'features') ft
      ORDER BY CASE (ft ->> 'quality')
                 WHEN 'EFFECTIVE' THEN 1 WHEN 'PARTIALLY_EFFECTIVE' THEN 2
@@ -247,6 +275,8 @@ BEGIN
     INSERT INTO r (section, ord, line)
     VALUES ('7 高分特徵', v_ord,
             rpad(v_rec.q, 20) || ' ' || v_rec.code || ' ｜ ' || v_rec.reason
+            || CASE WHEN v_rec.effect <> '' THEN ' ｜ 作用：' || v_rec.effect ELSE '' END
+            || CASE WHEN v_rec.beyond <> '' THEN ' ｜ 非僅形式：' || v_rec.beyond ELSE '' END
             || CASE WHEN v_rec.quotes <> '' THEN ' ｜ ' || v_rec.quotes ELSE '' END);
   END LOOP;
 

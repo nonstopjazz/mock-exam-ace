@@ -281,20 +281,30 @@ ${nodeList}
 硬塞、誤用、或造成可讀性下降，要判 MISUSED 或 PARTIALLY_EFFECTIVE。
 只有 EFFECTIVE 才是明確的正面證據。
 
-【EFFECTIVE 的門檻很高，請不要慷慨】
-判 EFFECTIVE 之前先問自己一句：把這個特徵從文章裡拿掉，文章會明顯變差嗎？
-  • 會明顯變差，而且用得自然       → EFFECTIVE
-  • 有用到、沒有錯，但可有可無     → PARTIALLY_EFFECTIVE
-  • 形式出現但用錯或反而扣分       → MISUSED
-  • 形式根本沒出現                 → UNMEASURED
+【四個值怎麼選】
+  • EFFECTIVE            正確、自然，而且對【這一篇】真的產生了作用
+  • PARTIALLY_EFFECTIVE  形式出現、方向對，但貢獻薄弱或不完整
+  • MISUSED              形式出現但用錯、不自然，或反而傷害表達
+  • UNMEASURED           沒有證據
 
-一般水準的正確使用是 PARTIALLY_EFFECTIVE，不是 EFFECTIVE。
-一篇作文能同時「有效」展現的特徵通常只有幾個。如果你發現自己把這一批
-特徵大多判成 EFFECTIVE，那幾乎一定是標準放太寬，請重新逐一檢視。
+【判 EFFECTIVE 要付舉證責任 —— 這一項會被系統檢查】
+「形式存在」本身【永遠不足以】判 EFFECTIVE。
+每一個 EFFECTIVE 都必須另外附上 justification，三個欄位缺一不可：
+
+  criterion    這個 feature 的哪一條 canonical 判準被滿足了
+  effect       對【這一篇作文】產生了什麼具體的正面作用
+  beyondForm   為什麼這不只是「形式出現了」
+
+三個欄位不可以填一樣的內容。寫不出來，就代表它不該是 EFFECTIVE——
+請降為 PARTIALLY_EFFECTIVE。
+
+非 EFFECTIVE 的 feature 不要填 justification。
 
 【形式前提：沒有那個形式就是 UNMEASURED】
 有些特徵有明確的形式要件，不能靠語氣或語意去推論：
-  • 修辭問句 → 文章裡必須真的有問句（問號）。陳述句不算，即使它在提出疑問。
+  • 修辭問句 → 文章裡必須真的有問號。陳述句不算，即使它在提出疑問。
+    （系統會直接檢查作文有沒有問號，沒有的話這個特徵只能是 UNMEASURED）
+  • 段落間銜接 → 文章必須有兩段以上。只有一段就不存在「段落之間」。
   • 倒裝     → 必須真的有主詞與助動詞倒置（例如 Not only do these stores…）。
   • 比喻     → 必須真的有 like / as 的明喻或可辨識的隱喻。
 形式不存在，就是 UNMEASURED，不可以因為「意思上有那個效果」而給分。
@@ -324,6 +334,11 @@ ${OUTPUT_RULE}
       "code": "${exampleCode}",
       "quality": "EFFECTIVE",
       "reason": "為什麼是這個判斷（繁體中文）",
+      "justification": {
+        "criterion": "滿足了哪一條判準",
+        "effect": "對這一篇作文產生了什麼具體作用",
+        "beyondForm": "為什麼不只是形式出現"
+      },
       "instances": [
         {
           "quote": "學生原文逐字片段",
@@ -335,7 +350,7 @@ ${OUTPUT_RULE}
     }
   ]
 }
-features 必須恰好有 ${total} 筆。
+features 必須恰好有 ${total} 筆。\njustification 只有 quality 為 EFFECTIVE 時才出現，其他情況請省略這個欄位。
 `.trim();
 
   return [
@@ -410,7 +425,22 @@ export function synthesisMessages(digest: string, citableRefs: readonly string[]
   • 不可以產生任何新的判斷。你手上的分析就是全部的事實。
   • 不可以推翻、修改或重新詮釋任何一條既有結論。
   • 不可以引用下方清單以外的任何代碼。
-  • 你沒有拿到作文全文，也不需要——你的工作是排序與取捨，不是重新分析。
+
+【最重要：你不可以引用作文原文，一個字都不行】
+你沒有拿到作文全文，所以你【沒有能力】正確引用原文。
+任何看起來像原文引用的東西，都會是你編出來的——實際上已經發生過。
+
+因此你寫的每一句 text 都必須是【描述】，不是引文：
+  ✗ 結尾的修辭問句「⋯⋯」把文章提升到另一個層次
+  ✓ 結尾用修辭問句收束，把文章提升到另一個層次
+
+具體規則（系統會檢查）：
+  • text 裡不可以出現任何引號（「」『』"" ''）
+  • text 裡不可以出現成串的英文。學生寫的是英文、你寫的是中文，
+    成串英文只可能是你在引用原文。
+
+學生要看的原句，UI 會依照你給的 refs 回 Stage 1 取出來顯示。
+你的工作是排序與取捨，證據不歸你管。
 
 【refs 規則】
 strengths 與 needs_work 的每一項都必須至少引用一個代碼，而且只能取自這份清單：
