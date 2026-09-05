@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Bug, Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, Bug, Database, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
@@ -35,6 +35,22 @@ interface QueueRow {
   error_detail: string | null;
   attempt_count: number | null;
   synthesis_attempt_count: number | null;
+}
+
+/**
+ * 這一頁會真的觸發 DeepSeek 並把結果寫進資料庫，所以「現在連的是哪個 Supabase
+ * 專案」必須是看得見的事實，而不是要靠人記得去 Vercel 後台核對。
+ * 連到正式專案時直接跳警示，不要等寫進去才發現。
+ */
+const STAGING_REF = "cwymrzcovgobfqxtithn";
+const PRODUCTION_REF = "ytzspnjmkvrkbztnaomm";
+
+function supabaseProject(): { ref: string; label: string; isProduction: boolean } {
+  const url = import.meta.env.VITE_SUPABASE_URL ?? "";
+  const ref = url.replace(/^https?:\/\//, "").split(".")[0] || "(未設定)";
+  if (ref === STAGING_REF) return { ref, label: "gsat-staging", isProduction: false };
+  if (ref === PRODUCTION_REF) return { ref, label: "正式專案", isProduction: true };
+  return { ref, label: "未知專案", isProduction: false };
 }
 
 interface RunResult {
@@ -74,6 +90,7 @@ const StatusBadge = ({ row }: { row: QueueRow }) => {
 };
 
 const WritingDebug = () => {
+  const project = supabaseProject();
   const [queue, setQueue] = useState<QueueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -170,6 +187,25 @@ const WritingDebug = () => {
             </Button>
           </div>
 
+          {project.isProduction ? (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                這個部署連的是<strong>正式專案</strong>（{project.ref}）。
+                執行分析會把 AI 結果寫進正式資料庫，因此按鈕已停用。
+                請把 Preview 的 VITE_SUPABASE_URL 指向 gsat-staging 之後再試。
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+              <Database className="h-4 w-4 shrink-0" />
+              <span className="min-w-0 truncate">
+                資料庫：{project.label}
+                <span className="ml-2 font-mono text-xs">{project.ref}</span>
+              </span>
+            </div>
+          )}
+
           {error ? (
             <Alert variant="destructive" className="mb-6">
               <AlertCircle className="h-4 w-4" />
@@ -219,7 +255,7 @@ const WritingDebug = () => {
                         <Button
                           size="sm"
                           onClick={() => void run(row.essay_id, "full")}
-                          disabled={Boolean(running)}
+                          disabled={Boolean(running) || project.isProduction}
                         >
                           {busy && running?.endsWith(":full") ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -231,7 +267,7 @@ const WritingDebug = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => void run(row.essay_id, "synthesis")}
-                            disabled={Boolean(running)}
+                            disabled={Boolean(running) || project.isProduction}
                           >
                             只重跑綜合層
                           </Button>
