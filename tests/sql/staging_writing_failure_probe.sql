@@ -143,12 +143,17 @@ BEGIN
     END IF;
 
   ELSIF a.status = 'COMPLETED' THEN
-    INSERT INTO d (item, value) VALUES
-      ('結果', '這一次成功了，沒有 502。逐支狀態與量測見下'),
-      ('Stage 1 請求次數（推算）',
+    INSERT INTO d (item, value) VALUES ('結果', '這一次成功了，沒有 502。逐支狀態與量測見下');
+    -- ⚠️ to_jsonb 之後，NULL 欄位會變成 JSON 的 null，不是 SQL 的 NULL，
+    -- 所以 coalesce(j -> 'x', '{}') 擋不住它——jsonb_each 會直接報錯。
+    -- 判斷型別才是可靠的做法。
+    IF jsonb_typeof(j -> 'stage1_progress') = 'object' THEN
+      INSERT INTO d (item, value) VALUES (
+        'Stage 1 請求次數（推算）',
         '至少 ' || (SELECT max((x.value ->> 'attempts')::int)
-                      FROM jsonb_each(coalesce(j -> 'stage1_progress', '{}'::jsonb)) x) || ' 次'
+                      FROM jsonb_each(j -> 'stage1_progress') x) || ' 次'
         || '　（等於嘗試次數最多那一支的次數：重試是另一次請求）');
+    END IF;
   ELSE
     INSERT INTO d (item, value) VALUES ('狀態', a.status || '：這一列還沒有結果，也沒有失敗紀錄');
   END IF;
@@ -166,7 +171,7 @@ BEGIN
   END LOOP;
 
   -- ── 逐支狀態（跨請求）────────────────────────────────────
-  IF j ->> 'stage1_progress' IS NOT NULL THEN
+  IF jsonb_typeof(j -> 'stage1_progress') = 'object' THEN
     INSERT INTO d (item, value) VALUES ('—— 逐支狀態 ——', '');
     FOR v_rec IN
       SELECT key AS pass_label, value AS s FROM jsonb_each(j -> 'stage1_progress') ORDER BY key
@@ -189,7 +194,7 @@ BEGIN
   -- ── 逐支、逐次量測 ────────────────────────────────────────
   -- 這一段取代三個舊盲點：attempt_count 是常數、被中斷的呼叫 latency 歸零、
   -- 以及最後一次的空陣列蓋掉前一次的缺漏清單。
-  IF j -> 'stage1_telemetry' IS NULL OR j ->> 'stage1_telemetry' IS NULL THEN
+  IF jsonb_typeof(j -> 'stage1_telemetry') <> 'object' THEN
     INSERT INTO d (item, value)
     VALUES ('—— 逐支量測 ——', '此列在加入量測之前產生，或尚未跑 add_writing_analyses_telemetry.sql');
   ELSE
@@ -232,7 +237,7 @@ BEGIN
     END LOOP;
   END IF;
 
-  IF j ->> 'synthesis_telemetry' IS NOT NULL THEN
+  IF jsonb_typeof(j -> 'synthesis_telemetry') = 'object' THEN
     INSERT INTO d (item, value) VALUES (
       'synthesis 量測',
       '嘗試 ' || (j -> 'synthesis_telemetry' ->> 'attempts') || ' 次　'
@@ -256,6 +261,26 @@ BEGIN
     );
     INSERT INTO d (item, value) VALUES (
       '錯誤 findings 筆數', coalesce(jsonb_array_length(a.error_analysis -> 'findings')::text, '?'));
+
+    -- 16 類的分布。要判斷「掃描是否涵蓋全部 16 類」就得看這個：
+    -- 總筆數相同、但集中在少數幾類，跟平均散布在多類，是兩回事。
+    INSERT INTO d (item, value) VALUES ('—— 16 類錯誤分布 ——', '');
+    FOR v_rec IN
+      SELECT value ->> 'code' AS code, (value ->> 'count')::int AS n
+        FROM jsonb_array_elements(a.error_analysis -> 'coverage')
+       ORDER BY (value ->> 'count')::int DESC, value ->> 'code'
+    LOOP
+      INSERT INTO d (item, value) VALUES (
+        '  ' || v_rec.code,
+        CASE WHEN v_rec.n = 0 THEN '0（本篇未偵測到此類，不代表已精熟）'
+             ELSE v_rec.n || ' 筆　' || repeat('▪', least(v_rec.n, 20)) END
+      );
+    END LOOP;
+    INSERT INTO d (item, value) VALUES (
+      '有 finding 的類別數',
+      (SELECT count(*)::text FROM jsonb_array_elements(a.error_analysis -> 'coverage') x
+        WHERE (x.value ->> 'count')::int > 0) || ' / 16'
+    );
   END IF;
   IF a.high_score_feature_analysis IS NOT NULL THEN
     SELECT jsonb_array_length(a.high_score_feature_analysis -> 'features') INTO v_n;

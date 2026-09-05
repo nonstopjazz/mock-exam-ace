@@ -546,6 +546,20 @@ console.log("\nprompt 的節點覆蓋");
     prompt.includes("題目與提示文字不是學生寫的") && prompt.includes("findings 留空"),
   );
   check("Pass 2 prompt 不再向模型索取 coverage", !prompt.includes("coverage"));
+  // 掃描指令與輸出格式是兩件事：拿掉 coverage 輸出【不等於】可以拿掉
+  // 「16 類都要看過」。2026-09-05 把兩者一起改掉，findings 從 44 掉到 22。
+  check(
+    "Pass 2 prompt 要求逐一檢查全部 16 類",
+    prompt.includes("必須逐一檢查") && prompt.includes("一類都不能跳"),
+  );
+  check(
+    "Pass 2 prompt 說明檢查涵蓋 16 類但輸出只放找到的",
+    prompt.includes("檢查要涵蓋 16 類，輸出只放真的找到的東西"),
+  );
+  check(
+    "Pass 2 prompt 禁止為了湊數硬找",
+    prompt.includes("不是為了湊數而硬找一個"),
+  );
   check(
     "Pass 2 prompt 仍然強調『沒出現不等於精熟』",
     prompt.includes("不代表學生已經精熟"),
