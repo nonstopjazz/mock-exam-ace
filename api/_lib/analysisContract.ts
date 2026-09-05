@@ -28,7 +28,7 @@ import {
   HIGH_SCORE_FEATURE_BY_CODE,
   HIGH_SCORE_SUBSKILL_BY_CODE,
   WRITING_TAXONOMY_VERSION,
-} from "./taxonomy";
+} from "./taxonomy.js";
 
 /* ──────────────── 狀態語彙 ──────────────── */
 

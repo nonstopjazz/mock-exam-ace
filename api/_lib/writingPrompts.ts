@@ -17,13 +17,13 @@ import {
   HIGH_SCORE_CATEGORIES,
   HIGH_SCORE_SUBSKILLS,
   type HighScoreCategory,
-} from "./taxonomy";
+} from "./taxonomy.js";
 import type {
   CompetencyAnalysis,
   ErrorAnalysis,
   HighScoreAnalysis,
-} from "./analysisContract";
-import type { DeepSeekMessage } from "./deepseek";
+} from "./analysisContract.js";
+import type { DeepSeekMessage } from "./deepseek.js";
 
 export interface EssayInput {
   title: string;

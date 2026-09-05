@@ -14,7 +14,7 @@ import {
   isValidationOk,
   type PassValidation,
   type ValidationIssue,
-} from "./analysisContract";
+} from "./analysisContract.js";
 
 const DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions";
 

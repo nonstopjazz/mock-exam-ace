@@ -34,14 +34,14 @@ import {
   requireEssayAccess,
   type VercelLikeRequest,
   type VercelLikeResponse,
-} from "./_lib/essayAuth";
+} from "./_lib/essayAuth.js";
 import {
   isPassOk,
   runValidatedPass,
   DEFAULT_MODEL,
   type PassFailure,
   type PassOutcome,
-} from "./_lib/deepseek";
+} from "./_lib/deepseek.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   compressForSynthesis,
@@ -53,7 +53,7 @@ import {
   HIGH_SCORE_PASS_A,
   HIGH_SCORE_PASS_B,
   type EssayInput,
-} from "./_lib/writingPrompts";
+} from "./_lib/writingPrompts.js";
 import {
   collectCitableRefs,
   validateCompetencyAnalysis,
@@ -64,8 +64,8 @@ import {
   type ErrorAnalysis,
   type HighScoreAnalysis,
   type ValidationIssue,
-} from "./_lib/analysisContract";
-import { WRITING_TAXONOMY_VERSION } from "./_lib/taxonomy";
+} from "./_lib/analysisContract.js";
+import { WRITING_TAXONOMY_VERSION } from "./_lib/taxonomy.js";
 
 export const config = {
   maxDuration: 60,

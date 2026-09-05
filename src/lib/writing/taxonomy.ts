@@ -8,4 +8,4 @@
  * import 到 api/ 目錄外面會讓 function 在載入階段就崩潰
  * （FUNCTION_INVOCATION_FAILED）。所以共用模組必須住在 api/_lib/。
  */
-export * from "../../../api/_lib/taxonomy";
+export * from "../../../api/_lib/taxonomy.js";

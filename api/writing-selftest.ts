@@ -56,12 +56,12 @@ export default async function handler(
 
   // 逐一嘗試，順序 = 相依順序。第一個失敗的就是根因。
   await attempt("@supabase/supabase-js", () => import("@supabase/supabase-js"));
-  await attempt("./_lib/taxonomy", () => import("./_lib/taxonomy"));
-  await attempt("./_lib/analysisContract", () => import("./_lib/analysisContract"));
-  await attempt("./_lib/deepseek", () => import("./_lib/deepseek"));
-  await attempt("./_lib/writingPrompts", () => import("./_lib/writingPrompts"));
-  await attempt("./_lib/essayAuth", () => import("./_lib/essayAuth"));
-  await attempt("./analyze-writing", () => import("./analyze-writing"));
+  await attempt("./_lib/taxonomy", () => import("./_lib/taxonomy.js"));
+  await attempt("./_lib/analysisContract", () => import("./_lib/analysisContract.js"));
+  await attempt("./_lib/deepseek", () => import("./_lib/deepseek.js"));
+  await attempt("./_lib/writingPrompts", () => import("./_lib/writingPrompts.js"));
+  await attempt("./_lib/essayAuth", () => import("./_lib/essayAuth.js"));
+  await attempt("./analyze-writing", () => import("./analyze-writing.js"));
 
   // 部署產物裡到底有哪些檔案——這一項直接看得出 _lib/ 有沒有被包進去。
   let files: unknown = "（讀取失敗）";
