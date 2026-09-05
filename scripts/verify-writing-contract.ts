@@ -636,6 +636,43 @@ console.log("\nv3 —— 只靠 prompt 修不動的三件事，改成可強制")
 }
 
 {
+  // 2026-09-05 calibration run 1 真的漏掉的那一句：逗號把英文切碎，舊門檻擋不住
+  const bad = validateSynthesis(
+    {
+      overall_evaluation: { level: "STRONG", headline: "h", summary: "s" },
+      strengths: [
+        {
+          text: "如用 simmering broth 對比 heated, sealed, and forgettable，對比很清楚",
+          refs: ["WRITE_ORG_LOGIC"],
+        },
+      ],
+      needs_work: [{ text: "主詞單複數", refs: ["WRITE_ERR_SV_AGREEMENT"] }],
+      next_steps: [{ text: "檢查主詞" }],
+    },
+    citable,
+  );
+  expectIssue("逗號切碎的英文引文 → SYNTHESIS_EVIDENCE", bad, "SYNTHESIS_EVIDENCE");
+}
+
+{
+  // 反向：taxonomy code 與短英文術語不可以被誤判成引文
+  const good = validateSynthesis(
+    {
+      overall_evaluation: {
+        level: "STRONG",
+        headline: "結構清楚",
+        summary: "WRITE_ORG_LOGIC 這一軸表現穩定。",
+      },
+      strengths: [{ text: "topic sentence 位置正確，段落好讀", refs: ["WRITE_ORG_LOGIC"] }],
+      needs_work: [{ text: "主詞單複數", refs: ["WRITE_ERR_SV_AGREEMENT"] }],
+      next_steps: [{ text: "檢查主詞" }],
+    },
+    citable,
+  );
+  check("taxonomy code 與兩字英文術語不算引文", isValidationOk(good));
+}
+
+{
   // headline / summary 也要擋
   const bad = validateSynthesis(
     {

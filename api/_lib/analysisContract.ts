@@ -365,8 +365,17 @@ export function quoteAppearsInEssay(essay: string, quote: string): boolean {
 /** 引號：中英日常用的都算 */
 const QUOTE_MARK = /[「」『』“”‘’"']/;
 
-/** 連續四個以上的拉丁字詞——綜合層寫中文，這種東西只可能是引文 */
-const LATIN_RUN = /(?:[A-Za-z][A-Za-z'’-]*[ \t]+){3,}[A-Za-z][A-Za-z'’-]*/;
+/**
+ * 連續三個以上的拉丁字詞——綜合層寫中文，這種東西只可能是引文。
+ *
+ * 2026-09-05 calibration run 1：綜合層寫出「如用 simmering broth 對比 heated, sealed,
+ * and forgettable」。舊版只把空白/tab 當分隔，逗號一插進來字串就被切成 2 + 2 個字，
+ * 整句從 4 字門檻底下溜過去。所以分隔符要含標點，門檻也降到 3 個字。
+ * 底線不算分隔符，taxonomy code（WRITE_ORG_LOGIC）因此不會被誤判。
+ */
+const LATIN_WORD = "[A-Za-z][A-Za-z'’-]*";
+const LATIN_SEP = "[ \\t,.;:!?()\\[\\]/·—]+";
+const LATIN_RUN = new RegExp(`(?:${LATIN_WORD}${LATIN_SEP}){2,}${LATIN_WORD}`);
 
 /**
  * 綜合層的 text 不得夾帶證據。
