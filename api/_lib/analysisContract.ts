@@ -24,6 +24,7 @@ import {
   ALL_ERROR_CODES,
   COMPETENCY_CATEGORIES,
   ERROR_TAG_BY_CODE,
+  ERROR_TAGS,
   HIGH_SCORE_CATEGORIES,
   HIGH_SCORE_FEATURE_BY_CODE,
   HIGH_SCORE_SUBSKILL_BY_CODE,
@@ -346,6 +347,8 @@ export type ValidationIssueKind =
   | "QUOTE_NOT_IN_ESSAY"
   | "PREREQUISITE_NOT_MET"
   | "MISSING_JUSTIFICATION"
+  | "REDUNDANT_SPAN"
+  | "FALLBACK_SELF_CONTRADICTION"
   | "SYNTHESIS_EVIDENCE";
 
 export interface ValidationIssue {
@@ -726,6 +729,11 @@ export function validateErrorAnalysis(
     });
   });
 
+  // 這兩條要看整批 findings 的關係，所以在逐筆檢查之後才跑。
+  // 只用已經通過逐筆檢查的那些——被擋下的 finding 不該影響別人的判定。
+  checkMinimalSpans(findings, essay, issues);
+  checkFallbackConsistency(findings, issues);
+
   if (issues.length > 0) return { ok: false, issues };
 
   return {
@@ -737,6 +745,131 @@ export function validateErrorAnalysis(
       coverage_source: "SERVER_DERIVED",
     },
   };
+}
+
+/**
+ * 找出一段引用在原文裡的位置。
+ *
+ * 引用已經通過逐字查核，所以直接找得到；正規化過才相符的情況退回 null，
+ * 由呼叫端改用字串包含判斷。
+ */
+function spanOf(essay: string, quote: string): { start: number; end: number } | null {
+  const i = essay.indexOf(quote);
+  if (i < 0) return null;
+  return { start: i, end: i + quote.length };
+}
+
+/**
+ * 規則 A：每一筆 finding 都要用【剛好夠用】的最小證據範圍。
+ *
+ * 2026-09-05 v8：34 筆 findings 裡，12 筆是 GRAMMAR_OTHER，其中 8 筆是「整句打包」
+ * ——引用整個句子，理由裡列出該句所有問題，然後同一批問題又各自有具體的 finding。
+ * 學生會看到同一個錯誤被算兩次，而 GRAMMAR_OTHER 的占比被灌到 35%。
+ *
+ * 這裡【不是】無條件否決包住別筆的 fallback。真正的殘餘錯誤仍然可以存在——
+ * 它只要把範圍縮到自己那一處就會通過。所以修正指示給兩條路：
+ *   • 這確實是別筆沒涵蓋的獨立錯誤 → 把引用縮到那個錯誤本身的最小範圍
+ *   • 這只是把已經分類過的錯誤總結一遍 → 刪掉它
+ * 縮到最小範圍之後就不再包住別人，規則自動放行——判斷交給模型，界線交給程式。
+ */
+function checkMinimalSpans(
+  findings: readonly ErrorFinding[],
+  essay: string,
+  issues: ValidationIssue[],
+): void {
+  const spans = findings.map((f) => spanOf(essay, f.quote));
+
+  findings.forEach((outer, i) => {
+    if (outer.code !== ERROR_FALLBACK_CODE) return;
+    const a = spans[i];
+
+    const swallowed: string[] = [];
+    findings.forEach((inner, j) => {
+      if (i === j) return;
+      const b = spans[j];
+      let covered: boolean;
+      if (a && b) {
+        // 兩段都定位得到：用原文的字元區間判斷，比字串包含可靠。
+        const overlap = Math.min(a.end, b.end) - Math.max(a.start, b.start);
+        const shorter = Math.min(a.end - a.start, b.end - b.start);
+        // 完全落在裡面，或與較短的那一段重疊超過八成，都算「已經涵蓋」。
+        covered = overlap > 0 && overlap >= shorter * 0.8 && a.end - a.start > b.end - b.start;
+      } else {
+        covered = outer.quote.includes(inner.quote) && outer.quote.length > inner.quote.length;
+      }
+      if (covered) swallowed.push(`${inner.code}「${inner.quote}」`);
+    });
+
+    if (swallowed.length > 0) {
+      issues.push({
+        kind: "REDUNDANT_SPAN",
+        path: `error.findings[${i}]`,
+        detail:
+          `這一筆 ${ERROR_FALLBACK_CODE} 的引用範圍包住了已經另外分類的錯誤：` +
+          `${swallowed.join("、")}。請二擇一：` +
+          "（1）如果它確實是那些 finding 沒有涵蓋的另一個錯誤，把 quote 縮到【那個錯誤本身】的最小範圍；" +
+          "（2）如果它只是把上面那些已分類的錯誤總結一遍，就刪掉這一筆。" +
+          "每一筆 finding 都要用剛好夠用的最小證據範圍，不要引用整個句子。",
+      });
+    }
+  });
+}
+
+/**
+ * 規則 B：fallback 的理由不得自我推翻。
+ *
+ * 2026-09-05 v8 兩筆真實案例，理由欄寫著
+ *   「詞類誤用，但已歸類為 WORD_CLASS，此處重複？不，…應歸類為 WORD_CLASS。」
+ * 模型自己寫下「應該歸類為 WORD_CLASS」，然後還是標了 GRAMMAR_OTHER。
+ * 必填但不驗內容，等於多了一個可以寫任何東西的欄位。
+ *
+ * ⚠️ 只擋【肯定式】的歸屬。正確的理由本來就會點名其他類別來排除它們
+ *    （「不屬於冠詞／單複數／SV 一致任何一類」），那是合格的寫法，不能誤殺。
+ */
+const AFFIRMATIVE_MARKERS = [
+  "應歸類為", "應該歸類", "歸類為", "應標為", "應標成", "應改標", "屬於", "應該是",
+];
+const NEGATIONS = ["不", "非", "未", "無"];
+
+function checkFallbackConsistency(
+  findings: readonly ErrorFinding[],
+  issues: ValidationIssue[],
+): void {
+  findings.forEach((f, i) => {
+    if (f.code !== ERROR_FALLBACK_CODE || !f.fallback_rationale) return;
+    const text = f.fallback_rationale;
+
+    // 找出沒有被否定詞修飾的肯定式歸屬用語。
+    const affirms = AFFIRMATIVE_MARKERS.some((m) => {
+      let from = 0;
+      for (;;) {
+        const at = text.indexOf(m, from);
+        if (at < 0) return false;
+        const before = text.slice(Math.max(0, at - 2), at);
+        if (!NEGATIONS.some((n) => before.includes(n))) return true;
+        from = at + m.length;
+      }
+    });
+    if (!affirms) return;
+
+    // 理由裡點名了哪個具體類別？code、去掉前綴的 code、以及中文名都算。
+    const named = ERROR_TAGS.filter((t) => t.code !== ERROR_FALLBACK_CODE).find(
+      (t) =>
+        text.includes(t.code) ||
+        text.includes(t.code.replace("WRITE_ERR_", "")) ||
+        text.includes(t.zh),
+    );
+    if (!named) return;
+
+    issues.push({
+      kind: "FALLBACK_SELF_CONTRADICTION",
+      path: `error.findings[${i}]`,
+      detail:
+        `這一筆 ${ERROR_FALLBACK_CODE} 的 fallback_rationale 自己說它應該歸類為 ` +
+        `${named.code}（${named.zh}）。既然有更具體的類別適用，就直接用那一個 code，` +
+        "不要用 fallback。fallback_rationale 只能說明為什麼其他類別【都不】適用。",
+    });
+  });
 }
 
 /**

@@ -258,6 +258,90 @@ const fullError = () => ({
 }
 
 {
+  // 規則 A：整句打包的 fallback 被擋下（2026-09-05 v8 真實案例，12 筆裡有 8 筆）。
+  const r = validateErrorAnalysis({
+    findings: [
+      {
+        code: "WRITE_ERR_GRAMMAR_OTHER",
+        quote: "Many student thinks the policy are unfair.",
+        reason: "整句都有問題",
+        correction: "Many students think the policy is unfair.",
+        primary_skill: "WRITE_GRAMMAR_BASIC",
+        fallback_rationale: "句子結構混亂，不屬於其他具體類別",
+      },
+      {
+        code: "WRITE_ERR_SV_AGREEMENT",
+        quote: "Many student thinks",
+        reason: "主詞複數",
+        correction: "Many students think",
+        primary_skill: "WRITE_GRAMMAR_BASIC",
+      },
+    ],
+  }, ESSAY);
+  expectIssue("fallback 包住已分類的錯誤 → REDUNDANT_SPAN", r, "REDUNDANT_SPAN");
+  if (!r.ok) {
+    const i = r.issues.find((x) => x.kind === "REDUNDANT_SPAN")!;
+    check("修正指示同時給出「縮小範圍」與「刪掉」兩條路",
+      i.detail.includes("最小範圍") && i.detail.includes("刪掉這一筆"));
+  }
+}
+
+{
+  // 規則 A 的重點：真正獨立的殘餘錯誤縮小範圍之後就通過，不會被連坐刪掉。
+  const r = validateErrorAnalysis({
+    findings: [
+      {
+        code: "WRITE_ERR_GRAMMAR_OTHER",
+        quote: "However,",
+        reason: "轉折詞用得不當",
+        correction: "Nevertheless,",
+        primary_skill: "WRITE_GRAMMAR_BASIC",
+        fallback_rationale: "連接副詞選用不當，不屬於其他具體類別",
+      },
+      {
+        code: "WRITE_ERR_SV_AGREEMENT",
+        quote: "Many student thinks",
+        reason: "主詞複數",
+        correction: "Many students think",
+        primary_skill: "WRITE_GRAMMAR_BASIC",
+      },
+    ],
+  }, ESSAY);
+  check("縮到最小範圍的獨立 fallback 仍然通過", isValidationOk(r));
+}
+
+{
+  // 規則 B：理由自己說「應歸類為 WORD_CLASS」——v8 一字不改的真實案例。
+  const r = validateErrorAnalysis({
+    findings: [{
+      code: "WRITE_ERR_GRAMMAR_OTHER",
+      quote: "Many student thinks",
+      reason: "詞類誤用",
+      correction: "Many students think",
+      primary_skill: "WRITE_GRAMMAR_BASIC",
+      fallback_rationale:
+        "詞類誤用，但已歸類為 WORD_CLASS，此處重複？不，此處是 basis 誤用為形容詞，屬於詞類錯誤，應歸類為 WORD_CLASS。",
+    }],
+  }, ESSAY);
+  expectIssue("理由自我推翻 → FALLBACK_SELF_CONTRADICTION", r, "FALLBACK_SELF_CONTRADICTION");
+}
+
+{
+  // 規則 B 不可以誤殺：合格的理由本來就會點名其他類別【來排除它們】。
+  const r = validateErrorAnalysis({
+    findings: [{
+      code: "WRITE_ERR_GRAMMAR_OTHER",
+      quote: "Many student thinks",
+      reason: "語態錯誤",
+      correction: "Many students think",
+      primary_skill: "WRITE_GRAMMAR_BASIC",
+      fallback_rationale: "動詞語態錯誤，不屬於冠詞／單複數／SV 一致／詞類／代名詞／that／介係詞任何一類",
+    }],
+  }, ESSAY);
+  check("排除式的合格理由不被誤殺", isValidationOk(r));
+}
+
+{
   // 被驗證擋下來的 finding 不可以算進 count，否則捏造的證據會把數字灌水。
   const payload = fullError();
   payload.findings.push({

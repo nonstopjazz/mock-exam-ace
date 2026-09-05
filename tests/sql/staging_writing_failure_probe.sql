@@ -303,6 +303,15 @@ BEGIN
              ELSE v_rec.n || ' 筆　' || repeat('▪', least(v_rec.n, 20)) END
       );
     END LOOP;
+    -- fallback 占比是標籤紀律的主要指標。整句打包時它會被灌高，
+    -- 而規則 A／B 正是為了壓下這個數字。
+    INSERT INTO d (item, value) VALUES (
+      'GRAMMAR_OTHER 占比',
+      coalesce((SELECT (x.value ->> 'count')
+                  FROM jsonb_array_elements(a.error_analysis -> 'coverage') x
+                 WHERE x.value ->> 'code' = 'WRITE_ERR_GRAMMAR_OTHER'), '0')
+      || ' / ' || jsonb_array_length(a.error_analysis -> 'findings') || ' 筆'
+    );
     INSERT INTO d (item, value) VALUES (
       '有 finding 的類別數',
       (SELECT count(*)::text FROM jsonb_array_elements(a.error_analysis -> 'coverage') x

@@ -585,6 +585,10 @@ console.log("\nprompt 的節點覆蓋");
       && prompt.includes("那是 WRITE_ERR_NUMBER"),
   );
   check(
+    "Pass 2 prompt 要求每筆用最小證據範圍",
+    prompt.includes("剛好夠用") && prompt.includes("不要引用整個句子"),
+  );
+  check(
     "Pass 2 prompt 要求 fallback_rationale 且說明不給學生看",
     prompt.includes("fallback_rationale") && prompt.includes("不會呈現給學生"),
   );
