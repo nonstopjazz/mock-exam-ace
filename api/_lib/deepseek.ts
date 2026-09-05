@@ -85,8 +85,13 @@ export interface AttemptRecord {
   isRepair: boolean;
   /** 從這一支 pass 開始算起，這次嘗試在第幾毫秒發出 */
   offsetMs: number;
-  /** 這一次嘗試花了多久（含被中斷前跑掉的時間） */
+  /**
+   * 這一次嘗試花了多久（含被中斷前跑掉的時間）。
+   * 量到【回應主體讀完】為止，不是收到標頭就算——見 callDeepSeek 裡的說明。
+   */
   latencyMs: number;
+  /** 收到標頭的時間。與 latencyMs 的差距就是主體串流的時間。 */
+  ttfbMs?: number;
   outcome: AttemptOutcome;
   /** 給人看的一句話。期限中斷會明確寫成期限，不會留下通用的 abort 訊息。 */
   detail?: string;
@@ -150,12 +155,18 @@ export async function callDeepSeek(
     signal: options.signal,
   });
 
+  // ⚠️ 這裡【只】記 status，不記 latency。
+  // fetch 在【收到標頭】時就 resolve，回應主體還在串流。DeepSeek 的主體要跑
+  // 十幾秒，標頭卻 0.4 秒就回來——在這裡量 latency 量到的是 TTFB，不是整支呼叫。
+  // 2026-09-05 的量測就吃了這個虧：每一次嘗試都顯示 0.4 秒，pass 總長卻是 19.6 秒。
+  // latencyMs 移到主體讀完之後才寫。
   if (options.telemetry) {
-    options.telemetry.latencyMs = Date.now() - startedAt;
     options.telemetry.httpStatus = res.status;
+    options.telemetry.ttfbMs = Date.now() - startedAt;
   }
 
   if (!res.ok) {
+    if (options.telemetry) options.telemetry.latencyMs = Date.now() - startedAt;
     const retriable = res.status === 429 || res.status >= 500;
     // 刻意不把 provider 的原始回應帶進錯誤訊息——它可能含有請求內容的回音。
     throw new DeepSeekError(`DeepSeek 回應 ${res.status}`, retriable, "HTTP_ERROR");
@@ -177,6 +188,8 @@ export async function callDeepSeek(
   }
   const content = payload.choices?.[0]?.message?.content;
   if (options.telemetry) {
+    // 主體已經讀完，這時候的 elapsed 才是整支呼叫真正花的時間。
+    options.telemetry.latencyMs = Date.now() - startedAt;
     // 輸出量的代理指標。驗證有沒有過都記得下來，這樣「弱作文的 error 這一支
     // 到底吐了多少東西」在失敗的列上也查得到。
     options.telemetry.responseChars = content?.length ?? 0;

@@ -308,14 +308,14 @@ async function runStage1(ctx: RunContext) {
       label: "High-Score Feature H1–H3",
       messages: highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_A)),
       validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_A, essay.content),
-      describe: (raw) => ({ categories: countArray(raw, "categories") }),
+      describe: (raw) => ({ features: countArray(raw, "features") }),
     }),
     runValidatedPass({
       ...shared,
       label: "High-Score Feature H4–H5",
       messages: highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_B)),
       validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_B, essay.content),
-      describe: (raw) => ({ categories: countArray(raw, "categories") }),
+      describe: (raw) => ({ features: countArray(raw, "features") }),
     }),
   ]);
 

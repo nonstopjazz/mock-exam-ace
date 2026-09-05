@@ -35,6 +35,7 @@ DECLARE
   v_rec2  RECORD;
   v_rec3  RECORD;
   v_n     INTEGER;
+  v_outcome TEXT;
 BEGIN
   SELECT * INTO a FROM public.writing_analyses x
    WHERE (v_essay IS NULL OR x.essay_id = v_essay)
@@ -55,7 +56,10 @@ BEGIN
   v_stage1_secs := round(extract(epoch FROM (
                      coalesce((j ->> 'analyzed_at')::timestamptz,
                               a.synthesis_started_at,
-                              a.completed_at) - a.started_at))::numeric, 1);
+                              a.completed_at,
+                              -- 失敗的列沒有前面那些時間戳，但 failed_at 就是 Stage 1 的終點
+                              CASE WHEN a.status = 'FAILED' THEN a.failed_at END)
+                     - a.started_at))::numeric, 1);
   v_stage2_secs := round(extract(epoch FROM (
                      coalesce(a.synthesis_completed_at, a.synthesis_failed_at) - a.synthesis_started_at))::numeric, 1);
 
@@ -102,17 +106,25 @@ BEGIN
   -- ── 判讀：502 是哪一種 ────────────────────────────────────
   INSERT INTO d (item, value) VALUES ('—— 判讀 ——', '');
 
+  -- 判讀優先讀 telemetry 的 finalOutcome。比對錯誤訊息字串是不可靠的：
+  -- 2026-09-05 就是因為期限訊息從英文的 "aborted" 改成中文的「硬性期限」，
+  -- 這裡的 ILIKE '%abort%' 沒中，於是把一次期限中斷誤判成 HTTP／JSON 失敗。
+  -- 結局是列舉值，訊息是給人看的散文——判讀只能靠前者。
+  v_outcome := j -> 'stage1_telemetry' -> a.failed_pass ->> 'finalOutcome';
+
   IF a.status = 'FAILED' THEN
-    IF a.validation_issues IS NOT NULL AND jsonb_array_length(a.validation_issues) > 0 THEN
+    IF v_outcome = 'DEADLINE'
+       OR (v_outcome IS NULL AND a.error_detail ~* '(abort|硬性期限)') THEN
+      INSERT INTO d (item, value) VALUES
+        ('502 成因', 'Stage 1 的「' || a.failed_pass || '」被【我們自己的 50 秒硬性期限】中斷，不是 Vercel 逾時'),
+        ('對應動作', '四軸沒有落地，必須整個重跑 Stage 1');
+    ELSIF a.validation_issues IS NOT NULL AND jsonb_array_length(a.validation_issues) > 0 THEN
       INSERT INTO d (item, value) VALUES
         ('502 成因', 'Stage 1 結構化輸出驗證失敗（' || a.failed_pass || '），缺漏清單見下');
-    ELSIF a.error_detail ILIKE '%abort%' THEN
-      INSERT INTO d (item, value) VALUES
-        ('502 成因', 'Stage 1 的「' || a.failed_pass || '」被【我們自己的 50 秒硬性期限】中斷（AbortError），不是 Vercel 逾時'),
-        ('對應動作', '四軸沒有落地，必須整個重跑 Stage 1');
     ELSE
       INSERT INTO d (item, value) VALUES
-        ('502 成因', 'Stage 1 呼叫本身失敗（' || a.failed_pass || '）：HTTP 非 2xx／回傳不是合法 JSON');
+        ('502 成因', 'Stage 1 呼叫本身失敗（' || a.failed_pass || '）：'
+                     || coalesce(v_outcome, 'HTTP 非 2xx／回傳不是合法 JSON'));
     END IF;
 
   ELSIF a.synthesis_status = 'FAILED' THEN
@@ -120,7 +132,8 @@ BEGIN
        AND jsonb_array_length(a.synthesis_validation_issues) > 0 THEN
       INSERT INTO d (item, value) VALUES
         ('502 成因', '綜合層驗證失敗（refs 或夾帶原文），缺漏清單見下。四軸完好');
-    ELSIF a.synthesis_error_detail ILIKE '%abort%' THEN
+    ELSIF coalesce(j -> 'synthesis_telemetry' ->> 'finalOutcome', '') = 'DEADLINE'
+          OR a.synthesis_error_detail ~* '(abort|硬性期限)' THEN
       INSERT INTO d (item, value) VALUES
         ('502 成因', '綜合層被【我們自己的 50 秒硬性期限】中斷（AbortError），不是 Vercel 逾時，也不是模型的問題'),
         ('對應動作', '這是拆成兩次請求要解決的問題。四軸完好，重新部署後按「只跑綜合層」即可補完');

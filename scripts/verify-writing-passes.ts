@@ -326,6 +326,13 @@ console.log("\n量測（逐支、逐次）");
     `${a1.issueCount} 項`,
   );
   check("attempt 1 記下輸出量（responseChars）", (a1.responseChars ?? 0) > 0, `${a1.responseChars}`);
+  // latencyMs 必須量到主體讀完為止。在標頭就結算的話，每一次嘗試都會顯示 0.4 秒，
+  // 而 pass 總長是 19.6 秒——2026-09-05 的量測就是這樣被弄壞的。
+  check(
+    "latencyMs 量到主體讀完，不是只到標頭",
+    a1.latencyMs >= (a1.ttfbMs ?? 0),
+    `latency ${a1.latencyMs} / ttfb ${a1.ttfbMs}`,
+  );
   check("attempt 1 記下 completion tokens", a1.completionTokens === 4200, `${a1.completionTokens}`);
   check("attempt 1 記下 findings 筆數", (a1.shape?.findings ?? -1) >= 0, JSON.stringify(a1.shape));
 
