@@ -18,6 +18,7 @@
 --   psql -d wtest -f supabase/migrations/create_writing_submissions.sql
 --   psql -d wtest -f supabase/migrations/create_writing_texts.sql
 --   psql -d wtest -f supabase/migrations/create_writing_analyses.sql
+--   psql -d wtest -f supabase/migrations/add_writing_analyses_analyzed_at.sql
 --   psql -d wtest -f tests/sql/writing_analyses_security_test.sql
 --
 -- 純 SQL，沒有 \ir / \echo / \set，結果累積到 temp table 後一次 SELECT，

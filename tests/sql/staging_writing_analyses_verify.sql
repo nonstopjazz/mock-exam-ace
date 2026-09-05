@@ -59,8 +59,10 @@ BEGIN
     FROM information_schema.columns
    WHERE table_schema = 'public' AND table_name = 'writing_analyses';
   INSERT INTO v_result (section, name, verdict, detail)
-  VALUES ('A 結構', '欄位數 = 32',
-          CASE WHEN v_int = 32 THEN 'PASS' ELSE 'FAIL' END, v_int || ' 欄');
+  VALUES ('A 結構', '欄位數 = 33',
+          CASE WHEN v_int = 33 THEN 'PASS' ELSE 'FAIL' END,
+          v_int || ' 欄' ||
+          CASE WHEN v_int = 32 THEN '（少了 analyzed_at，請先跑 add_writing_analyses_analyzed_at.sql）' ELSE '' END);
 
   -- 四個 jsonb 分析欄位
   SELECT count(*) INTO v_int

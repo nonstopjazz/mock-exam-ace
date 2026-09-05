@@ -19,15 +19,17 @@ has_analyses    = false   has_is_admin = true
 | # | 檔案 | 性質 | 回滾點 |
 |---|---|---|---|
 | 0 | 本文件的「步驟 0」查詢 | 唯讀 | 不適用 |
-| 1 | `supabase/migrations/create_writing_analyses.sql` | **唯一的寫入步驟** | 步驟 1R |
+| 1 | `supabase/migrations/create_writing_analyses.sql` | 建表（改 schema） | 步驟 1R |
 | 1R | `supabase/migrations/create_writing_analyses.rollback.sql` | 回滾 | — |
+| 1b | `supabase/migrations/add_writing_analyses_analyzed_at.sql` | 純新增一欄（改 schema） | 步驟 1bR |
+| 1bR | `supabase/migrations/add_writing_analyses_analyzed_at.rollback.sql` | 回滾 | — |
 | 2 | `tests/sql/staging_writing_analyses_verify.sql` | 唯讀 | 不適用 |
 | 3 | Preview 上 `/admin/writing-debug` 跑真實分析 | 寫入 staging 資料 | 步驟 3R |
 | 3R | 本文件的「步驟 3R」刪除語句 | 清掉測試分析列 | — |
 | 4 | `tests/sql/staging_writing_audit_report.sql` | 唯讀 | 不適用 |
 
-**整個流程只有步驟 1 會改變 schema。** 步驟 3 只會在 `writing_analyses`
-新增資料列，不動 schema。
+**只有步驟 1 與 1b 會改變 schema。** 步驟 3 只會在 `writing_analyses`
+新增資料列，不動 schema。已經套過步驟 1 的環境只需要補跑步驟 1b。
 
 ---
 
@@ -56,7 +58,7 @@ SELECT
 
 | 類別 | 內容 |
 |---|---|
-| 表 | `writing_analyses`（32 欄）+ 3 個索引 + 註解 |
+| 表 | `writing_analyses`（32 欄，步驟 1b 之後 33 欄）+ 3 個索引 + 註解 |
 | trigger | `writing_analyses_guard_immutable_trigger`（狀態機白名單、四軸凍結、COMPLETED 前置條件） |
 | 權限 | 啟用 RLS；`REVOKE ALL` 收回 anon / authenticated；只給 service_role `SELECT/INSERT/UPDATE` |
 | 政策 | 1 個，只給 service_role |
@@ -84,11 +86,31 @@ SELECT
 
 ---
 
+## 步驟 1b — 套用 `add_writing_analyses_analyzed_at.sql`
+
+分析流程從「一次請求跑完兩個 Stage」拆成兩次請求之後，Stage 1 的結束時間
+不再能從既有欄位推導（舊算法會把兩次請求之間的客戶端空檔算進 Stage 1）。
+這一欄記錄四軸落地的那一刻，讓兩段延遲各自量得準。
+
+整份貼進 SQL Editor 執行。它只有一行 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`
+與一行 `COMMENT`：不改既有欄位、不改資料、不改 RLS／grants／trigger，重複執行是冪等的。
+
+**預期結果：** `Success. No rows returned`
+
+### 步驟 1bR — 回滾點
+
+`add_writing_analyses_analyzed_at.rollback.sql`。只 DROP 那一個量測欄位，
+分析結果與狀態機都不受影響。
+
+---
+
 ## 步驟 2 — 唯讀驗證
 
 整份貼進 SQL Editor 執行：`tests/sql/staging_writing_analyses_verify.sql`
 
 **預期：`24/24　全部通過`**
+
+若「欄位數」那一項回報 32 欄，代表步驟 1b 還沒跑。
 
 它檢查結構、索引、trigger、RLS、grants、五個函式的
 `SECURITY DEFINER` 與 `search_path`、EXECUTE 授權，
@@ -113,13 +135,26 @@ SELECT
 1. 用**管理員帳號**登入 Preview 站台
 2. 開 `/admin/writing-debug`
 3. 若佇列是空的，先用學生帳號在 `/learn/student/writing` 送出一篇作文
-4. 對目標作文按「執行完整分析」
-5. 頁面會顯示 HTTP 狀態、端對端耗時、以及原始 JSON 回應
+4. 對目標作文按「**開始 AI 批改**」——**只按這一次**
 
-**預期成功回應：**
+分析是兩次請求，但只需要按一次：Stage 1 成功之後，綜合層由頁面自動接續發出。
+按鈕文字會從「Stage 1 進行中」變成「綜合層進行中」。
+
+5. 頁面會把兩段分開列出：各自的 HTTP 狀態、耗時、以及對 50 秒期限的餘裕，
+   還有兩段各自的原始 JSON 回應
+
+**預期 Stage 1 成功回應：**
 ```json
-{ "analysisId": "...", "status": "COMPLETED",
-  "synthesisStatus": "COMPLETED", "reportReady": true }
+{ "analysisId": "...", "stage": "stage1", "status": "ANALYZED",
+  "synthesisStatus": "PENDING", "reportReady": false,
+  "nextRequest": "synthesis", "stage1LatencyMs": 31800 }
+```
+`reportReady: false` 是正確的——四軸過了不等於報告可以給學生看。
+
+**預期 Stage 2 成功回應：**
+```json
+{ "analysisId": "...", "stage": "synthesis", "status": "COMPLETED",
+  "synthesisStatus": "COMPLETED", "reportReady": true, "stage2LatencyMs": 16000 }
 ```
 
 **預期失敗回應（Stage 1 沒過完整覆蓋）：**
@@ -129,14 +164,20 @@ SELECT
 ```
 這是設計上的行為，不是 bug——缺漏一律走失敗路徑，不補值。
 缺漏清單會存進 `validation_issues`，步驟 4 會印出來。
+**Stage 1 失敗時綜合層完全不會被呼叫**，頁面就停在這裡。
 
 **預期綜合層失敗：**
 ```json
-{ "status": "ANALYZED", "synthesisStatus": "FAILED",
+{ "stage": "synthesis", "status": "ANALYZED", "synthesisStatus": "FAILED",
   "reportReady": false, "retryable": true,
   "note": "四軸分析已保留，可只重跑綜合層" }
 ```
-此時頁面會多出「只重跑綜合層」按鈕，四軸資料不會被丟掉。
+此時頁面會多出「只跑綜合層」按鈕。四軸資料在資料庫層已被凍結，
+重跑綜合層不可能改寫它們，也不會重跑那四支昂貴的呼叫。
+
+**重複點擊的防護：** Stage 1 已完成的作文再按一次「開始 AI 批改」，
+端點回 `alreadyDone: true` 並直接指向綜合層，不會重跑四軸；
+另一次請求還在飛時會回 409。
 
 建議跑 2–3 篇不同程度的作文。
 `tests/fixtures/writing/` 有三篇現成的（中等／弱／強），可以直接複製內文去送出。
@@ -165,7 +206,8 @@ DELETE FROM writing_analyses WHERE id IN ('<貼上要刪的 id>');
 
 輸出一張 `section / ord / line` 的表，包含：
 
-1. 概況與延遲（Stage 1 / Stage 2 / 端對端 / 對 50 秒期限的餘裕 / 嘗試次數）
+1. 概況與延遲（Stage 1 / Stage 2 各自的耗時與對 50 秒期限的餘裕、牆鐘時間、嘗試次數）
+   —— 牆鐘時間含兩次請求之間的空檔，**不要**拿它對照 50 秒
 2. 完整覆蓋計數（23 / 16 / 29，直接數，不靠信任）
 3. **引用查核** —— 每一段引用是否逐字出現在 `writing_texts` 的內文裡
 4. 綜合層（學生的第一屏）

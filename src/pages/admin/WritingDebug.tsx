@@ -53,13 +53,26 @@ function supabaseProject(): { ref: string; label: string; isProduction: boolean 
   return { ref, label: "未知專案", isProduction: false };
 }
 
-interface RunResult {
-  essayId: string;
-  mode: string;
+type RunMode = "stage1" | "synthesis";
+
+/** 一次請求的結果。兩個 Stage 是兩次請求，所以兩段延遲要分開留著看。 */
+interface RunStep {
+  mode: RunMode;
   httpStatus: number;
   elapsedMs: number;
   body: unknown;
+  ok: boolean;
 }
+
+interface RunResult {
+  essayId: string;
+  steps: RunStep[];
+}
+
+const STAGE_LABEL: Record<RunMode, string> = {
+  stage1: "Stage 1 四軸",
+  synthesis: "Stage 2 綜合層",
+};
 
 const StatusBadge = ({ row }: { row: QueueRow }) => {
   if (!row.analysis_status) {
@@ -114,21 +127,10 @@ const WritingDebug = () => {
     void loadQueue();
   }, [loadQueue]);
 
-  const run = useCallback(
-    async (essayId: string, mode: "full" | "synthesis") => {
-      setRunning(`${essayId}:${mode}`);
-      setResult(null);
+  /** 送出一次請求，回傳那一段的結果。不做任何流程判斷。 */
+  const callEndpoint = useCallback(
+    async (essayId: string, mode: RunMode, token: string): Promise<RunStep> => {
       const startedAt = Date.now();
-
-      // 端點要求呼叫者的 JWT——授權在伺服器端做，不是靠這裡藏按鈕。
-      const { data: session } = await supabase.auth.getSession();
-      const token = session.session?.access_token;
-      if (!token) {
-        toast.error("找不到登入 token，請重新登入");
-        setRunning(null);
-        return;
-      }
-
       try {
         const res = await fetch("/api/analyze-writing", {
           method: "POST",
@@ -150,28 +152,71 @@ const WritingDebug = () => {
             rawResponse: raw.slice(0, 4000),
           };
         }
-        setResult({ essayId, mode, httpStatus: res.status, elapsedMs: Date.now() - startedAt, body });
-        if (res.ok) {
-          toast.success(`完成，耗時 ${((Date.now() - startedAt) / 1000).toFixed(1)} 秒`);
-        } else {
-          toast.error(`HTTP ${res.status}`);
-        }
+        return { mode, httpStatus: res.status, elapsedMs: Date.now() - startedAt, body, ok: res.ok };
       } catch (err) {
         const message = err instanceof Error ? err.message : "呼叫失敗";
-        setResult({
-          essayId,
+        return {
           mode,
           httpStatus: 0,
           elapsedMs: Date.now() - startedAt,
           body: { error: message },
-        });
-        toast.error(message);
+          ok: false,
+        };
+      }
+    },
+    [],
+  );
+
+  /**
+   * 老師只按一次。Stage 1 成功之後，綜合層由這裡自動接續發出，
+   * 不需要第二次人為動作。
+   *
+   * Stage 1 失敗就停在這裡：綜合層永遠不會被呼叫，因為它沒有可引用的
+   * 已驗證 finding，跑了也只會產生無根據的摘要。
+   */
+  const runAnalysis = useCallback(
+    async (essayId: string, from: RunMode = "stage1") => {
+      setResult(null);
+
+      // 端點要求呼叫者的 JWT——授權在伺服器端做，不是靠這裡藏按鈕。
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      if (!token) {
+        toast.error("找不到登入 token，請重新登入");
+        return;
+      }
+
+      const steps: RunStep[] = [];
+      try {
+        if (from === "stage1") {
+          setRunning(`${essayId}:stage1`);
+          const stage1 = await callEndpoint(essayId, "stage1", token);
+          steps.push(stage1);
+          setResult({ essayId, steps: [...steps] });
+          if (!stage1.ok) {
+            toast.error(`Stage 1 失敗（HTTP ${stage1.httpStatus}），未執行綜合層`);
+            return;
+          }
+          toast.success(`Stage 1 完成 ${(stage1.elapsedMs / 1000).toFixed(1)} 秒，接續綜合層`);
+        }
+
+        setRunning(`${essayId}:synthesis`);
+        const stage2 = await callEndpoint(essayId, "synthesis", token);
+        steps.push(stage2);
+        setResult({ essayId, steps: [...steps] });
+        if (stage2.ok) {
+          const total = steps.reduce((sum, step) => sum + step.elapsedMs, 0);
+          toast.success(`分析完成，兩段合計 ${(total / 1000).toFixed(1)} 秒`);
+        } else {
+          // 四軸已落地且被凍結，重跑綜合層不會動到它們。
+          toast.error(`綜合層失敗（HTTP ${stage2.httpStatus}），四軸結果已保留，可只重跑綜合層`);
+        }
       } finally {
         setRunning(null);
         void loadQueue();
       }
     },
-    [loadQueue],
+    [callEndpoint, loadQueue],
   );
 
   return (
@@ -243,8 +288,11 @@ const WritingDebug = () => {
               <div className="divide-y divide-border">
                 {queue.map((row) => {
                   const busy = running?.startsWith(row.essay_id);
-                  const canRetrySynthesis =
-                    row.analysis_status === "ANALYZED" && row.synthesis_status === "FAILED";
+                  const stage = busy ? running?.split(":")[1] : null;
+                  // 綜合層自己失敗、或 Stage 1 之後綜合層還沒跑成功，都可以只補這一段。
+                  const canRunSynthesisOnly =
+                    row.analysis_status === "ANALYZED" &&
+                    (row.synthesis_status === "FAILED" || row.synthesis_status === "PENDING");
                   return (
                     <div
                       key={row.essay_id}
@@ -265,22 +313,24 @@ const WritingDebug = () => {
                       <div className="flex gap-2 shrink-0">
                         <Button
                           size="sm"
-                          onClick={() => void run(row.essay_id, "full")}
+                          onClick={() => void runAnalysis(row.essay_id)}
                           disabled={Boolean(running) || project.isProduction}
                         >
-                          {busy && running?.endsWith(":full") ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : null}
-                          執行完整分析
+                          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          {busy
+                            ? stage === "synthesis"
+                              ? "綜合層進行中"
+                              : "Stage 1 進行中"
+                            : "開始 AI 批改"}
                         </Button>
-                        {canRetrySynthesis ? (
+                        {canRunSynthesisOnly ? (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => void run(row.essay_id, "synthesis")}
+                            onClick={() => void runAnalysis(row.essay_id, "synthesis")}
                             disabled={Boolean(running) || project.isProduction}
                           >
-                            只重跑綜合層
+                            只跑綜合層
                           </Button>
                         ) : null}
                       </div>
@@ -293,17 +343,34 @@ const WritingDebug = () => {
 
           {result ? (
             <Card className="p-6">
-              <div className="flex flex-wrap items-baseline justify-between gap-2 mb-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
                 <h2 className="text-lg font-semibold text-foreground">原始回應</h2>
                 <p className="text-sm text-muted-foreground">
-                  HTTP {result.httpStatus} · {(result.elapsedMs / 1000).toFixed(1)} 秒 ·{" "}
-                  {result.mode}
+                  兩段合計{" "}
+                  {(result.steps.reduce((sum, step) => sum + step.elapsedMs, 0) / 1000).toFixed(1)} 秒
                 </p>
               </div>
-              <div className="overflow-x-auto rounded-lg bg-muted/40 p-4">
-                <pre className="text-xs text-foreground whitespace-pre">
-                  {JSON.stringify(result.body, null, 2)}
-                </pre>
+              {/* 每一段各自對照 50 秒硬性期限——合計數字只是參考，不是任何一段的約束。 */}
+              <p className="text-xs text-muted-foreground mb-4">
+                每次請求各自面對 50 秒期限，兩段之間的空檔不屬於任何一段
+              </p>
+              <div className="space-y-4">
+                {result.steps.map((step, index) => (
+                  <div key={`${step.mode}-${index}`}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+                      <p className="font-semibold text-foreground">{STAGE_LABEL[step.mode]}</p>
+                      <p className="text-sm text-muted-foreground">
+                        HTTP {step.httpStatus} · {(step.elapsedMs / 1000).toFixed(1)} 秒 · 對 50 秒餘裕{" "}
+                        {((50_000 - step.elapsedMs) / 1000).toFixed(1)} 秒
+                      </p>
+                    </div>
+                    <div className="overflow-x-auto rounded-lg bg-muted/40 p-4">
+                      <pre className="text-xs text-foreground whitespace-pre">
+                        {JSON.stringify(step.body, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                ))}
               </div>
             </Card>
           ) : null}

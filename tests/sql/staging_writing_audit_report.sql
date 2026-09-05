@@ -11,7 +11,7 @@
 --
 -- 輸出一張表：section / ord / line。全部貼回來即可。
 -- 它同時包含：
---   • 延遲（Stage 1 / Stage 2 / 端對端，由資料庫時間戳推導）
+--   • 延遲（Stage 1 / Stage 2 各自對 50 秒期限的餘裕，由資料庫時間戳推導）
 --   • 完整覆蓋計數（23 / 16 / 29）
 --   • 引用是否真的出現在 writing_texts 的內文裡（抓捏造證據）
 --   • 三軸完整明細與綜合層
@@ -65,32 +65,41 @@ BEGIN
     ('1 概況', 5, 'status：' || a.status || '　synthesis_status：' || coalesce(a.synthesis_status, 'NULL')),
     ('1 概況', 6, 'report_ready：' || (a.status = 'COMPLETED')::text),
     ('1 概況', 7, 'model：' || coalesce(a.model, 'NULL') || '　taxonomy：' || a.taxonomy_version),
+    -- 拆成兩次請求之後，兩段各自面對 50 秒期限，所以兩段各自報餘裕。
+    -- analyzed_at 是 Stage 1 落地的那一刻；舊的列沒有這一欄，會退回近似值
+    -- （那個近似值把兩次請求之間的客戶端空檔算進 Stage 1，只能當參考）。
     ('1 概況', 8, 'Stage 1 延遲：' ||
-        coalesce(round(extract(epoch FROM (a.completed_at - a.started_at))::numeric
-                       - coalesce(extract(epoch FROM (a.synthesis_completed_at - a.synthesis_started_at))::numeric, 0), 1)::text, '?') || ' 秒'),
-    ('1 概況', 9, 'Stage 2 綜合層延遲：' ||
+        coalesce(round(extract(epoch FROM (a.analyzed_at - a.started_at))::numeric, 1)::text,
+                 coalesce(round(extract(epoch FROM (a.completed_at - a.started_at))::numeric
+                       - coalesce(extract(epoch FROM (a.synthesis_completed_at - a.synthesis_started_at))::numeric, 0), 1)::text, '?')
+                 || '（近似，此列無 analyzed_at）') || ' 秒'),
+    ('1 概況', 9, 'Stage 1 對 50 秒期限的餘裕：' ||
+        coalesce(round(50 - extract(epoch FROM (a.analyzed_at - a.started_at))::numeric, 1)::text, '?') || ' 秒'),
+    ('1 概況', 10, 'Stage 2 綜合層延遲：' ||
         coalesce(round(extract(epoch FROM (a.synthesis_completed_at - a.synthesis_started_at))::numeric, 1)::text, '?') || ' 秒'),
-    ('1 概況', 10, '端對端（requested → completed）：' ||
+    ('1 概況', 11, 'Stage 2 對 50 秒期限的餘裕：' ||
+        coalesce(round(50 - extract(epoch FROM (a.synthesis_completed_at - a.synthesis_started_at))::numeric, 1)::text, '?') || ' 秒'),
+    -- 牆鐘時間包含老師按下按鈕到報告完成的全程，中間夾著客戶端往返。
+    -- 它不是任何一次 serverless 執行的長度，不要拿它對照 50 秒。
+    ('1 概況', 12, '牆鐘（requested → completed，含兩次請求之間的空檔）：' ||
         coalesce(round(extract(epoch FROM (a.completed_at - a.requested_at))::numeric, 1)::text, '?') || ' 秒'),
-    ('1 概況', 11, '對 50 秒硬性期限的餘裕：' ||
-        coalesce(round(50 - extract(epoch FROM (a.completed_at - a.requested_at))::numeric, 1)::text, '?') || ' 秒'),
-    ('1 概況', 12, 'Stage 1 嘗試次數：' || a.attempt_count ||
+    ('1 概況', 13, 'Stage 1 嘗試次數：' || a.attempt_count ||
                    '　Stage 2 嘗試次數：' || a.synthesis_attempt_count);
 
   IF a.failed_pass IS NOT NULL OR a.error_detail IS NOT NULL THEN
     INSERT INTO r (section, ord, line) VALUES
-      ('1 概況', 13, '失敗的 pass：' || coalesce(a.failed_pass, '-')),
-      ('1 概況', 14, '錯誤訊息：' || coalesce(a.error_detail, '-'));
+      ('1 概況', 14, '失敗的 pass：' || coalesce(a.failed_pass, '-')),
+      ('1 概況', 15, '錯誤訊息：' || coalesce(a.error_detail, '-'));
   END IF;
   IF a.synthesis_error_detail IS NOT NULL THEN
     INSERT INTO r (section, ord, line)
-    VALUES ('1 概況', 15, '綜合層錯誤：' || a.synthesis_error_detail);
+    VALUES ('1 概況', 16, '綜合層錯誤：' || a.synthesis_error_detail);
   END IF;
   IF a.validation_issues IS NOT NULL THEN
     INSERT INTO r (section, ord, line)
-    VALUES ('1 概況', 16, '完整覆蓋缺漏（validation_issues）：'
+    VALUES ('1 概況', 17, '完整覆蓋缺漏（validation_issues）：'
                           || jsonb_array_length(a.validation_issues) || ' 項');
-    v_ord := 16;
+    v_ord := 17;
     FOR v_rec IN SELECT value FROM jsonb_array_elements(a.validation_issues) LOOP
       v_ord := v_ord + 1;
       INSERT INTO r (section, ord, line)

@@ -152,6 +152,13 @@ if (!writing) {
   check("非 Bearer 授權標頭 → 401", res.code === 401, `${res.code}`);
   check("非 Bearer 也沒有對外呼叫", outbound === 0, `${outbound} 次`);
 
+  // mode 檢查必須排在授權之後：參數錯誤的回應也是資訊，未授權的呼叫端
+  // 不該從中讀出這個端點接受哪些 mode。
+  res = mockRes();
+  await handler({ method: "POST", headers: {}, body: { essayId: ESSAY_ID, mode: "full" } }, res);
+  check("未授權 + 無效 mode → 仍然是 401（不是 400）", res.code === 401, `${res.code}`);
+  check("mode 檢查也沒有觸發對外呼叫", outbound === 0, `${outbound} 次`);
+
   globalThis.fetch = realFetch;
 }
 
