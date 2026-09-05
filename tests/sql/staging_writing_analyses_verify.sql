@@ -59,12 +59,13 @@ BEGIN
     FROM information_schema.columns
    WHERE table_schema = 'public' AND table_name = 'writing_analyses';
   INSERT INTO v_result (section, name, verdict, detail)
-  VALUES ('A 結構', '欄位數 = 35',
-          CASE WHEN v_int = 35 THEN 'PASS' ELSE 'FAIL' END,
+  VALUES ('A 結構', '欄位數 = 36',
+          CASE WHEN v_int = 36 THEN 'PASS' ELSE 'FAIL' END,
           v_int || ' 欄' ||
           CASE WHEN v_int = 32 THEN '（少了 analyzed_at 與量測欄位，請跑步驟 1b 與 1c）'
                WHEN v_int = 33 THEN '（少了 stage1_telemetry / synthesis_telemetry，請跑步驟 1c）'
                WHEN v_int = 34 THEN '（量測欄位只補了一半，請重跑 add_writing_analyses_telemetry.sql）'
+               WHEN v_int = 35 THEN '（少了 stage1_progress，請跑步驟 1d）'
                ELSE '' END);
 
   -- 四個 jsonb 分析欄位

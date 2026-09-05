@@ -25,14 +25,16 @@ has_analyses    = false   has_is_admin = true
 | 1bR | `supabase/migrations/add_writing_analyses_analyzed_at.rollback.sql` | 回滾 | — |
 | 1c | `supabase/migrations/add_writing_analyses_telemetry.sql` | 純新增兩欄（改 schema） | 步驟 1cR |
 | 1cR | `supabase/migrations/add_writing_analyses_telemetry.rollback.sql` | 回滾 | — |
+| 1d | `supabase/migrations/add_writing_analyses_stage1_progress.sql` | 純新增一欄（改 schema） | 步驟 1dR |
+| 1dR | `supabase/migrations/add_writing_analyses_stage1_progress.rollback.sql` | 回滾 | — |
 | 2 | `tests/sql/staging_writing_analyses_verify.sql` | 唯讀 | 不適用 |
 | 3 | Preview 上 `/admin/writing-debug` 跑真實分析 | 寫入 staging 資料 | 步驟 3R |
 | 3R | 本文件的「步驟 3R」刪除語句 | 清掉測試分析列 | — |
 | 4 | `tests/sql/staging_writing_audit_report.sql` | 唯讀 | 不適用 |
 | 診斷 | `tests/sql/staging_writing_failure_probe.sql` | 唯讀（分析失敗時跑） | 不適用 |
 
-**只有步驟 1、1b、1c 會改變 schema。** 步驟 3 只會在 `writing_analyses`
-新增資料列，不動 schema。已經套過步驟 1 的環境只需要補跑步驟 1b 與 1c。
+**只有步驟 1、1b、1c、1d 會改變 schema。** 步驟 3 只會在 `writing_analyses`
+新增資料列，不動 schema。已經套過步驟 1 的環境只需要補跑步驟 1b、1c、1d。
 
 ---
 
@@ -127,13 +129,32 @@ SELECT
 
 ---
 
+## 步驟 1d — 套用 `add_writing_analyses_stage1_progress.sql`
+
+新增 `stage1_progress` JSONB。
+
+驗證重試從「同一次 invocation 裡再打一次」改成「另一次請求」之後，四支 pass 的
+完成狀態必須跨請求保存，否則重試那一次不知道哪些已經好了。這一欄讓已通過的 pass
+**不重跑也不丟棄** —— 2026-09-05 那次期限中斷就白白丟掉了三支已經成功的呼叫。
+
+整份貼進 SQL Editor 執行。一行 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` 加一行
+`COMMENT`，冪等。
+
+**預期結果：** `Success. No rows returned`
+
+### 步驟 1dR — 回滾點
+
+`add_writing_analyses_stage1_progress.rollback.sql`。已完成分析的 canonical 三軸不受影響。
+
+---
+
 ## 步驟 2 — 唯讀驗證
 
 整份貼進 SQL Editor 執行：`tests/sql/staging_writing_analyses_verify.sql`
 
 **預期：`24/24　全部通過`**
 
-「欄位數」那一項期望 35。回報 32／33／34 時，訊息會直接說少了哪一步。
+「欄位數」那一項期望 36。回報 32～35 時，訊息會直接說少了哪一步。
 
 它檢查結構、索引、trigger、RLS、grants、五個函式的
 `SECURITY DEFINER` 與 `search_path`、EXECUTE 授權，
@@ -160,8 +181,11 @@ SELECT
 3. 若佇列是空的，先用學生帳號在 `/learn/student/writing` 送出一篇作文
 4. 對目標作文按「**開始 AI 批改**」——**只按這一次**
 
-分析是兩次請求，但只需要按一次：Stage 1 成功之後，綜合層由頁面自動接續發出。
-按鈕文字會從「Stage 1 進行中」變成「綜合層進行中」。
+分析可能是兩次以上的請求，但只需要按一次。Stage 1 的某一支沒過驗證時，重試是
+**另一次請求**（那樣它才拿得到完整的 50 秒），由頁面自動接續發出；已通過的那幾支
+不會重跑。全部通過後才自動接綜合層。
+
+過程中會看到 toast 說明第幾次請求、哪幾支要重試、保留了幾支。
 
 5. 頁面會把兩段分開列出：各自的 HTTP 狀態、耗時、以及對 50 秒期限的餘裕，
    還有兩段各自的原始 JSON 回應

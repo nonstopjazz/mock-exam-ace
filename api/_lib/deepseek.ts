@@ -230,10 +230,18 @@ export interface PassFailure {
   detail: string;
   attempts: number;
   telemetry: PassTelemetry;
+  /**
+   * 最後一次【有回來但沒過驗證】的原始輸出。
+   *
+   * 跨請求的重試靠它把「修正」做成修正：下一次請求把這份輸出與缺漏清單一起
+   * 餵回去，模型才知道要改哪裡，而不是從零重寫一份同樣可能出錯的東西。
+   * 呼叫失敗（中斷／HTTP／非 JSON）時沒有這個值。
+   */
+  lastRaw?: unknown;
 }
 
 /** 把驗證失敗的缺漏清單整理成餵回模型的修正指示。 */
-function repairInstruction(issues: readonly ValidationIssue[]): string {
+export function repairInstruction(issues: readonly ValidationIssue[]): string {
   const missing = issues.filter((i) => i.kind === "MISSING_NODE");
   const others = issues.filter((i) => i.kind !== "MISSING_NODE");
 
@@ -285,6 +293,7 @@ export async function runValidatedPass<T>(args: {
   const records: AttemptRecord[] = [];
   let lastIssues: readonly ValidationIssue[] = [];
   let lastDetail = "";
+  let lastRaw: unknown;
 
   /** 把這一支的紀錄收成 PassTelemetry。finalOutcome 一律取最後一次的結局。 */
   const summarise = (): PassTelemetry => {
@@ -377,6 +386,7 @@ export async function runValidatedPass<T>(args: {
     record.detail = `結構化輸出驗證失敗（${result.issues.length} 項）`;
 
     lastIssues = result.issues;
+    lastRaw = raw;
     lastDetail = `${args.label}：結構化輸出驗證失敗（${result.issues.length} 項）`;
 
     if (attempt < maxAttempts) {
@@ -387,5 +397,12 @@ export async function runValidatedPass<T>(args: {
     }
   }
 
-  return { ok: false, issues: lastIssues, detail: lastDetail, attempts: records.length, telemetry: summarise() };
+  return {
+    ok: false,
+    issues: lastIssues,
+    detail: lastDetail,
+    attempts: records.length,
+    telemetry: summarise(),
+    lastRaw,
+  };
 }

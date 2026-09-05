@@ -53,6 +53,7 @@ import {
 import {
   isPassOk,
   runValidatedPass,
+  repairInstruction,
   DeadlineExceeded,
   DEFAULT_MODEL,
   type PassFailure,
@@ -198,12 +199,74 @@ export default async function handler(req: VercelLikeRequest, res: VercelLikeRes
   }
 }
 
-/* ──────────────── 請求 A：Stage 1 ──────────────── */
+/* ──────────────── 請求 A：Stage 1（可續跑） ──────────────── */
+
+/**
+ * Stage 1 的每一支 pass 各自有狀態，而且跨請求保存。
+ *
+ *   PENDING         還沒跑過
+ *   RUNNING         某一次請求正在跑它
+ *   VALID           已通過驗證，結果保存在 progress.value，【永遠不會重跑】
+ *   RETRY_REQUIRED  這一次沒過，但值得在下一次請求裡重試
+ *   FAILED          終局失敗（不可重試的錯誤，或重試次數用盡）
+ */
+export type PassState = "PENDING" | "RUNNING" | "VALID" | "RETRY_REQUIRED" | "FAILED";
+
+export interface PassProgress {
+  state: PassState;
+  /** 累計嘗試次數，跨請求累加 */
+  attempts: number;
+  /** 進入 RUNNING 的時間。用來分辨「另一次請求正在跑」與「卡住的殘留狀態」 */
+  runningSince?: string;
+  lastDetail?: string;
+  /** 上一次的缺漏清單。跨請求重試時用來組修正指示。 */
+  lastIssues?: readonly ValidationIssue[];
+  /** 上一次沒過驗證的原始輸出。餵回去讓重試是「修正」而不是「從頭重寫」。 */
+  lastRaw?: unknown;
+  /** VALID 時的已驗證結果 */
+  value?: unknown;
+}
+
+export type Stage1Progress = Record<string, PassProgress>;
+
+export const STAGE1_PASSES = [
+  "competency",
+  "error",
+  "high_score_h1_h3",
+  "high_score_h4_h5",
+] as const;
+
+/**
+ * 每一支 pass 的總嘗試上限（跨請求累計）。
+ * 一次原始 + 兩次修正。用完還是不過就是 FAILED，不再無限重試下去。
+ */
+export const MAX_PASS_ATTEMPTS = 3;
+
+/** 一次請求最多為每支 pass 打一次 DeepSeek——重試是【下一次請求】的事。 */
+const ATTEMPTS_PER_REQUEST = 1;
+
+function emptyProgress(): Stage1Progress {
+  const p: Stage1Progress = {};
+  for (const label of STAGE1_PASSES) p[label] = { state: "PENDING", attempts: 0 };
+  return p;
+}
+
+function readProgress(raw: unknown): Stage1Progress {
+  const base = emptyProgress();
+  if (!raw || typeof raw !== "object") return base;
+  for (const label of STAGE1_PASSES) {
+    const entry = (raw as Record<string, unknown>)[label];
+    if (entry && typeof entry === "object") base[label] = { ...base[label], ...(entry as PassProgress) };
+  }
+  return base;
+}
 
 async function runStage1(ctx: RunContext) {
   const admin = ctx.admin;
+  const requestStartedAt = Date.now();
 
   // 排入佇列走呼叫者身分，資料庫再擋一次「只有管理員能觸發」。
+  // 重試請求也走同一條路——授權在每一次請求都重做一遍，不因為是續跑就放寬。
   const { data: analysisId, error: enqueueError } = await ctx.caller.rpc(
     "writing_enqueue_analysis",
     { p_essay_id: ctx.essayId },
@@ -212,14 +275,9 @@ async function runStage1(ctx: RunContext) {
     return fail(ctx.res, 400, enqueueError?.message ?? "無法排入分析");
   }
 
-  // ── 重複請求的防護 ───────────────────────────────────────────
-  // writing_enqueue_analysis 是冪等的：同一篇作文已經有 QUEUED / ANALYZING /
-  // ANALYZED 的列時，它回傳既有那一筆而不是新開一筆。所以拿到 id 之後還要看
-  // 它現在停在哪裡，否則重按一次會再燒掉四支 DeepSeek 呼叫，寫回時才被
-  // 資料庫的狀態機擋掉——錢已經花了。
   const { data: current } = await admin
     .from("writing_analyses")
-    .select("status, started_at, synthesis_status")
+    .select("status, started_at, synthesis_status, stage1_progress, stage1_telemetry")
     .eq("id", analysisId)
     .maybeSingle();
 
@@ -238,8 +296,27 @@ async function runStage1(ctx: RunContext) {
     });
   }
 
-  if (current?.status === "ANALYZING" && isStillInFlight(current.started_at)) {
-    return fail(ctx.res, 409, "這篇作文的 Stage 1 正在進行中，請等它結束再試");
+  const progress = readProgress(current?.stage1_progress);
+
+  // ── 重複請求的防護 ───────────────────────────────────────────
+  // 現在不能再用「status = ANALYZING」當判準：續跑請求進來時 status 本來就是
+  // ANALYZING。真正要擋的是「另一次請求正在跑同一支 pass」，所以看逐支的
+  // RUNNING 與它的時間戳。超過期限窗還停在 RUNNING 的是被平台砍掉的殘留，
+  // 讓這一次接手，否則那篇作文會永遠卡住（唯一索引不讓它開新的一版）。
+  const inFlight = STAGE1_PASSES.filter(
+    (label) => progress[label].state === "RUNNING" && isStillInFlight(progress[label].runningSince),
+  );
+  if (inFlight.length > 0) {
+    return fail(ctx.res, 409, `這篇作文的 Stage 1 正在進行中（${inFlight.join("、")}），請等它結束再試`);
+  }
+
+  // 這一次要跑哪幾支：沒跑過的、要重試的、以及卡住的殘留。VALID 的一律跳過。
+  const todo = STAGE1_PASSES.filter((label) => progress[label].state !== "VALID"
+    && progress[label].state !== "FAILED");
+
+  if (todo.length === 0) {
+    // 全部 VALID 卻還沒 ANALYZED：上一次請求在收尾時掛掉了。直接收尾，不重跑。
+    return finaliseStage1(ctx, analysisId, progress, requestStartedAt);
   }
 
   // 取最新的正規文字。evidence 的引用都以這一版為準。
@@ -268,118 +345,134 @@ async function runStage1(ctx: RunContext) {
     content: text.content,
   };
 
-  const stage1StartedAt = Date.now();
+  // 佔位：把這一次要跑的幾支標成 RUNNING，讓並行的另一次請求看得到。
+  const now = new Date().toISOString();
+  for (const label of todo) {
+    progress[label] = { ...progress[label], state: "RUNNING", runningSince: now };
+  }
   await admin
     .from("writing_analyses")
     .update({
       status: "ANALYZING",
-      started_at: new Date().toISOString(),
+      // started_at 只在第一次寫入。續跑請求不重設它——那是 Stage 1 的起點。
+      ...(current?.started_at ? {} : { started_at: now }),
       model: DEFAULT_MODEL,
       taxonomy_version: WRITING_TAXONOMY_VERSION,
-      attempt_count: 1,
+      stage1_progress: progress,
     })
     .eq("id", analysisId);
 
-  // ── Stage 1：四支平行，各自獨立驗證 ─────────────────────────
-  const shared = { apiKey: ctx.apiKey, signal: ctx.signal };
-  const [competencyPass, errorPass, hsAPass, hsBPass] = await Promise.all([
-    runValidatedPass({
-      ...shared,
-      label: "Writing Competency",
-      messages: competencyMessages(essay),
-      validate: (raw) => validateCompetencyAnalysis(raw, essay.content),
-      describe: (raw) => ({ categories: countArray(raw, "categories") }),
-    }),
-    runValidatedPass({
-      ...shared,
-      label: "Writing Error",
-      messages: errorMessages(essay),
-      validate: (raw) => validateErrorAnalysis(raw, essay.content),
-      // findings 是四支裡唯一沒有上限的輸出，而且它的長度與「作文有多少錯」
-      // 成正比。要回答「弱作文是不是因為 findings 暴增才超時」就得數它，
-      // 而且必須在驗證之前數——驗證沒過的那一次也要有數字。
-      describe: (raw) => ({
-        findings: countArray(raw, "findings"),
-        coverage: countArray(raw, "coverage"),
-      }),
-    }),
-    runValidatedPass({
-      ...shared,
-      label: "High-Score Feature H1–H3",
-      messages: highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_A)),
-      validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_A, essay.content),
-      describe: (raw) => ({ features: countArray(raw, "features") }),
-    }),
-    runValidatedPass({
-      ...shared,
-      label: "High-Score Feature H4–H5",
-      messages: highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_B)),
-      validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_B, essay.content),
-      describe: (raw) => ({ features: countArray(raw, "features") }),
-    }),
-  ]);
+  // ── 跑這一次該跑的那幾支，各自獨立驗證 ─────────────────────
+  // maxAttempts 是 1：驗證失敗【不在這一次請求裡重打】。重試是下一次請求的事，
+  // 那樣它才能拿到完整的 50 秒，而不是跟第一次擠同一個預算。
+  const outcomes = await Promise.all(
+    todo.map((label) =>
+      runPass(label, essay, progress[label], {
+        apiKey: ctx.apiKey,
+        signal: ctx.signal,
+      }).then((pass) => ({ label, pass })),
+    ),
+  );
 
-  // 任何一支沒過，就不發佈半套報告。
-  const outcomes: { label: PassLabel; pass: PassOutcome<unknown> }[] = [
-    { label: "competency", pass: competencyPass },
-    { label: "error", pass: errorPass },
-    { label: "high_score_h1_h3", pass: hsAPass },
-    { label: "high_score_h4_h5", pass: hsBPass },
-  ];
-  // 四支的量測不論成敗都要保留：失敗那次最需要看的往往是【成功那三支】跑了多久。
-  const stage1Telemetry: Record<string, PassTelemetry> = {};
-  for (const o of outcomes) stage1Telemetry[o.label] = o.pass.telemetry;
+  applyPassOutcomes(progress, outcomes);
 
-  const broken = outcomes.find((o) => !isPassOk(o.pass));
-  if (broken) {
-    const failure = broken.pass as PassFailure;
+  const telemetry = mergeTelemetry(current?.stage1_telemetry, outcomes);
+  const totalAttempts = STAGE1_PASSES.reduce((n, l) => n + progress[l].attempts, 0);
+
+  // ── 收尾 ─────────────────────────────────────────────────────
+  const failed = STAGE1_PASSES.filter((l) => progress[l].state === "FAILED");
+  const retryable = STAGE1_PASSES.filter((l) => progress[l].state === "RETRY_REQUIRED");
+
+  if (failed.length > 0) {
+    // 終局失敗。已通過的那幾支【原封不動保留在 progress 裡】，不丟棄——
+    // 重新分析時可以直接沿用，不必再付一次那些成功呼叫的錢。
+    const first = progress[failed[0]];
     await markFailed(
       admin,
       analysisId,
-      broken.label,
-      failure.detail,
-      failure.issues,
-      stage1Telemetry,
-      totalAttempts(stage1Telemetry),
+      failed[0] as PassLabel,
+      first.lastDetail ?? "Stage 1 失敗",
+      first.lastIssues ?? [],
+      telemetry,
+      totalAttempts,
+      progress,
     );
     return ctx.res.status(502).json({
       analysisId,
+      stage: "stage1",
       status: "FAILED",
-      failedPass: broken.label,
-      error: failure.detail,
-      issueCount: failure.issues.length,
-      // 期限中斷與模型輸出爛掉是兩回事，回應層就要分得出來。
-      hitDeadline: failure.telemetry.hitDeadline,
-      stage1: telemetrySummary(stage1Telemetry),
+      failedPass: failed[0],
+      error: first.lastDetail,
+      issueCount: (first.lastIssues ?? []).length,
+      passStates: passStates(progress),
+      preserved: STAGE1_PASSES.filter((l) => progress[l].state === "VALID"),
+      stage1: telemetrySummary(telemetry),
     });
   }
 
-  const stage1: Stage1Result = {
-    competency: (competencyPass as { value: CompetencyAnalysis }).value,
-    errors: (errorPass as { value: ErrorAnalysis }).value,
-    highScoreA: (hsAPass as { value: HighScoreAnalysis }).value,
-    highScoreB: (hsBPass as { value: HighScoreAnalysis }).value,
-  };
+  await admin
+    .from("writing_analyses")
+    .update({
+      stage1_progress: progress,
+      stage1_telemetry: telemetry,
+      attempt_count: totalAttempts,
+    })
+    .eq("id", analysisId);
 
-  // 四軸先落地，再跑綜合層。這一步之後三軸就被資料庫凍結了，
-  // 綜合層失敗也不會讓這些昂貴的結果消失。
+  if (retryable.length > 0) {
+    // 還沒好，但也還沒死。已通過的那幾支保存著，下一次請求只重跑這幾支。
+    return ctx.res.status(200).json({
+      analysisId,
+      stage: "stage1",
+      status: "ANALYZING",
+      reportReady: false,
+      retryRequired: true,
+      nextRequest: "stage1",
+      retryPasses: retryable,
+      passStates: passStates(progress),
+      preserved: STAGE1_PASSES.filter((l) => progress[l].state === "VALID"),
+      requestLatencyMs: Date.now() - requestStartedAt,
+      stage1: telemetrySummary(telemetry),
+    });
+  }
+
+  return finaliseStage1(ctx, analysisId, progress, requestStartedAt, telemetry, totalAttempts);
+}
+
+/** 四支全部 VALID 時才走到這裡：組出 canonical 三軸，進入 ANALYZED。 */
+async function finaliseStage1(
+  ctx: RunContext,
+  analysisId: string,
+  progress: Stage1Progress,
+  requestStartedAt: number,
+  telemetry?: Record<string, PassTelemetry>,
+  totalAttempts?: number,
+) {
+  const missing = STAGE1_PASSES.filter((l) => progress[l].state !== "VALID" || !progress[l].value);
+  if (missing.length > 0) {
+    // 防呆：完整性由這裡把關，不靠呼叫端記得檢查。
+    return fail(ctx.res, 500, `Stage 1 尚未完整（${missing.join("、")}），不應進入 ANALYZED`);
+  }
+
+  const hsA = progress.high_score_h1_h3.value as HighScoreAnalysis;
+  const hsB = progress.high_score_h4_h5.value as HighScoreAnalysis;
   const mergedHighScore: HighScoreAnalysis = {
     taxonomy_version: WRITING_TAXONOMY_VERSION,
-    features: [...stage1.highScoreA.features, ...stage1.highScoreB.features],
+    features: [...hsA.features, ...hsB.features],
   };
 
-  const { error: persistError } = await admin
+  const { error: persistError } = await ctx.admin
     .from("writing_analyses")
     .update({
       status: "ANALYZED",
       analyzed_at: new Date().toISOString(),
-      competency_analysis: stage1.competency,
-      error_analysis: stage1.errors,
+      competency_analysis: progress.competency.value,
+      error_analysis: progress.error.value,
       high_score_feature_analysis: mergedHighScore,
       synthesis_status: "PENDING",
-      stage1_telemetry: stage1Telemetry,
-      // 真實嘗試次數。以前這裡是寫死的 1，所有「零重試」的稽核結論都讀到常數。
-      attempt_count: totalAttempts(stage1Telemetry),
+      stage1_progress: progress,
+      ...(telemetry ? { stage1_telemetry: telemetry } : {}),
+      ...(totalAttempts !== undefined ? { attempt_count: totalAttempts } : {}),
     })
     .eq("id", analysisId);
 
@@ -388,8 +481,6 @@ async function runStage1(ctx: RunContext) {
     return fail(ctx.res, 500, "寫入分析結果失敗");
   }
 
-  // 請求 A 到此為止。綜合層是另一次請求，讓它擁有自己完整的 50 秒。
-  // reportReady 仍然是 false——四軸過了不等於報告可以給學生看。
   return ctx.res.status(200).json({
     analysisId,
     stage: "stage1",
@@ -397,14 +488,152 @@ async function runStage1(ctx: RunContext) {
     synthesisStatus: "PENDING",
     reportReady: false,
     nextRequest: "synthesis",
-    stage1LatencyMs: Date.now() - stage1StartedAt,
-    stage1: telemetrySummary(stage1Telemetry),
+    passStates: passStates(progress),
+    requestLatencyMs: Date.now() - requestStartedAt,
+    ...(telemetry ? { stage1: telemetrySummary(telemetry) } : {}),
   });
 }
 
-/** 四支加起來真正打了幾次 DeepSeek。這是量測值。 */
-function totalAttempts(telemetry: Record<string, PassTelemetry>): number {
-  return Object.values(telemetry).reduce((sum, t) => sum + t.attempts, 0);
+/**
+ * 跑一支 pass。
+ *
+ * 這一支上一次若是驗證失敗，就把它上次的輸出與缺漏清單接在訊息後面——
+ * 那樣重試才是「修正」，而不是從零重寫一份同樣可能出錯的東西。
+ * 跨請求也成立，因為 lastRaw／lastIssues 存在 stage1_progress 裡。
+ */
+function runPass(
+  label: (typeof STAGE1_PASSES)[number],
+  essay: EssayInput,
+  prior: PassProgress,
+  shared: { apiKey: string; signal: AbortSignal },
+): Promise<PassOutcome<unknown>> {
+  const repair =
+    prior.lastIssues && prior.lastIssues.length > 0 && prior.lastRaw !== undefined
+      ? [
+          { role: "assistant" as const, content: JSON.stringify(prior.lastRaw) },
+          { role: "user" as const, content: repairInstruction(prior.lastIssues) },
+        ]
+      : [];
+
+  const common = { ...shared, maxAttempts: ATTEMPTS_PER_REQUEST };
+
+  switch (label) {
+    case "competency":
+      return runValidatedPass({
+        ...common,
+        label: "Writing Competency",
+        messages: [...competencyMessages(essay), ...repair],
+        validate: (raw) => validateCompetencyAnalysis(raw, essay.content),
+        describe: (raw) => ({ categories: countArray(raw, "categories") }),
+      });
+    case "error":
+      return runValidatedPass({
+        ...common,
+        label: "Writing Error",
+        messages: [...errorMessages(essay), ...repair],
+        validate: (raw) => validateErrorAnalysis(raw, essay.content),
+        // findings 是四支裡唯一沒有上限的輸出，而且它的長度與「作文有多少錯」
+        // 成正比。要回答「弱作文是不是因為 findings 暴增才超時」就得數它，
+        // 而且必須在驗證之前數——驗證沒過的那一次也要有數字。
+        describe: (raw) => ({ findings: countArray(raw, "findings") }),
+      });
+    case "high_score_h1_h3":
+      return runValidatedPass({
+        ...common,
+        label: "High-Score Feature H1–H3",
+        messages: [...highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_A)), ...repair],
+        validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_A, essay.content),
+        describe: (raw) => ({ features: countArray(raw, "features") }),
+      });
+    case "high_score_h4_h5":
+      return runValidatedPass({
+        ...common,
+        label: "High-Score Feature H4–H5",
+        messages: [...highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_B)), ...repair],
+        validate: (raw) => validateHighScoreAnalysis(raw, HIGH_SCORE_PASS_B, essay.content),
+        describe: (raw) => ({ features: countArray(raw, "features") }),
+      });
+  }
+}
+
+/**
+ * 依這一次的結果更新逐支狀態。就地修改 progress。
+ *
+ * 抽出來是為了能單獨測——這裡是整個設計裡最危險的一段：判斷錯了不是壞掉，
+ * 是安靜地丟掉已經付過錢的結果，或是無限重試下去。
+ */
+export function applyPassOutcomes(
+  progress: Stage1Progress,
+  outcomes: { label: string; pass: PassOutcome<unknown> }[],
+): void {
+  for (const { label, pass } of outcomes) {
+    const before = progress[label] ?? { state: "PENDING" as PassState, attempts: 0 };
+    const attempts = before.attempts + pass.attempts;
+
+    if (isPassOk(pass)) {
+      // 通過了就定案。之後任何一次請求都不會再碰它。
+      progress[label] = { state: "VALID", attempts, value: pass.value };
+      continue;
+    }
+
+    const failure = pass as PassFailure;
+    const outcome = failure.telemetry.finalOutcome;
+    // 不可重試的錯誤（例如 401 金鑰錯）再花一次請求也是一樣的結果。
+    // 429 與 5xx 是暫時性的，值得重試。
+    const worthRetrying =
+      outcome !== "HTTP_ERROR" ||
+      failure.telemetry.records.some((r) => r.httpStatus === 429 || (r.httpStatus ?? 0) >= 500);
+    const budgetLeft = attempts < MAX_PASS_ATTEMPTS;
+
+    progress[label] = {
+      state: worthRetrying && budgetLeft ? "RETRY_REQUIRED" : "FAILED",
+      attempts,
+      lastDetail: failure.detail,
+      // 逐次的缺漏清單完整保留在 telemetry；這裡留一份是為了組下一次的修正指示。
+      lastIssues: failure.issues.length > 0 ? failure.issues : undefined,
+      lastRaw: failure.lastRaw,
+      // 保留上一次成功的結果（如果有的話）——理論上不會走到，但萬一狀態機
+      // 有 bug，寧可留著已付費的資料，也不要靜靜地把它抹掉。
+      ...(before.state === "VALID" ? { value: before.value } : {}),
+    };
+  }
+}
+
+/** 逐支狀態的濃縮版，放進回應讓前端與人都看得懂現在卡在哪。 */
+function passStates(progress: Stage1Progress): Record<string, string> {
+  return Object.fromEntries(
+    STAGE1_PASSES.map((l) => [l, `${progress[l].state}(${progress[l].attempts})`]),
+  );
+}
+
+/**
+ * 把這一次請求的量測併進既有的量測，不覆蓋。
+ * 跨請求的重試要看得到「第 1 次請求跑了什麼、第 2 次請求跑了什麼」。
+ */
+function mergeTelemetry(
+  existing: unknown,
+  outcomes: { label: string; pass: PassOutcome<unknown> }[],
+): Record<string, PassTelemetry> {
+  const merged: Record<string, PassTelemetry> =
+    existing && typeof existing === "object" ? { ...(existing as Record<string, PassTelemetry>) } : {};
+
+  for (const { label, pass } of outcomes) {
+    const prior = merged[label];
+    merged[label] = prior
+      ? {
+          ...pass.telemetry,
+          attempts: prior.attempts + pass.telemetry.attempts,
+          totalLatencyMs: prior.totalLatencyMs + pass.telemetry.totalLatencyMs,
+          retried: true,
+          hitDeadline: prior.hitDeadline || pass.telemetry.hitDeadline,
+          records: [
+            ...prior.records,
+            ...pass.telemetry.records.map((r) => ({ ...r, attempt: prior.records.length + r.attempt })),
+          ],
+        }
+      : pass.telemetry;
+  }
+  return merged;
 }
 
 /** 回應裡給人一眼看懂的濃縮版；完整紀錄在資料庫的 stage1_telemetry。 */
@@ -626,6 +855,7 @@ async function markFailed(
   issues: readonly ValidationIssue[],
   telemetry?: Record<string, PassTelemetry>,
   attempts?: number,
+  progress?: unknown,
 ) {
   await admin
     .from("writing_analyses")
@@ -642,6 +872,8 @@ async function markFailed(
       validation_issues: issues,
       ...(telemetry ? { stage1_telemetry: telemetry } : {}),
       ...(attempts !== undefined ? { attempt_count: attempts } : {}),
+      // 已通過的那幾支保留下來，失敗不等於全部作廢。
+      ...(progress ? { stage1_progress: progress } : {}),
     })
     .eq("id", analysisId);
 }

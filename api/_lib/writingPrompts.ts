@@ -168,20 +168,18 @@ export function errorMessages(essay: EssayInput): DeepSeekMessage[] {
 這一支任務只負責【錯誤標籤（Error Tag）】這一個軸線。
 
 ${DEGENERATE_INPUT_RULE}
-非英文或題目複述時，16 個 code 全部 count = 0，findings 留空。
+非英文或題目複述時，findings 留空。
 
-【必須全部覆蓋的 16 個 error code】
+【你可以使用的 16 個 error code】
 ${nodeList}
 
-【兩份輸出，都不能少】
-1. findings：這篇作文裡每一處實際發現的錯誤，逐筆列出。同一個 code 可以出現多次。
-2. coverage：上面 16 個 code【全部】都要列出來，包含一次都沒出現的。
-   沒有出現就寫 count: 0。這是你的明確陳述——「本篇未發現此類錯誤」，
-   而不是因為你忘了看。
+【你只需要輸出 findings】
+findings：這篇作文裡每一處實際發現的錯誤，逐筆列出。同一個 code 可以出現多次。
+你【不需要】統計每個 code 出現幾次，也不需要輸出 16 個 code 的清單——
+那份統計由系統從你的 findings 直接數出來，不會漏也不會算錯。
+你只要專心把錯誤找對、引用抄對、修正寫對。
 
-coverage 裡每個 code 的 count 必須等於 findings 裡該 code 的筆數，對不上會被判定為錯誤。
-
-【重要：count = 0 不代表學生已經精熟】
+【重要：某個 code 沒有出現，不代表學生已經精熟】
 它只代表這一篇沒有出現這類錯誤。不要在任何文字裡把它寫成「已掌握」。
 
 【判斷規則】
@@ -197,7 +195,7 @@ correction 是那一段原文修好之後的樣子，不是給學生的指示。
   ✗ 「Many student thinks…」→「Please write your essay in English.」
 
 也不可以把錯誤代碼拿來傳達與錯誤無關的訊息。
-如果整篇不是英文，那不是拼寫錯誤——16 個 code 全部 count = 0，
+如果整篇不是英文，那不是拼寫錯誤——findings 留空，
 該講的話留給能力軸的理由欄位。
 
 ${OUTPUT_RULE}
@@ -212,12 +210,9 @@ ${OUTPUT_RULE}
       "correction": "改寫後的正確英文句子",
       "primary_skill": "WRITE_GRAMMAR_BASIC"
     }
-  ],
-  "coverage": [
-    { "code": "WRITE_ERR_RUN_ON", "count": 0 }
   ]
 }
-coverage 必須恰好有 16 筆。
+沒有發現任何錯誤時，findings 就是空陣列。
 `.trim();
 
   return [

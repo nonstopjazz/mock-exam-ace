@@ -158,6 +158,27 @@ BEGIN
                        || coalesce(v_rec.value ->> 'detail', ''));
   END LOOP;
 
+  -- ── 逐支狀態（跨請求）────────────────────────────────────
+  IF j ->> 'stage1_progress' IS NOT NULL THEN
+    INSERT INTO d (item, value) VALUES ('—— 逐支狀態 ——', '');
+    FOR v_rec IN
+      SELECT key AS pass_label, value AS s FROM jsonb_each(j -> 'stage1_progress') ORDER BY key
+    LOOP
+      INSERT INTO d (item, value) VALUES (
+        v_rec.pass_label,
+        (v_rec.s ->> 'state') || '　累計嘗試 ' || coalesce(v_rec.s ->> 'attempts', '?') || ' 次'
+          || CASE WHEN v_rec.s -> 'value' IS NOT NULL
+                  THEN '　✓ 結果已保存（重試不會重跑它）' ELSE '' END
+          || coalesce('　' || (v_rec.s ->> 'lastDetail'), '')
+      );
+    END LOOP;
+    INSERT INTO d (item, value) VALUES (
+      '保存下來的 pass 數',
+      (SELECT count(*)::text FROM jsonb_each(j -> 'stage1_progress') x
+        WHERE x.value ->> 'state' = 'VALID') || ' / 4　（這幾支不會被重跑，也沒有被丟棄）'
+    );
+  END IF;
+
   -- ── 逐支、逐次量測 ────────────────────────────────────────
   -- 這一段取代三個舊盲點：attempt_count 是常數、被中斷的呼叫 latency 歸零、
   -- 以及最後一次的空陣列蓋掉前一次的缺漏清單。
@@ -221,7 +242,13 @@ BEGIN
   END IF;
   IF a.error_analysis IS NOT NULL THEN
     SELECT jsonb_array_length(a.error_analysis -> 'coverage') INTO v_n;
-    INSERT INTO d (item, value) VALUES ('錯誤 code 覆蓋數（應為 16）', coalesce(v_n::text, '?'));
+    INSERT INTO d (item, value) VALUES (
+      '錯誤 code 覆蓋數（應為 16）',
+      coalesce(v_n::text, '?') || '　來源：'
+        || coalesce(a.error_analysis ->> 'coverage_source', '（舊列，模型提供）')
+    );
+    INSERT INTO d (item, value) VALUES (
+      '錯誤 findings 筆數', coalesce(jsonb_array_length(a.error_analysis -> 'findings')::text, '?'));
   END IF;
   IF a.high_score_feature_analysis IS NOT NULL THEN
     SELECT jsonb_array_length(a.high_score_feature_analysis -> 'features') INTO v_n;

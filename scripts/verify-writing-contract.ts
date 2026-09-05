@@ -179,20 +179,47 @@ const fullError = () => ({
 }
 
 {
+  // coverage 現在由伺服器推導，模型送什麼都不影響結果——連送都不必送。
   const payload = fullError();
-  const dropped = payload.coverage.pop()!;
-  expectIssue(
-    "coverage 漏一個 code → MISSING_NODE",
-    validateErrorAnalysis(payload, ESSAY),
-    "MISSING_NODE",
-    dropped.code,
-  );
+  delete (payload as { coverage?: unknown }).coverage;
+  const r = validateErrorAnalysis(payload, ESSAY);
+  check("模型不送 coverage 也能通過（伺服器自己算）", isValidationOk(r));
+  if (isValidationOk(r)) {
+    check("伺服器推導出 16 筆 coverage", r.value.coverage.length === ALL_ERROR_CODES.length,
+      `${r.value.coverage.length}`);
+    check("coverage 標記為伺服器推導", r.value.coverage_source === "SERVER_DERIVED");
+    const sv = r.value.coverage.find((c) => c.code === "WRITE_ERR_SV_AGREEMENT");
+    check("有 finding 的 code count 正確", sv?.count === 1, `${sv?.count}`);
+    const zero = r.value.coverage.filter((c) => c.count === 0).length;
+    check("其餘 code 的 count 為 0", zero === ALL_ERROR_CODES.length - 1, `${zero}`);
+  }
 }
 
 {
+  // 模型自己送一份【算錯的】coverage，也不會再讓整支失敗——伺服器不看它。
+  // 這正是 2026-09-05 那次重試的觸發原因，現在它不可能再發生。
+  const payload = fullError() as Record<string, unknown>;
+  payload.coverage = [{ code: "WRITE_ERR_SV_AGREEMENT", count: 99 }];
+  const r = validateErrorAnalysis(payload, ESSAY);
+  check("模型送錯的 coverage 不再造成失敗", isValidationOk(r));
+  if (isValidationOk(r)) {
+    const sv = r.value.coverage.find((c) => c.code === "WRITE_ERR_SV_AGREEMENT");
+    check("count 以伺服器數的為準，不是模型說的 99", sv?.count === 1, `${sv?.count}`);
+  }
+}
+
+{
+  // 被驗證擋下來的 finding 不可以算進 count，否則捏造的證據會把數字灌水。
   const payload = fullError();
-  payload.coverage[0] = { ...payload.coverage[0], count: 3 };
-  expectIssue("coverage 與 findings 對不上 → COUNT_MISMATCH", validateErrorAnalysis(payload, ESSAY), "COUNT_MISMATCH");
+  payload.findings.push({
+    code: "WRITE_ERR_SPELLING",
+    quote: "這段原文裡沒有的字",
+    reason: "拼錯",
+    correction: "fixed",
+    primary_skill: "WRITE_LEXICAL_FORM",
+  });
+  const r = validateErrorAnalysis(payload, ESSAY);
+  check("引用不存在的 finding 仍然擋下整支", !isValidationOk(r));
 }
 
 {

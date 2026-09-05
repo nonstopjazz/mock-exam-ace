@@ -111,10 +111,23 @@ export interface ErrorCoverageEntry {
   readonly note?: string;
 }
 
+/**
+ * coverage 的來源。
+ *
+ * SERVER_DERIVED = 伺服器從已驗證的 findings 數出來的，不是模型的判斷。
+ *
+ * 這一欄存在的理由：count = 0 的意思從「模型明確表示它看過這個 code、本篇沒有」
+ * 變成「已驗證的 findings 裡沒有這個 code」。兩者對學生的意義相同——本篇未發現
+ * 此類錯誤——但**都不是**「已精熟」（TR-12／TR-13）。把來源記在資料裡，
+ * 報告層就不可能把伺服器的算術誤讀成 AI 的能力判斷。
+ */
+export type ErrorCoverageSource = "SERVER_DERIVED";
+
 export interface ErrorAnalysis {
   readonly taxonomy_version: string;
   readonly findings: readonly ErrorFinding[];
   readonly coverage: readonly ErrorCoverageEntry[];
+  readonly coverage_source: ErrorCoverageSource;
 }
 
 /* ──────────────── 形式前提：只在邏輯上確實成立的地方設 ──────────────── */
@@ -310,7 +323,6 @@ export type ValidationIssueKind =
   | "MISSING_REASON"
   | "MISSING_EVIDENCE"
   | "UNEXPECTED_EVIDENCE"
-  | "COUNT_MISMATCH"
   | "TOO_MANY"
   | "MISSING_CITATION"
   | "UNCITABLE_REF"
@@ -588,18 +600,38 @@ export function validateCompetencyAnalysis(
 
 /* ---------- Pass 2 ---------- */
 
+/**
+ * Pass 2：錯誤軸。
+ *
+ * 【coverage 由伺服器推導，不再向模型索取】
+ *
+ * 以前模型要同時回 findings 與一份 16 個 code 的 coverage，兩者對不上就整支重做。
+ * 2026-09-05 的偏弱作文量測顯示這是一個會自我強化的失敗迴圈：那一次 44 筆
+ * findings，模型在四個 code 上都把數量少算了（ARTICLE 4 vs 5、SV_AGREEMENT 3 vs 4、
+ * WORD_CLASS 2 vs 3、SPELLING 8 vs 11），全部低估、方向一致——那是算術記帳，
+ * 不是語言判斷。findings 越多越容易算錯，而作文越爛 findings 越多，於是最需要
+ * 詳細回饋的作文最容易觸發重試，重試又在那些作文上最貴。
+ *
+ * count 本來就是 findings 的函數，伺服器數得又快又對。所以現在：
+ *   • 模型只負責 findings——那是它真正在做的語言判斷
+ *   • 伺服器從【已驗證的】findings 建出 16 個 code 的完整 coverage
+ *
+ * 覆蓋完整性沒有減弱：16 個 code 一定全部到齊，而且現在是【保證】到齊，
+ * 不再依賴模型記得列。減弱的只有「模型自己宣稱它數過」這個沒有實際效力的儀式。
+ *
+ * ⚠️ count = 0 仍然只代表「本篇未發現此類錯誤」，不代表已精熟（TR-12／TR-13）。
+ *    coverage_source 把「這是伺服器算的」寫進資料裡，讓報告層不會誤讀。
+ */
 export function validateErrorAnalysis(
   raw: unknown,
   essay: string,
 ): PassValidation<ErrorAnalysis> {
   const issues: ValidationIssue[] = [];
 
-  if (!isRecord(raw) || !Array.isArray(raw.findings) || !Array.isArray(raw.coverage)) {
+  if (!isRecord(raw) || !Array.isArray(raw.findings)) {
     return {
       ok: false,
-      issues: [
-        { kind: "MALFORMED", path: "error", detail: "缺少 findings 或 coverage 陣列" },
-      ],
+      issues: [{ kind: "MALFORMED", path: "error", detail: "缺少 findings 陣列" }],
     };
   }
 
@@ -651,48 +683,32 @@ export function validateErrorAnalysis(
     });
   });
 
-  const coverage: ErrorCoverageEntry[] = [];
-  const returnedCodes: string[] = [];
-  raw.coverage.forEach((item, i) => {
-    const path = `error.coverage[${i}]`;
-    if (!isRecord(item) || typeof item.code !== "string") {
-      issues.push({ kind: "MALFORMED", path, detail: "coverage 缺少 code" });
-      return;
-    }
-    returnedCodes.push(item.code);
-    if (typeof item.count !== "number" || !Number.isInteger(item.count) || item.count < 0) {
-      issues.push({
-        kind: "MALFORMED",
-        path: `error.coverage.${item.code}`,
-        detail: "count 必須是非負整數",
-      });
-      return;
-    }
-    coverage.push({
-      code: item.code,
-      count: item.count,
-      note: isNonEmptyString(item.note) ? item.note : undefined,
-    });
-  });
-
-  issues.push(...checkCoverage(returnedCodes, ALL_ERROR_CODES, "error.coverage"));
-
-  // coverage 與 findings 必須互相對得起來，否則其中一邊漏了東西。
-  const actual = new Map<string, number>();
-  for (const f of findings) actual.set(f.code, (actual.get(f.code) ?? 0) + 1);
-  for (const entry of coverage) {
-    const n = actual.get(entry.code) ?? 0;
-    if (n !== entry.count) {
-      issues.push({
-        kind: "COUNT_MISMATCH",
-        path: `error.coverage.${entry.code}`,
-        detail: `coverage 說 ${entry.count} 筆，findings 實際 ${n} 筆`,
-      });
-    }
-  }
-
   if (issues.length > 0) return { ok: false, issues };
-  return { ok: true, value: { taxonomy_version: WRITING_TAXONOMY_VERSION, findings, coverage } };
+
+  return {
+    ok: true,
+    value: {
+      taxonomy_version: WRITING_TAXONOMY_VERSION,
+      findings,
+      coverage: deriveErrorCoverage(findings),
+      coverage_source: "SERVER_DERIVED",
+    },
+  };
+}
+
+/**
+ * 從已驗證的 findings 建出 16 個 canonical error code 的完整 coverage。
+ *
+ * 一定回傳 16 筆、順序固定為 canonical 順序、count 為非負整數。
+ * 只數【通過驗證】的 findings——被引用查核或欄位檢查擋下來的那些不算數，
+ * 否則捏造的證據會把 count 灌水。
+ */
+export function deriveErrorCoverage(
+  findings: readonly ErrorFinding[],
+): readonly ErrorCoverageEntry[] {
+  const tally = new Map<string, number>();
+  for (const f of findings) tally.set(f.code, (tally.get(f.code) ?? 0) + 1);
+  return ALL_ERROR_CODES.map((code) => ({ code, count: tally.get(code) ?? 0 }));
 }
 
 /* ---------- Pass 3a / 3b ---------- */

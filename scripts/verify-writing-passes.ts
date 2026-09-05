@@ -15,10 +15,18 @@
 
 import {
   runValidatedPass,
+  repairInstruction,
   isPassOk,
   DeadlineExceeded,
   type PassFailure,
+  type PassOutcome,
 } from "../api/_lib/deepseek";
+import {
+  applyPassOutcomes,
+  STAGE1_PASSES,
+  MAX_PASS_ATTEMPTS,
+  type Stage1Progress,
+} from "../api/analyze-writing";
 import {
   competencyMessages,
   errorMessages,
@@ -299,8 +307,10 @@ console.log("\n量測（逐支、逐次）");
 {
   // 2026-09-05 偏弱作文那次的真實組合，也是舊版查不出來的那一種：
   // attempt 1 驗證失敗 → attempt 2 撞上我們自己的 50 秒期限。
+  // 用 2026-09-05 真的出現過的那一種缺陷：correction 跟原句一模一樣。
+  // （以前這裡是砍掉 coverage，但 coverage 現在由伺服器推導，砍掉不再是錯誤。）
   const partial = fullError();
-  partial.coverage = partial.coverage.slice(0, 10);   // 故意缺 6 個 code
+  partial.findings[0] = { ...partial.findings[0], correction: partial.findings[0].quote };
   installStub([{ content: partial, completionTokens: 4200 }, { deadline: true }]);
   const result = await runValidatedPass({
     label: "Writing Error",
@@ -392,6 +402,118 @@ console.log("\n量測（逐支、逐次）");
   check("成功時也記下 totalLatencyMs", typeof result.telemetry.totalLatencyMs === "number");
 }
 
+/* ──────────────── 2c. 跨請求重試的狀態機 ──────────────── */
+
+console.log("\n逐支狀態機（跨請求重試）");
+
+{
+  const ok = (value: unknown): PassOutcome<unknown> => ({
+    ok: true, value, attempts: 1,
+    telemetry: { label: "x", attempts: 1, totalLatencyMs: 100, finalOutcome: "OK",
+      retried: false, hitDeadline: false, records: [] },
+  });
+  const bad = (
+    outcome: string,
+    opts: { issues?: any[]; raw?: unknown; httpStatus?: number } = {},
+  ): PassOutcome<unknown> => ({
+    ok: false, issues: opts.issues ?? [], detail: `失敗：${outcome}`, attempts: 1,
+    lastRaw: opts.raw,
+    telemetry: {
+      label: "x", attempts: 1, totalLatencyMs: 100, finalOutcome: outcome as any,
+      retried: false, hitDeadline: outcome === "DEADLINE",
+      records: [{ attempt: 1, isRepair: false, offsetMs: 0, latencyMs: 100,
+        outcome: outcome as any, httpStatus: opts.httpStatus }],
+    },
+  });
+  const fresh = (): Stage1Progress =>
+    Object.fromEntries(STAGE1_PASSES.map((l) => [l, { state: "PENDING" as const, attempts: 0 }]));
+
+  {
+    // 一支沒過、三支過了：過了的必須是 VALID 並帶著結果，不可以被連坐。
+    const p = fresh();
+    applyPassOutcomes(p, [
+      { label: "competency", pass: ok({ c: 1 }) },
+      { label: "error", pass: bad("VALIDATION_FAILED", { issues: [{ kind: "MALFORMED" }], raw: { r: 1 } }) },
+      { label: "high_score_h1_h3", pass: ok({ a: 1 }) },
+      { label: "high_score_h4_h5", pass: ok({ b: 1 }) },
+    ]);
+    check("成功的三支標成 VALID",
+      ["competency", "high_score_h1_h3", "high_score_h4_h5"].every((l) => p[l].state === "VALID"));
+    check("成功的三支保留了結果（不會被重跑）",
+      STAGE1_PASSES.filter((l) => p[l].value !== undefined).length === 3);
+    check("失敗那一支是 RETRY_REQUIRED", p.error.state === "RETRY_REQUIRED", p.error.state);
+    check("失敗那一支留下缺漏清單", (p.error.lastIssues?.length ?? 0) > 0);
+    check("失敗那一支留下原始輸出，重試才能做成『修正』", p.error.lastRaw !== undefined);
+  }
+
+  {
+    // 續跑：VALID 的不在 todo 裡，所以 applyPassOutcomes 根本不會收到它們。
+    const p = fresh();
+    p.competency = { state: "VALID", attempts: 1, value: { c: 1 } };
+    p.error = { state: "RETRY_REQUIRED", attempts: 1, lastRaw: { r: 1 }, lastIssues: [{ kind: "MALFORMED" } as any] };
+    applyPassOutcomes(p, [{ label: "error", pass: ok({ e: 2 }) }]);
+    check("重試成功後 error 變 VALID", p.error.state === "VALID");
+    check("重試的 attempts 累加跨請求", p.error.attempts === 2, `${p.error.attempts}`);
+    check("已 VALID 的 competency 完全沒被動到", p.competency.value !== undefined && p.competency.attempts === 1);
+  }
+
+  {
+    // 重試次數用盡 → FAILED，不再無限重試。
+    const p = fresh();
+    p.error = { state: "RETRY_REQUIRED", attempts: MAX_PASS_ATTEMPTS - 1 };
+    applyPassOutcomes(p, [{ label: "error", pass: bad("VALIDATION_FAILED", { issues: [{ kind: "MALFORMED" }] }) }]);
+    check("嘗試次數用盡 → FAILED", p.error.state === "FAILED", `${p.error.state}(${p.error.attempts})`);
+  }
+
+  {
+    // 期限中斷值得重試（下一次請求拿得到完整的 50 秒）。
+    const p = fresh();
+    applyPassOutcomes(p, [{ label: "error", pass: bad("DEADLINE") }]);
+    check("期限中斷 → RETRY_REQUIRED", p.error.state === "RETRY_REQUIRED");
+  }
+
+  {
+    // 金鑰錯這種再打一次也沒用的，不浪費一次請求。
+    const p = fresh();
+    applyPassOutcomes(p, [{ label: "error", pass: bad("HTTP_ERROR", { httpStatus: 401 }) }]);
+    check("HTTP 401 → 直接 FAILED，不重試", p.error.state === "FAILED");
+  }
+
+  {
+    // 429／5xx 是暫時性的，值得重試。
+    const p = fresh();
+    applyPassOutcomes(p, [{ label: "error", pass: bad("HTTP_ERROR", { httpStatus: 429 }) }]);
+    check("HTTP 429 → RETRY_REQUIRED", p.error.state === "RETRY_REQUIRED");
+  }
+}
+
+{
+  // 跨請求的重試要能組出真正的修正指示——不是從零重寫。
+  const issues = [{ kind: "MALFORMED" as const, path: "error.findings[8]", detail: "correction 與原句相同" }];
+  const instruction = repairInstruction(issues);
+  check("修正指示點名了具體問題", instruction.includes("correction 與原句相同"));
+  check("修正指示說明省略不等於 UNMEASURED 或帶出格式問題",
+    instruction.includes("其他格式問題") || instruction.includes("UNMEASURED"));
+}
+
+{
+  // maxAttempts = 1：驗證失敗【不在同一次請求裡】重打。
+  const partial = fullError();
+  partial.findings[0] = { ...partial.findings[0], correction: partial.findings[0].quote };
+  installStub([{ content: partial }, { content: fullError() }]);
+  const result = await runValidatedPass({
+    label: "Writing Error",
+    messages: errorMessages(essay),
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+    maxAttempts: 1,
+  });
+  restoreFetch();
+  check("maxAttempts=1 時同一次請求只打一次", sentBodies.length === 1, `${sentBodies.length}`);
+  check("驗證失敗時帶回原始輸出供下一次請求修正",
+    !isPassOk(result) && (result as PassFailure).lastRaw !== undefined);
+}
+
 /* ──────────────── 3. prompt 真的列出全部節點 ──────────────── */
 
 console.log("\nprompt 的節點覆蓋");
@@ -417,7 +539,17 @@ console.log("\nprompt 的節點覆蓋");
     "Pass 2 prompt 禁止用錯誤代碼傳達 meta 訊息",
     prompt.includes("不可以把錯誤代碼拿來傳達與錯誤無關的訊息"),
   );
-  check("Pass 2 prompt 有退化輸入規則", prompt.includes("16 個 code 全部 count = 0"));
+  // 退化輸入規則還在，只是措辭隨著 coverage 交給伺服器而改了：
+  // 以前是「16 個 code 全部 count = 0」，現在是「findings 留空」。
+  check(
+    "Pass 2 prompt 有退化輸入規則",
+    prompt.includes("題目與提示文字不是學生寫的") && prompt.includes("findings 留空"),
+  );
+  check("Pass 2 prompt 不再向模型索取 coverage", !prompt.includes("coverage"));
+  check(
+    "Pass 2 prompt 仍然強調『沒出現不等於精熟』",
+    prompt.includes("不代表學生已經精熟"),
+  );
 }
 
 {

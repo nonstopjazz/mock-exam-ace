@@ -74,6 +74,14 @@ const STAGE_LABEL: Record<RunMode, string> = {
   synthesis: "Stage 2 綜合層",
 };
 
+/**
+ * Stage 1 續跑請求的上限。
+ *
+ * 伺服器每支 pass 有自己的 MAX_PASS_ATTEMPTS，這裡是前端的獨立保險：
+ * 就算伺服器的狀態機出了錯，也不會讓瀏覽器無限打下去。
+ */
+const MAX_STAGE1_REQUESTS = 4;
+
 const StatusBadge = ({ row }: { row: QueueRow }) => {
   if (!row.analysis_status) {
     return (
@@ -189,15 +197,41 @@ const WritingDebug = () => {
       const steps: RunStep[] = [];
       try {
         if (from === "stage1") {
-          setRunning(`${essayId}:stage1`);
-          const stage1 = await callEndpoint(essayId, "stage1", token);
-          steps.push(stage1);
-          setResult({ essayId, steps: [...steps] });
-          if (!stage1.ok) {
-            toast.error(`Stage 1 失敗（HTTP ${stage1.httpStatus}），未執行綜合層`);
+          // Stage 1 可能需要不只一次請求：某一支沒過驗證時，重試是【另一次請求】，
+          // 那樣它才拿得到完整的 50 秒。老師仍然只按一次——這個迴圈自己跑完。
+          let done = false;
+          for (let round = 1; round <= MAX_STAGE1_REQUESTS && !done; round += 1) {
+            setRunning(`${essayId}:stage1`);
+            const stage1 = await callEndpoint(essayId, "stage1", token);
+            steps.push(stage1);
+            setResult({ essayId, steps: [...steps] });
+
+            if (!stage1.ok) {
+              toast.error(`Stage 1 失敗（HTTP ${stage1.httpStatus}），未執行綜合層`);
+              return;
+            }
+
+            const body = stage1.body as {
+              retryRequired?: boolean;
+              retryPasses?: string[];
+              preserved?: string[];
+            };
+            if (body?.retryRequired) {
+              // 已通過的那幾支不會重跑——伺服器把它們保存在 stage1_progress 裡。
+              toast.message(
+                `Stage 1 第 ${round} 次：${(body.retryPasses ?? []).join("、")} 需要重試`,
+                { description: `已保留 ${(body.preserved ?? []).length} 支通過的結果，不重跑` },
+              );
+              continue;
+            }
+            done = true;
+            toast.success(`Stage 1 完成（${round} 次請求），接續綜合層`);
+          }
+
+          if (!done) {
+            toast.error(`Stage 1 重試 ${MAX_STAGE1_REQUESTS} 次仍未完成，未執行綜合層`);
             return;
           }
-          toast.success(`Stage 1 完成 ${(stage1.elapsedMs / 1000).toFixed(1)} 秒，接續綜合層`);
         }
 
         setRunning(`${essayId}:synthesis`);
