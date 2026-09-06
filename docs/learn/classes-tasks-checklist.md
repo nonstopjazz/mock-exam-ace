@@ -62,6 +62,28 @@ psql -f tests/sql/learn_classes_security_test.sql
 
 ## 4. 正式環境上線前
 
+### Migration 順序（全部 additive）
+
+| # | 檔案 | 作用 |
+|---|---|---|
+| 1 | `fix_admin_rpc_authorization.sql` | 🔴 **先跑這支**。修掉四支 admin RPC 未登入可呼叫的破口 |
+| 2 | `create_writing_analyses.sql` | 作文分析 |
+| 3 | `add_writing_analyses_analyzed_at.sql` | ↑ |
+| 4 | `add_writing_analyses_telemetry.sql` | ↑ |
+| 5 | `add_writing_analyses_stage1_progress.sql` | ↑ |
+| 6 | `create_writing_teacher_feedback.sql` | 老師講評 |
+| 7 | `create_learn_classes_tasks.sql` | 班級與任務 |
+
+第 1 支排最前面，是因為這次上線會把真實學生的姓名、年級、學校寫進
+`user_profiles` —— 破口本身是既有的，但曝險面是這次上線放大的。
+
+### 驗證
+
+- [ ] `tests/sql/launch_surface_rpc_check.sql`（唯讀）→ 四支 admin RPC 的
+      「anon可執行」都是 f、「守門有防NULL」都是 t
+- [ ] `tests/sql/launch_surface_rls_check.sql`（唯讀）→ 17 張表沒有 🔴
+- [ ] `tests/sql/staging_writing_analyses_verify.sql` → 24 / 24、36 欄
+- [ ] `tests/sql/learn_classes_verify.sql` → 15 / 15
 - [ ] 正式環境跑 `create_learn_classes_tasks.sql`
 - [ ] 正式環境跑 `learn_classes_verify.sql` → 15 / 15（`SKIP` 項應該變成 `PASS`）
 - [ ] `/admin/classes` 已在管理員首頁導覽中（本次已加）

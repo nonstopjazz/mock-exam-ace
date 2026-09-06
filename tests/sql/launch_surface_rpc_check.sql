@@ -8,7 +8,10 @@
 --    `NOT NULL` 不成立 —— 守門會被跳過。加上 Supabase 預設把 EXECUTE 授予
 --    anon，未登入者就能拿到整份使用者名單（email / 姓名 / 年級 / 學校）。
 --    這兩支在 "anon可執行" 欄位必須是 f。
---    修補：supabase/migrations/fix_admin_user_rpc_null_guard.sql
+--    admin_grant_premium / admin_revoke_premium 更嚴重：它們【完全沒有授權
+--    分支】，未登入者可替任意帳號開通 premium、撤銷任意人的會員資格。
+--    這四支在 "anon可執行" 欄位都必須是 f，"守門有防NULL" 都必須是 t。
+--    修補：supabase/migrations/fix_admin_rpc_authorization.sql
 -- =====================================================
 
 SELECT
@@ -37,5 +40,6 @@ WHERE n.nspname = 'public'
   AND (p.proname LIKE 'learn\_%'
     OR p.proname LIKE 'writing\_%'
     OR p.proname IN ('admin_get_all_users','admin_get_user_stats',
+                     'admin_grant_premium','admin_revoke_premium',
                      'get_user_profile','upsert_user_profile','get_user_stats','is_admin'))
 ORDER BY (p.proname LIKE 'admin\_%') DESC, p.proname;
