@@ -1,143 +1,114 @@
 import { Card } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Flame } from "lucide-react";
-import {
-  WEEKDAY_LABELS, WEEK_DATES, type CompletionSource, type RhythmTrack,
-} from "@/data/learn/studentDashboardMock";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BookMarked, Flame, Repeat2 } from "lucide-react";
+import { useUserStats } from "@/hooks/useUserStats";
 import { TYPE } from "./shared";
-import type { StudentDashboard } from "@/hooks/learn/useStudentDashboard";
-
-const SOURCE_TAG: Record<CompletionSource, string> = {
-  auto: "AUTO",
-  self: "SELF-REPORTED",
-  teacher: "TEACHER VERIFIED",
-};
-
-const SOURCE_NOTE: Record<CompletionSource, string> = {
-  auto: "平台記錄",
-  self: "自行標記 · 待老師確認",
-  teacher: "老師已確認",
-};
 
 /**
- * Learning Rhythm —— 一週的 habit grid。
- * 主體是格子的節奏本身；右側的 n/m 只是佐證，權重刻意壓低。
- * 🛑 顏色不是唯一辨識方式：tooltip 會說出日期、項目、來源與狀態。
+ * 學習紀錄 —— user_stats 裡真的存下來的四個數字。
+ *
+ * 🛑 刻意【沒有】一週的活動格子。系統沒有逐日的活動歷史，
+ *    畫七格出來就等於編造學生哪幾天有練習。改用緊湊的數字呈現。
+ * 🛑 完全沒有紀錄時說「開始練習後，這裡會慢慢累積」，
+ *    而不是顯示一排 0 —— 沒開始不等於表現差。
  */
-export const LearningRhythm = ({ sd }: { sd: StudentDashboard }) => {
-  const { rhythm, todayIndex, vocabulary } = sd.scenario;
-  const totalTarget = rhythm.reduce((s, t) => s + t.target, 0);
-  const totalDone = rhythm.reduce((s, t) => s + t.days.filter(Boolean).length, 0);
+
+const Stat = ({
+  icon: Icon,
+  value,
+  unit,
+  label,
+}: {
+  icon: typeof Flame;
+  value: number;
+  unit: string;
+  label: string;
+}) => (
+  <div className="flex items-start gap-3">
+    <div className="h-9 w-9 grid place-items-center rounded-lg bg-muted/70 shrink-0">
+      <Icon className="h-4 w-4 text-secondary" />
+    </div>
+    <div className="min-w-0">
+      <p className="flex items-baseline gap-1">
+        <span className="text-2xl font-bold text-foreground tabular-nums leading-none">
+          {value.toLocaleString()}
+        </span>
+        <span className="text-sm text-muted-foreground">{unit}</span>
+      </p>
+      <p className={`${TYPE.micro} mt-1`}>{label}</p>
+    </div>
+  </div>
+);
+
+const relativeDay = (iso: string) => {
+  const day = 86_400_000;
+  const a = new Date(`${iso}T00:00:00Z`).getTime();
+  const now = new Date();
+  const b = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.round((b - a) / day);
+  if (diff <= 0) return "今天";
+  if (diff === 1) return "昨天";
+  if (diff < 7) return `${diff} 天前`;
+  const d = new Date(`${iso}T00:00:00Z`);
+  return `${d.getUTCMonth() + 1} 月 ${d.getUTCDate()} 日`;
+};
+
+export const LearningRhythm = () => {
+  const { stats, loading } = useUserStats();
+
+  const hasActivity =
+    stats.totalReviewCount > 0 || stats.totalWordsLearned > 0 || !!stats.lastStudyDate;
 
   return (
     <Card className="p-5 h-full flex flex-col bg-card border-border/70" id="section-rhythm">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h2 className={TYPE.sectionHeading}>本週學習節奏</h2>
-          <p className={TYPE.micro}>深色格子代表當天有完成</p>
+          <h2 className={TYPE.sectionHeading}>我的學習紀錄</h2>
+          <p className={TYPE.micro}>來自字卡練習的累計數字</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-foreground">
+        {hasActivity && stats.streakDays > 0 ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-foreground shrink-0">
             <Flame className="h-3.5 w-3.5 text-primary" />
-            連續 {vocabulary.streakDays} 天
+            連續 {stats.streakDays} 天
           </span>
-          <span className={`${TYPE.micro} tabular-nums`}>本週 {totalDone} / {totalTarget}</span>
-        </div>
+        ) : null}
       </div>
 
-      <TooltipProvider delayDuration={80}>
-        <div className="flex-1">
-          {/* 星期表頭；今天用一小段指示線標出，不用刺眼色塊 */}
-          <div className="flex items-center gap-3 mb-2">
-            <span className="w-[4.5rem] shrink-0" />
-            <div className="grid grid-cols-7 gap-[5px] w-[15.25rem]">
-              {WEEKDAY_LABELS.map((d, i) => (
-                <div key={d} className="flex flex-col items-center gap-1">
-                  <span
-                    className={`text-[11px] leading-none ${
-                      i === todayIndex ? "font-semibold text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    {d}
-                  </span>
-                  <span
-                    className={`h-[2px] w-4 rounded-full ${
-                      i === todayIndex ? "bg-primary/70" : "bg-transparent"
-                    }`}
-                  />
-                </div>
-              ))}
-            </div>
-            <span className="w-9 shrink-0" />
-          </div>
-
-          <div className="space-y-[5px]">
-            {rhythm.map((track: RhythmTrack) => {
-              const done = track.days.filter(Boolean).length;
-              const met = done >= track.target;
-              return (
-                <div key={track.label} className="flex items-center gap-3">
-                  <span className="w-[4.5rem] shrink-0 text-[13px] text-foreground/85 truncate">
-                    {track.label}
-                  </span>
-                  <div className="grid grid-cols-7 gap-[5px] w-[15.25rem]">
-                    {track.days.map((filled, i) => (
-                      <Tooltip key={i}>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            tabIndex={-1}
-                            aria-label={`${WEEK_DATES[i]} ${track.label}：${filled ? "已完成" : "沒有紀錄"}`}
-                            className={[
-                              "h-[30px] rounded-md transition-all duration-150 outline-none",
-                              filled
-                                ? "bg-secondary hover:bg-secondary/85"
-                                : "bg-muted/50 ring-1 ring-inset ring-border/70 hover:bg-muted",
-                              "hover:ring-2 hover:ring-secondary/40",
-                              i === todayIndex && !filled ? "ring-1 ring-primary/45" : "",
-                              i === todayIndex && filled ? "ring-2 ring-primary/35 ring-offset-1 ring-offset-card" : "",
-                            ].join(" ")}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="px-2.5 py-2">
-                          <p className="text-xs font-semibold text-foreground">
-                            {WEEK_DATES[i]} · {track.label}
-                          </p>
-                          <p className="text-[10px] font-semibold tracking-wider text-muted-foreground mt-1">
-                            {SOURCE_TAG[track.source]}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {filled ? SOURCE_NOTE[track.source] : "沒有紀錄"}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                  </div>
-                  <span
-                    className={`w-9 shrink-0 text-right text-[11px] tabular-nums ${
-                      met ? "text-foreground/70 font-medium" : "text-muted-foreground/80"
-                    }`}
-                  >
-                    {done}/{track.target}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+      {loading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-2/3" />
         </div>
-      </TooltipProvider>
+      ) : !hasActivity ? (
+        <div className="flex-1 flex items-center justify-center py-8">
+          <p className="text-sm text-muted-foreground text-center max-w-xs">
+            開始練習後，這裡會慢慢累積你的學習紀錄。
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 flex-1">
+            <Stat
+              icon={Repeat2}
+              value={stats.totalReviewCount}
+              unit="次"
+              label="累計複習次數"
+            />
+            <Stat
+              icon={BookMarked}
+              value={stats.totalWordsLearned}
+              unit="個"
+              label="學過的單字"
+            />
+          </div>
 
-      {/* legend 刻意極簡，不搶主視覺 */}
-      <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/60">
-        <span className={`flex items-center gap-1.5 ${TYPE.micro}`}>
-          <span className="h-3 w-3 rounded-[4px] bg-secondary" />已完成
-        </span>
-        <span className={`flex items-center gap-1.5 ${TYPE.micro}`}>
-          <span className="h-3 w-3 rounded-[4px] bg-muted/50 ring-1 ring-inset ring-border/70" />
-          沒有紀錄
-        </span>
-        <span className={`${TYPE.micro} ml-auto`}>紙本練習為自行標記</span>
-      </div>
+          {stats.lastStudyDate ? (
+            <p className={`${TYPE.micro} mt-4 pt-3 border-t border-border/60`}>
+              最近一次練習：{relativeDay(stats.lastStudyDate)}
+            </p>
+          ) : null}
+        </>
+      )}
     </Card>
   );
 };

@@ -1,8 +1,6 @@
 import { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
-import type { CompletionSource } from "@/data/learn/studentDashboardMock";
-import { TASK_STATE, type TaskStateKey } from "./studentTokens";
 
 /* ---------- Surface hierarchy ----------
  * 品牌色不動；層次靠 elevation + border 濃度做，讓整頁不再是一片奶油色。
@@ -66,53 +64,4 @@ export const QuietPanel = ({
     </div>
     {children}
   </Card>
-);
-
-/* ---------- 完成狀態：全站一套 ----------
- * 🛑 顏色不是唯一的辨識方式 —— 每一種狀態都有專屬 icon 與文字。
- */
-/** 狀態列：任何形狀的任務都用同一組 icon / 色彩角色 / 字級 */
-export const StateLine = ({
-  stateKey,
-  label,
-}: {
-  stateKey: TaskStateKey;
-  label: string;
-}) => {
-  const S = TASK_STATE[stateKey];
-  const Icon = S.icon;
-  return (
-    <span className={`inline-flex items-center gap-1.5 ${TYPE.status} ${S.className}`}>
-      <Icon className="h-3.5 w-3.5 shrink-0" />
-      {label}
-    </span>
-  );
-};
-
-/** 練習完成狀態沿用同一組 icon / 色彩角色 */
-export const PracticeDone = ({ source }: { source: CompletionSource | null }) => {
-  const S = source === "self" ? TASK_STATE.self : TASK_STATE.verified;
-  const Icon = S.icon;
-  return (
-    <span className={`inline-flex items-center gap-1.5 ${TYPE.status} ${S.className}`}>
-      <Icon className="h-3.5 w-3.5 shrink-0" />
-      {source === "self" ? "已標記完成" : "已完成"}
-    </span>
-  );
-};
-
-/** 四階等級指示條。刻意離散，不顯示百分比 */
-export const LevelSteps = ({ step }: { step: number | null }) => (
-  <div className="flex gap-1 shrink-0" aria-hidden>
-    {[1, 2, 3, 4].map((i) =>
-      step === null ? (
-        <span key={i} className="h-1.5 w-6 rounded-full border border-dashed border-border" />
-      ) : (
-        <span
-          key={i}
-          className={`h-1.5 w-6 rounded-full ${i <= step ? "bg-secondary" : "bg-muted"}`}
-        />
-      ),
-    )}
-  </div>
 );

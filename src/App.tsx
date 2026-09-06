@@ -118,14 +118,16 @@ const App = () => (
             {/* Claim pack route */}
             <Route path="/claim/:token" element={<ClaimPack />} />
 
-          {/* /learn 家長儀表板（設計原型，mock data） */}
-          <Route path="/learn/parent" element={<ParentDashboard />} />
+          {/* /learn 家長儀表板（設計原型，mock data）
+              🛑 仍是示範資料，所以鎖在管理員後面——真實學生／家長絕不能看到假成績。 */}
+          <Route path="/learn/parent" element={<RequireAdmin><ParentDashboard /></RequireAdmin>} />
 
-          {/* /learn 老師課堂工作區（設計原型，mock data） */}
-          <Route path="/learn/teacher/session" element={<TeacherSessionWorkspace />} />
+          {/* /learn 老師課堂工作區（設計原型，mock data）
+              🛑 同上：示範資料一律鎖在管理員後面。 */}
+          <Route path="/learn/teacher/session" element={<RequireAdmin><TeacherSessionWorkspace /></RequireAdmin>} />
 
-          {/* /learn 學生首頁（設計原型，mock data；字彙區導向既有字卡系統） */}
-          <Route path="/learn/student" element={<StudentDashboard />} />
+          {/* /learn 學生首頁 —— 全部真實資料，需登入 */}
+          <Route path="/learn/student" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
 
           {/* ⚠️ Prototype retained for internal reference; not part of current student IA.
               未連結於任何學生導覽，僅供內部參考 */}
