@@ -276,7 +276,8 @@ DELETE FROM writing_analyses WHERE id IN ('<貼上要刪的 id>');
 - [ ] 正式 Supabase 依序套用：`create_writing_analyses` → `add_writing_analyses_analyzed_at`
       → `add_writing_analyses_telemetry` → `add_writing_analyses_stage1_progress`
       → `create_writing_teacher_feedback`
-- [ ] 正式環境跑 `tests/sql/staging_writing_analyses_verify.sql` → 24/24、36 欄
+- [ ] 正式環境跑 `tests/sql/staging_writing_analyses_verify.sql` → 顯示「全部通過」、FAIL = 0、36 欄
+      （分母隨環境變動：`writing_analyses` 已有資料時最後一項記成 INFO，24 會變成 23）
 - [ ] Vercel Production 設定 `DEEPSEEK_API_KEY`（`SUPABASE_SERVICE_ROLE_KEY` 已存在）
 - [ ] 確認 `FeatureGate` 的 `writing_submission` 在正式環境為開啟
 - [x] **把 `/admin/writing` 加進管理員導覽** —— 已加在 `/admin` 首頁的模組清單

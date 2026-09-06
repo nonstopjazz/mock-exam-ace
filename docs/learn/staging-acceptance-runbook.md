@@ -212,7 +212,7 @@ repo 裡沒有它的 DDL，只能用猜的，比缺一個百分比危險得多�
 
 | 腳本 | 預期 |
 |---|---|
-| `tests/sql/staging_writing_analyses_verify.sql` | **24 / 24 全部通過**，`writing_analyses` **36 欄** |
+| `tests/sql/staging_writing_analyses_verify.sql` | **「全部通過」且 FAIL = 0**，`writing_analyses` **36 欄**。<br>⚠️ 分母**隨環境變動**：最後一項在 `writing_analyses` 已經有資料時會記成 `INFO` 而不是 `PASS`，分母就從 24 掉到 23。**看「全部通過」四個字，不要看數字。** |
 | `tests/sql/learn_classes_verify.sql` | **16 / 16** |
 | `tests/sql/launch_surface_rpc_check.sql` | 四支 admin RPC：「anon可執行」全 `f`、「守門有防NULL」全 `t` |
 | `tests/sql/launch_surface_rls_check.sql` | 17 張表**沒有任何 🔴**，`learn_*` 與 `writing_analyses` / `writing_teacher_feedback` 顯示「✅ 零授權 + RLS」 |
@@ -222,6 +222,26 @@ repo 裡沒有它的 DDL，只能用猜的，比缺一個百分比危險得多�
 
 如果 `staging_writing_analyses_verify` 回報 32 / 33 / 34 欄，說明第 3～5 支
 migration 有漏跑 —— 訊息本身會告訴你缺哪一支。
+
+**gsat-staging 實測結果（2026-09-06，七支 migration 套用後）**
+
+| 腳本 | 結果 |
+|---|---|
+| `staging_writing_analyses_verify.sql` | ✅ **23 / 23 全部通過**、36 欄（分母 23 是因為 `writing_analyses` 已有 15 列既有資料） |
+| `learn_classes_verify.sql` | ✅ **16 / 16** |
+| `launch_surface_rpc_check.sql` | ✅ 四支 admin RPC 全部 `anon可執行=f`、`守門有防NULL=t` |
+| `launch_surface_rls_check.sql` | ✅ 17 張表無 🔴；`learn_*` 五張與 `writing_teacher_feedback` 皆「零授權 + RLS」 |
+
+判讀欄出現 ℹ️ 的**觸發器函式**（`*_touch`、`*_guard_*`）不是問題：
+它們回傳 `trigger`，PostgreSQL 直接拒絕被當一般函式呼叫
+（`trigger functions can only be called as triggers`），
+PostgREST 也不會把它們收進 schema cache，所以在 API 上根本不存在。
+
+`get_user_profile` / `get_user_stats` / `is_admin` / `upsert_user_profile`
+顯示 ⚠️ 同樣是刻意的 —— 它們本來就要讓未登入者呼叫，並在函式內回
+`NOT_AUTHENTICATED`。
+
+---
 
 ### 3.2 未登入 HTTP 檢查 —— **staging 上唯一能真正證明破口關上的方法**
 
@@ -384,7 +404,7 @@ Promise.all([
 - [ ] 階段 0 已用 `diagnose_admin_identity.sql` 查出這個環境的管理員帳號，並成功登入
 - [ ] 階段 1 兩份探測完成並記錄修補前狀態
 - [ ] 階段 2 七支 migration 全部乾淨套用
-- [ ] `staging_writing_analyses_verify.sql` → 24 / 24、36 欄
+- [ ] `staging_writing_analyses_verify.sql` → 顯示「全部通過」、FAIL = 0、36 欄
 - [ ] `learn_classes_verify.sql` → 16 / 16
 - [ ] `launch_surface_rpc_check.sql` → 四支 admin RPC 全 `f` / `t`
 - [ ] `launch_surface_rls_check.sql` → 17 張表無 🔴

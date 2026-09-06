@@ -16,13 +16,19 @@
 
 SELECT
   p.proname                                                   AS "函式",
-  CASE WHEN p.prosecdef THEN 'DEFINER' ELSE 'INVOKER' END     AS "安全模式",
+  CASE WHEN pg_get_function_result(p.oid) = 'trigger' THEN 'TRIGGER'
+       WHEN p.prosecdef THEN 'DEFINER' ELSE 'INVOKER' END     AS "安全模式",
   EXISTS (SELECT 1 FROM information_schema.role_routine_grants g
            WHERE g.routine_schema = 'public'
              AND g.routine_name = p.proname
              AND g.grantee IN ('anon', 'PUBLIC'))             AS "anon可執行",
   (p.prosrc ~ 'coalesce\s*\(\s*(public\.)?is_admin')          AS "守門有防NULL",
   CASE
+    -- 回傳 trigger 的函式無法被直接呼叫（PostgreSQL 直接拒絕），
+    -- 而且 PostgREST 根本不會把它們收進 schema cache，所以打不到。
+    -- 它們身上的 anon EXECUTE 是 Supabase 預設授權的殘留，沒有攻擊面。
+    WHEN pg_get_function_result(p.oid) = 'trigger'
+      THEN 'ℹ️ 觸發器函式：無法被直接呼叫，也不在 PostgREST 的 API 上'
     WHEN p.proname LIKE 'learn\_student\_%' THEN 'ℹ️ 學生端：以 auth.uid() 過濾，不吃 student_id 參數'
     WHEN EXISTS (SELECT 1 FROM information_schema.role_routine_grants g
                   WHERE g.routine_schema='public' AND g.routine_name=p.proname
