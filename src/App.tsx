@@ -28,6 +28,8 @@ import UsersAdmin from "./pages/admin/UsersAdmin";
 import AdminHome from "./pages/admin/AdminHome";
 import WritingGrading from "./pages/admin/WritingGrading";
 import WritingGradingDetail from "./pages/admin/WritingGradingDetail";
+import ClassesAdmin from "./pages/admin/ClassesAdmin";
+import ClassDetail from "./pages/admin/ClassDetail";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -127,7 +129,7 @@ const App = () => (
 
           {/* ⚠️ Prototype retained for internal reference; not part of current student IA.
               未連結於任何學生導覽，僅供內部參考 */}
-          <Route path="/learn/student/tasks" element={<StudentTasks />} />
+          <Route path="/learn/student/tasks" element={<ProtectedRoute><StudentTasks /></ProtectedRoute>} />
 
           {/* /learn 寫作系統 Phase 1 —— 真實資料，需登入。
               目前只收文字作文；圖片提交、OCR、AI 分析屬於 Phase 2 之後。 */}
@@ -174,6 +176,17 @@ const App = () => (
           <Route path="/admin/writing/:essayId" element={
             <RequireAdmin>
               <WritingGradingDetail />
+            </RequireAdmin>
+          } />
+          {/* 班級與任務指派：老師端的主入口 */}
+          <Route path="/admin/classes" element={
+            <RequireAdmin>
+              <ClassesAdmin />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/classes/:classId" element={
+            <RequireAdmin>
+              <ClassDetail />
             </RequireAdmin>
           } />
           <Route path="/admin/exams" element={

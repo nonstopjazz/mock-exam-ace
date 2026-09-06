@@ -12,6 +12,8 @@ import {
   Users,
   TrendingUp,
   GraduationCap,
+  School,
+  PenLine,
 } from 'lucide-react';
 import { PRODUCT_CONFIG } from '@/config/product';
 
@@ -63,6 +65,19 @@ export default function AdminHome() {
       icon: <Users className="h-6 w-6" />,
       href: '/admin/users',
       badge: '新功能',
+    },
+    {
+      title: '班級管理',
+      description: '建立班級、管理名冊、指派作業與常態練習',
+      icon: <School className="h-6 w-6" />,
+      href: '/admin/classes',
+      badge: '新功能',
+    },
+    {
+      title: '作文批改',
+      description: '批改佇列、AI 分析報告、老師講評',
+      icon: <PenLine className="h-6 w-6" />,
+      href: '/admin/writing',
     },
     {
       title: '單字包管理',

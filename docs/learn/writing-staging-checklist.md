@@ -279,10 +279,12 @@ DELETE FROM writing_analyses WHERE id IN ('<貼上要刪的 id>');
 - [ ] 正式環境跑 `tests/sql/staging_writing_analyses_verify.sql` → 24/24、36 欄
 - [ ] Vercel Production 設定 `DEEPSEEK_API_KEY`（`SUPABASE_SERVICE_ROLE_KEY` 已存在）
 - [ ] 確認 `FeatureGate` 的 `writing_submission` 在正式環境為開啟
-- [ ] **把 `/admin/writing` 加進管理員導覽** —— 目前只能直接輸入網址
+- [x] **把 `/admin/writing` 加進管理員導覽** —— 已加在 `/admin` 首頁的模組清單
 - [ ] 用一篇真實作文走完整條路：學生送出 → `/admin/writing` 批改 →
       學生在 `/learn/student/writing/:id` 看到報告 → Dashboard 出現「最近的作文」卡
-- [ ] 決定 `/learn/student` Dashboard 其餘區塊的處理方式（目前仍是示範資料）
+- [ ] 決定 `/learn/student` Dashboard 其餘區塊的處理方式
+      （任務與作文已是真實資料；今天／學習狀況／節奏／字卡／成績／老師的話仍是示範資料）
+- [ ] 班級與任務系統另見 `docs/learn/classes-tasks-checklist.md`
 
 ---
 

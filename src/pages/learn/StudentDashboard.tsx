@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { STUDENT_SCENARIOS, type StudentId } from "@/data/learn/studentDashboardMock";
 import { useStudentDashboard } from "@/hooks/learn/useStudentDashboard";
-import { NextClassHero } from "@/components/learn/student/NextClassHero";
+import { StudentTasksCard } from "@/components/learn/student/StudentTasksCard";
 import { TodayLauncher } from "@/components/learn/student/TodayLauncher";
 import { ProgressSnapshot } from "@/components/learn/student/ProgressSnapshot";
 import { LearningRhythm } from "@/components/learn/student/LearningRhythm";
@@ -17,13 +17,13 @@ import { LatestWritingCard } from "@/components/learn/student/LatestWritingCard"
 /**
  * Student Dashboard — v1.1（視覺重組）
  *
- * 🛑 除了「最近的作文」之外全部是 mock data。
- *    LatestWritingCard 用的是真實的 writing_submissions 與批改 RPC；
- *    其餘區塊（下一堂課、今天、學習狀況、節奏、字卡、成績、老師的話）
- *    仍是 studentDashboardMock 的示範資料。
+ * 資料來源：
+ *   ✅ 真實 —— 我的任務（learn_student_tasks）、最近的作文（writing_*）
+ *   🛑 示範 —— 今天、學習狀況、節奏、字卡、成績、老師的話
+ *      這幾區仍是 studentDashboardMock，尚未接後端。
  *
  * 視覺層級刻意不平均：
- *   Hero（下一堂課）→ Action zone（今天）→ 兩欄摘要（學習狀況 / 節奏）
+ *   我的任務 → Action zone（今天）→ 兩欄摘要（學習狀況 / 節奏）
  *   → 字卡收藏 → 底部次要資訊（成績 / 老師的話）
  */
 const StudentDashboard = () => {
@@ -62,15 +62,16 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          {/* 1. Hero —— 下次上課前還要做什麼 */}
-          <NextClassHero sd={sd} />
+          {/* 1. 我的任務 —— ⚠️ 真實資料。老師指派什麼就顯示什麼；
+              沒有任務時顯示「目前沒有新的任務」，不會整張卡消失。 */}
+          <StudentTasksCard />
 
           {/* 2. Action zone —— 今天要做什麼 */}
           <div className="mt-10">
             <TodayLauncher sd={sd} />
           </div>
 
-          {/* 2.5 最近的作文 —— ⚠️ 這一頁唯一使用真實資料的區塊。
+          {/* 2.5 最近的作文 —— ⚠️ 真實資料。
               沒有已送出的作文時整張卡不出現。 */}
           <div className="mt-10">
             <LatestWritingCard />
@@ -94,7 +95,7 @@ const StudentDashboard = () => {
               <TeacherFeedback sd={sd} />
             </div>
             <p className="text-center text-[11px] text-muted-foreground mt-8">
-              除了「最近的作文」之外，本頁其餘資料皆為示範用途。
+              「我的任務」與「最近的作文」是真實資料，本頁其餘區塊為示範用途。
             </p>
           </div>
         </div>

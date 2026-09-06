@@ -9,7 +9,7 @@ export type TaskStateKey =
   | "verified"
   | "partial"
   | "unchecked"
-  /* Task Center 追加的三種；Dashboard 不使用，但共用同一套 icon / 色彩角色 */
+  /* 保留給之後的線上任務（Digital Assignment）；Phase 1 的作業不會用到 */
   | "in_progress"
   | "followup"
   | "resubmitted";
