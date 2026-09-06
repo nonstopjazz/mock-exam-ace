@@ -116,6 +116,25 @@ repo 裡**沒有任何 DDL**，所以 staging 從來沒有它。
 
 ---
 
+## 🟡 6. `claim_pack_with_token` 忽略 `p_site`，與 `getSiteId()` 的預設值互相矛盾
+
+稽核 §9.5 已記載 `p_site` 從未被使用；`site` 永遠落回欄位預設 `'gsat'`。
+搭配前端 `getSiteId()` 的行為（hostname 不含 `gsat`/`toeic`/`kids` 時
+**預設回傳 `'toeic'`**），在任何非正式網域上會造成：
+
+> 兌換回報成功 → `user_pack_claims.site = 'gsat'`
+> → `useUserPacks` 以 `'toeic'` 過濾 → **字卡永遠不顯示**
+
+**不影響正式站**（`gsat.ilearn.blog` 含 `gsat`），但會讓
+`*.vercel.app` 上的所有字卡驗收失效，而且症狀看起來像功能壞掉。
+
+**繞過方式**：在該部署設 `VITE_SITE_ID`。
+**真正的修法**（未排程）：讓 `claim_pack_with_token` 真的使用 `p_site`，
+並把 `getSiteId()` 的預設從 `'toeic'` 改成明確失敗或可設定值 ——
+一個靜默的預設站別是這類 bug 的溫床。
+
+---
+
 ## ✅ 已於上線前修掉
 
 | 項目 | 修補 |

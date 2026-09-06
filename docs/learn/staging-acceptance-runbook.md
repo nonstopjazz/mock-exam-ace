@@ -383,6 +383,31 @@ localStorage 分開，就有兩個獨立的 Supabase 登入狀態，也不必動
 
 ### 4.5 字卡
 
+> 🔴 **在 Vercel 的 `*.vercel.app` 預覽網址上，兌換完字卡也不會出現。**
+>
+> 三件事湊在一起：
+> 1. `claim_pack_with_token(p_token, p_site)` 的 **`p_site` 參數從未被使用**
+>    （稽核 §9.5），INSERT 沒帶 `site`，落回欄位預設值 **`'gsat'`**
+> 2. `getSiteId()` 看 hostname：含 `gsat`/`toeic`/`kids` 就用它，
+>    否則讀 `VITE_SITE_ID`，**再否則預設 `'toeic'`**
+> 3. `useUserPacks` 查詢帶 `.eq('site', getSiteId())`
+>
+> `mock-exam-xxxx.vercel.app` 三個關鍵字都不含 → 前端用 `'toeic'`，
+> 資料寫的是 `'gsat'` → **兌換回報成功，但字卡永遠不出現**。
+>
+> 正式站 `gsat.ilearn.blog` 網域含 `gsat`，不受影響。
+>
+> **解法**：Vercel → Settings → Environment Variables →
+> Preview 環境加 `VITE_SITE_ID = gsat` → 重新部署。
+> 不想動設定就略過兌換段，只驗空狀態。
+>
+> 確認目前是哪一種（學生視窗 console）：
+> ```js
+> const h = location.hostname;
+> console.log(h, h.includes('gsat') ? 'gsat' : h.includes('toeic') ? 'toeic'
+>   : h.includes('kids') ? 'kids' : '沒比中 → VITE_SITE_ID，沒設就是 toeic');
+> ```
+
 > 🟡 **staging 上這一段驗不完整。** `pack_item_progress` 表與
 > `get_all_word_progress()` 在 staging 都不存在（見階段 1.2），
 > 所以「已學習 %」會固定是 **0%**，Console 也會出現 `PGRST202` 404。
