@@ -21,11 +21,20 @@
 
 ---
 
-## 🛑 絕對不要在 staging 執行的 SQL
+## 先分清楚三個環境
 
-這四份是**本機專用**。它們會 `INSERT INTO auth.users`、寫入 `premium_memberships`，
-而且依賴本機把 `is_admin()` 換成讀 GUC 的替身 —— 在真正的 Supabase 上只會噴一堆
-看不懂的錯，還會留下垃圾資料。
+這份 runbook 牽涉三個環境。**「本機」不是 staging，也不是正式站** ——
+它是一個裝在開發容器裡、測完就丟的暫時 PostgreSQL。
+
+| 環境 | 是什麼 | 這次跑什麼 |
+|---|---|---|
+| **本機 PostgreSQL** | 開發容器裡的暫時資料庫，測完即丟 | 下面那四份安全測試（**已完成：48/48、19/19**） |
+| **Staging Supabase** | 你的測試專案 | 唯讀 verify 腳本 + 未登入 HTTP 檢查 + 瀏覽器 E2E |
+| **Production** | 正式站 | 這次**什麼都不跑** |
+
+---
+
+## 🛑 這四份 SQL：staging 不跑，Production 更不跑
 
 ```
 tests/sql/learn_classes_security_test.sql
@@ -34,8 +43,36 @@ tests/sql/writing_analyses_security_test.sql
 tests/sql/writing_teacher_feedback_security_test.sql
 ```
 
-staging 上的行為面安全驗證改由**階段 3 的未登入 HTTP 檢查**與**階段 4 的瀏覽器
-E2E** 完成 —— 那才是用真實 JWT 走真實路徑。
+它們**只能在本機跑，而且已經跑完了**。這不是政策問題，是技術上跑不動：
+
+1. **會 `INSERT INTO auth.users`。** 真正的 Supabase 裡 `auth.users.id` 沒有
+   DEFAULT，這個 insert 會直接違反 NOT NULL 而失敗。就算能寫，在認證系統裡
+   塞假帳號本身就是壞主意。
+2. **需要一個「假的 `is_admin()`」。** 測試要在同一個交易裡切換三種身分
+   （未登入 → 學生 → 管理員），所以本機把 `is_admin()` 換成讀 GUC 的替身。
+   staging 上的 `is_admin()` 是真的那一支，它讀 `auth.uid()`，而 `auth.uid()`
+   讀的是 JWT —— **你在 SQL Editor 裡沒辦法偽造 JWT**，身分永遠切不動，
+   測試只會全部走同一條路徑然後噴一堆看不懂的錯。
+3. **會真的寫入** `premium_memberships`、`learn_*`，留下垃圾資料。
+
+### 那 staging 上怎麼驗證安全性？
+
+**用真的 JWT 走真的路徑**，這就是階段 3.2 與階段 4 存在的理由：
+
+- **階段 3.2** —— 未登入的 HTTP 請求打四支 admin RPC。SQL Editor 是以資料庫
+  擁有者身分執行的，天生看不出 PostgREST 對 `anon` 的行為；只有真的發一個
+  沒有 JWT 的請求才算數。
+- **階段 4** —— 老師與學生各自登入、各自帶著真的 JWT，驗證「學生看不到別人的
+  作業」「學生按不到老師的確認鍵」。
+
+### 那 `nonstopjazz@gmail.com` 這個 admin 帳號是幹嘛的？
+
+**跟上面四份 SQL 完全無關。** 它是給**階段 4 用滑鼠點**的 —— 你要能登入
+`/admin/classes` 建班級、加學生、指派作業、批改作文。`is_admin()` 硬編碼比對
+這個 email，staging 上沒有它，瀏覽器裡所有老師功能都點不了。
+
+一句話：**admin 帳號是給人用滑鼠點的，那四份 SQL 是給本機資料庫跑的，
+兩件事沒有交集。**
 
 ---
 
