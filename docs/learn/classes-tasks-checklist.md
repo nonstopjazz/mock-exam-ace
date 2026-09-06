@@ -22,7 +22,8 @@
 
 ## 2. 部署後驗證（唯讀，可以直接在 staging / 正式環境貼上執行）
 
-`tests/sql/learn_classes_verify.sql` → 預期 **15 / 15**
+`tests/sql/learn_classes_verify.sql` → 在 staging / 正式環境預期 **16 / 16**
+   （本機測試庫沒有 writing_* 那幾張表，第 16 項會顯示 SKIP，變成 15/15 + 1 SKIP）
 
 它檢查：五張表存在且欄位數正確、三條型別 CHECK、三組唯一鍵、
 **五張表對 anon / authenticated / service_role 零授權**、RLS 已啟用且零政策、
@@ -83,9 +84,9 @@ psql -f tests/sql/learn_classes_security_test.sql
       「anon可執行」都是 f、「守門有防NULL」都是 t
 - [ ] `tests/sql/launch_surface_rls_check.sql`（唯讀）→ 17 張表沒有 🔴
 - [ ] `tests/sql/staging_writing_analyses_verify.sql` → 24 / 24、36 欄
-- [ ] `tests/sql/learn_classes_verify.sql` → 15 / 15
+- [ ] `tests/sql/learn_classes_verify.sql` → 16 / 16
 - [ ] 正式環境跑 `create_learn_classes_tasks.sql`
-- [ ] 正式環境跑 `learn_classes_verify.sql` → 15 / 15（`SKIP` 項應該變成 `PASS`）
+- [ ] 正式環境跑 `learn_classes_verify.sql` → 16 / 16
 - [ ] `/admin/classes` 已在管理員首頁導覽中（本次已加）
 - [ ] 建第一個班、設定下次上課日期、加入學生（學生**必須先註冊過**）
 - [ ] 指派一筆 HOMEWORK 給全班、一筆只給單一學生
