@@ -269,6 +269,23 @@ DELETE FROM writing_analyses WHERE id IN ('<貼上要刪的 id>');
 
 ---
 
+## 上線前檢查（正式環境）
+
+依序完成，全部完成才部署正式環境。
+
+- [ ] 正式 Supabase 依序套用：`create_writing_analyses` → `add_writing_analyses_analyzed_at`
+      → `add_writing_analyses_telemetry` → `add_writing_analyses_stage1_progress`
+      → `create_writing_teacher_feedback`
+- [ ] 正式環境跑 `tests/sql/staging_writing_analyses_verify.sql` → 24/24、36 欄
+- [ ] Vercel Production 設定 `DEEPSEEK_API_KEY`（`SUPABASE_SERVICE_ROLE_KEY` 已存在）
+- [ ] 確認 `FeatureGate` 的 `writing_submission` 在正式環境為開啟
+- [ ] **把 `/admin/writing` 加進管理員導覽** —— 目前只能直接輸入網址
+- [ ] 用一篇真實作文走完整條路：學生送出 → `/admin/writing` 批改 →
+      學生在 `/learn/student/writing/:id` 看到報告 → Dashboard 出現「最近的作文」卡
+- [ ] 決定 `/learn/student` Dashboard 其餘區塊的處理方式（目前仍是示範資料）
+
+---
+
 ## 步驟 4 — 可讀稽核報告（唯讀）
 
 整份貼進 SQL Editor 執行：`tests/sql/staging_writing_audit_report.sql`

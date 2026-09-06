@@ -12,10 +12,15 @@ import { LearningRhythm } from "@/components/learn/student/LearningRhythm";
 import { MyVocabulary } from "@/components/learn/student/MyVocabulary";
 import { RecentResults } from "@/components/learn/student/RecentResults";
 import { TeacherFeedback } from "@/components/learn/student/TeacherFeedback";
+import { LatestWritingCard } from "@/components/learn/student/LatestWritingCard";
 
 /**
  * Student Dashboard — v1.1（視覺重組）
- * 🛑 全部為 mock data。字卡區塊使用共用的 PackCard，導向既有的字卡系統。
+ *
+ * 🛑 除了「最近的作文」之外全部是 mock data。
+ *    LatestWritingCard 用的是真實的 writing_submissions 與批改 RPC；
+ *    其餘區塊（下一堂課、今天、學習狀況、節奏、字卡、成績、老師的話）
+ *    仍是 studentDashboardMock 的示範資料。
  *
  * 視覺層級刻意不平均：
  *   Hero（下一堂課）→ Action zone（今天）→ 兩欄摘要（學習狀況 / 節奏）
@@ -65,6 +70,12 @@ const StudentDashboard = () => {
             <TodayLauncher sd={sd} />
           </div>
 
+          {/* 2.5 最近的作文 —— ⚠️ 這一頁唯一使用真實資料的區塊。
+              沒有已送出的作文時整張卡不出現。 */}
+          <div className="mt-10">
+            <LatestWritingCard />
+          </div>
+
           {/* 3–4. 摘要與節奏：兩欄，密度比上面高、份量比上面輕 */}
           <div className="mt-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] gap-4 items-stretch">
             <ProgressSnapshot sd={sd} />
@@ -83,7 +94,7 @@ const StudentDashboard = () => {
               <TeacherFeedback sd={sd} />
             </div>
             <p className="text-center text-[11px] text-muted-foreground mt-8">
-              本頁為設計原型，所有資料皆為示範用途，未連接後端。
+              除了「最近的作文」之外，本頁其餘資料皆為示範用途。
             </p>
           </div>
         </div>
