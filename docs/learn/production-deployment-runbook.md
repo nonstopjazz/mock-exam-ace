@@ -238,6 +238,48 @@ K = 'PASTE_KEY_HERE'
 
 ---
 
+## ✅ 階段 1–3 實測結果（正式站，2026-09-06）
+
+| 階段 | 結果 |
+|---|---|
+| 1 preflight | ✅ 全部 PASS。七張新表皆未建立（乾淨部署）；管理員兩套機制對齊；`auth.users` 22 人（與稽核記載一致，確認連對專案）；破口基線 **4 項授權 / 0-4 NULL-safe** |
+| 2 七支 migration | ✅ 依序套用，無 ERROR |
+| 3.1 `staging_writing_analyses_verify` | ✅ **24 / 24**、36 欄（正式站 `writing_analyses` 是全新的 0 列，所以分母是 24 而非 staging 的 23） |
+| 3.1 `learn_classes_verify` | ✅ **16 / 16** |
+| 3.1 `launch_surface_rpc_check` | ✅ 四支 admin RPC 全 `f` / `t` —— 基線的 `4 → 0`、`0/4 → 4/4` 都翻過來了 |
+| 3.1 `launch_surface_rls_check` | ✅ 17 張表無 🔴。**`pack_item_progress` 在正式站存在**（staging 沒有），所以字卡進度可以在這裡驗 |
+| 3.2 未登入 HTTP | ✅ 陽性對照 `200 NOT_AUTHENTICATED`；五支全 `401` + `42501 permission denied for function` |
+
+**這次修補在正式站的實際價值**：部署前 `admin_grant_premium` 是 anon 可寫的
+（staging 早就被收過權限，正式站沒有），也就是未登入者能替任意帳號開通 premium。
+現在是 `401`。
+
+### 與 staging 的一個差異（非問題）
+
+正式站多數既有表顯示 `anon 授權 = 7`，包含 `exam_attempts`；staging 的
+`exam_attempts` 是 `0 / 1`。這是 Supabase 的常態：**grant 開得寬，靠 RLS 收窄**。
+稽核 §4.4 已確認 exam 領域的 RLS 是 owner-scoped 且正確，
+`user_*` / `pack_item_progress` 也已確認是 owner-scoped 樣板。
+
+---
+
+## ⚠️ 階段 4 之前：前端還沒部署
+
+**資料庫已經 migrate，但正式站的前端還是舊程式碼。**
+
+Vercel Production 部署自 `main`，而這次的所有前端改動都在
+`claude/security-architecture-continuation-i3hw1y`（領先 `main` 118 個 commit）。
+所以正式站現在**還沒有** `/admin/classes`、沒有新的 Dashboard。
+
+這是**安全且一致的中間狀態** —— 七支 migration 全是 additive，
+舊前端只是忽略那些新表；`admin_get_all_users` 收成 authenticated-only 之後，
+舊的 `/admin/users` 以管理員身分呼叫仍然正常。
+**可以停在這裡，沒有時間壓力。**
+
+要跑階段 4 的煙霧測試，必須先把這個分支合進 `main` 並讓 Vercel 部署 Production。
+
+---
+
 ## 階段 4 — 正式站煙霧測試
 
 不重跑完整 E2E（staging 已經驗過了）。這裡只確認「正式環境的接線是對的」。
