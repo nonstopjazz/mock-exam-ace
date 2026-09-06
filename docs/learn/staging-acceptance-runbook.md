@@ -253,27 +253,61 @@ staging 的 anon key —— 它本來就內建在 bundle 裡，不是機密；**
 絕對不要用在這裡**）：
 
 ```js
-const URL = 'https://<你的-staging-ref>.supabase.co';
-const ANON = '<staging anon key>';
+const URL  = 'https://<your-project-ref>.supabase.co';
+const ANON = 'PASTE_ANON_KEY_HERE'.trim();   // ← 只改這一行
+
+// ⚠️ 佔位符一定要用純 ASCII。HTTP 標頭只吃 ISO-8859-1，
+//    佔位字串裡留下任何中文字都會讓 fetch 直接丟
+//    "String contains non ISO-8859-1 code point"，而不是給你乾淨的 401。
+if (!/^ey[A-Za-z0-9_\-.]+$/.test(ANON)) {
+  throw new Error('anon key 還沒貼上，或貼到的不是 JWT（應該以 ey 開頭）');
+}
+
 const call = (fn, body = {}) =>
   fetch(`${URL}/rest/v1/rpc/${fn}`, {
     method: 'POST',
-    headers: { apikey: ANON, 'Content-Type': 'application/json' },
+    headers: { apikey: ANON, 'Content-Type': 'application/json' },  // 刻意不帶 Authorization
     body: JSON.stringify(body),
-  }).then(async r => [fn, r.status, (await r.text()).slice(0, 120)]);
+  })
+    .then(async r => ({ fn, status: r.status, body: (await r.text()).slice(0, 90) }))
+    .catch(e => ({ fn, status: 'ERROR', body: String(e).slice(0, 90) }));
 
 Promise.all([
+  call('get_user_profile'),                                              // 陽性對照
   call('admin_get_all_users'),
   call('admin_get_user_stats'),
-  call('admin_grant_premium', { p_user_id: '00000000-0000-0000-0000-000000000000' }),
+  call('admin_grant_premium',  { p_user_id: '00000000-0000-0000-0000-000000000000' }),
   call('admin_revoke_premium', { p_membership_id: '00000000-0000-0000-0000-000000000000' }),
+  call('learn_student_tasks'),
 ]).then(r => console.table(r));
 ```
 
-**預期：四列全部是 `401` 或 `403`**（PostgREST 因為沒有 EXECUTE 權限而拒絕）。
+| 函式 | 預期 |
+|---|---|
+| `get_user_profile` | `200`，body 含 `NOT_AUTHENTICATED` ← **陽性對照** |
+| `admin_get_all_users` | `401` 或 `403` |
+| `admin_get_user_stats` | `401` 或 `403` |
+| `admin_grant_premium` | `401` 或 `403` |
+| `admin_revoke_premium` | `401` 或 `403` |
+| `learn_student_tasks` | `401` 或 `403` |
 
-🔴 **任何一列回 `200` 就是驗收失敗**，尤其若 body 裡出現 email 或
+**陽性對照為什麼必要**：如果只看那五個 401，你無法分辨「權限確實收掉了」
+和「請求根本沒送到 / key 打錯 / 網址錯了」。`get_user_profile` 回
+`NOT_AUTHENTICATED` 才證明請求真的送達、而且是以未登入身分執行的。
+
+🔴 陽性對照不成立 → 這次測試不算數。
+🔴 下面五列任何一列回 `200` → 驗收失敗，尤其若 body 出現 email 或
 `{"success":true}`。停下來回報。
+
+### 不需要無痕視窗
+
+上面的 `fetch` 自己組請求、**不帶 `Authorization` 標頭**，PostgREST 因此
+一律當成 `anon`。所以在**一般視窗**跑結果完全一樣。
+
+（Vercel Preview 預設開著 Deployment Protection，無痕視窗會先被 Vercel
+的登入頁攔下，根本碰不到你的網站。階段 4 需要兩個同時登入的工作階段時，
+用 **Chrome 多重設定檔**最省事：兩個設定檔各自登入同一個 Vercel 帳號，
+localStorage 分開，就有兩個獨立的 Supabase 登入狀態，也不必動保護設定。）
 
 ---
 
