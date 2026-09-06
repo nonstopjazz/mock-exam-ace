@@ -486,6 +486,42 @@ localStorage 分開，就有兩個獨立的 Supabase 登入狀態，也不必動
 
 ---
 
+## ✅ 驗收結果（gsat-staging，2026-09-06）
+
+**通過。** 逐項紀錄：
+
+| 階段 | 結果 |
+|---|---|
+| 0 管理員身分 | ✅ `staging-admin@example.test`（兩套機制都指向它） |
+| 1 唯讀探測 | ✅ 破口確認存在，並記錄 staging 與正式站的差異 |
+| 2 七支 migration | ✅ 全部乾淨套用 |
+| 3.1 `staging_writing_analyses_verify` | ✅ 23 / 23、36 欄 |
+| 3.1 `learn_classes_verify` | ✅ 16 / 16 |
+| 3.1 `launch_surface_rpc_check` | ✅ 四支 admin RPC 全 `f` / `t` |
+| 3.1 `launch_surface_rls_check` | ✅ 17 張表無 🔴 |
+| 3.2 未登入 HTTP | ✅ 陽性對照成立；五支全 401 / `42501` |
+| 4.1 班級 | ✅ 含「未排定上課日」不編假日期 |
+| 4.2 名冊 | ✅ 含「1 個字不列出帳號」、顯示姓名非 uuid |
+| 4.3 HOMEWORK | ✅ NEXT_CLASS 跟著動、CUSTOM_DATE 不動；跨學生隔離；老師蓋章後自述鈕消失 |
+| 4.4 RECURRING | ✅ 每天／每週切換、當期累計、學生間互不影響 |
+| 4.5 字卡 | ✅ 空狀態 + 兌換後顯示真實字卡包（需先設 `VITE_SITE_ID`） |
+| 4.6 模擬考 | ✅ 空狀態（兩邊都沒有考卷，有資料的路徑仍未驗 —— followups §7） |
+| 4.7 Writing | ✅ A–E 全過，含跨學生讀不到 |
+| 4.8 Dashboard 總驗 | ✅ 六個誠實空狀態、無示範資料殘留、無橫向捲軸 |
+
+### 過程中修掉／記錄的問題
+
+| 發現 | 處置 |
+|---|---|
+| runbook 寫死 admin email，與 staging 實際不符 | 改成階段 0 先查再用 |
+| `24 / 24` 是環境相依的數字 | 改成看「全部通過 + FAIL = 0」 |
+| 探測把觸發器函式誤報成風險 | 探測改讀 `pg_get_function_result` |
+| `*.vercel.app` 上字卡永遠不顯示（`p_site` 被忽略 + `getSiteId()` 預設 toeic） | runbook 事前警告 + followups §6 |
+| `pack_item_progress` / `get_all_word_progress` 在 staging 缺席 | followups §5 |
+| 「最近的成績」有資料時的路徑無處可驗 | followups §7 |
+
+---
+
 ## 驗收判定
 
 **全部通過**才算 staging 驗收完成：
