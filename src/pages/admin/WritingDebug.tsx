@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Bug, Database, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { TeacherFeedbackEditor } from "@/components/learn/writing/report/TeacherFeedbackEditor";
 
 /**
  * 寫作分析除錯頁（僅限管理員）
@@ -367,6 +368,12 @@ const WritingDebug = () => {
                             只跑綜合層
                           </Button>
                         ) : null}
+                      </div>
+
+                      {/* 講評是選填的，而且與批改無關——AI 報告早就對學生公開了。
+                          放在這裡只是因為老師批改時順手，不是流程的一步。 */}
+                      <div className="w-full">
+                        <TeacherFeedbackEditor essayId={row.essay_id} />
                       </div>
                     </div>
                   );

@@ -7,9 +7,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeft, FileQuestion, Loader2 } from "lucide-react";
 import { useEssay } from "@/hooks/useEssays";
 import { useWritingReport } from "@/hooks/learn/useWritingReport";
+import { useTeacherFeedback } from "@/hooks/learn/useTeacherFeedback";
 import { EssayStatusBadge, WritingLoading } from "@/components/learn/writing/writingShared";
 import { formatEssayDate } from "@/components/learn/writing/writingFormat";
 import { WritingReportView } from "@/components/learn/writing/report/WritingReportView";
+import { TeacherFeedbackSection } from "@/components/learn/writing/report/TeacherFeedbackSection";
 
 /**
  * 作文詳情（寫作系統 Phase 1）
@@ -20,6 +22,7 @@ const EssayDetail = () => {
   const { essayId } = useParams<{ essayId: string }>();
   const { essay, text, loading, error, notFound, refetch } = useEssay(essayId);
   const report = useWritingReport(essayId);
+  const teacherFeedback = useTeacherFeedback(essayId);
 
   return (
     <Layout>
@@ -98,6 +101,14 @@ const EssayDetail = () => {
               ) : null}
 
               <Separator className="my-8" />
+
+              {/* 老師講評放在 AI 報告【之前】：它是人寫的、篇幅短，
+                  而且對學生的份量比自動分析重。沒有講評時整個區塊不存在。 */}
+              {teacherFeedback.feedback ? (
+                <div className="mb-8">
+                  <TeacherFeedbackSection feedback={teacherFeedback.feedback} />
+                </div>
+              ) : null}
 
               {/* ── 批改結果 ────────────────────────────────────
                   三種狀態要分得清楚，因為它們對學生的意義完全不同：

@@ -27,14 +27,16 @@ has_analyses    = false   has_is_admin = true
 | 1cR | `supabase/migrations/add_writing_analyses_telemetry.rollback.sql` | 回滾 | — |
 | 1d | `supabase/migrations/add_writing_analyses_stage1_progress.sql` | 純新增一欄（改 schema） | 步驟 1dR |
 | 1dR | `supabase/migrations/add_writing_analyses_stage1_progress.rollback.sql` | 回滾 | — |
+| 1e | `supabase/migrations/create_writing_teacher_feedback.sql` | 新表 + 2 支 RPC（改 schema） | 步驟 1eR |
+| 1eR | `supabase/migrations/create_writing_teacher_feedback.rollback.sql` | 回滾 | — |
 | 2 | `tests/sql/staging_writing_analyses_verify.sql` | 唯讀 | 不適用 |
 | 3 | Preview 上 `/admin/writing-debug` 跑真實分析 | 寫入 staging 資料 | 步驟 3R |
 | 3R | 本文件的「步驟 3R」刪除語句 | 清掉測試分析列 | — |
 | 4 | `tests/sql/staging_writing_audit_report.sql` | 唯讀 | 不適用 |
 | 診斷 | `tests/sql/staging_writing_failure_probe.sql` | 唯讀（分析失敗時跑） | 不適用 |
 
-**只有步驟 1、1b、1c、1d 會改變 schema。** 步驟 3 只會在 `writing_analyses`
-新增資料列，不動 schema。已經套過步驟 1 的環境只需要補跑步驟 1b、1c、1d。
+**只有步驟 1、1b、1c、1d、1e 會改變 schema。** 步驟 3 只會在 `writing_analyses`
+新增資料列，不動 schema。已經套過步驟 1 的環境只需要補跑步驟 1b、1c、1d、1e。
 
 ---
 
@@ -145,6 +147,29 @@ SELECT
 ### 步驟 1dR — 回滾點
 
 `add_writing_analyses_stage1_progress.rollback.sql`。已完成分析的 canonical 三軸不受影響。
+
+---
+
+## 步驟 1e — 套用 `create_writing_teacher_feedback.sql`
+
+老師的選填講評。**不是發布關卡**：AI 分析完成後學生立即看得到報告，
+寫不寫講評都不影響。
+
+新增一張 `writing_teacher_feedback`（一篇作文一則）與兩支 SECURITY DEFINER RPC：
+`writing_upsert_teacher_feedback`（僅限管理員）、`writing_teacher_feedback_for`
+（管理員或本人學生）。**這張表對 anon / authenticated / service_role 都沒有任何
+grant**，RPC 是唯一入口；RLS 啟用但不建任何政策，作為第二層防護。
+
+不碰 `writing_submissions`、`writing_texts`、`writing_analyses`、`user_profiles`、
+`is_admin()` —— 只讀 `writing_submissions`（外鍵與擁有權檢查）與 `user_profiles`
+（取老師姓名）。
+
+**預期結果：** `Success. No rows returned`
+（會有一則 `NOTICE: trigger ... does not exist, skipping`，那是 `DROP TRIGGER IF EXISTS` 的正常輸出。）
+
+### 步驟 1eR — 回滾點
+
+`create_writing_teacher_feedback.rollback.sql`。⚠️ 會一併刪除已寫下的講評內容。
 
 ---
 
