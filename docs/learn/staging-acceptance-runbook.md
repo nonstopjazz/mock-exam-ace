@@ -299,6 +299,26 @@ Promise.all([
 🔴 下面五列任何一列回 `200` → 驗收失敗，尤其若 body 出現 email 或
 `{"success":true}`。停下來回報。
 
+**gsat-staging 實測結果（2026-09-06，修補後）**
+
+| fn | status | body |
+|---|---|---|
+| `get_user_profile` | `200` | `{"success": false, "error": "NOT_AUTHENTICATED"}` ✅ 陽性對照成立 |
+| `admin_get_all_users` | `401` | `42501 permission denied for function` |
+| `admin_get_user_stats` | `401` | `42501 permission denied for function` |
+| `admin_grant_premium` | `401` | `42501 permission denied for function` |
+| `admin_revoke_premium` | `401` | `42501 permission denied for function` |
+| `learn_student_tasks` | `401` | `42501 permission denied for function` |
+
+`42501` 是 PostgreSQL 的 `insufficient_privilege`，訊息是
+**permission denied for function** —— 代表請求在**函式本體執行之前**
+就被擋掉了，是第二層（`REVOKE EXECUTE`）擋的。第一層的
+`coalesce(is_admin(), false)` 守門還在後面沒被用到。兩層縱深都成立。
+
+✅ **階段 3 完成。**
+
+---
+
 ### 不需要無痕視窗
 
 上面的 `fetch` 自己組請求、**不帶 `Authorization` 標頭**，PostgREST 因此
