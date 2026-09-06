@@ -91,6 +91,31 @@ RLS 關閉 + `anon` / `authenticated` 完整 CRUD + 零政策，兩個獨立查�
 
 ---
 
+## 🟡 5. `pack_item_progress` 沒有 migration
+
+這張表只存在於**正式站**（當初直接在 Supabase Dashboard 建的），
+repo 裡**沒有任何 DDL**，所以 staging 從來沒有它。
+
+後果：
+- staging 上字卡的「已學習 %」永遠是 0%
+- 任何新環境都複製不出完整的字卡後端
+- `useUserPacks` 會對一張不存在的表發查詢
+
+`get_all_word_progress()` 是同一類問題的另一半：repo **有** migration
+（`create_user_word_progress_table.sql` / `unify_word_progress_tracking.sql`），
+但 staging 沒套用，所以會 `PGRST202` 404。
+
+**修法**：從正式站把 `pack_item_progress` 的 DDL 匯出，補成一支 migration，
+再連同兩支 word_progress migration 一起套用到 staging。
+
+🛑 **不要用猜的建這張表。** 欄位猜錯會讓字卡進度靜靜地算錯，
+比缺一個百分比嚴重得多。
+
+**不擋這次上線**：正式站有這張表，正式環境的字卡功能是正常的。
+這是「環境可重現性」的債，不是正式站的功能缺陷。
+
+---
+
 ## ✅ 已於上線前修掉
 
 | 項目 | 修補 |

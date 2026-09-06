@@ -10,7 +10,7 @@
 | 項目 | 說明 |
 |---|---|
 | Staging Supabase 專案 | **不是** 正式專案 `ytzspnjmkvrkbztnaomm` |
-| 管理員帳號 | `is_admin()` 硬編碼比對 `nonstopjazz@gmail.com` —— staging 上**必須有這個 email 的帳號**，否則所有老師端功能都會被擋 |
+| 管理員帳號 | 🛑 **不要假設是哪一個 email。先跑階段 0 查出來。** 每個環境的 `is_admin()` 比對的 email 可能不同 |
 | 學生帳號 | 至少 1 個（建議 2 個，才能驗證學生之間互相看不到） |
 | Preview 部署 | 指向 staging Supabase |
 | `DEEPSEEK_API_KEY` | 設在 Preview 環境。**你自己設定，不要貼給任何人** |
@@ -76,29 +76,108 @@ tests/sql/writing_teacher_feedback_security_test.sql
 
 ---
 
+## 階段 0 — 先確認「這個環境的管理員是誰」
+
+🛑 **在建立任何帳號之前先做這一步。**
+
+這個專案有【兩套彼此不相通】的管理員判斷，兩套都要成立老師端才會通：
+
+| | 機制 | 判斷依據 |
+|---|---|---|
+| **[1] 前端閘門** | `RequireAdmin` → `useAdmin` | `app_admins` 表裡有沒有你的 `user_id` |
+| **[2] 資料庫閘門** | `is_admin()` | `auth.users.email` 是否等於**該環境硬編碼的那個 email** |
+
+而**每個環境硬編碼的 email 不一樣**。gsat-staging 用的是專屬的
+staging 管理員帳號，**不是**正式站那個 —— 這是好做法，staging 的管理權
+不該和正式站共用同一個 email。
+
+在 staging 的 SQL Editor 跑（**完全唯讀**）：
+
+```
+tests/sql/diagnose_admin_identity.sql
+```
+
+看兩列：
+
+- **`is_admin() 硬編碼比對的 email`** —— 這才是這個環境真正要的帳號
+- **`★ 兩套機制是否都指向同一個帳號`** —— 顯示 ✅ 時，說明欄會告訴你是哪個帳號
+
+用**那個**帳號登入，不要自己新建一個。多數環境早就有一個兩套都滿足的帳號了。
+
+> ⚠️ 這一步是實戰教訓：先前照 repo migration 假設 staging 的管理員 email
+> 與正式站相同，結果 staging 早已改成別的 email。新建帳號不但沒用，
+> 還在 staging 多了一個沒有用途的帳號。**查，不要猜。**
+
+沒有那個帳號的密碼時：Supabase Dashboard → Authentication → Users →
+該使用者 → **直接設定新密碼**。不要走寄信重設 —— 測試用網域收不到信。
+
+**通過條件**：用查出來的帳號登入 Preview 後，`/admin/classes` 打得開
+（此時頁面會顯示「無法載入班級：Could not find the function
+`public.learn_admin_classes`」—— 這是**正確的**，階段 2 還沒套用 migration。
+能看到這行紅字就代表 `RequireAdmin` 已經放你進來了）。
+
+---
+
 ## 階段 1 — 動任何東西之前的唯讀探測
+
+（階段 0 確認完管理員身分之後再做這一步。）
 
 在 staging 的 Supabase SQL Editor 依序貼上執行。**兩份都不寫入任何資料。**
 
 ### 1.1 `tests/sql/launch_surface_rpc_check.sql`
 
-**預期（修補前）**：`admin_get_all_users`、`admin_get_user_stats`、
-`admin_grant_premium`、`admin_revoke_premium` 四支的
-「anon可執行」是 `t`、「守門有防NULL」是 `f`，判讀欄顯示 🔴。
+**gsat-staging 實測結果（2026-09-06）**：
 
-> 這一步是刻意的：**先確認破口在 staging 真的存在**。
-> 如果四支已經是 `f` / `t`，代表 staging 早就修過了，記錄下來後跳過階段 2.1。
+| 函式 | anon可執行 | 守門有防NULL | 判讀 |
+|---|---|---|---|
+| `admin_get_all_users` | `t` | `f` | 🔴 破口存在 |
+| `admin_get_user_stats` | `t` | `f` | 🔴 破口存在 |
+| `admin_grant_premium` | `f` | `f` | ⚠️ 見下方 |
+| `admin_revoke_premium` | `f` | `f` | ⚠️ 見下方 |
+
+> ⚠️ **staging 與正式站不同**。稽核報告記載的是**正式站**的狀態
+> （premium 兩支對 anon 開放）；staging 顯然已經收過權限。
+>
+> **但修補仍然必要**：兩支的「守門有防NULL」是 `f`，代表它們
+> **仍然完全沒有授權分支**。anon 進不來，可是**任何已登入的學生**
+> 都還能呼叫 `admin_grant_premium` 替自己開通 premium。
+> 第二層擋住了，第一層還是空的。
+
+`get_user_profile` / `get_user_stats` / `is_admin` / `upsert_user_profile`
+顯示 ⚠️ 是**正常的** —— 它們本來就該讓未登入者呼叫（並在函式內回
+`NOT_AUTHENTICATED`）。
+
+`writing_*_guard_*` 那幾支是**觸發器函式**，顯示 ⚠️ 也是正常的：
+直接呼叫它們會因為不在觸發器情境而報錯。與
+`learn_touch_updated_at` 同一類，低風險，這次不處理。
 
 `get_user_profile` / `is_admin` / `upsert_user_profile` 顯示 ⚠️ 是**正常的** ——
 它們本來就該讓未登入者呼叫（並在函式內回 `NOT_AUTHENTICATED`）。
 
 ### 1.2 `tests/sql/launch_surface_rls_check.sql`
 
-**預期（修補前）**：`learn_*` 五張與 `writing_analyses` / `writing_teacher_feedback`
-顯示「⚠️ 這個環境沒有這張表」（還沒建），其餘既有表不應該出現 🔴。
+**gsat-staging 實測結果（2026-09-06）**：17 張表**沒有任何 🔴**。
+
+- `learn_*` 五張、`writing_teacher_feedback` → 「不存在」（階段 2 才會建）
+- `exam_attempts` → RLS ON、**anon 授權 0、authenticated 授權 1**，鎖得很乾淨
+- `user_profiles` / `packs` / `pack_items` / `user_pack_claims` / `user_stats`
+  / `exams` / `writing_submissions` / `writing_texts` → RLS ON + 政策
+
+**🟡 已知的 staging 缺件（不是這次改動造成的）**
+
+| 缺的東西 | 狀況 |
+|---|---|
+| `pack_item_progress` 表 | **repo 裡完全沒有它的 migration** —— 當初直接在正式站 Dashboard 建的，staging 從來沒有 |
+| `get_all_word_progress()` | repo 有 migration，但 staging 沒套用（Console 會出現 `PGRST202` 404） |
+
+也就是 **staging 的字卡後端本身就不完整**，與正式站有落差。
+影響見階段 4.5。
+
+🛑 **不要**為了補這個而在 staging 手動建 `pack_item_progress` ——
+repo 裡沒有它的 DDL，只能用猜的，比缺一個百分比危險得多。
 
 **若 `packs` / `user_pack_claims` / `user_stats` / `exam_attempts` 出現 🔴 RLS 關閉
-—— 停下來回報，不要繼續。** 那代表 staging 的狀態和稽核報告不一致。
+—— 停下來回報，不要繼續。**
 
 ---
 
@@ -230,13 +309,19 @@ Promise.all([
 
 ### 4.5 字卡
 
-| # | 動作 | 預期 |
+> 🟡 **staging 上這一段驗不完整。** `pack_item_progress` 表與
+> `get_all_word_progress()` 在 staging 都不存在（見階段 1.2），
+> 所以「已學習 %」會固定是 **0%**，Console 也會出現 `PGRST202` 404。
+> **這是 staging 的環境缺件，不是這次改動的 bug。**
+> 空狀態、字卡包清單、兌換流程仍然驗得到；進度百分比留到正式環境再驗。
+
+| # | 動作 | staging 預期 |
 |---|---|---|
 | 1 | 用**沒有領過字卡包**的學生開 `/learn/student` | 我的字卡區顯示 **「尚未指派字卡」** ＋「前往字卡收藏」按鈕 |
 | 2 | 老師在 `/admin/tokens` 產生兌換碼 | — |
 | 3 | 學生兌換 | — |
-| 4 | 學生重新整理 `/learn/student` | 出現真實字卡包封面、真實單字數、`已學習 N%` |
-| 5 | 做幾張字卡後回 Dashboard | `已學習 %` 上升（來自 `pack_item_progress`） |
+| 4 | 學生重新整理 `/learn/student` | 出現真實字卡包封面與真實單字數；**`已學習 0%`（staging 預期如此）** |
+| 5 | 做幾張字卡後回 Dashboard | staging：**百分比不會動**（缺 `pack_item_progress`）<br>正式環境：百分比應上升 ← **留到 Production 驗** |
 
 ### 4.6 模擬考成績
 
@@ -296,6 +381,7 @@ Promise.all([
 
 **全部通過**才算 staging 驗收完成：
 
+- [ ] 階段 0 已用 `diagnose_admin_identity.sql` 查出這個環境的管理員帳號，並成功登入
 - [ ] 階段 1 兩份探測完成並記錄修補前狀態
 - [ ] 階段 2 七支 migration 全部乾淨套用
 - [ ] `staging_writing_analyses_verify.sql` → 24 / 24、36 欄
@@ -306,3 +392,13 @@ Promise.all([
 - [ ] 階段 4.1 ～ 4.8 全部符合預期
 
 任何一項不符 —— 停下來回報，不要往 Production 走。
+
+### 已知可接受的 staging 落差
+
+這兩項**不算驗收失敗**，但要記錄，並在 Production 驗收時補驗：
+
+- 字卡「已學習 %」固定 0%（staging 缺 `pack_item_progress`）
+- Console 出現 `get_all_word_progress` 的 `PGRST202` 404（staging 缺該函式）
+
+另外要補一支 migration 把 `pack_item_progress` 納入版本控制 ——
+它目前只存在於正式站，repo 裡沒有 DDL。**這是上線後的工作，不擋這次驗收。**
