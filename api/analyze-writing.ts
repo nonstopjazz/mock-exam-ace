@@ -34,7 +34,7 @@
  * 所以改成讓兩個 Stage 各自擁有完整的 50 秒。
  *
  * 老師只按一次「開始 AI 批改」：請求 B 由前端在請求 A 成功後自動接續發出，
- * 不需要第二次人為動作（src/pages/admin/WritingDebug.tsx 的 runAnalysis）。
+ * 不需要第二次人為動作（src/hooks/learn/useWritingGrading.ts 的 run）。
  *
  * 為什麼 Stage 1 是四支而不是一支：29 個高分特徵加 23 個能力節點的完整覆蓋，
  * 單一 prompt 的輸出量會逼近 token 上限，而且一支失敗就全毀。

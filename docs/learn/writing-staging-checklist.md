@@ -30,7 +30,7 @@ has_analyses    = false   has_is_admin = true
 | 1e | `supabase/migrations/create_writing_teacher_feedback.sql` | 新表 + 2 支 RPC（改 schema） | 步驟 1eR |
 | 1eR | `supabase/migrations/create_writing_teacher_feedback.rollback.sql` | 回滾 | — |
 | 2 | `tests/sql/staging_writing_analyses_verify.sql` | 唯讀 | 不適用 |
-| 3 | Preview 上 `/admin/writing-debug` 跑真實分析 | 寫入 staging 資料 | 步驟 3R |
+| 3 | Preview 上 `/admin/writing` 跑真實分析 | 寫入 staging 資料 | 步驟 3R |
 | 3R | 本文件的「步驟 3R」刪除語句 | 清掉測試分析列 | — |
 | 4 | `tests/sql/staging_writing_audit_report.sql` | 唯讀 | 不適用 |
 | 診斷 | `tests/sql/staging_writing_failure_probe.sql` | 唯讀（分析失敗時跑） | 不適用 |
@@ -202,7 +202,7 @@ grant**，RPC 是唯一入口；RLS 啟用但不建任何政策，作為第二�
 必須指向 **gsat-staging**，否則端點會寫到別的資料庫去。
 
 1. 用**管理員帳號**登入 Preview 站台
-2. 開 `/admin/writing-debug`
+2. 開 `/admin/writing`（批改佇列），點進要批改的那一篇
 3. 若佇列是空的，先用學生帳號在 `/learn/student/writing` 送出一篇作文
 4. 對目標作文按「**開始 AI 批改**」——**只按這一次**
 

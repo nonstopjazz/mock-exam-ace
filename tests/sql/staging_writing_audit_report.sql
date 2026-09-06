@@ -1,7 +1,7 @@
 -- =====================================================
 -- 真實分析結果的可讀稽核報告（唯讀）
 --
--- 在 Preview 跑過 /admin/writing-debug 之後，於 Supabase SQL Editor 執行。
+-- 在 Preview 跑過 /admin/writing 的批改之後，於 Supabase SQL Editor 執行。
 -- 讀 writing_analyses 最新一次分析，輸出成一欄一欄看得懂的文字。
 --
 -- ⚠️ 完全唯讀，不寫入、不修改任何資料。

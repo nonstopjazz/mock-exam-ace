@@ -26,7 +26,8 @@ import ExamQuestionsEditor from "./pages/admin/ExamQuestionsEditor";
 import SiteSettings from "./pages/admin/SiteSettings";
 import UsersAdmin from "./pages/admin/UsersAdmin";
 import AdminHome from "./pages/admin/AdminHome";
-import WritingDebug from "./pages/admin/WritingDebug";
+import WritingGrading from "./pages/admin/WritingGrading";
+import WritingGradingDetail from "./pages/admin/WritingGradingDetail";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -164,10 +165,15 @@ const App = () => (
               <BlogAdmin />
             </RequireAdmin>
           } />
-          {/* staging 驗證用的技術工具，不是學生看的報告 UI */}
-          <Route path="/admin/writing-debug" element={
+          {/* 作文批改：佇列與單篇批改頁 */}
+          <Route path="/admin/writing" element={
             <RequireAdmin>
-              <WritingDebug />
+              <WritingGrading />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/writing/:essayId" element={
+            <RequireAdmin>
+              <WritingGradingDetail />
             </RequireAdmin>
           } />
           <Route path="/admin/exams" element={
