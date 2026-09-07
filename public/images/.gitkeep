@@ -1,0 +1,2 @@
+# 靜態圖片放這裡。網址是去掉 public/ 之後的路徑：
+#   public/images/essay-card.webp  →  <img src="/images/essay-card.webp" />
