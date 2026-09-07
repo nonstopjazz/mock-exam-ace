@@ -1,0 +1,13 @@
+Rule ID,規則,例子
+TR-01,每一道可計分 Speaking assessable item / rubric evidence 必須恰好有一個 Primary Skill。,若一個片段主要問題是詞彙搭配不自然，Primary 選 SPEAK_LEXICAL_COLLOCATION。
+TR-02,Secondary Skill 是 optional，預設 null；v1 不自動產生與 Primary Skill 等權的 mastery evidence。,Secondary 先作 tagging / analysis metadata，不因同時出現多個表面特徵就固定雙標。
+TR-03,Task Type / Activity Type 與 Skill 分離。,Picture Description、Read Aloud、Role Play、Interview、Presentation、Debate 都不是 Skill。
+TR-04,準備時間、回答時間、是否看圖、是否真人互動、題目難度等是 task / stimulus metadata，不是 Skill。,60 秒準備 + 2 分鐘回答不建立成 Speaking Skill。
+TR-05,Accent 本身不是能力目標；評量聚焦 intelligibility 與 phonological control。,Taiwanese / American / British accent 本身不因口音來源加扣分。
+TR-06,S3 Speaking Grammar 與 Grammar Domain 分離。Speaking grammar rubric 不得自動等同 Grammar Domain mastery。,口說中 tense 使用不穩 → S3 evidence；若要更新 Grammar tense mastery，需另有特定 Skill-level evidence。
+TR-07,Vocabulary Range 不等於使用艱深詞彙。評量的是完成溝通任務所需的詞彙廣度。,簡單但充分、準確的詞彙可比不自然的高難度詞彙更好。
+TR-08,Fluency 不等於越快越好。適切 pace、持續性與可理解性共同決定。,快速但吞音、失控或難懂不應得到較高 Fluency。
+TR-09,Turn-taking & Interaction Management 只在有互動需求的任務產生 evidence。,單人 monologue 不因沒有 turn-taking 而扣分。
+TR-10,Overall Intelligibility 可作 rubric outcome / derived metric，但 Speaking v1 不把它建立成第 20 個 Skill。,S4 五項共同影響 intelligibility，但不另建 mastery node。
+TR-11,Speaking v1 不建立 Micro-skill。,四層 taxonomy 是上限不是配額；Speaking v1 在 Skill 層結束。
+TR-12,Skill code 是 stable opaque identifier；禁止 parse code 字串推導 Category。,SPEAK_PRON_INTONATION 屬 S4 必須由正式 taxonomy relationship 取得。

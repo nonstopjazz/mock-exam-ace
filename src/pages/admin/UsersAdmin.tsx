@@ -145,8 +145,14 @@ export default function UsersAdmin() {
 
     setPremiumSubmitting(false);
 
+    // ⚠️ 這支 RPC 用回傳值表示授權失敗，不是丟錯誤——只看 rpcError 會把
+    //    {"success": false, "error": "UNAUTHORIZED"} 當成成功，跳出假的成功訊息。
+    const grantResult = data as { success?: boolean; error?: string } | null;
+
     if (rpcError) {
       toast.error('授權失敗: ' + rpcError.message);
+    } else if (grantResult && grantResult.success === false) {
+      toast.error('授權失敗: ' + (grantResult.error ?? '沒有權限'));
     } else {
       toast.success(`已授予 ${premiumTargetUser.email} Premium 資格`);
       setPremiumDialogOpen(false);
@@ -155,12 +161,16 @@ export default function UsersAdmin() {
   };
 
   const handleRevokePremium = async (userId: string, membershipId: string) => {
-    const { error: rpcError } = await supabase.rpc('admin_revoke_premium', {
+    const { data, error: rpcError } = await supabase.rpc('admin_revoke_premium', {
       p_membership_id: membershipId,
     });
 
+    const revokeResult = data as { success?: boolean; error?: string } | null;
+
     if (rpcError) {
       toast.error('收回失敗: ' + rpcError.message);
+    } else if (revokeResult && revokeResult.success === false) {
+      toast.error('收回失敗: ' + (revokeResult.error ?? '沒有權限'));
     } else {
       toast.success('已收回 Premium 資格');
       setPremiumCache(prev => ({ ...prev, [userId]: null }));

@@ -1,0 +1,15 @@
+{
+  "profile": "A｜中等程度",
+  "title": "Should High School Students Have Part-Time Jobs?",
+  "topic": "Some people think high school students should take part-time jobs. Others disagree. Write an essay of about 150 words stating your opinion with reasons.",
+  "content": "In my opinion, high school students should have part-time jobs. There are two reasons for this.\n\nFirst, working part-time teaches students about money. When I worked at a coffee shop last summer, I learned how hard it is to earn one thousand dollars. After that experience, I stopped buying things I did not need. My classmates who never worked still spend money very fast, and they does not understand why their parents are tired.\n\nSecond, a part-time job helps students meet different people. At school we only talk to classmates who are the same age as us. At the coffee shop I talked to office workers, old people, and even foreign tourists. This made my English better and also made me more confident.\n\nOf course, studying is still the most important thing. Students should not work too many hours. But a few hours on weekend is helpful, not harmful.",
+  "expectations": [
+    "W1 任務回應完整（有立場、兩個理由、字數接近要求）→ 應為 ADEQUATE 或以上",
+    "W2 組織清楚（First / Second / Of course）→ ADEQUATE",
+    "W1 支持與具體化有真實例子（coffee shop、one thousand dollars）→ 不該被判 DEVELOPING",
+    "錯誤：they does not understand（SV 一致）",
+    "錯誤：a few hours on weekend（冠詞／介係詞用法，on the weekend）",
+    "高分特徵：H3-1 自然轉承有出現但偏機械（First/Second）→ 適合 PARTIALLY_EFFECTIVE",
+    "高分特徵：大部分修辭類（H4）應為 UNMEASURED，不該硬給正面評價"
+  ]
+}

@@ -28,6 +28,8 @@ import { useNavigate } from "react-router-dom";
 import { useUserPacks } from "@/hooks/useUserPacks";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { PackCard } from "@/components/vocabulary/PackCard";
+import { SKILL_TYPES } from "@/components/vocabulary/packMeta";
 
 interface PublicPack {
   id: string;
@@ -39,14 +41,6 @@ interface PublicPack {
   is_premium: boolean;
   cover_image?: { image_url: string } | null;
 }
-
-// 英文能力類型
-const SKILL_TYPES = [
-  { value: 'all', label: '全部' },
-  { value: 'vocabulary', label: '單字' },
-  { value: 'writing', label: '寫作' },
-  { value: 'reading', label: '閱讀' },
-];
 
 const VocabularyCollections = () => {
   const navigate = useNavigate();
@@ -405,108 +399,12 @@ const VocabularyCollections = () => {
         {/* Pack List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-4">
           {filteredPacks.map((pack) => (
-            <Card
+            <PackCard
               key={pack.id}
-              className="transition-all duration-200 overflow-hidden hover:shadow-lg"
-            >
-              {/* Cover Image */}
-              {pack.cover_image_url ? (
-                <div className="aspect-video xl:aspect-[4/3] bg-muted overflow-hidden">
-                  <img
-                    src={pack.cover_image_url}
-                    alt={pack.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="aspect-video xl:aspect-[4/3] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                  <BookOpen className="h-12 w-12 xl:h-8 xl:w-8 text-primary/40" />
-                </div>
-              )}
-
-              <div className="p-6 xl:p-4 space-y-4 xl:space-y-3">
-                {/* Header */}
-                <div>
-                  <div className="flex items-center gap-2 xl:gap-1 mb-2 flex-wrap">
-                    {pack.skill_type && (
-                      <Badge className="text-xs">
-                        {SKILL_TYPES.find(s => s.value === pack.skill_type)?.label || pack.skill_type}
-                      </Badge>
-                    )}
-                    {pack.theme && (
-                      <Badge variant="outline" className="text-xs">
-                        <Tag className="h-3 w-3 mr-1" />
-                        {pack.theme}
-                      </Badge>
-                    )}
-                    {pack.difficulty && (
-                      <Badge variant="secondary" className="text-xs">
-                        {pack.difficulty}
-                      </Badge>
-                    )}
-                  </div>
-                  <h3
-                    className="text-xl xl:text-base font-bold text-foreground mb-1 cursor-pointer hover:text-primary transition-colors"
-                    onClick={() => navigate(`/practice/vocabulary/pack/${pack.pack_id}`)}
-                  >
-                    {pack.title}
-                  </h3>
-                  {pack.description && (
-                    <p className="text-sm xl:text-xs text-muted-foreground line-clamp-2">
-                      {pack.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Stats */}
-                <div className="flex items-center justify-between p-3 xl:p-2 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-primary" />
-                    <span className="text-sm xl:text-xs font-medium text-foreground">
-                      {pack.word_count} 個單字
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress */}
-                <div className="space-y-2 xl:space-y-1">
-                  <div className="flex items-center justify-between text-sm xl:text-xs">
-                    <span className="text-muted-foreground">學習進度</span>
-                    <span className="font-medium text-foreground">{pack.progress}%</span>
-                  </div>
-                  <div className="h-2 xl:h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full bg-primary transition-all duration-300"
-                      style={{ width: `${pack.progress}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Meta Info */}
-                <div className="text-xs text-muted-foreground">
-                  收藏時間：{new Date(pack.claimed_at).toLocaleDateString('zh-TW')}
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 xl:text-xs xl:h-8"
-                    onClick={() => navigate(`/practice/vocabulary/pack/${pack.pack_id}`)}
-                  >
-                    查看詳情
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1 xl:text-xs xl:h-8"
-                    onClick={() => navigate(`/practice/vocabulary/srs?pack=${pack.pack_id}`)}
-                  >
-                    開始複習
-                  </Button>
-                </div>
-              </div>
-            </Card>
+              pack={pack}
+              onOpenDetail={() => navigate(`/practice/vocabulary/pack/${pack.pack_id}`)}
+              onStartReview={() => navigate(`/practice/vocabulary/srs?pack=${pack.pack_id}`)}
+            />
           ))}
         </div>
 

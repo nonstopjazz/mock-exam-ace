@@ -1,0 +1,714 @@
+/**
+ * 分析執行路徑的自我檢查（不需要網路，也不需要 DeepSeek API key）
+ *
+ *   npm run verify:writing-passes
+ *
+ * 這裡把 fetch 換成受控的替身，用來證明幾件不能靠讀程式碼保證的事：
+ *
+ *   1. 模型漏回傳 canonical node 時，會帶著缺漏清單重試，而不是被補成 UNMEASURED
+ *   2. 重試指示明確說出「省略 ≠ UNMEASURED」
+ *   3. 重試後仍缺漏 → 該支 pass 失敗，issues 完整帶回
+ *   4. 可重試與不可重試的錯誤分得開（429/5xx vs 401；逾時不重試）
+ *   5. 四支 prompt 真的列出了全部 canonical 節點（數量由 taxonomy 推導，不寫死）
+ *   6. 綜合層拿到的摘要與可引用集合是一致的
+ */
+
+import {
+  runValidatedPass,
+  repairInstruction,
+  isPassOk,
+  DeadlineExceeded,
+  type PassFailure,
+  type PassOutcome,
+} from "../api/_lib/deepseek";
+import {
+  applyPassOutcomes,
+  STAGE1_PASSES,
+  MAX_PASS_ATTEMPTS,
+  type Stage1Progress,
+} from "../api/analyze-writing";
+import {
+  competencyMessages,
+  errorMessages,
+  highScoreMessages,
+  highScoreCategoriesFor,
+  compressForSynthesis,
+  synthesisMessages,
+  HIGH_SCORE_PASS_A,
+  HIGH_SCORE_PASS_B,
+  type EssayInput,
+} from "../api/_lib/writingPrompts";
+import {
+  ALL_COMPETENCY_SKILL_CODES,
+  ALL_ERROR_CODES,
+  COMPETENCY_CATEGORIES,
+  HIGH_SCORE_CATEGORIES,
+} from "../api/_lib/taxonomy";
+import {
+  collectCitableRefs,
+  validateCompetencyAnalysis,
+  validateErrorAnalysis,
+  validateHighScoreAnalysis,
+  validateSynthesis,
+  isValidationOk,
+} from "../api/_lib/analysisContract";
+
+let passed = 0;
+const failures: string[] = [];
+
+function check(name: string, condition: boolean, detail = "") {
+  if (condition) {
+    passed += 1;
+    console.log(`  PASS  ${name}`);
+  } else {
+    failures.push(`${name}${detail ? ` — ${detail}` : ""}`);
+    console.log(`  FAIL  ${name}${detail ? ` — ${detail}` : ""}`);
+  }
+}
+
+/* ──────────────── fetch 替身 ──────────────── */
+
+interface StubResponse {
+  status?: number;
+  /** 直接當成 message.content 送回；物件會被 JSON.stringify */
+  content?: unknown;
+  /** 設 true 時模擬「別人」中斷的通用 AbortError */
+  abort?: boolean;
+  /** 設 true 時模擬【我們自己的】硬性期限中斷 */
+  deadline?: boolean;
+  /** 呼叫端量到的 completion token 數 */
+  completionTokens?: number;
+}
+
+const sentBodies: string[] = [];
+let queue: StubResponse[] = [];
+
+const originalFetch = globalThis.fetch;
+
+function installStub(responses: StubResponse[]) {
+  queue = [...responses];
+  sentBodies.length = 0;
+  globalThis.fetch = (async (_url: unknown, init: { body?: string }) => {
+    sentBodies.push(init?.body ?? "");
+    const next = queue.shift();
+    if (!next) throw new Error("替身用完了：實際呼叫次數比預期多");
+    if (next.deadline) {
+      // 真實情況是 controller.abort(reason) 讓 fetch 以 reason 本身 reject。
+      throw new DeadlineExceeded(50_000, 48_102);
+    }
+    if (next.abort) {
+      const err = new Error("The operation was aborted");
+      err.name = "AbortError";
+      throw err;
+    }
+    const status = next.status ?? 200;
+    if (status !== 200) {
+      return { ok: false, status, json: async () => ({}) };
+    }
+    return {
+      ok: true,
+      status,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content:
+                typeof next.content === "string" ? next.content : JSON.stringify(next.content),
+            },
+          },
+        ],
+        ...(next.completionTokens === undefined
+          ? {}
+          : { usage: { completion_tokens: next.completionTokens } }),
+      }),
+    };
+  }) as unknown as typeof fetch;
+}
+
+function restoreFetch() {
+  globalThis.fetch = originalFetch;
+}
+
+/* ──────────────── fixtures ──────────────── */
+
+const essay: EssayInput = {
+  title: "Should students wear uniforms?",
+  topic: "Write an essay of about 120 words.",
+  content: "Many student thinks the policy are unfair. However, uniforms save time every morning.",
+};
+
+const fullCompetency = (dropCode?: string) => ({
+  categories: COMPETENCY_CATEGORIES.map((c) => ({
+    code: c.code,
+    summary: `${c.zh}的整體觀察`,
+    skills: c.skills
+      .filter((s) => s.code !== dropCode)
+      .map((s) => ({
+        code: s.code,
+        state: "ADEQUATE",
+        reason: `${s.zh}：本篇有對應表現`,
+        evidence: [{ quote: "uniforms save time every morning", reason: "示例" }],
+      })),
+  })),
+});
+
+const fullError = () => ({
+  findings: [
+    {
+      code: "WRITE_ERR_SV_AGREEMENT",
+      quote: "Many student thinks the policy are unfair.",
+      reason: "主詞 students 是複數，動詞要用 think。",
+      correction: "Many students think the policy is unfair.",
+      primary_skill: "WRITE_GRAMMAR_BASIC",
+    },
+  ],
+  coverage: ALL_ERROR_CODES.map((code) => ({
+    code,
+    count: code === "WRITE_ERR_SV_AGREEMENT" ? 1 : 0,
+  })),
+});
+
+const featuresOf = (cats: readonly string[]) =>
+  HIGH_SCORE_CATEGORIES.filter((c) => cats.includes(c.code)).flatMap((c) => c.features);
+
+const fullHighScore = (cats: readonly string[], effective?: string) => ({
+  features: featuresOf(cats).map((f) =>
+    f.code === effective
+      ? {
+          code: f.code,
+          quality: "EFFECTIVE",
+          reason: "用得自然且有功能",
+          justification: {
+            criterion: "結構真正對稱",
+            effect: "讓兩個概念在同一句裡並列，對比一眼可見",
+            beyondForm: "不只是出現了那個句型，兩邊的資訊量也相當",
+          },
+          instances: [
+            { quote: "uniforms save time every morning", reason: "資訊壓縮得宜" },
+          ],
+        }
+      : {
+          code: f.code,
+          quality: "UNMEASURED",
+          reason: `${f.zh}：本篇沒有出現這個特徵`,
+          instances: [],
+        },
+  ),
+});
+
+/* ──────────────── 1. 缺漏 → 重試 → 成功 ──────────────── */
+
+console.log("\n完整覆蓋失敗時的重試行為");
+
+{
+  const dropped = "WRITE_ORG_PARAGRAPH";
+  installStub([{ content: fullCompetency(dropped) }, { content: fullCompetency() }]);
+
+  const result = await runValidatedPass({
+    label: "Writing Competency",
+    messages: competencyMessages(essay),
+    validate: (raw) => validateCompetencyAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+  });
+  restoreFetch();
+
+  check("漏一個節點時會重試並在第二次成功", isPassOk(result) && result.attempts === 2);
+  check("總共只呼叫兩次", sentBodies.length === 2, `${sentBodies.length}`);
+
+  const repair = sentBodies[1];
+  check("重試訊息點名了缺漏的節點", repair.includes(dropped));
+  check(
+    "重試訊息說明「省略 ≠ UNMEASURED」",
+    repair.includes("省略等於沒有分析") && repair.includes("判定為 UNMEASURED"),
+  );
+  check(
+    "重試訊息把上一次的輸出當成 assistant 訊息帶回去",
+    repair.includes('"role":"assistant"'),
+  );
+}
+
+{
+  const dropped = "WRITE_LEXICAL_FORM";
+  installStub([{ content: fullCompetency(dropped) }, { content: fullCompetency(dropped) }]);
+
+  const result = await runValidatedPass({
+    label: "Writing Competency",
+    messages: competencyMessages(essay),
+    validate: (raw) => validateCompetencyAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+  });
+  restoreFetch();
+
+  check("重試後仍缺漏 → pass 失敗", !isPassOk(result));
+  const failure = result as PassFailure;
+  check(
+    "失敗時帶回 MISSING_NODE 且點名該節點",
+    failure.issues.some((i) => i.kind === "MISSING_NODE" && i.detail.includes(dropped)),
+  );
+  check("失敗時不產出任何 value", !("value" in failure));
+}
+
+/* ──────────────── 2. 可重試 vs 不可重試 ──────────────── */
+
+console.log("\n呼叫層的錯誤分類");
+
+{
+  installStub([{ status: 500 }, { content: fullError() }]);
+  const result = await runValidatedPass({
+    label: "Writing Error",
+    messages: errorMessages(essay),
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+  });
+  restoreFetch();
+  check("5xx 會重試並可能成功", isPassOk(result) && result.attempts === 2);
+}
+
+{
+  installStub([{ status: 401 }, { content: fullError() }]);
+  const result = await runValidatedPass({
+    label: "Writing Error",
+    messages: errorMessages(essay),
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+  });
+  restoreFetch();
+  check("401 不重試，立刻失敗", !isPassOk(result) && sentBodies.length === 1);
+}
+
+{
+  installStub([{ abort: true }, { content: fullError() }]);
+  const result = await runValidatedPass({
+    label: "Writing Error",
+    messages: errorMessages(essay),
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+  });
+  restoreFetch();
+  check("逾時（AbortError）不重試", !isPassOk(result) && sentBodies.length === 1);
+}
+
+{
+  installStub([{ content: "這不是 JSON" }, { content: fullError() }]);
+  const result = await runValidatedPass({
+    label: "Writing Error",
+    messages: errorMessages(essay),
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+  });
+  restoreFetch();
+  check("回傳非 JSON 時會重試", isPassOk(result) && sentBodies.length === 2);
+}
+
+/* ──────────────── 2b. 量測：失敗必須可診斷 ──────────────── */
+
+console.log("\n量測（逐支、逐次）");
+
+{
+  // 2026-09-05 偏弱作文那次的真實組合，也是舊版查不出來的那一種：
+  // attempt 1 驗證失敗 → attempt 2 撞上我們自己的 50 秒期限。
+  // 用 2026-09-05 真的出現過的那一種缺陷：correction 跟原句一模一樣。
+  // （以前這裡是砍掉 coverage，但 coverage 現在由伺服器推導，砍掉不再是錯誤。）
+  const partial = fullError();
+  partial.findings[0] = { ...partial.findings[0], correction: partial.findings[0].quote };
+  installStub([{ content: partial, completionTokens: 4200 }, { deadline: true }]);
+  const result = await runValidatedPass({
+    label: "Writing Error",
+    messages: errorMessages(essay),
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+    describe: (raw) => ({
+      findings: Array.isArray((raw as any)?.findings) ? (raw as any).findings.length : -1,
+    }),
+  });
+  restoreFetch();
+
+  const t = result.telemetry;
+  check("兩次嘗試都留下紀錄", t.records.length === 2, `${t.records.length}`);
+  check("attempts 是真實次數，不是常數 1", t.attempts === 2, `${t.attempts}`);
+
+  const a1 = t.records[0];
+  const a2 = t.records[1];
+  check("attempt 1 記為 VALIDATION_FAILED", a1.outcome === "VALIDATION_FAILED", a1.outcome);
+  check(
+    "attempt 1 的缺漏清單被保留下來",
+    (a1.issues?.length ?? 0) > 0 && a1.issueCount === a1.issues?.length,
+    `${a1.issueCount} 項`,
+  );
+  check("attempt 1 記下輸出量（responseChars）", (a1.responseChars ?? 0) > 0, `${a1.responseChars}`);
+  // latencyMs 必須量到主體讀完為止。在標頭就結算的話，每一次嘗試都會顯示 0.4 秒，
+  // 而 pass 總長是 19.6 秒——2026-09-05 的量測就是這樣被弄壞的。
+  check(
+    "latencyMs 量到主體讀完，不是只到標頭",
+    a1.latencyMs >= (a1.ttfbMs ?? 0),
+    `latency ${a1.latencyMs} / ttfb ${a1.ttfbMs}`,
+  );
+  check("attempt 1 記下 completion tokens", a1.completionTokens === 4200, `${a1.completionTokens}`);
+  check("attempt 1 記下 findings 筆數", (a1.shape?.findings ?? -1) >= 0, JSON.stringify(a1.shape));
+
+  check("attempt 2 記為 DEADLINE，不是通用的 ABORTED", a2.outcome === "DEADLINE", a2.outcome);
+  check("attempt 2 標記為驗證重試", a2.isRepair === true);
+  check("這一支被標記為撞到期限", t.hitDeadline === true);
+  check(
+    "期限訊息說得出是我們自己的碼表與第幾次嘗試",
+    Boolean(a2.detail?.includes("硬性期限") && a2.detail?.includes("第 2 次")),
+    a2.detail ?? "(無)",
+  );
+
+  // 這一條是整組量測存在的理由：舊版會用 attempt 2 的空陣列蓋掉 attempt 1 的清單。
+  const failure = result as PassFailure;
+  check("最終 issues 是空的（最後一次是呼叫層失敗）", failure.issues.length === 0);
+  check(
+    "但重試的原因沒有被 AbortError 毀掉",
+    (t.records[0].issues?.length ?? 0) > 0,
+    "attempt 1 的清單仍在",
+  );
+}
+
+{
+  // 我們自己的期限，與其他四種失敗，必須是互斥且分得開的結局。
+  const cases: { name: string; stub: any; expect: string }[] = [
+    { name: "我們自己的期限 → DEADLINE", stub: { deadline: true }, expect: "DEADLINE" },
+    { name: "別人中斷 → ABORTED", stub: { abort: true }, expect: "ABORTED" },
+    { name: "DeepSeek 非 2xx → HTTP_ERROR", stub: { status: 401 }, expect: "HTTP_ERROR" },
+    { name: "回傳不是合法 JSON → MALFORMED_JSON", stub: { content: "這不是 JSON" }, expect: "MALFORMED_JSON" },
+  ];
+  for (const c of cases) {
+    installStub([c.stub, c.stub]);
+    const result = await runValidatedPass({
+      label: "Writing Error",
+      messages: errorMessages(essay),
+      validate: (raw) => validateErrorAnalysis(raw, essay.content),
+      apiKey: "test-key-not-a-real-secret",
+    });
+    restoreFetch();
+    check(c.name, result.telemetry.records[0].outcome === c.expect, result.telemetry.records[0].outcome);
+  }
+}
+
+{
+  // 成功的那一支也要有量測——失敗診斷時最需要的往往是「成功那幾支跑了多久」。
+  installStub([{ content: fullError(), completionTokens: 900 }]);
+  const result = await runValidatedPass({
+    label: "Writing Error",
+    messages: errorMessages(essay),
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+  });
+  restoreFetch();
+  check("成功時 finalOutcome = OK", result.telemetry.finalOutcome === "OK");
+  check("成功時 retried = false", result.telemetry.retried === false);
+  check("成功時 hitDeadline = false", result.telemetry.hitDeadline === false);
+  check("成功時也記下 totalLatencyMs", typeof result.telemetry.totalLatencyMs === "number");
+}
+
+/* ──────────────── 2c. 跨請求重試的狀態機 ──────────────── */
+
+console.log("\n逐支狀態機（跨請求重試）");
+
+{
+  const ok = (value: unknown): PassOutcome<unknown> => ({
+    ok: true, value, attempts: 1,
+    telemetry: { label: "x", attempts: 1, totalLatencyMs: 100, finalOutcome: "OK",
+      retried: false, hitDeadline: false, records: [] },
+  });
+  const bad = (
+    outcome: string,
+    opts: { issues?: any[]; raw?: unknown; httpStatus?: number } = {},
+  ): PassOutcome<unknown> => ({
+    ok: false, issues: opts.issues ?? [], detail: `失敗：${outcome}`, attempts: 1,
+    lastRaw: opts.raw,
+    telemetry: {
+      label: "x", attempts: 1, totalLatencyMs: 100, finalOutcome: outcome as any,
+      retried: false, hitDeadline: outcome === "DEADLINE",
+      records: [{ attempt: 1, isRepair: false, offsetMs: 0, latencyMs: 100,
+        outcome: outcome as any, httpStatus: opts.httpStatus }],
+    },
+  });
+  const fresh = (): Stage1Progress =>
+    Object.fromEntries(STAGE1_PASSES.map((l) => [l, { state: "PENDING" as const, attempts: 0 }]));
+
+  {
+    // 一支沒過、三支過了：過了的必須是 VALID 並帶著結果，不可以被連坐。
+    const p = fresh();
+    applyPassOutcomes(p, [
+      { label: "competency", pass: ok({ c: 1 }) },
+      { label: "error", pass: bad("VALIDATION_FAILED", { issues: [{ kind: "MALFORMED" }], raw: { r: 1 } }) },
+      { label: "high_score_h1_h3", pass: ok({ a: 1 }) },
+      { label: "high_score_h4_h5", pass: ok({ b: 1 }) },
+    ]);
+    check("成功的三支標成 VALID",
+      ["competency", "high_score_h1_h3", "high_score_h4_h5"].every((l) => p[l].state === "VALID"));
+    check("成功的三支保留了結果（不會被重跑）",
+      STAGE1_PASSES.filter((l) => p[l].value !== undefined).length === 3);
+    check("失敗那一支是 RETRY_REQUIRED", p.error.state === "RETRY_REQUIRED", p.error.state);
+    check("失敗那一支留下缺漏清單", (p.error.lastIssues?.length ?? 0) > 0);
+    check("失敗那一支留下原始輸出，重試才能做成『修正』", p.error.lastRaw !== undefined);
+  }
+
+  {
+    // 續跑：VALID 的不在 todo 裡，所以 applyPassOutcomes 根本不會收到它們。
+    const p = fresh();
+    p.competency = { state: "VALID", attempts: 1, value: { c: 1 } };
+    p.error = { state: "RETRY_REQUIRED", attempts: 1, lastRaw: { r: 1 }, lastIssues: [{ kind: "MALFORMED" } as any] };
+    applyPassOutcomes(p, [{ label: "error", pass: ok({ e: 2 }) }]);
+    check("重試成功後 error 變 VALID", p.error.state === "VALID");
+    check("重試的 attempts 累加跨請求", p.error.attempts === 2, `${p.error.attempts}`);
+    check("已 VALID 的 competency 完全沒被動到", p.competency.value !== undefined && p.competency.attempts === 1);
+  }
+
+  {
+    // 重試次數用盡 → FAILED，不再無限重試。
+    const p = fresh();
+    p.error = { state: "RETRY_REQUIRED", attempts: MAX_PASS_ATTEMPTS - 1 };
+    applyPassOutcomes(p, [{ label: "error", pass: bad("VALIDATION_FAILED", { issues: [{ kind: "MALFORMED" }] }) }]);
+    check("嘗試次數用盡 → FAILED", p.error.state === "FAILED", `${p.error.state}(${p.error.attempts})`);
+  }
+
+  {
+    // 期限中斷值得重試（下一次請求拿得到完整的 50 秒）。
+    const p = fresh();
+    applyPassOutcomes(p, [{ label: "error", pass: bad("DEADLINE") }]);
+    check("期限中斷 → RETRY_REQUIRED", p.error.state === "RETRY_REQUIRED");
+  }
+
+  {
+    // 金鑰錯這種再打一次也沒用的，不浪費一次請求。
+    const p = fresh();
+    applyPassOutcomes(p, [{ label: "error", pass: bad("HTTP_ERROR", { httpStatus: 401 }) }]);
+    check("HTTP 401 → 直接 FAILED，不重試", p.error.state === "FAILED");
+  }
+
+  {
+    // 429／5xx 是暫時性的，值得重試。
+    const p = fresh();
+    applyPassOutcomes(p, [{ label: "error", pass: bad("HTTP_ERROR", { httpStatus: 429 }) }]);
+    check("HTTP 429 → RETRY_REQUIRED", p.error.state === "RETRY_REQUIRED");
+  }
+}
+
+{
+  // 跨請求的重試要能組出真正的修正指示——不是從零重寫。
+  const issues = [{ kind: "MALFORMED" as const, path: "error.findings[8]", detail: "correction 與原句相同" }];
+  const instruction = repairInstruction(issues);
+  check("修正指示點名了具體問題", instruction.includes("correction 與原句相同"));
+  check("修正指示說明省略不等於 UNMEASURED 或帶出格式問題",
+    instruction.includes("其他格式問題") || instruction.includes("UNMEASURED"));
+}
+
+{
+  // maxAttempts = 1：驗證失敗【不在同一次請求裡】重打。
+  const partial = fullError();
+  partial.findings[0] = { ...partial.findings[0], correction: partial.findings[0].quote };
+  installStub([{ content: partial }, { content: fullError() }]);
+  const result = await runValidatedPass({
+    label: "Writing Error",
+    messages: errorMessages(essay),
+    validate: (raw) => validateErrorAnalysis(raw, essay.content),
+    apiKey: "test-key-not-a-real-secret",
+    maxAttempts: 1,
+  });
+  restoreFetch();
+  check("maxAttempts=1 時同一次請求只打一次", sentBodies.length === 1, `${sentBodies.length}`);
+  check("驗證失敗時帶回原始輸出供下一次請求修正",
+    !isPassOk(result) && (result as PassFailure).lastRaw !== undefined);
+}
+
+/* ──────────────── 3. prompt 真的列出全部節點 ──────────────── */
+
+console.log("\nprompt 的節點覆蓋");
+
+{
+  const prompt = competencyMessages(essay)[0].content;
+  const missing = ALL_COMPETENCY_SKILL_CODES.filter((c) => !prompt.includes(c));
+  check("Pass 1 prompt 列出全部 23 個 skill", missing.length === 0, missing.join(","));
+  check("Pass 1 prompt 沒有混入 error code", !prompt.includes("WRITE_ERR_"));
+  check("Pass 1 prompt 有退化輸入規則", prompt.includes("題目與提示文字不是學生寫的"));
+  check("引用規則禁止用 ... 或 / 接起兩段", prompt.includes("把不相鄰的兩段接成一個引用"));
+}
+
+{
+  const prompt = errorMessages(essay)[0].content;
+  const missing = ALL_ERROR_CODES.filter((c) => !prompt.includes(c));
+  check(`Pass 2 prompt 列出全部 ${ALL_ERROR_CODES.length} 個 error code`, missing.length === 0, missing.join(","));
+  check(
+    "Pass 2 prompt 明講 count = 0 不代表精熟",
+    prompt.includes("不代表學生已經精熟"),
+  );
+  check(
+    "Pass 2 prompt 禁止用錯誤代碼傳達 meta 訊息",
+    prompt.includes("不可以把錯誤代碼拿來傳達與錯誤無關的訊息"),
+  );
+  // 退化輸入規則還在，只是措辭隨著 coverage 交給伺服器而改了：
+  // 以前是「16 個 code 全部 count = 0」，現在是「findings 留空」。
+  check(
+    "Pass 2 prompt 有退化輸入規則",
+    prompt.includes("題目與提示文字不是學生寫的") && prompt.includes("findings 留空"),
+  );
+  check("Pass 2 prompt 不再向模型索取 coverage", !prompt.includes("coverage"));
+  // 掃描指令與輸出格式是兩件事：拿掉 coverage 輸出【不等於】可以拿掉
+  // 「16 類都要看過」。2026-09-05 把兩者一起改掉，findings 從 44 掉到 22。
+  check(
+    "Pass 2 prompt 要求逐一檢查全部類別",
+    prompt.includes(`必須逐一檢查的 ${ALL_ERROR_CODES.length} 個 error code`)
+      && prompt.includes("一類都不能跳"),
+  );
+  check(
+    "Pass 2 prompt 說明檢查涵蓋全部類別但輸出只放找到的",
+    prompt.includes(`檢查要涵蓋 ${ALL_ERROR_CODES.length} 類，輸出只放真的找到的東西`),
+  );
+  check(
+    "Pass 2 prompt 禁止為了湊數硬找",
+    prompt.includes("不是為了湊數而硬找一個"),
+  );
+  // 三道精確度修正，各自釘住
+  check(
+    "Pass 2 prompt 有開 finding 前的自我查核",
+    prompt.includes("先過這三關") && prompt.includes("不確定原文是不是錯的"),
+  );
+  check(
+    "Pass 2 prompt 點名樣式複製型偽陽性（basis 那一類）",
+    prompt.includes("樣式複製") && prompt.includes("the basis of happiness"),
+  );
+  check(
+    "Pass 2 prompt 有 comma splice 的專門掃描",
+    prompt.includes("comma splice") && prompt.includes("WRITE_ERR_RUN_ON"),
+  );
+  check(
+    "Pass 2 prompt 把代名詞導向 PRONOUN 而不是 fallback",
+    prompt.includes("那是 WRITE_ERR_PRONOUN"),
+  );
+  check(
+    "Pass 2 prompt 把 GRAMMAR_OTHER 的誤放清單列出來",
+    prompt.includes("最後手段，不是方便的抽屜")
+      && prompt.includes("那是 WRITE_ERR_ARTICLE")
+      && prompt.includes("那是 WRITE_ERR_NUMBER"),
+  );
+  check(
+    "Pass 2 prompt 要求每筆用最小證據範圍",
+    prompt.includes("剛好夠用") && prompt.includes("不要引用整個句子"),
+  );
+  check(
+    "Pass 2 prompt 要求 fallback_rationale 且說明不給學生看",
+    prompt.includes("fallback_rationale") && prompt.includes("不會呈現給學生"),
+  );
+  check(
+    "Pass 2 prompt 仍然強調『沒出現不等於精熟』",
+    prompt.includes("不代表學生已經精熟"),
+  );
+}
+
+{
+  const a = highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_A))[0].content;
+  const b = highScoreMessages(essay, highScoreCategoriesFor(HIGH_SCORE_PASS_B))[0].content;
+  const codesA = featuresOf(HIGH_SCORE_PASS_A).map((f) => f.code);
+  const codesB = featuresOf(HIGH_SCORE_PASS_B).map((f) => f.code);
+
+  check("Pass 3a prompt 列出 H1–H3 的 17 個 feature", codesA.every((c) => a.includes(c)));
+  check("Pass 3b prompt 列出 H4–H5 的 12 個 feature", codesB.every((c) => b.includes(c)));
+  check("Pass 3a 不含 H4–H5 的 feature", !codesB.some((c) => a.includes(c)));
+  check("Pass 3b 不含 H1–H3 的 feature", !codesA.some((c) => b.includes(c)));
+  check(
+    "Pass 3a prompt 明講「偵測到形式不等於高分」（TR-06）",
+    a.includes("偵測到形式不等於高分"),
+  );
+  check("Pass 3a prompt 帶入每個 feature 的 boundary rule", a.includes("有效與否的界線"));
+  // ↓ 以下五項對應 2026-09-05 真實測試抓到的問題（prompt v2）
+  // v3：把「請你嚴格一點」換成可強制的舉證責任
+  check("Pass 3a prompt 要求 EFFECTIVE 付舉證責任", a.includes("判 EFFECTIVE 要付舉證責任"));
+  check(
+    "Pass 3a prompt 明講形式存在不足以判 EFFECTIVE",
+    a.includes("「形式存在」本身【永遠不足以】判 EFFECTIVE"),
+  );
+  check(
+    "Pass 3a prompt 列出 justification 三欄",
+    a.includes("criterion") && a.includes("effect") && a.includes("beyondForm"),
+  );
+  check(
+    "Pass 3a prompt 要求形式前提（問號、段落數、倒裝）",
+    a.includes("必須真的有問號")
+      && a.includes("必須有兩段以上")
+      && a.includes("主詞與助動詞倒置"),
+  );
+  check("Pass 3a prompt 寫入 TR-08（同句可多特徵）", a.includes("同一句話可以同時成立多個特徵"));
+  check("Pass 3a prompt 有退化輸入規則", a.includes("題目與提示文字不是學生寫的"));
+}
+
+/* ──────────────── 4. 綜合層的輸入 ──────────────── */
+
+console.log("\n綜合層的輸入一致性");
+
+{
+  const c = validateCompetencyAnalysis(fullCompetency(), essay.content);
+  const e = validateErrorAnalysis(fullError(), essay.content);
+  const a = validateHighScoreAnalysis(
+    fullHighScore(HIGH_SCORE_PASS_A, "WRITE_HSF_REDUCED"),
+    HIGH_SCORE_PASS_A,
+    essay.content,
+  );
+  const b = validateHighScoreAnalysis(
+    fullHighScore(HIGH_SCORE_PASS_B),
+    HIGH_SCORE_PASS_B,
+    essay.content,
+  );
+
+  if (!isValidationOk(c) || !isValidationOk(e) || !isValidationOk(a) || !isValidationOk(b)) {
+    throw new Error("Stage 1 fixture 應該要通過驗證");
+  }
+
+  const citable = collectCitableRefs(c.value, e.value, [a.value, b.value]);
+  const digest = compressForSynthesis(c.value, e.value, [a.value, b.value]);
+
+  check("摘要含有實際出現的錯誤與其修正", digest.includes("WRITE_ERR_SV_AGREEMENT")
+    && digest.includes("Many students think the policy is unfair."));
+  check(
+    "摘要【不】含 UNMEASURED 的高分特徵（那些不是可引用的證據）",
+    !digest.includes("WRITE_HSF_INVERSION"),
+  );
+  check("摘要含有判為 EFFECTIVE 的特徵", digest.includes("WRITE_HSF_REDUCED = EFFECTIVE"));
+  check(
+    "摘要沒有夾帶作文全文",
+    !digest.includes("However, uniforms save time every morning."),
+  );
+
+  const prompt = synthesisMessages(digest, [...citable])[0].content;
+  check("綜合層 prompt 明講不可產生新判斷", prompt.includes("不可以產生任何新的判斷"));
+  check("綜合層 prompt 附上可引用清單", prompt.includes("WRITE_HSF_REDUCED"));
+  check(
+    "綜合層 prompt 不含 UNMEASURED 的節點",
+    !prompt.includes("WRITE_HSF_INVERSION"),
+  );
+
+  // 端點實際會用的驗證方式
+  const good = validateSynthesis(
+    {
+      overall_evaluation: { level: "SOLID", headline: "h", summary: "s" },
+      strengths: [{ text: "簡化結構用得好", refs: ["WRITE_HSF_REDUCED"] }],
+      needs_work: [{ text: "主詞單複數", refs: ["WRITE_ERR_SV_AGREEMENT"] }],
+      next_steps: [{ text: "檢查每個主詞的單複數" }],
+    },
+    citable,
+  );
+  check("引用可引用集合內的節點 → 通過", isValidationOk(good));
+
+  const bad = validateSynthesis(
+    {
+      overall_evaluation: { level: "SOLID", headline: "h", summary: "s" },
+      strengths: [{ text: "倒裝用得好", refs: ["WRITE_HSF_INVERSION"] }],
+      needs_work: [{ text: "主詞單複數", refs: ["WRITE_ERR_SV_AGREEMENT"] }],
+      next_steps: [{ text: "檢查主詞" }],
+    },
+    citable,
+  );
+  check("引用 Stage 1 判為 UNMEASURED 的節點 → 擋下", !isValidationOk(bad));
+}
+
+/* ──────────────── 結論 ──────────────── */
+
+console.log(`\n${passed} / ${passed + failures.length} 通過`);
+if (failures.length > 0) {
+  console.error("\n失敗項目：");
+  for (const f of failures) console.error(`  - ${f}`);
+  process.exit(1);
+}
+console.log("全部通過");

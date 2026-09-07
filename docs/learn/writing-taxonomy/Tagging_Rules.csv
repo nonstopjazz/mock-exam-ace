@@ -1,0 +1,21 @@
+Rule ID,規則,例子
+TR-01,一篇作文可以產生多筆 rubric evidence；每一筆 rubric evidence 必須恰好有一個 Primary Skill。,同一篇作文可同時產生 W1、W2、W3、W4、W5 evidence；每筆各自 one Primary。
+TR-02,Secondary Skill 是 optional，預設 null；v1 不自動產生與 Primary 等權的 mastery evidence。,Secondary 先作 tagging / analysis metadata。
+TR-03,Writing Competency、Error Tag、High-Score Feature 是三條不同軸。,WRITE_GRAMMAR_BASIC + WRITE_ERR_RUN_ON；另一句可同時有 WRITE_HSF_INVERSION。
+TR-04,High-Score Feature finding 必須記錄 feature_code + quality + evidence_span + reason。,H1-5 Inversion → EFFECTIVE，並引用實際倒裝句 span。
+TR-05,High-Score Feature quality 僅使用 EFFECTIVE / PARTIALLY_EFFECTIVE / MISUSED；只有 EFFECTIVE 是明確 positive evidence。,Only when people realizes... 可標 Inversion + MISUSED，並同時標 SV agreement error。
+TR-06,偵測到形式不等於高分。高級字、倒裝、修辭問句、比喻等必須正確、自然且有功能才算 EFFECTIVE。,硬塞艱深字但語意不合 → Appropriate Advanced Vocabulary = MISUSED。
+TR-07,High-Score Feature 的 Sub-skills / 判斷項目只是 detection criteria / subtype，不另建正式 taxonomy node。,simile / metaphor / analogy 都歸 H4-4 Figurative Comparison。
+TR-08,同一 span 可標多個 High-Score Features，只要判斷焦點不同且各自成立。,句子可同時是 H1-1 Parallel Structure + H4-2 Rhetorical Patterning。
+TR-09,Task Type / Genre 不是 Skill 或 High-Score Feature。,Essay、Email、Picture Writing、Chart Writing、Story、Translation → task_type / genre。
+TR-10,Task metadata 不是 Skill 或 High-Score Feature。,字數、限時、是否看圖、是否允許字典、outline、handwritten/typed。
+TR-11,沒有被 task elicited 的 Competency Skill = UNMEASURED，不等於 weak；High-Score Feature 未出現也不等於弱。,50 字生日卡未使用 counter-style analytical craft，不能據此判低。
+TR-12,Writing Grammar rubric ≠ Grammar Domain mastery。只有可解析到特定 Grammar Skill 的證據，未來才可能依 Evidence Model 更新 Grammar。,作文 Grammar 70% 不可直接寫成 Tenses / Relative Clauses / Conditionals 都 70%。
+TR-13,Writing Lexical Resource ≠ Vocabulary learner-word mastery。拼寫或用字表現不自動更新 canonical word Recognition / Production。,environment 拼錯 → Writing Error Tag；是否更新 Vocabulary Production 留到 future evidence policy。
+TR-14,`WRITE_ERR_GRAMMAR_OTHER` 僅作 fallback。能用更具體 tag 時必須優先使用具體 tag。,Article error 不應只標 GRAMMAR_OTHER。
+TR-15,Run-on / Fragment 主要歸 W4 Basic Sentence Accuracy，即使同時牽涉 punctuation。,Run-on 可同時帶 WRITE_ERR_PUNCTUATION，但 Primary Writing Skill 不必改成 W5。
+TR-16,Chinglish / Chinese-transfer tag 必須有可辨識的中文轉譯或不自然搭配證據，不可把所有非母語風格都標成錯。,open the TV 類可標；單純不是 native-like 不足以標。
+TR-17,Error Tags 可持續擴充而不改動 Writing Skill taxonomy；High-Score Features 未來調整走 versioning。,可新增 dangling modifier error；若 feature taxonomy 改動，使用 v1.1 / v2。
+TR-18,Overall writing score / overall high-score impression 可作 derived rubric outcome，但不是額外 Skill 或 Feature。,總分 82 不建立 WRITE_OVERALL；也不建立 H_OVERALL。
+TR-19,Skill / Error / Feature code 都是 stable opaque identifier；禁止 parse code 推導 Category 或 family。,WRITE_HSF_CALLBACK 屬 H3 必須從正式 relationship 取得。
+TR-20,Writing v1 不建立 Micro-skill；High-Score Sub-skills 也不是 Micro-skill。,四層 taxonomy 是上限不是配額；Writing Competency 在 Skill 層結束。

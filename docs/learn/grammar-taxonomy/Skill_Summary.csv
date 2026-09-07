@@ -1,0 +1,52 @@
+Category Code,Category 中文,Category English,Skill Code,Skill 中文,Skill English,國中來源筆數,高中來源筆數,建議年段,狀態
+G1,句子與結構一致,Sentence Structure & Agreement,GRAM_G1_SENT_PAT,基本句型,Basic Sentence Patterns,1,9,國中＋高中,CANDIDATE
+G1,句子與結構一致,Sentence Structure & Agreement,GRAM_G1_SENT_ELEM,句子成分,Sentence Elements,0,2,高中,CANDIDATE
+G1,句子與結構一致,Sentence Structure & Agreement,GRAM_G1_AGREEMENT,主動詞一致,Subject–Verb Agreement,0,8,高中,CANDIDATE
+G1,句子與結構一致,Sentence Structure & Agreement,GRAM_G1_VERB_COMP,動詞配價與補語,Verb Complementation,4,1,國中＋高中,CANDIDATE
+G1,句子與結構一致,Sentence Structure & Agreement,GRAM_G1_NOUN_CLAUSE,名詞子句,Noun Clauses,2,6,國中＋高中,CANDIDATE
+G1,句子與結構一致,Sentence Structure & Agreement,GRAM_G1_ADJ_CLAUSE,形容詞子句,Adjective Clauses,0,0,待補來源,CANDIDATE
+G1,句子與結構一致,Sentence Structure & Agreement,GRAM_G1_ADV_CLAUSE,副詞子句,Adverb Clauses,0,5,高中,CANDIDATE
+G2,名詞、代名詞與限定詞,"Nouns, Pronouns & Determiners",GRAM_G2_NOUN,名詞,Nouns,1,6,國中＋高中,CANDIDATE
+G2,名詞、代名詞與限定詞,"Nouns, Pronouns & Determiners",GRAM_G2_POSSESS,所有格,Possession,0,3,高中,CANDIDATE
+G2,名詞、代名詞與限定詞,"Nouns, Pronouns & Determiners",GRAM_G2_PRON,代名詞,Pronouns,1,9,國中＋高中,CANDIDATE
+G2,名詞、代名詞與限定詞,"Nouns, Pronouns & Determiners",GRAM_G2_ARTICLE,冠詞與限定詞,Articles & Determiners,0,4,高中,CANDIDATE
+G2,名詞、代名詞與限定詞,"Nouns, Pronouns & Determiners",GRAM_G2_QUANT,數量詞與數字,Quantifiers & Numerals,2,3,國中＋高中,CANDIDATE
+G3,動詞、時態與語態,"Verbs, Tenses & Voice",GRAM_G3_PRESENT,現在時態,Present Tenses,3,5,國中＋高中,CANDIDATE
+G3,動詞、時態與語態,"Verbs, Tenses & Voice",GRAM_G3_PAST,過去時態,Past Tenses,3,4,國中＋高中,CANDIDATE
+G3,動詞、時態與語態,"Verbs, Tenses & Voice",GRAM_G3_FUTURE,未來時態,Future Tenses,1,4,國中＋高中,CANDIDATE
+G3,動詞、時態與語態,"Verbs, Tenses & Voice",GRAM_G3_TENSE_INT,時態整合,Tense Integration,0,2,高中,CANDIDATE
+G3,動詞、時態與語態,"Verbs, Tenses & Voice",GRAM_G3_VERB_USAGE,動詞用法,Verb Usage,6,3,國中＋高中,CANDIDATE
+G3,動詞、時態與語態,"Verbs, Tenses & Voice",GRAM_G3_VOICE,主動與被動語態,Active & Passive Voice,1,2,國中＋高中,CANDIDATE
+G3,動詞、時態與語態,"Verbs, Tenses & Voice",GRAM_G3_PASSIVE_TENSE,各時態的被動語態,Passive Voice across Tenses,2,12,國中＋高中,CANDIDATE
+G3,動詞、時態與語態,"Verbs, Tenses & Voice",GRAM_G3_PASSIVE_PAT,特殊被動句型,Special Passive Patterns,12,0,國中,CANDIDATE
+G4,助動詞,Auxiliary Verbs,GRAM_G4_AUX,助動詞,Auxiliary Verbs,3,13,國中＋高中,CANDIDATE
+G4,助動詞,Auxiliary Verbs,GRAM_G4_AUX_PERF,助動詞完成式,Modal Perfect,0,2,高中,CANDIDATE
+G5,形容詞、副詞與比較,"Adjectives, Adverbs & Comparison",GRAM_G5_ADJ,形容詞,Adjectives,7,1,國中＋高中,CANDIDATE
+G5,形容詞、副詞與比較,"Adjectives, Adverbs & Comparison",GRAM_G5_ADV,副詞,Adverbs,3,7,國中＋高中,CANDIDATE
+G5,形容詞、副詞與比較,"Adjectives, Adverbs & Comparison",GRAM_G5_PART_ADJ,分詞形容詞,Participial Adjectives,5,1,國中＋高中,CANDIDATE
+G5,形容詞、副詞與比較,"Adjectives, Adverbs & Comparison",GRAM_G5_COMP,比較與最高級,Comparison,3,4,國中＋高中,CANDIDATE
+G5,形容詞、副詞與比較,"Adjectives, Adverbs & Comparison",GRAM_G5_MODIFIER,修飾語與位置,Modifiers & Position,0,3,高中,CANDIDATE
+G6,介係詞與連接詞,Prepositions & Conjunctions,GRAM_G6_PREP,介係詞,Prepositions,4,3,國中＋高中,CANDIDATE
+G6,介係詞與連接詞,Prepositions & Conjunctions,GRAM_G6_PREP_PHRASE,介係詞與動詞片語,Prepositional & Phrasal Verb Patterns,3,2,國中＋高中,CANDIDATE
+G6,介係詞與連接詞,Prepositions & Conjunctions,GRAM_G6_COORD,對等與相關連接詞,Coordinating & Correlative Conjunctions,1,3,國中＋高中,CANDIDATE
+G6,介係詞與連接詞,Prepositions & Conjunctions,GRAM_G6_SUBORD,從屬連接詞,Subordinating Conjunctions,2,3,國中＋高中,CANDIDATE
+G7,關係子句與關係詞,Relative Clauses & Relative Words,GRAM_G7_REL_CLAUSE,關係子句,Relative Clauses,0,3,高中,CANDIDATE
+G7,關係子句與關係詞,Relative Clauses & Relative Words,GRAM_G7_REL_PRON,關係代名詞,Relative Pronouns,1,2,國中＋高中,CANDIDATE
+G7,關係子句與關係詞,Relative Clauses & Relative Words,GRAM_G7_REL_ADV,關係副詞,Relative Adverbs,1,1,國中＋高中,CANDIDATE
+G7,關係子句與關係詞,Relative Clauses & Relative Words,GRAM_G7_COMPOUND_REL,複合關係詞,Compound Relatives,1,1,國中＋高中,CANDIDATE
+G7,關係子句與關係詞,Relative Clauses & Relative Words,GRAM_G7_REL_SPECIAL,關係詞特殊規則,Special Rules for Relative Words,3,2,國中＋高中,CANDIDATE
+G8,不定詞、動名詞與分詞,"Infinitives, Gerunds & Participles",GRAM_G8_INFINITIVE,不定詞,Infinitives,1,9,國中＋高中,CANDIDATE
+G8,不定詞、動名詞與分詞,"Infinitives, Gerunds & Participles",GRAM_G8_GERUND,動名詞,Gerunds,1,7,國中＋高中,CANDIDATE
+G8,不定詞、動名詞與分詞,"Infinitives, Gerunds & Participles",GRAM_G8_PARTICIPLE,分詞,Participles,0,4,高中,CANDIDATE
+G8,不定詞、動名詞與分詞,"Infinitives, Gerunds & Participles",GRAM_G8_PART_CLAUSE,分詞構句與省略,Participial Constructions & Reduction,0,3,高中,CANDIDATE
+G9,條件與假設,Conditionals & Subjunctive,GRAM_G9_COND,條件句,Conditionals,1,5,國中＋高中,CANDIDATE
+G9,條件與假設,Conditionals & Subjunctive,GRAM_G9_UNREAL,非真實表達,Unreal Expressions,1,4,國中＋高中,CANDIDATE
+G9,條件與假設,Conditionals & Subjunctive,GRAM_G9_SUBJ,假設語氣與要求句型,Mandative Subjunctive,1,2,國中＋高中,CANDIDATE
+G9,條件與假設,Conditionals & Subjunctive,GRAM_G9_COND_INV,條件倒裝,Conditional Inversion,0,1,高中,CANDIDATE
+G10,疑問、否定與特殊句構,"Questions, Negation & Special Structures",GRAM_G10_QUESTION,疑問詞與問句,Questions & Interrogatives,4,1,國中＋高中,CANDIDATE
+G10,疑問、否定與特殊句構,"Questions, Negation & Special Structures",GRAM_G10_TAG,附加與附和,Tag Questions & Agreement,2,0,國中,CANDIDATE
+G10,疑問、否定與特殊句構,"Questions, Negation & Special Structures",GRAM_G10_INDIRECT_Q,間接問句,Indirect Questions,1,0,國中,CANDIDATE
+G10,疑問、否定與特殊句構,"Questions, Negation & Special Structures",GRAM_G10_REPORTED,間接引語,Reported Speech,0,1,高中,CANDIDATE
+G10,疑問、否定與特殊句構,"Questions, Negation & Special Structures",GRAM_G10_NEG,否定,Negation,0,1,高中,CANDIDATE
+G10,疑問、否定與特殊句構,"Questions, Negation & Special Structures",GRAM_G10_INVERSION,倒裝,Inversion,2,1,國中＋高中,CANDIDATE
+G10,疑問、否定與特殊句構,"Questions, Negation & Special Structures",GRAM_G10_SPECIAL,特殊句型,Special Sentence Patterns,2,1,國中＋高中,CANDIDATE

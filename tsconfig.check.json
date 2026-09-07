@@ -1,0 +1,28 @@
+// api/ 的型別檢查。
+//
+// 為什麼要獨立一份：根 tsconfig 只 include ["src"]，tsconfig.node.json 只有
+// vite.config.ts——也就是說【部署上去的那些函式從來沒有被型別檢查過】。
+// 2026-09-05 改動 telemetry 形狀時，`npx tsc --noEmit` 回報乾淨，但實際上
+// 它連 api/ 都沒讀。這一份補上那個缺口，並由 preflight 在部署前執行。
+//
+// 尚未涵蓋 scripts/：那裡有 13 個型別問題，全都是測試 fixture 的窄化寫法，
+// 不是真的 bug（套件執行時全綠）。那是另一件事，不混在這次改動裡。
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowJs": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "baseUrl": ".",
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["api"]
+}

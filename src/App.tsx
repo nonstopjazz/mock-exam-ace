@@ -26,10 +26,18 @@ import ExamQuestionsEditor from "./pages/admin/ExamQuestionsEditor";
 import SiteSettings from "./pages/admin/SiteSettings";
 import UsersAdmin from "./pages/admin/UsersAdmin";
 import AdminHome from "./pages/admin/AdminHome";
+import WritingGrading from "./pages/admin/WritingGrading";
+import WritingGradingDetail from "./pages/admin/WritingGradingDetail";
+import ClassesAdmin from "./pages/admin/ClassesAdmin";
+import ClassDetail from "./pages/admin/ClassDetail";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import ClaimPack from "./pages/ClaimPack";
+import ParentDashboard from "./pages/learn/ParentDashboard";
+import TeacherSessionWorkspace from "./pages/learn/TeacherSessionWorkspace";
+import StudentDashboard from "./pages/learn/StudentDashboard";
+import StudentTasks from "./pages/learn/StudentTasks";
 import StudentWriting from "./pages/learn/StudentWriting";
 import EssayCompose from "./pages/learn/EssayCompose";
 import EssayDetail from "./pages/learn/EssayDetail";
@@ -110,6 +118,21 @@ const App = () => (
             {/* Claim pack route */}
             <Route path="/claim/:token" element={<ClaimPack />} />
 
+          {/* /learn 家長儀表板（設計原型，mock data）
+              🛑 仍是示範資料，所以鎖在管理員後面——真實學生／家長絕不能看到假成績。 */}
+          <Route path="/learn/parent" element={<RequireAdmin><ParentDashboard /></RequireAdmin>} />
+
+          {/* /learn 老師課堂工作區（設計原型，mock data）
+              🛑 同上：示範資料一律鎖在管理員後面。 */}
+          <Route path="/learn/teacher/session" element={<RequireAdmin><TeacherSessionWorkspace /></RequireAdmin>} />
+
+          {/* /learn 學生首頁 —— 全部真實資料，需登入 */}
+          <Route path="/learn/student" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
+
+          {/* /learn 任務中心 —— 真實班級任務，需登入。
+              由 Dashboard 的「我的任務」卡連過來。 */}
+          <Route path="/learn/student/tasks" element={<ProtectedRoute><StudentTasks /></ProtectedRoute>} />
+
           {/* /learn 寫作系統 Phase 1 —— 真實資料，需登入。
               目前只收文字作文；圖片提交、OCR、AI 分析屬於 Phase 2 之後。 */}
           <Route path="/learn/student/writing" element={<FeatureGate featureId="writing_submission" title="作文提交" description="作文功能暫時關閉，稍後會再開放。"><ProtectedRoute><StudentWriting /></ProtectedRoute></FeatureGate>} />
@@ -144,6 +167,28 @@ const App = () => (
           <Route path="/admin/blog" element={
             <RequireAdmin>
               <BlogAdmin />
+            </RequireAdmin>
+          } />
+          {/* 作文批改：佇列與單篇批改頁 */}
+          <Route path="/admin/writing" element={
+            <RequireAdmin>
+              <WritingGrading />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/writing/:essayId" element={
+            <RequireAdmin>
+              <WritingGradingDetail />
+            </RequireAdmin>
+          } />
+          {/* 班級與任務指派：老師端的主入口 */}
+          <Route path="/admin/classes" element={
+            <RequireAdmin>
+              <ClassesAdmin />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/classes/:classId" element={
+            <RequireAdmin>
+              <ClassDetail />
             </RequireAdmin>
           } />
           <Route path="/admin/exams" element={

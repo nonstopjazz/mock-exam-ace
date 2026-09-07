@@ -1,0 +1,20 @@
+Category Code,Category 中文,Skill Code,Skill 中文,Skill English,Definition,Includes / Typical Evidence,Excludes / Boundary Rule,Status
+S1,流暢與連貫,SPEAK_FLUENCY_CONTINUITY,語流持續與速度控制,Speech Continuity & Pace,能維持適當語速並持續表達，不因過慢、過快或頻繁中斷而影響理解。,sustained speech；appropriate pace；flow,若問題主要是停頓、填充詞或猶豫頻率，優先標 Pausing & Hesitation Control,DECIDED v1
+S1,流暢與連貫,SPEAK_FLUENCY_HESITATION,停頓與猶豫控制,Pausing & Hesitation Control,能適當控制停頓、猶豫、重啟、填充詞與自我修正，不致過度打斷語流。,pauses；uh/um；false starts；self-repair,自然思考停頓本身不應視為錯誤；只有明顯影響流暢或理解時才構成弱點,DECIDED v1
+S1,流暢與連貫,SPEAK_FLUENCY_ORGANIZATION,內容組織與發展,Idea Organization & Development,能將想法依合理順序展開，提供足夠支持、例子或說明，使回答完整。,idea development；supporting details；logical sequencing,若主要測句與句的連接手段而非內容發展，優先標 Cohesion & Linking,DECIDED v1
+S1,流暢與連貫,SPEAK_FLUENCY_COHESION,銜接與連貫,Cohesion & Linking,能使用適當連接語、指涉與語篇手段，使口語內容前後連貫。,linking devices；reference；discourse markers；cohesion,若只是單一連接詞的文法正確性，不一定屬 Speaking Skill,DECIDED v1
+S1,流暢與連貫,SPEAK_FLUENCY_INTERACTION,輪替與互動管理,Turn-taking & Interaction Management,能在互動口語中適當開始、維持、回應、接續與結束話輪，並處理澄清或修補。,turn-taking；responding；clarification；repair；interactive management,單人口說任務若沒有互動需求，不應強行產生本 Skill evidence,DECIDED v1
+S2,詞彙運用,SPEAK_LEXICAL_RANGE,詞彙範圍,Vocabulary Range,能使用足夠範圍的詞彙處理任務與主題，避免因詞彙不足而大量重複或中斷。,breadth of vocabulary；topic coverage；avoid excessive repetition,不應以『使用越難的字越好』作為判準；範圍必須服務表意需求,DECIDED v1
+S2,詞彙運用,SPEAK_LEXICAL_PRECISION,用字準確與精確,Word Choice & Precision,能選用語意正確且足夠精確的詞彙，使意思清楚、不造成誤解。,accurate word choice；semantic precision；specific vocabulary,若主要問題是固定搭配不自然，優先標 Collocation & Natural Usage,DECIDED v1
+S2,詞彙運用,SPEAK_LEXICAL_COLLOCATION,搭配與自然用法,Collocation & Natural Usage,能使用自然常見的詞語搭配、慣用組合與語法化詞彙用法。,make a decision；heavy rain；verb-noun collocation；natural phrasing,若主要是特定 Grammar 結構錯誤，應屬 S3 或 Grammar candidate evidence,DECIDED v1
+S2,詞彙運用,SPEAK_LEXICAL_PARAPHRASE,改述與繞述能力,Paraphrase & Circumlocution,在缺少特定字詞時，能用替代表達、描述、例子或近義改述維持溝通。,explain unknown word；rephrase；describe around a lexical gap,若只是使用同義字炫技而非維持表意，不應視為額外能力分,DECIDED v1
+S2,詞彙運用,SPEAK_LEXICAL_REGISTER,語域與情境適切性,Register & Appropriacy,能依對象、情境與目的選擇合宜的正式度、禮貌程度與詞彙表達。,formal/informal；politeness；audience appropriacy；contextual fit,不要求固定母語文化風格；重點是溝通情境是否適切,DECIDED v1
+S3,文法運用,SPEAK_GRAMMAR_BASIC,基本句構準確度,Basic Sentence Accuracy,能在基本句型與高頻文法結構中維持足夠準確度，使基本意思清楚。,basic clauses；agreement；basic tense；common sentence patterns,此 Skill 是口語即時表現，不等同 Grammar Domain 的特定 Skill mastery,DECIDED v1
+S3,文法運用,SPEAK_GRAMMAR_RANGE,文法結構範圍,Grammatical Range,能依表意需求使用不只單一簡單句型的多樣文法結構。,variety of structures；tense/aspect variety；modals；clause variety,結構複雜不等於高分；若多樣但失控，還需看 Complex Structure Control,DECIDED v1
+S3,文法運用,SPEAK_GRAMMAR_COMPLEX,複雜句構控制,Complex Structure Control,能在使用從屬、關係、條件、分詞等較複雜句構時維持結構完整與可理解性。,subordination；relative clauses；conditionals；complex clauses,不應因使用複雜句本身加分；重點是控制與準確,DECIDED v1
+S3,文法運用,SPEAK_GRAMMAR_REALTIME,即時文法控制,Real-time Grammatical Control,能在沒有充分編輯時間的即時口語中持續監控文法並有效自我修正。,online grammatical control；self-monitoring；repair without breakdown,不要直接把此分數轉成 Grammar Domain mastery；特定文法證據需另行偵測,DECIDED v1
+S4,發音與語調,SPEAK_PRON_SEGMENTAL,音素發音,Segmental Accuracy,能清楚產出關鍵母音、子音與音素對立，使字詞可被辨識。,vowels；consonants；minimal contrasts；final consonants,Accent 差異本身不構成錯誤，只要不妨礙 intelligibility,DECIDED v1
+S4,發音與語調,SPEAK_PRON_WORD_STRESS,單字重音,Word Stress,能在多音節字中使用適當主要重音，使詞彙易於辨識。,PHOtograph / phoTOGraphy；syllable stress,若問題是整句資訊焦點與節奏，應標 Sentence Stress & Rhythm,DECIDED v1
+S4,發音與語調,SPEAK_PRON_RHYTHM,句子重音與節奏,Sentence Stress & Rhythm,能適當安排內容詞／功能詞重音與整句節奏，呈現自然資訊焦點。,sentence stress；rhythm；prominence；focus,若主要測語調曲線功能，優先標 Intonation,DECIDED v1
+S4,發音與語調,SPEAK_PRON_INTONATION,語調運用,Intonation,能使用合宜語調表達陳述、疑問、態度、強調與語篇功能。,rising/falling contours；attitudinal intonation；focus,此處評量產出控制；聽懂他人語調屬 Listening，而非 Speaking,DECIDED v1
+S4,發音與語調,SPEAK_PRON_CONNECTED,連音與自然語流,Connected Speech,能適度使用連音、弱化、縮約與語流現象，使口語自然且仍維持可理解性。,linking；reduction；weak forms；contractions；connected speech,不要求模仿特定母語者口音或把越連越快視為越好,DECIDED v1
