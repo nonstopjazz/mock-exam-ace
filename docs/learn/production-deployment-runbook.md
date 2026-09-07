@@ -319,6 +319,46 @@ Vercel Production 部署自 `main`，而這次的所有前端改動都在
 
 ---
 
+## 常見問題
+
+### 批改時顯示「伺服器設定不完整」
+
+環境變數問題，**不是程式或 schema 的問題**。不需要回滾任何 migration。
+
+有**兩個**不同的原因會產生這句一模一樣的訊息（見下方缺陷記錄），
+只能靠 Vercel 函式日誌分辨：
+
+Vercel → 專案 → Deployments → 最新的 Production 部署 → **Logs** → 篩 `analyze-writing`
+
+| log 那一行 | 缺的東西 |
+|---|---|
+| `[analyze-writing] 缺少 DEEPSEEK_API_KEY` | `DEEPSEEK_API_KEY` 沒設在 **Production** |
+| `[essayAuth] 缺少 Supabase 環境變數` | `SUPABASE_SERVICE_ROLE_KEY` / `VITE_SUPABASE_URL` / anon key 其中之一 |
+
+`requireEssayAccess` 跑在 `DEEPSEEK_API_KEY` 檢查【之前】，所以看到
+`[essayAuth]` 那一行時，DEEPSEEK 的檢查根本還沒執行到。
+
+**修法**：Settings → Environment Variables 補上該變數並勾 **Production**，
+然後 **必須重新部署** —— serverless function 的環境變數是部署時注入的，
+光存變數不會生效。
+
+> 📌 **2026-09-07 正式站實際踩到這個**：`DEEPSEEK_API_KEY` 只勾了 Preview
+> （staging 驗收時設的），Production 沒勾。log 顯示
+> `[analyze-writing] 缺少 DEEPSEEK_API_KEY`，補勾並重新部署後解決。
+> 階段 0 的環境變數檢查就是為了避免這一步，**不要跳過它**。
+
+### 🐛 已知缺陷：這句錯誤訊息無法分辨原因
+
+`api/analyze-writing.ts` 與 `api/_lib/essayAuth.ts` 兩個完全不同的失敗原因，
+對老師顯示**同一句**「伺服器設定不完整」。
+
+對老師沒差（兩者的下一步都是「找工程端」），但對除錯是障礙 ——
+必須去翻 log 才知道是哪一個。應該改成兩句可分辨的訊息。
+
+不影響功能，不擋上線。
+
+---
+
 ## 完成判定
 
 - [ ] 階段 1 preflight 全部 PASS
