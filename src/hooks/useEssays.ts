@@ -1,71 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import type {
-  EssayListItem,
-  EssaySubmission,
-  EssayText,
-  SubmitTextEssayInput,
-} from "@/types/writing";
+import type { EssaySubmission, EssayText, SubmitTextEssayInput } from "@/types/writing";
 
 /**
  * 作文資料存取（Phase 1）
  *
  * 權限一律由 RLS 執行，不由這裡的查詢條件負責 —— 就算某個查詢忘了加
  * student_id 條件，資料庫也只會回傳呼叫者自己的資料。
+ *
+ * 列表不在這裡：卡片列表要的批改狀態，學生透過 RLS 讀不到（那是刻意的），
+ * 必須走策展過的 writing_student_essay_cards()。見 hooks/learn/useEssayCards.ts。
  */
 
 /** 一篇作文可能有多筆 writing_texts（append-only），最新的一筆才是目前的文字。 */
 function latestText<T extends { created_at: string }>(rows: T[] | null | undefined): T | null {
   if (!rows || rows.length === 0) return null;
   return [...rows].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
-}
-
-export function useEssayList() {
-  const { user } = useAuth();
-  const [essays, setEssays] = useState<EssayListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchEssays = useCallback(async () => {
-    if (!user) {
-      setEssays([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    const { data, error: queryError } = await supabase
-      .from("writing_submissions")
-      .select("*, writing_texts(char_count, created_at)")
-      .order("essay_date", { ascending: false })
-      .order("created_at", { ascending: false });
-
-    if (queryError) {
-      console.error("[useEssayList] 讀取失敗:", queryError);
-      setError("讀取作文列表失敗，請稍後再試");
-      setEssays([]);
-    } else {
-      setEssays(
-        (data ?? []).map((row) => {
-          const { writing_texts, ...essay } = row as EssaySubmission & {
-            writing_texts: { char_count: number; created_at: string }[] | null;
-          };
-          return { ...essay, charCount: latestText(writing_texts)?.char_count ?? null };
-        }),
-      );
-    }
-
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => {
-    void fetchEssays();
-  }, [fetchEssays]);
-
-  return { essays, loading, error, refetch: fetchEssays };
 }
 
 export function useEssay(essayId: string | undefined) {

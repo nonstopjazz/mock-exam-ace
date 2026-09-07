@@ -6,6 +6,8 @@
  * 前端不需要再改一次型別定義。
  */
 
+import type { OverallLevel } from "@/lib/writing/analysisContract";
+
 export type EssaySubmissionType = "text" | "image";
 
 /** DRAFT = 撰寫中；SUBMITTED = 已送出且不可變。批改與發布狀態屬於 Phase 4。 */
@@ -38,15 +40,42 @@ export interface EssayText {
   created_at: string;
 }
 
-/** 列表用：只需要字數與是否已有正規文字，不需要整篇內容 */
-export interface EssayListItem extends EssaySubmission {
-  charCount: number | null;
-}
-
 export interface SubmitTextEssayInput {
   title: string;
   content: string;
   essayTopic?: string;
   essayDate?: string;
   studentNotes?: string;
+}
+
+/** 批改（AI 分析）的生命週期。NULL = 還沒有人按過「開始分析」。 */
+export type EssayAnalysisStatus =
+  | "QUEUED"
+  | "ANALYZING"
+  | "ANALYZED"
+  | "COMPLETED"
+  | "FAILED";
+
+/**
+ * 卡片列表的一筆 —— writing_student_essay_cards() 的回傳形狀。
+ *
+ * 欄位一律用 snake_case，因為這是 RPC 原封不動的輸出；前端不再改名，
+ * 免得「同一個東西在兩個地方叫不同名字」。
+ */
+export interface EssayCard {
+  essay_id: string;
+  title: string;
+  essay_topic: string | null;
+  essay_date: string;
+  submission_type: EssaySubmissionType;
+  status: EssayStatus;
+  submitted_at: string | null;
+  created_at: string;
+  char_count: number | null;
+  analysis_status: EssayAnalysisStatus | null;
+  report_ready: boolean;
+  /** 只有 report_ready 才有值 */
+  overall_level: OverallLevel | null;
+  overall_headline: string | null;
+  has_teacher_feedback: boolean;
 }
