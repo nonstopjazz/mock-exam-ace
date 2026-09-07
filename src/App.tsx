@@ -129,8 +129,8 @@ const App = () => (
           {/* /learn 學生首頁 —— 全部真實資料，需登入 */}
           <Route path="/learn/student" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
 
-          {/* ⚠️ Prototype retained for internal reference; not part of current student IA.
-              未連結於任何學生導覽，僅供內部參考 */}
+          {/* /learn 任務中心 —— 真實班級任務，需登入。
+              由 Dashboard 的「我的任務」卡連過來。 */}
           <Route path="/learn/student/tasks" element={<ProtectedRoute><StudentTasks /></ProtectedRoute>} />
 
           {/* /learn 寫作系統 Phase 1 —— 真實資料，需登入。
