@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { StudentTasksCard } from "@/components/learn/student/StudentTasksCard";
+import { StudentTasksSection } from "@/components/learn/student/StudentTasksSection";
 import { AbilitySnapshot } from "@/components/learn/student/AbilitySnapshot";
 import { LearningRhythm } from "@/components/learn/student/LearningRhythm";
 import { MyVocabulary } from "@/components/learn/student/MyVocabulary";
@@ -61,8 +61,8 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          {/* 1. 我的任務 —— 沒有任務時顯示「目前沒有新的任務」，整張卡不會消失 */}
-          <StudentTasksCard />
+          {/* 1. 我的任務 —— 左邊一件最該做的事，右邊今天的節奏。沒有任務時整區不會消失 */}
+          <StudentTasksSection />
 
           {/* 2. 最近的作文 —— 卡片與「我的作文」同一張、同一組網格寬度。
                  還沒有任何作文時整區不出現（作文既有的 UX） */}

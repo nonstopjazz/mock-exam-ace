@@ -11,6 +11,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { CalendarDays, ChevronRight, GraduationCap, Plus, Users } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { toast } from "sonner";
 import { useAdminClasses } from "@/hooks/learn/useAdminClasses";
 import { formatDate } from "@/lib/learn/tasks";
@@ -52,23 +53,17 @@ const ClassesAdmin = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 md:p-3 rounded-lg bg-primary/10 shrink-0">
-              <GraduationCap className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-2xl md:text-4xl font-bold text-foreground truncate">班級管理</h1>
-              <p className="text-sm md:text-base text-muted-foreground hidden sm:block">
-                建立班級、管理名冊、指派作業與常態練習
-              </p>
-            </div>
-          </div>
-          <Button onClick={() => setOpen(true)} className="shrink-0">
-            <Plus className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">新增班級</span>
-          </Button>
-        </div>
+        <AdminPageHeader
+          icon={GraduationCap}
+          title="班級管理"
+          subtitle="建立班級、管理名冊、指派作業與常態練習"
+          action={
+            <Button onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">新增班級</span>
+            </Button>
+          }
+        />
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

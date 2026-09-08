@@ -14,6 +14,7 @@ import {
   ArrowLeft, CalendarDays, ClipboardList, Repeat, UserMinus, UserPlus, Users, Plus, Archive,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminBreadcrumb, AdminPageHeader, type AdminCrumb } from "@/components/admin/AdminPageHeader";
 import { useAdminClassDetail } from "@/hooks/learn/useAdminClassDetail";
 import { AddStudentsDialog } from "@/components/admin/classes/AddStudentsDialog";
 import { TaskEditorDialog } from "@/components/admin/classes/TaskEditorDialog";
@@ -77,6 +78,8 @@ const AssigneeRow = ({
 
 /* ---------- 頁面 ---------- */
 
+const CLASS_TRAIL: AdminCrumb[] = [{ label: "班級管理", to: "/admin/classes" }];
+
 const ClassDetail = () => {
   const { classId } = useParams<{ classId: string }>();
   const api = useAdminClassDetail(classId);
@@ -93,6 +96,8 @@ const ClassDetail = () => {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
+          {/* 載入中也要有出得去的路：這一頁沒有 Navbar */}
+          <AdminBreadcrumb trail={CLASS_TRAIL} />
           <Skeleton className="h-10 w-56 mb-8" />
           <Card className="p-6">
             <Skeleton className="h-5 w-32 mb-3" />
@@ -107,6 +112,7 @@ const ClassDetail = () => {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
+          <AdminBreadcrumb trail={CLASS_TRAIL} />
           <Alert variant="destructive">
             <AlertDescription>{api.error ?? "找不到這個班級"}</AlertDescription>
           </Alert>
@@ -227,29 +233,17 @@ const ClassDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
-          <Link to="/admin/classes">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            班級列表
-          </Link>
-        </Button>
-
-        {/* 頁首 */}
+        {/* 頁首。麵包屑取代了原本的「班級列表」返回鈕：多一層「管理中心」，
+            從書籤直接進來也回得去。 */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 min-w-0 mb-3">
-            <div className="p-2 md:p-3 rounded-lg bg-primary/10 shrink-0">
-              <Users className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-2xl md:text-4xl font-bold text-foreground truncate">
-                {detail.class.name}
-              </h1>
-              <p className="text-sm md:text-base text-muted-foreground">
-                {detail.members.length} 位學生
-                {detail.class.status === "ARCHIVED" ? " · 已封存" : ""}
-              </p>
-            </div>
-          </div>
+          <AdminPageHeader
+            icon={Users}
+            title={detail.class.name}
+            subtitle={`${detail.members.length} 位學生${
+              detail.class.status === "ARCHIVED" ? " · 已封存" : ""
+            }`}
+            trail={CLASS_TRAIL}
+          />
 
           {/* 下次上課日期 —— 改一次會移動全班的 NEXT_CLASS 作業，所以獨立成一個動作 */}
           <Card className="p-6 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">

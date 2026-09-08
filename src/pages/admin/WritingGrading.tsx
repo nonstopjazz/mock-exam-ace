@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,23 +43,17 @@ const WritingGrading = () => {
     <Layout>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
-          <div className="mb-8 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="p-2 md:p-3 rounded-lg bg-primary/10 shrink-0">
-                <PenLine className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-2xl md:text-4xl font-bold text-foreground truncate">作文批改</h1>
-                <p className="text-sm md:text-base text-muted-foreground hidden sm:block">
-                  學生送出的作文與批改狀態
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => void loadQueue()} disabled={loading}>
-              <RefreshCw className="h-4 w-4" />
-              重新載入
-            </Button>
-          </div>
+          <AdminPageHeader
+            icon={PenLine}
+            title="作文批改"
+            subtitle="學生送出的作文與批改狀態"
+            action={
+              <Button variant="outline" size="sm" onClick={() => void loadQueue()} disabled={loading}>
+                <RefreshCw className="h-4 w-4" />
+                重新載入
+              </Button>
+            }
+          />
 
           {error ? (
             <Alert variant="destructive" className="mb-6">
