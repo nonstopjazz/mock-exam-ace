@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, Minus, Plus } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import { recurringProgress, recurringTargetLabel, type StudentRecurring } from "@/lib/learn/tasks";
+import { ProgressRing } from "./ProgressRing";
 import { TYPE } from "../shared";
 
 /**
@@ -16,48 +17,6 @@ import { TYPE } from "../shared";
  */
 
 const MAX_ROWS = 2;
-const RING = 46;
-const R = 15.5;
-const CIRCUMFERENCE = 2 * Math.PI * R;
-
-const Ring = ({
-  percent,
-  met,
-  label,
-  size,
-}: {
-  percent: number;
-  met: boolean;
-  label: string;
-  size: number;
-}) => (
-  <div className="relative shrink-0" style={{ width: size, height: size }}>
-    <svg viewBox="0 0 36 36" style={{ width: size, height: size }} className="-rotate-90">
-      <circle cx="18" cy="18" r={R} fill="none" strokeWidth="3.2" className="stroke-muted" />
-      {/* 進度為 0 時整段不畫：圓頭線帽會在 12 點鐘方向留下一個小點，看起來像壞掉 */}
-      {percent > 0 ? (
-        <circle
-          cx="18"
-          cy="18"
-          r={R}
-          fill="none"
-          strokeWidth="3.2"
-          strokeLinecap="round"
-          className={`transition-all duration-300 ${met ? "stroke-success" : "stroke-secondary"}`}
-          strokeDasharray={`${(percent / 100) * CIRCUMFERENCE} ${CIRCUMFERENCE}`}
-        />
-      ) : null}
-    </svg>
-    <span className="absolute inset-0 grid place-items-center">
-      {met ? (
-        <Check className="h-4 w-4 text-success" aria-hidden />
-      ) : (
-        /* 顯示 0/1 而不是 0%：學生記的是次數，不是百分比 */
-        <span className="text-[11px] font-bold tabular-nums text-foreground">{label}</span>
-      )}
-    </span>
-  </div>
-);
 
 const HabitRow = ({
   item,
@@ -73,7 +32,7 @@ const HabitRow = ({
   return (
     <div className="py-3 border-b border-border/50 last:border-0 first:pt-0">
       <div className="flex items-center gap-3">
-        <Ring percent={p.percent} met={p.met} label={`${p.done}/${p.target}`} size={RING} />
+        <ProgressRing percent={p.percent} met={p.met} label={`${p.done}/${p.target}`} />
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-semibold text-foreground leading-snug line-clamp-2">
             {item.title}
