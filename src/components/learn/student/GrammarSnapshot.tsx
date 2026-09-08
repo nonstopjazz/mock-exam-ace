@@ -16,7 +16,6 @@ import { Doughnut } from "react-chartjs-2";
 import {
   BAND_LABEL,
   BAND_RANGE,
-  BAND_TEXT,
   bandOf,
   buildGrammarMock,
   type GrammarBand,
@@ -55,7 +54,7 @@ const BANDS: GrammarBand[] = ["EXCELLENT", "GOOD", "NEEDS_WORK", "WEAK"];
 
 
 
-/** "142 76% 36%" → [142, 76, 36]；讀不到就回傳 null，讓呼叫端自己給退路。 */
+/** "184 65% 42%" → [184, 65, 42]；讀不到就回傳 null，讓呼叫端自己給退路。 */
 function readToken(name: string): [number, number, number] | null {
   if (typeof window === "undefined") return null;
   const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -63,31 +62,65 @@ function readToken(name: string): [number, number, number] | null {
   return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
 }
 
-const hsl = ([h, s, l]: [number, number, number], ds = 0, dl = 0) =>
-  `hsl(${h} ${Math.max(0, Math.min(100, s + ds))}% ${Math.max(0, Math.min(100, l + dl))}%)`;
+const clamp = (n: number) => Math.max(0, Math.min(100, n));
+
+/** 以 token 為基準推一階顏色；alpha 用來做同一個顏色的淡底與描邊。 */
+const step = (
+  [h, s, l]: [number, number, number],
+  ds: number,
+  dl: number,
+  alpha = 1,
+): string =>
+  alpha === 1
+    ? `hsl(${h} ${clamp(s + ds)}% ${clamp(l + dl)}%)`
+    : `hsl(${h} ${clamp(s + ds)}% ${clamp(l + dl)}% / ${alpha})`;
+
+interface BandColor {
+  /** 圓餅圖、長條、圖例小圓點 */
+  solid: string;
+  /** 徽章底色 */
+  tint: string;
+  /** 徽章描邊 */
+  line: string;
+}
 
 interface ChartPalette {
-  band: Record<GrammarBand, string>;
+  band: Record<GrammarBand, BandColor>;
+  /** 圓餅圖切片之間的縫，用卡片底色才看得出是「隔開」而不是另一個顏色 */
   gap: string;
 }
 
 /**
- * 從 token 算出圖表用的顏色。深色模式切換時 token 會換一組值，
- * 因此監看 <html> 的 class，換了就重算。
+ * 等第色階。
+ *
+ * 用的是站上既有的兩個色相 —— secondary（深青，代表學習）與 accent（赤陶，
+ * 代表要處理的事）—— 不引進第三組配色。熟練度是有方向的量（低是壞、高是好），
+ * 所以做成發散式：兩端深、中間淺，愈往青色愈好、愈往赤陶愈需要練。
+ *
+ * 深色模式下 token 會換一組值，因此監看 <html> 的 class，換了就重算。
  */
 function useChartPalette(): ChartPalette {
   const compute = useCallback((): ChartPalette => {
-    const good = readToken("--success") ?? [142, 76, 36];
-    const bad = readToken("--destructive") ?? [0, 72, 51];
+    const good = readToken("--secondary") ?? [184, 65, 42];
+    const weak = readToken("--accent") ?? [16, 75, 55];
     const card = readToken("--card") ?? [40, 40, 98];
+    const band = (
+      base: [number, number, number],
+      ds: number,
+      dl: number,
+    ): BandColor => ({
+      solid: step(base, ds, dl),
+      tint: step(base, ds, dl, 0.14),
+      line: step(base, ds, dl, 0.4),
+    });
     return {
       band: {
-        EXCELLENT: hsl(good),
-        GOOD: hsl(good, -20, +22),
-        NEEDS_WORK: hsl(bad, -8, +17),
-        WEAK: hsl(bad),
+        EXCELLENT: band(good, +10, -10),
+        GOOD: band(good, -7, +11),
+        NEEDS_WORK: band(weak, +5, +12),
+        WEAK: band(weak, +3, -10),
       },
-      gap: hsl(card),
+      gap: step(card, 0, 0),
     };
   }, []);
 
@@ -103,13 +136,6 @@ function useChartPalette(): ChartPalette {
   return palette;
 }
 
-/**
- * 熟練度長條。
- *
- * 沒有用 ui/progress：那支的填色固定是 primary（琥珀），軌道是 secondary（青），
- * 兩個顏色都與這一區的等第語意衝突 —— 一條琥珀色的 75% 會讓人以為 75% 是「警告」。
- * 這裡的填色跟圓餅圖是同一組色階，兩邊講的是同一件事。
- */
 /**
  * 圓餅圖包一層 memo。
  *
@@ -200,14 +226,14 @@ export const GrammarSnapshot = () => {
         {
           label: "中主題",
           data: middles.map((m) => m.accuracy ?? 0),
-          backgroundColor: middles.map((m) => palette.band[bandOf(m.accuracy ?? 0)]),
+          backgroundColor: middles.map((m) => palette.band[bandOf(m.accuracy ?? 0)].solid),
           borderColor: palette.gap,
           borderWidth: 2,
         },
         {
           label: "大主題",
           data: data.map((m) => m.accuracy ?? 0),
-          backgroundColor: data.map((m) => palette.band[bandOf(m.accuracy ?? 0)]),
+          backgroundColor: data.map((m) => palette.band[bandOf(m.accuracy ?? 0)].solid),
           borderColor: palette.gap,
           borderWidth: 2,
         },
@@ -286,10 +312,14 @@ export const GrammarSnapshot = () => {
                 <span key={band} className="flex items-center gap-1.5">
                   <span
                     className="h-2.5 w-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: palette.band[band] }}
+                    style={{ backgroundColor: palette.band[band].solid }}
                     aria-hidden="true"
                   />
-                  <Icon className={`h-3.5 w-3.5 shrink-0 ${BAND_TEXT[band]}`} aria-hidden="true" />
+                  <Icon
+                    className="h-3.5 w-3.5 shrink-0"
+                    style={{ color: palette.band[band].solid }}
+                    aria-hidden="true"
+                  />
                   <span className="text-xs text-foreground">{BAND_LABEL[band]}</span>
                   <span className={TYPE.micro}>{BAND_RANGE[band]}</span>
                   <span className="text-xs font-semibold text-foreground tabular-nums">
@@ -316,11 +346,11 @@ export const GrammarSnapshot = () => {
                   >
                     <span
                       className="h-2 w-2 rounded-full shrink-0"
-                      style={{ backgroundColor: palette.band[band] }}
+                      style={{ backgroundColor: palette.band[band].solid }}
                       aria-hidden="true"
                     />
                     {main.name}
-                    <span className={`tabular-nums ${BAND_TEXT[band]}`}>{accuracy}%</span>
+                    <span className="tabular-nums text-muted-foreground">{accuracy}%</span>
                   </button>
                 );
               })}
@@ -372,8 +402,10 @@ export const GrammarSnapshot = () => {
                     <div className="mt-2 flex items-center justify-between gap-1">
                       <span className={TYPE.micro}>整體正確率</span>
                       <span className="flex items-center gap-1 shrink-0">
-                        <Icon className={`h-3.5 w-3.5 ${BAND_TEXT[band]}`} />
-                        <span className={`text-lg font-bold tabular-nums ${BAND_TEXT[band]}`}>
+                        <Icon className="h-3.5 w-3.5" style={{ color: palette.band[band].solid }} />
+                        {/* 數字穿文字色，顏色由旁邊的圖示與長條負責 ——
+                            把數字染成等第色，在淺色階上會變成讀不清楚的低對比字 */}
+                        <span className="text-lg font-bold tabular-nums text-foreground">
                           {accuracy}%
                         </span>
                       </span>
@@ -382,7 +414,7 @@ export const GrammarSnapshot = () => {
                     <BandBar
                       value={accuracy}
                       band={band}
-                      color={palette.band[band]}
+                      color={palette.band[band].solid}
                       className="mt-1.5"
                     />
 
@@ -390,7 +422,11 @@ export const GrammarSnapshot = () => {
                       <span className={TYPE.micro}>{main.middleTopics.length} 個中主題</span>
                       <Badge
                         variant="outline"
-                        className={`text-[11px] font-normal shrink-0 ${BAND_TEXT[band]}`}
+                        className="text-[11px] font-normal shrink-0 text-foreground"
+                        style={{
+                          backgroundColor: palette.band[band].tint,
+                          borderColor: palette.band[band].line,
+                        }}
                       >
                         {BAND_LABEL[band]}
                       </Badge>
@@ -428,11 +464,11 @@ export const GrammarSnapshot = () => {
                       <BandBar
                         value={midAccuracy}
                         band={midBand}
-                        color={palette.band[midBand]}
+                        color={palette.band[midBand].solid}
                         className="h-1 w-16 ml-auto shrink-0"
                       />
                       <span
-                        className={`text-xs font-medium tabular-nums w-9 text-right shrink-0 ${BAND_TEXT[midBand]}`}
+                        className="text-xs font-medium tabular-nums w-9 text-right shrink-0 text-foreground"
                       >
                         {midAccuracy}%
                       </span>

@@ -83,10 +83,7 @@ export const BAND_RANGE: Record<GrammarBand, string> = {
   WEAK: "< 60%",
 };
 
-/** 文字色調。四級都有文字標籤與圖示，顏色只是輔助，不是唯一的區辨方式。 */
-export const BAND_TEXT: Record<GrammarBand, string> = {
-  EXCELLENT: "text-success",
-  GOOD: "text-success/80",
-  NEEDS_WORK: "text-destructive/80",
-  WEAK: "text-destructive",
-};
+/*
+ * 顏色不放在這裡：等第的色階是從 CSS token 即時算出來的（見 GrammarSnapshot 的
+ * useChartPalette），深色模式才不會壞掉。這一支只負責資料與分級。
+ */
