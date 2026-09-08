@@ -67,7 +67,8 @@ export const RecurringCard = ({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} asChild>
-      <Card className="overflow-hidden border-secondary/25">
+      {/* 與 Dashboard 的「每日動能」同一種底色，兩頁的常態練習看起來是同一件事 */}
+      <Card className="overflow-hidden border-secondary/25 bg-gradient-to-b from-secondary/[0.08] to-card">
         <div className="flex items-start gap-3 p-4 md:p-5">
           <div className="pt-0.5">
             <ProgressRing
@@ -113,7 +114,7 @@ export const RecurringCard = ({
         <div className="flex sm:hidden items-center gap-2 px-4 pb-4 -mt-1">{actions}</div>
 
         <CollapsibleContent>
-          <div className="border-t border-border/60 bg-muted/20 px-4 md:px-5 py-4">
+          <div className="border-t border-secondary/15 bg-muted/25 px-4 md:px-5 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               老師的說明
             </p>

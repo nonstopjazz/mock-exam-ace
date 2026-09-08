@@ -67,7 +67,9 @@ export const TaskCard = ({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} asChild>
-      <Card className="overflow-hidden">
+      {/* 琥珀 = 作業，深青 = 常態練習：任務頁用顏色分【種類】。
+          濃度刻意壓在 5%，一整頁都是這個色也不會變成一片琥珀。 */}
+      <Card className="overflow-hidden border-primary/20 bg-gradient-to-b from-primary/[0.05] to-card">
         <div className="flex items-start gap-3 p-4 md:p-5">
           {/* 標題區整塊是展開的觸發點；沒有細節時退化成單純的文字，不會有假的可點感 */}
           <CollapsibleTrigger asChild disabled={!hasDetail}>
@@ -120,7 +122,7 @@ export const TaskCard = ({
         </div>
 
         <CollapsibleContent>
-          <div className="border-t border-border/60 bg-muted/20 px-4 md:px-5 py-4 space-y-3">
+          <div className="border-t border-primary/15 bg-muted/25 px-4 md:px-5 py-4 space-y-3">
             {instruction ? (
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
