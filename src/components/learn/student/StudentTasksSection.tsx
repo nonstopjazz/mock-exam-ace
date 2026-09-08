@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useStudentTasks } from "@/hooks/learn/useStudentTasks";
-import { needsAction, sortHomework, type StudentHomework } from "@/lib/learn/tasks";
+import { needsAction, pickFocus, sortHomework, type StudentHomework } from "@/lib/learn/tasks";
 import { FocusTaskCard } from "./tasks/FocusTaskCard";
 import { CompactTaskRow } from "./tasks/CompactTaskRow";
 import { HabitCard } from "./tasks/HabitCard";
@@ -75,7 +75,13 @@ export const StudentTasksSection = () => {
   }
 
   const pending = sortHomework(st.homework.filter(needsAction));
-  const [focus, ...others] = pending;
+
+  /*
+   * 焦點看的是急迫度（pickFocus），其餘維持清單的順序（sortHomework）——
+   * 兩套規則是刻意分開的，理由寫在 lib/learn/tasks.ts 的 pickFocus 註解裡。
+   */
+  const focus = pickFocus(pending, st.today);
+  const others = pending.filter((hw) => hw.task_id !== focus?.task_id);
   const compact = others.slice(0, COMPACT_ROWS);
 
   /*

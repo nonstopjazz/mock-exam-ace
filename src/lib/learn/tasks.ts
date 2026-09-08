@@ -141,6 +141,45 @@ export const formatDate = (iso: string | null): string => {
   return `${m} 月 ${d} 日（週${WEEKDAY[wd]}）`;
 };
 
+/**
+ * 焦點任務 —— Dashboard 上唯一被放大的那一件。
+ *
+ * 🛑 挑選規則刻意與 sortHomework() 不同，不要「統一」它們。
+ *
+ *    sortHomework() 是【清單】的順序：一列一列往下讀，把還沒做的排前面很合理。
+ *    但拿同一套規則挑【唯一一件】焦點會出事 —— 狀態壓過日期時，
+ *    一份三週後才截止的新作業（none，rank 1）會排在一份【昨天就逾期】、
+ *    老師還標了未完成的作業（unchecked，rank 2）前面，最急的那件反而不是焦點。
+ *
+ *    所以焦點以【急迫度】為主：逾期最久的優先，其次依截止日由近到遠，
+ *    沒有排定日期的排最後（NEXT_CLASS 還沒排課、或根本沒有截止日），
+ *    完全同分時才用狀態與建立時間決定。
+ *
+ * 老師不需要、也沒有辦法「指定」焦點：焦點是對【某一個學生】而言的，
+ * 同一份作業對已經做完的甲和還沒動的乙重要性完全不同。老師是用截止日在控制它。
+ */
+export const pickFocus = (
+  list: StudentHomework[],
+  today: string,
+): StudentHomework | null => {
+  const actionable = list.filter(needsAction);
+  if (actionable.length === 0) return null;
+
+  // 逾期為負、今天為 0、未來為正 —— 一個數字就同時表達了「逾期優先」與「越近越前」
+  const urgency = (hw: StudentHomework) =>
+    hw.resolved_due_date ? dayDiff(hw.resolved_due_date, today) : Number.POSITIVE_INFINITY;
+
+  return [...actionable].sort((a, b) => {
+    const ua = urgency(a);
+    const ub = urgency(b);
+    if (ua !== ub) return ua - ub;
+    const ra = RANK[homeworkState(a).key];
+    const rb = RANK[homeworkState(b).key];
+    if (ra !== rb) return ra - rb;
+    return a.created_at.localeCompare(b.created_at);
+  })[0];
+};
+
 /* ---------- 常態練習 ---------- */
 
 export const RECURRENCE_LABEL: Record<Recurrence, string> = {
