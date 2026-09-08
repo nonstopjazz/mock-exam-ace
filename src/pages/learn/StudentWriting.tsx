@@ -7,6 +7,7 @@ import { AlertCircle, FileText, Plus } from "lucide-react";
 import { useEssayCards } from "@/hooks/learn/useEssayCards";
 import { EssayCard } from "@/components/learn/writing/EssayCard";
 import { WritingLoading, WritingPageHeader } from "@/components/learn/writing/writingShared";
+import { GRID_CARDS } from "@/lib/cardGrid";
 
 /**
  * 我的作文 —— 卡片列表
@@ -56,7 +57,7 @@ const StudentWriting = () => {
               </div>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={GRID_CARDS}>
               {cards.map((card) => (
                 <EssayCard key={card.essay_id} card={card} />
               ))}

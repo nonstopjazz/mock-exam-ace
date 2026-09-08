@@ -6,24 +6,26 @@ import { StudentTasksCard } from "@/components/learn/student/StudentTasksCard";
 import { AbilitySnapshot } from "@/components/learn/student/AbilitySnapshot";
 import { LearningRhythm } from "@/components/learn/student/LearningRhythm";
 import { MyVocabulary } from "@/components/learn/student/MyVocabulary";
-import { RecentResults } from "@/components/learn/student/RecentResults";
-import { LatestWritingCard } from "@/components/learn/student/LatestWritingCard";
+import { RecentEssays } from "@/components/learn/student/RecentEssays";
+import { GrammarSnapshot } from "@/components/learn/student/GrammarSnapshot";
 
 /**
  * Student Dashboard —— v2，全部真實資料。
  *
  * 🛑 這一頁【不再有任何示範資料】。每一區的來源都是持久化的：
  *      我的任務      learn_student_tasks()
- *      最近的作文    writing_submissions / writing_analyses
+ *      最近的作文    writing_student_essay_cards()
  *      學習表現      （沒有能力模型 → 誠實地說尚未有足夠資料）
  *      學習紀錄      user_stats
  *      我的字卡      user_pack_claims / packs / pack_items / pack_item_progress
- *      最近的成績    exam_attempts
  *    沒有資料就顯示空狀態，絕不用假資料填版面。
+ *
+ *    唯一的例外是最下方的「文法分析」：文法系統還沒上線，那一區是模擬資料，
+ *    而且在畫面上直接寫明「此為模擬資料」——不靠小字，也不假裝是真的。
  *
  * 視覺層級刻意不平均：
  *   我的任務 → 最近的作文 → 兩欄摘要（學習表現 / 學習紀錄）
- *   → 字卡收藏 → 底部次要資訊（成績）
+ *   → 字卡收藏 → 底部次要資訊（文法分析）
  */
 
 /** 顯示名稱順位：profile → email 前段 → 同學。永遠不顯示裸 uuid。 */
@@ -62,9 +64,10 @@ const StudentDashboard = () => {
           {/* 1. 我的任務 —— 沒有任務時顯示「目前沒有新的任務」，整張卡不會消失 */}
           <StudentTasksCard />
 
-          {/* 2. 最近的作文 —— 還沒有已送出的作文時整張卡不出現（作文既有的 UX） */}
+          {/* 2. 最近的作文 —— 卡片與「我的作文」同一張、同一組網格寬度。
+                 還沒有任何作文時整區不出現（作文既有的 UX） */}
           <div className="mt-10">
-            <LatestWritingCard />
+            <RecentEssays />
           </div>
 
           {/* 3–4. 摘要與紀錄：兩欄 */}
@@ -78,11 +81,9 @@ const StudentDashboard = () => {
             <MyVocabulary />
           </div>
 
-          {/* 6. 次要資訊 */}
+          {/* 6. 次要資訊 —— 文法分析（模擬資料，畫面上已標明） */}
           <div className="mt-10 -mx-4 px-4 py-8 border-t border-border/60 bg-muted/20">
-            <div className="max-w-2xl">
-              <RecentResults />
-            </div>
+            <GrammarSnapshot />
           </div>
         </div>
       </div>
