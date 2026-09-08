@@ -175,6 +175,11 @@ export const GrammarSnapshot = () => {
     [data],
   );
 
+  const opened = useMemo(
+    () => data.find((main) => main.name === openTopic) ?? null,
+    [data, openTopic],
+  );
+
   const middles = useMemo(
     () => data.flatMap((main) => main.middleTopics.map((mid) => ({ ...mid, main: main.name }))),
     [data],
@@ -256,9 +261,10 @@ export const GrammarSnapshot = () => {
         </AlertDescription>
       </Alert>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      {/* 5 欄切成 2 : 3 —— 右邊要排三張卡，對半分的話每張只剩約 170px，字會擠成一團 */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
         {/* 左：雙層同心圓 */}
-        <Card className={`p-6 ${SURFACE.base}`}>
+        <Card className={`lg:col-span-2 p-6 ${SURFACE.base}`}>
           <h3 className={TYPE.cardTitle}>文法分類總覽</h3>
           <p className={`${TYPE.micro} mt-1`}>
             外圈 {data.length} 個大主題，內圈 {middles.length} 個中主題；點一下可以看細節
@@ -322,12 +328,12 @@ export const GrammarSnapshot = () => {
           </div>
         </Card>
 
-        {/* 右：同一份資料的清單 —— 也是圖表的替代讀法（顏色看不出來時照樣讀得到數字） */}
-        <Card className={`p-6 ${SURFACE.base}`}>
+        {/* 右：同一份資料的小卡 —— 也是圖表的替代讀法（顏色看不出來時照樣讀得到數字） */}
+        <div className="lg:col-span-3">
           <h3 className={TYPE.cardTitle}>各大主題熟練度</h3>
-          <p className={`${TYPE.micro} mt-1`}>點一個主題可以展開它的中主題</p>
+          <p className={`${TYPE.micro} mt-1`}>點一張卡可以看它的中主題</p>
 
-          <div className="mt-3 divide-y divide-border/50">
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
             {data.map((main) => {
               const accuracy = main.accuracy ?? 0;
               const band = bandOf(accuracy);
@@ -335,68 +341,108 @@ export const GrammarSnapshot = () => {
               const open = openTopic === main.name;
 
               return (
-                <div
+                <Card
                   key={main.name}
                   ref={(el) => (rowRefs.current[main.name] = el)}
-                  className="py-2.5 first:pt-0"
+                  className={cn(
+                    "p-4 transition-all duration-200 hover:shadow-lg",
+                    SURFACE.base,
+                    open && "ring-2 ring-primary",
+                  )}
                 >
+                  {/* 只有 button 綁 onClick。卡片外層也綁的話，點一下會觸發兩次，
+                      展開又立刻收合。 */}
                   <button
                     type="button"
-                    onClick={() => select(main.name)}
                     aria-expanded={open}
-                    className="w-full text-left rounded-md px-1 -mx-1 hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => select(main.name)}
+                    className="w-full text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-start justify-between gap-1">
+                      <span className="text-sm font-semibold text-foreground min-w-0 truncate">
+                        {main.name}
+                      </span>
                       {open ? (
                         <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
                       ) : (
                         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                       )}
-                      <span className="text-sm font-medium text-foreground truncate min-w-0">
-                        {main.name}
-                      </span>
-                      <Icon className={`h-4 w-4 shrink-0 ml-auto ${BAND_TEXT[band]}`} />
-                      <span
-                        className={`text-sm font-semibold tabular-nums shrink-0 ${BAND_TEXT[band]}`}
-                      >
-                        {accuracy}%
-                      </span>
                     </div>
-                    <BandBar value={accuracy} band={band} color={palette.band[band]} className="mt-1.5" />
-                  </button>
 
-                  {open ? (
-                    <div className="mt-2 ml-6 space-y-1.5">
-                      {main.middleTopics.map((middle) => {
-                        const midAccuracy = middle.accuracy ?? 0;
-                        const midBand = bandOf(midAccuracy);
-                        return (
-                          <div key={middle.name} className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground truncate min-w-0">
-                              {middle.name}
-                            </span>
-                            <BandBar
-                              value={midAccuracy}
-                              band={midBand}
-                              color={palette.band[midBand]}
-                              className="h-1 w-16 ml-auto shrink-0"
-                            />
-                            <Badge
-                              variant="outline"
-                              className={`text-[11px] font-normal tabular-nums w-12 justify-center shrink-0 ${BAND_TEXT[midBand]}`}
-                            >
-                              {midAccuracy}%
-                            </Badge>
-                          </div>
-                        );
-                      })}
+                    <div className="mt-2 flex items-center justify-between gap-1">
+                      <span className={TYPE.micro}>整體正確率</span>
+                      <span className="flex items-center gap-1 shrink-0">
+                        <Icon className={`h-3.5 w-3.5 ${BAND_TEXT[band]}`} />
+                        <span className={`text-lg font-bold tabular-nums ${BAND_TEXT[band]}`}>
+                          {accuracy}%
+                        </span>
+                      </span>
                     </div>
-                  ) : null}
-                </div>
+
+                    <BandBar
+                      value={accuracy}
+                      band={band}
+                      color={palette.band[band]}
+                      className="mt-1.5"
+                    />
+
+                    <div className="mt-2 flex items-center justify-between gap-1">
+                      <span className={TYPE.micro}>{main.middleTopics.length} 個中主題</span>
+                      <Badge
+                        variant="outline"
+                        className={`text-[11px] font-normal shrink-0 ${BAND_TEXT[band]}`}
+                      >
+                        {BAND_LABEL[band]}
+                      </Badge>
+                    </div>
+                  </button>
+                </Card>
               );
             })}
           </div>
-        </Card>
+
+          {/* 細節放在網格【下方】，卡片才能維持一樣高、一樣寬 */}
+          {opened ? (
+            <Card className={`mt-3 p-4 ${SURFACE.base}`}>
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-semibold text-foreground truncate min-w-0">
+                  {opened.name} · 中主題
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setOpenTopic(null)}
+                  className={`${TYPE.micro} hover:text-foreground transition-colors shrink-0`}
+                >
+                  收合
+                </button>
+              </div>
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-2">
+                {opened.middleTopics.map((middle) => {
+                  const midAccuracy = middle.accuracy ?? 0;
+                  const midBand = bandOf(midAccuracy);
+                  return (
+                    <div key={middle.name} className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground truncate min-w-0">
+                        {middle.name}
+                      </span>
+                      <BandBar
+                        value={midAccuracy}
+                        band={midBand}
+                        color={palette.band[midBand]}
+                        className="h-1 w-16 ml-auto shrink-0"
+                      />
+                      <span
+                        className={`text-xs font-medium tabular-nums w-9 text-right shrink-0 ${BAND_TEXT[midBand]}`}
+                      >
+                        {midAccuracy}%
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          ) : null}
+        </div>
       </div>
     </section>
   );
