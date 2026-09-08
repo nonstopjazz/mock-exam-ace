@@ -10,6 +10,7 @@ export interface WritingQueueRow {
   title: string;
   submitted_at: string | null;
   char_count: number | null;
+  word_count: number | null;
   analysis_id: string | null;
   analysis_status: string | null;
   analysis_version: number | null;

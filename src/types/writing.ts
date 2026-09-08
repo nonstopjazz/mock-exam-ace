@@ -35,7 +35,10 @@ export interface EssayText {
   essay_id: string;
   content: string;
   provenance: EssayTextProvenance;
+  /** 字元數。要顯示「字數」請用 word_count —— 兩者差六倍。 */
   char_count: number;
+  /** 以空白切分的單字數，也就是學生與老師講的「字數」 */
+  word_count: number;
   created_by: string | null;
   created_at: string;
 }
@@ -72,6 +75,7 @@ export interface EssayCard {
   submitted_at: string | null;
   created_at: string;
   char_count: number | null;
+  word_count: number | null;
   analysis_status: EssayAnalysisStatus | null;
   report_ready: boolean;
   /** 只有 report_ready 才有值 */
