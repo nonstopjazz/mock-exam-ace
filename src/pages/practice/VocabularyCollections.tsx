@@ -28,6 +28,7 @@ import { useNavigate } from "react-router-dom";
 import { useUserPacks } from "@/hooks/useUserPacks";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { GRID_CARDS } from "@/lib/cardGrid";
 import { PackCard } from "@/components/vocabulary/PackCard";
 import { SKILL_TYPES } from "@/components/vocabulary/packMeta";
 
@@ -397,7 +398,7 @@ const VocabularyCollections = () => {
         </Card>
 
         {/* Pack List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-4">
+        <div className={GRID_CARDS}>
           {filteredPacks.map((pack) => (
             <PackCard
               key={pack.id}
