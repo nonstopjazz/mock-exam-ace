@@ -93,16 +93,26 @@ interface ChartPalette {
 /**
  * 等第色階。
  *
- * 用的是站上既有的兩個色相 —— secondary（深青，代表學習）與 accent（赤陶，
- * 代表要處理的事）—— 不引進第三組配色。熟練度是有方向的量（低是壞、高是好），
- * 所以做成發散式：兩端深、中間淺，愈往青色愈好、愈往赤陶愈需要練。
+ * 四個等第 = 四個色相（綠／藍／金／紅），這是學生一看就懂的老語彙，
+ * 而且它讓「優秀」與「良好」明確分得開 —— 同色相深淺兩階在圓餅圖那種
+ * 小切片上其實分不出來。
+ *
+ * 四個色相全部取自站上既有的 token，不另外發明顏色：
+ *   優秀   --success          綠
+ *   良好   --explorer-badge   藍（站上「探險者」的藍）
+ *   需加強 --treasure-gold    金
+ *   待改善 --destructive      紅
+ * 再各降一點飽和、微調明度，讓它們落在羊皮紙底色上不會太刺眼 ——
+ * 純飽和的四色會像紅綠燈，正是上一版要避開的問題。
  *
  * 深色模式下 token 會換一組值，因此監看 <html> 的 class，換了就重算。
  */
 function useChartPalette(): ChartPalette {
   const compute = useCallback((): ChartPalette => {
-    const good = readToken("--secondary") ?? [184, 65, 42];
-    const weak = readToken("--accent") ?? [16, 75, 55];
+    const excellent = readToken("--success") ?? [142, 76, 36];
+    const good = readToken("--explorer-badge") ?? [200, 70, 50];
+    const needsWork = readToken("--treasure-gold") ?? [45, 95, 55];
+    const weak = readToken("--destructive") ?? [0, 72, 51];
     const card = readToken("--card") ?? [40, 40, 98];
     const band = (
       base: [number, number, number],
@@ -115,10 +125,10 @@ function useChartPalette(): ChartPalette {
     });
     return {
       band: {
-        EXCELLENT: band(good, +10, -10),
-        GOOD: band(good, -7, +11),
-        NEEDS_WORK: band(weak, +5, +12),
-        WEAK: band(weak, +3, -10),
+        EXCELLENT: band(excellent, -16, +2),
+        GOOD: band(good, -8, -2),
+        NEEDS_WORK: band(needsWork, -10, -3),
+        WEAK: band(weak, -4, +1),
       },
       gap: step(card, 0, 0),
     };
