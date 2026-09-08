@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
+import { POST_LOGIN_LANDING } from '@/config/landing';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export default function AuthCallback() {
       }
 
       // Get return URL from localStorage (set before OAuth redirect)
-      const returnUrl = localStorage.getItem('auth_return_url') || '/practice/vocabulary';
+      const returnUrl = localStorage.getItem('auth_return_url') || POST_LOGIN_LANDING;
       localStorage.removeItem('auth_return_url');
 
       navigate(returnUrl, { replace: true });

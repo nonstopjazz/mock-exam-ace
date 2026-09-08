@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { POST_LOGIN_LANDING } from '@/config/landing';
 
 // Google icon component
 const GoogleIcon = () => (
@@ -44,7 +45,7 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const returnUrl = searchParams.get('returnUrl') || '/practice/vocabulary';
+  const returnUrl = searchParams.get('returnUrl') || POST_LOGIN_LANDING;
 
   // Redirect if already logged in
   useEffect(() => {
