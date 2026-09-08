@@ -15,7 +15,8 @@ import {
   BarChart3,
   PenTool,
 } from "lucide-react";
-import { usePhase } from "@/contexts/PhaseContext";
+import { usePhase, useHomeFeatureFlags } from "@/contexts/PhaseContext";
+import { HOME_FEATURES, isHomeFeatureVisible } from "@/config/homeFeatures";
 import { DevPhaseSwitcher } from "@/components/dev/DevPhaseSwitcher";
 import { APP_PRODUCT, PRODUCT_CONFIG } from "@/config/product";
 
@@ -52,7 +53,24 @@ const PRODUCT_COPY = {
 
 const copy = PRODUCT_COPY[APP_PRODUCT];
 
-// Feature definition with phase requirements
+/**
+ * 卡片的圖示與描述。
+ *
+ * 「有哪些卡、順序、屬於哪個 Phase」在 src/config/homeFeatures.ts —— 那份目錄
+ * 與 /admin/settings 的開關共用。這裡只補上呈現需要的東西：描述會依站別換字，
+ * 所以留在這一頁。
+ */
+const FEATURE_PRESENTATION: Record<
+  string,
+  { icon: React.ComponentType<{ className?: string }>; description: string }
+> = {
+  vocabulary: { icon: Layers, description: copy.vocabDescription },
+  collections: { icon: Heart, description: "瀏覽公開單字包，透過邀請碼領取主題字庫" },
+  exams: { icon: Clock, description: copy.examDescription },
+  dashboard: { icon: BarChart3, description: "詳細的答題數據與弱點分析" },
+  essay: { icon: PenTool, description: "智能評分與改進建議" },
+};
+
 interface Feature {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
@@ -65,49 +83,21 @@ const Home = () => {
   const navigate = useNavigate();
   const currentPhase = usePhase();
 
-  // All features with their required phase
-  const allFeatures: Feature[] = [
-    // Phase 0: Vocabulary (public MVP)
-    {
-      icon: Layers,
-      title: "單字複習中心",
-      description: copy.vocabDescription,
-      path: "/practice/vocabulary",
-      phase: 0,
-    },
-    {
-      icon: Heart,
-      title: "詞彙收藏",
-      description: "瀏覽公開單字包，透過邀請碼領取主題字庫",
-      path: "/practice/vocabulary/collections",
-      phase: 0,
-    },
-    // Phase 2: Premium features (hidden for now)
-    {
-      icon: Clock,
-      title: "真實模擬考",
-      description: copy.examDescription,
-      path: "/exams",
-      phase: 2,
-    },
-    {
-      icon: BarChart3,
-      title: "學習儀表板",
-      description: "詳細的答題數據與弱點分析",
-      path: "/dashboard",
-      phase: 2,
-    },
-    {
-      icon: PenTool,
-      title: "AI 作文批改",
-      description: "智能評分與改進建議",
-      path: "/essay",
-      phase: 2,
-    },
-  ];
+  const homeFeatureFlags = useHomeFeatureFlags();
 
-  // Filter available features based on simulated phase
-  const availableFeatures = allFeatures.filter((f) => f.phase <= currentPhase);
+  /*
+   * 兩道關卡：Phase 決定「功能開了沒」，管理員的開關決定「首頁要不要露出」。
+   * 開關只能關掉，不能越過 Phase 打開 —— 否則學生會點進「即將推出」的頁面。
+   */
+  const availableFeatures: Feature[] = HOME_FEATURES.filter((f) =>
+    isHomeFeatureVisible(f.key, currentPhase, f.phase, homeFeatureFlags),
+  ).map((f) => ({
+    icon: FEATURE_PRESENTATION[f.key].icon,
+    title: f.title,
+    description: FEATURE_PRESENTATION[f.key].description,
+    path: f.path,
+    phase: f.phase,
+  }));
 
   // Dynamic hero content based on phase
   const heroContent = {
