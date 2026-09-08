@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
+import { AdminBreadcrumb, type AdminCrumb } from "@/components/admin/AdminPageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useEssay } from "@/hooks/useEssays";
 import { useAdminWritingAnalysis } from "@/hooks/learn/useAdminWritingAnalysis";
@@ -27,6 +28,8 @@ import {
  * ⚠️ 批改完成後學生【立即】看得到 AI 報告。講評不是發布關卡——
  *    寫不寫、什麼時候寫，都不影響學生能不能看到分析。
  */
+const GRADING_TRAIL: AdminCrumb[] = [{ label: "作文批改", to: "/admin/writing" }];
+
 const WritingGradingDetail = () => {
   const { essayId } = useParams<{ essayId: string }>();
   const { essay, text, loading: essayLoading } = useEssay(essayId);
@@ -55,12 +58,7 @@ const WritingGradingDetail = () => {
     <Layout>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
-          <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
-            <Link to="/admin/writing">
-              <ArrowLeft className="h-4 w-4" />
-              批改佇列
-            </Link>
-          </Button>
+          <AdminBreadcrumb trail={GRADING_TRAIL} />
 
           {essayLoading ? (
             <WritingLoading label="正在載入作文" />
