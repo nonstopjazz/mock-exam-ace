@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
+import { countWords } from "@/lib/writing/wordCount";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,8 @@ const EssayCompose = () => {
   const [submitting, setSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  // 「字數」= 單字數，與資料庫的 writing_texts.word_count 同一個定義
+  const wordCount = countWords(content);
   const charCount = content.length;
   const canSubmit = title.trim().length > 0 && content.trim().length > 0 && !submitting;
 
@@ -137,7 +140,10 @@ const EssayCompose = () => {
                   <Label htmlFor="essay-content">
                     作文內容 <span className="text-destructive">*</span>
                   </Label>
-                  <span className="text-sm text-muted-foreground shrink-0">{charCount} 字</span>
+                  <span className="text-sm text-muted-foreground shrink-0">
+                    {wordCount} 字
+                    <span className="text-muted-foreground/70"> · {charCount} 字元</span>
+                  </span>
                 </div>
                 <Textarea
                   id="essay-content"

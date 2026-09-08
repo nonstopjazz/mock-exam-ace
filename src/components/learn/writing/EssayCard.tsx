@@ -141,7 +141,7 @@ export function EssayCard({ card }: { card: EssayCardData }) {
             <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
               {card.submission_type === "text" ? "文字" : "照片"}
             </Badge>
-            {card.char_count !== null ? <span>{card.char_count} 字</span> : null}
+            {card.word_count !== null ? <span>{card.word_count} 字</span> : null}
           </div>
 
           {/* ④ 結果格 */}

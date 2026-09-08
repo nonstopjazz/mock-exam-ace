@@ -69,6 +69,13 @@ BEGIN
   INSERT INTO writing_texts (essay_id, content, provenance, created_by, created_at)
     VALUES (v_e_plain, repeat('b', 250), 'TYPED', v_student, now());
 
+  -- 一般英文作文：10 個字。前後刻意放空白、換行與 tab ——
+  -- btrim 不帶字元集只去空格，換行留著就會多算一個字。
+  INSERT INTO writing_texts (essay_id, content, provenance, created_by)
+    VALUES (v_e_queued,
+            E'\n\n  The quick brown fox jumps\tover the  very lazy dog.  \n',
+            'TYPED', v_student);
+
   INSERT INTO writing_analyses (essay_id, status, requested_by, provider, model, error_detail)
     VALUES (v_e_queued, 'QUEUED', v_teacher, 'deepseek', 'deepseek-chat', NULL);
 
@@ -153,7 +160,12 @@ BEGIN
   INSERT INTO t (name, verdict, detail) VALUES (
     'char_count 取最新一版文字',
     CASE WHEN (v_card ->> 'char_count')::int = 250 THEN 'PASS' ELSE 'FAIL' END,
-    format('舊版 100 字、新版 250 字，實得 %s', v_card ->> 'char_count'));
+    format('舊版 100 字元、新版 250 字元，實得 %s', v_card ->> 'char_count'));
+  -- 「字數」是單字數，不是字元數：一篇 250 個字元的 'bbbb…' 只有 1 個字
+  INSERT INTO t (name, verdict, detail) VALUES (
+    'word_count 是單字數而非字元數',
+    CASE WHEN (v_card ->> 'word_count')::int = 1 THEN 'PASS' ELSE 'FAIL' END,
+    format('250 個字元、中間沒有空白 → 應為 1 個字，實得 %s', v_card ->> 'word_count'));
   INSERT INTO t (name, verdict, detail) VALUES (
     'essay_topic 與 submission_type 有帶出來',
     CASE WHEN v_card ->> 'essay_topic' = '自我介紹'
@@ -173,6 +185,11 @@ BEGIN
     format('status=%s ready=%s level=%s',
            v_card ->> 'analysis_status', v_card ->> 'report_ready',
            coalesce(v_card ->> 'overall_level', 'NULL')));
+
+  INSERT INTO t (name, verdict, detail) VALUES (
+    'word_count 忽略前後空白與連續空白',
+    CASE WHEN (v_card ->> 'word_count')::int = 10 THEN 'PASS' ELSE 'FAIL' END,
+    format('前後有換行與 tab 的十字句子，實得 %s', v_card ->> 'word_count'));
 
   /* ---------- ANALYZED：綜合層已寫入但尚未 COMPLETED ---------- */
   SELECT e INTO v_card FROM jsonb_array_elements(v_json) e

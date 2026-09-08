@@ -69,7 +69,12 @@ const EssayDetail = () => {
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                   <span>{formatEssayDate(essay.essay_date)}</span>
-                  {text ? <span>{text.char_count} 字</span> : null}
+                  {text ? (
+                    <span>
+                      {text.word_count} 字
+                      <span className="text-muted-foreground/70"> · {text.char_count} 字元</span>
+                    </span>
+                  ) : null}
                 </div>
               </div>
 

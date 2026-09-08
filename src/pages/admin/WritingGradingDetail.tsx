@@ -74,7 +74,7 @@ const WritingGradingDetail = () => {
             <>
               <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-2">{essay.title}</h1>
               <p className="text-sm text-muted-foreground mb-6">
-                {text ? `${text.char_count} 字` : "尚無內文"}
+                {text ? `${text.word_count} 字 · ${text.char_count} 字元` : "尚無內文"}
                 {essay.essay_topic ? ` · ${essay.essay_topic}` : ""}
               </p>
 

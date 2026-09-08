@@ -90,7 +90,7 @@ const WritingGrading = () => {
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-foreground truncate">{row.title}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {row.char_count ?? "?"} 字
+                          {row.word_count ?? "?"} 字
                           {row.analysis_version ? ` · 第 ${row.analysis_version} 次批改` : ""}
                         </p>
                       </div>
