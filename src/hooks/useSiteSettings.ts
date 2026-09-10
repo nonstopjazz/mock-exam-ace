@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSiteId, type SiteId } from '@/hooks/useSiteIdentifier';
+import type { HomeFeatureFlags } from '@/config/homeFeatures';
 
 export interface NavigationTab {
   enabled: boolean;
@@ -16,6 +17,8 @@ export interface SiteSettings {
   id: string;
   navigationTabs: Record<string, NavigationTab>;
   currentPhase: Phase;
+  /** 首頁功能卡片的開關。null = 還沒設定過，全部依 Phase 顯示 */
+  homeFeatures: HomeFeatureFlags | null;
   updatedAt: string;
   updatedBy: string | null;
 }
@@ -57,6 +60,7 @@ export function useSiteSettings(overrideSiteId?: SiteId) {
             id: siteId,
             navigationTabs: DEFAULT_NAVIGATION_TABS,
             currentPhase: 0,
+            homeFeatures: null,
             updatedAt: new Date().toISOString(),
             updatedBy: null,
           });
@@ -68,6 +72,8 @@ export function useSiteSettings(overrideSiteId?: SiteId) {
           id: data.id,
           navigationTabs: data.navigation_tabs || DEFAULT_NAVIGATION_TABS,
           currentPhase: (data.current_phase ?? 0) as Phase,
+          // 欄位還沒建立時 data.home_features 是 undefined，一律當作「沒設定過」
+          homeFeatures: (data.home_features as HomeFeatureFlags | null | undefined) ?? null,
           updatedAt: data.updated_at,
           updatedBy: data.updated_by,
         });
@@ -79,6 +85,7 @@ export function useSiteSettings(overrideSiteId?: SiteId) {
         id: siteId,
         navigationTabs: DEFAULT_NAVIGATION_TABS,
         currentPhase: 0,
+        homeFeatures: null,
         updatedAt: new Date().toISOString(),
         updatedBy: null,
       });
@@ -157,6 +164,43 @@ export function useSiteSettings(overrideSiteId?: SiteId) {
     }
   }, []);
 
+  /**
+   * 首頁功能卡片的開關。
+   *
+   * 🛑 只寫 home_features 一個欄位；current_phase 不在這裡動。
+   *    「功能開了沒」與「首頁露不露出」是兩件事，混在同一個儲存動作裡遲早出事。
+   */
+  const updateHomeFeatures = useCallback(async (flags: HomeFeatureFlags) => {
+    setError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error: updateError } = await supabase
+        .from('site_settings')
+        .update({
+          home_features: flags,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id || null,
+        })
+        .eq('id', siteId);
+
+      if (updateError) throw updateError;
+
+      setSettings(prev => prev ? {
+        ...prev,
+        homeFeatures: flags,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user?.id || null,
+      } : null);
+
+      return true;
+    } catch (err: any) {
+      setError(err.message);
+      return false;
+    }
+  }, [siteId]);
+
   // Get enabled navigation tabs sorted by order
   const getEnabledTabs = useCallback(() => {
     if (!settings?.navigationTabs) return [];
@@ -173,6 +217,7 @@ export function useSiteSettings(overrideSiteId?: SiteId) {
     error,
     updateNavigationTabs,
     updatePhase,
+    updateHomeFeatures,
     getEnabledTabs,
     refetch: fetchSettings,
   };

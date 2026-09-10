@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useSiteSettings, NavigationTab, type Phase } from '@/hooks/useSiteSettings';
+import { HOME_FEATURES, type HomeFeatureFlags } from '@/config/homeFeatures';
 import { supabase } from '@/lib/supabase';
-import type { SiteId } from '@/hooks/useSiteIdentifier';
+import { getSiteId, type SiteId } from '@/hooks/useSiteIdentifier';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Loader2, GripVertical, Settings, Rocket, Users, Crown } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, GripVertical, Settings, Rocket, Users, Crown, LayoutGrid } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const PHASE_OPTIONS: { value: Phase; label: string; description: string; icon: typeof Rocket; color: string; features: string[] }[] = [
@@ -97,9 +98,17 @@ function useAllSitePhases() {
 }
 
 export default function SiteSettings() {
-  const { settings, loading, error, updateNavigationTabs, updatePhase } = useSiteSettings();
+  const { settings, loading, error, updateNavigationTabs, updateHomeFeatures } = useSiteSettings();
   const allSites = useAllSitePhases();
+  /*
+   * 首頁卡片寫進「目前這個網域」那一列（useSiteSettings 也是同一個 id），
+   * 所以擋卡片的階段必須讀同一個站，不能寫死 gsat。
+   */
+  const thisSiteId = getSiteId();
   const [tabs, setTabs] = useState<Record<string, NavigationTab>>({});
+  const [homeFlags, setHomeFlags] = useState<HomeFeatureFlags>({});
+  const [savingHome, setSavingHome] = useState(false);
+  const [homeChanged, setHomeChanged] = useState(false);
   const [selectedPhases, setSelectedPhases] = useState<Record<SiteId, Phase>>({ gsat: 0, toeic: 0, kids: 0 });
   const [saving, setSaving] = useState(false);
   const [savingPhase, setSavingPhase] = useState<SiteId | null>(null);
@@ -111,6 +120,19 @@ export default function SiteSettings() {
     if (settings?.navigationTabs) {
       setTabs(settings.navigationTabs);
     }
+  }, [settings]);
+
+  /*
+   * 首頁卡片：資料庫裡沒有的 key 一律視為「顯示」。
+   * 缺席不等於關閉——之後新增卡片時，舊的設定不會把它悶掉。
+   */
+  useEffect(() => {
+    const flags: HomeFeatureFlags = {};
+    for (const f of HOME_FEATURES) {
+      flags[f.key] = settings?.homeFeatures?.[f.key] !== false;
+    }
+    setHomeFlags(flags);
+    setHomeChanged(false);
   }, [settings]);
 
   // Sync all sites' phases
@@ -157,6 +179,31 @@ export default function SiteSettings() {
         description: '導航設定已更新，重新整理頁面後生效',
       });
       setHasChanges(false);
+    } else {
+      toast({
+        title: '儲存失敗',
+        description: error || '請稍後再試',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleHomeToggle = (key: string, enabled: boolean) => {
+    setHomeFlags(prev => ({ ...prev, [key]: enabled }));
+    setHomeChanged(true);
+  };
+
+  const handleSaveHome = async () => {
+    setSavingHome(true);
+    const success = await updateHomeFeatures(homeFlags);
+    setSavingHome(false);
+
+    if (success) {
+      toast({
+        title: '首頁卡片已更新',
+        description: '學生重新整理首頁之後就會看到新的設定',
+      });
+      setHomeChanged(false);
     } else {
       toast({
         title: '儲存失敗',
@@ -305,6 +352,76 @@ export default function SiteSettings() {
             <p className="text-sm text-amber-800 dark:text-amber-200">
               <strong>注意：</strong>每個網站的階段獨立控制。切換階段會立即影響該站前台使用者可見的功能。階段是累進的 — Phase 2 包含 Phase 0 和 Phase 1 的所有功能。
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 首頁功能卡片 */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <LayoutGrid className="h-5 w-5" />
+                首頁功能卡片
+              </CardTitle>
+              <CardDescription className="mt-1.5">
+                控制首頁下方那一排卡片顯示哪幾張。關掉只是不在首頁露出，功能本身仍然可以用網址進入。
+              </CardDescription>
+            </div>
+            <Button onClick={handleSaveHome} disabled={savingHome || !homeChanged} size="sm">
+              {savingHome ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              儲存
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {HOME_FEATURES.map((feature) => {
+              const sitePhase = allSites.phases[thisSiteId] ?? settings?.currentPhase ?? 0;
+              const blockedByPhase = feature.phase > sitePhase;
+              const on = homeFlags[feature.key] !== false;
+
+              return (
+                <div
+                  key={feature.key}
+                  className={`flex items-center justify-between gap-4 px-4 py-3 rounded-lg border transition-colors ${
+                    on && !blockedByPhase ? 'bg-card border-border' : 'bg-muted/30 border-transparent'
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium">{feature.title}</span>
+                      {blockedByPhase && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          Phase {feature.phase} 才開放
+                        </Badge>
+                      )}
+                    </div>
+                    <code className="block truncate text-xs text-muted-foreground">{feature.path}</code>
+                  </div>
+                  <Switch
+                    className="shrink-0"
+                    checked={on && !blockedByPhase}
+                    disabled={blockedByPhase}
+                    onCheckedChange={(checked) => handleHomeToggle(feature.key, checked)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+            <h4 className="font-medium mb-2">說明</h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• 這裡只決定<strong>首頁露不露出</strong>，與導航選單、與功能本身的開放與否是三件事</li>
+              <li>• 標示「Phase N 才開放」的卡片目前被階段設定擋住，開了也不會顯示 —— 要先在上方把階段調高</li>
+              <li>• 開關只能關掉卡片，不能越過階段打開功能：否則學生會點進「即將推出」的頁面</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
