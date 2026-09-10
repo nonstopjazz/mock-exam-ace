@@ -10,6 +10,7 @@ import { useWritingReport } from "@/hooks/learn/useWritingReport";
 import { useTeacherFeedback } from "@/hooks/learn/useTeacherFeedback";
 import { EssayStatusBadge, WritingLoading } from "@/components/learn/writing/writingShared";
 import { formatEssayDate } from "@/components/learn/writing/writingFormat";
+import { EssayPhotos } from "@/components/learn/writing/EssayPhotos";
 import { WritingReportView } from "@/components/learn/writing/report/WritingReportView";
 import { TeacherFeedbackSection } from "@/components/learn/writing/report/TeacherFeedbackSection";
 
@@ -90,6 +91,16 @@ const EssayDetail = () => {
                   <p className="text-foreground whitespace-pre-wrap leading-relaxed">
                     {text.content}
                   </p>
+                ) : essay.status === "DRAFT" ? (
+                  /* 拍照作文在「上傳→辨識→校對」這段期間是草稿，還沒有文字。
+                     這裡給一條回去完成它的路，而不是讓學生看到「還沒有內容」然後卡住。 */
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p>這篇作文還沒完成</p>
+                    <p className="text-sm mt-2">回去把辨識出來的文字確認一下就可以送出</p>
+                    <Button asChild variant="outline" size="sm" className="mt-4">
+                      <Link to="/learn/student/writing/new">繼續完成</Link>
+                    </Button>
+                  </div>
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
                     <p>這篇作文還沒有內容</p>
@@ -97,6 +108,11 @@ const EssayDetail = () => {
                   </div>
                 )}
               </Card>
+
+              {/* 拍照作文的原始照片。過了保存期限之後這個區塊不會出現。 */}
+              {essay.submission_type === "image" && essayId ? (
+                <EssayPhotos essayId={essayId} />
+              ) : null}
 
               {essay.student_notes ? (
                 <Card className="p-6 mb-6">

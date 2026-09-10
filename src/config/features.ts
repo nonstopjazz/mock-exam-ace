@@ -118,10 +118,14 @@ export const FEATURES: Record<string, FeatureConfig> = {
     description: '目前僅支援文字作文',
   },
   writing_images: {
-    status: 'coming_soon',
-    phase: 2,
+    // 🔴 打開這個旗標之前，五份 SQL 必須先在該環境跑完（見 docs/learn/writing-images.md）：
+    //    ocr_runs → images → relax_checks → rpcs → buckets
+    //    以及 GOOGLE_VISION_API_KEY 這個環境變數。
+    //    沒跑完就打開，學生按下「拍照上傳」只會拿到錯誤。
+    status: 'enabled',
+    phase: 1,
     label: '作文拍照上傳',
-    description: '需與原圖保存、OCR 持久化一同上線',
+    description: '拍照上傳、辨識文字、學生校對後送出',
   },
 
   // ═══════════════════════════════════════════

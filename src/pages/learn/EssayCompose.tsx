@@ -21,16 +21,22 @@ import {
 import { ArrowLeft, Camera, Loader2, Send, Type } from "lucide-react";
 import { submitTextEssay } from "@/hooks/useEssays";
 import { WritingPageHeader } from "@/components/learn/writing/writingShared";
+import { PhotoEssayComposer } from "@/components/learn/writing/PhotoEssayComposer";
+import { isFeatureEnabled } from "@/config/features";
 
 /**
- * 寫一篇作文（寫作系統 Phase 1）
+ * 寫一篇作文
  *
- * Phase 1 只收文字。拍照上傳的入口刻意保留在畫面上但停用 ——
- * 圖片提交必須與「保存原圖 + OCR 持久化」一起上線（Phase 2），
- * 先開放收圖會從第一天就開始丟棄無法復原的原始檔。
+ * 兩種提交方式共用同一頁：打字輸入與拍照上傳。
+ *
+ * 拍照上傳（Phase 2）由 writing_images 這個旗標控制。它不是裝飾用的開關——
+ * 資料表、Storage bucket 與辨識端點沒到位之前把它打開，學生按下去只會失敗。
+ * 旗標關掉時那張卡仍然看得到，但標示「即將推出」，維持 Phase 1 的樣子。
  */
 const EssayCompose = () => {
   const navigate = useNavigate();
+  const photoEnabled = isFeatureEnabled("writing_images");
+  const [mode, setMode] = useState<"text" | "photo">("text");
 
   const [title, setTitle] = useState("");
   const [essayTopic, setEssayTopic] = useState("");
@@ -77,24 +83,70 @@ const EssayCompose = () => {
 
           <WritingPageHeader title="寫一篇作文" subtitle="寫完送出後就不能修改了，可以先想清楚再送" />
 
-          {/* 提交方式：Phase 1 只有文字 */}
+          {/* 提交方式 */}
           <div className="grid grid-cols-2 gap-4 mb-8">
-            <Card className="p-6 border-primary/40 bg-primary/5">
-              <div className="flex items-center gap-2">
-                <Type className="h-5 w-5 text-primary shrink-0" />
-                <span className="font-semibold text-foreground">打字輸入</span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">直接把作文打在下面</p>
-            </Card>
-            <Card className="p-6 opacity-60">
-              <div className="flex items-center gap-2">
-                <Camera className="h-5 w-5 text-muted-foreground shrink-0" />
-                <span className="font-semibold text-muted-foreground">拍照上傳</span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">即將推出</p>
-            </Card>
+            <button
+              type="button"
+              onClick={() => setMode("text")}
+              disabled={submitting}
+              className="text-left"
+            >
+              <Card
+                className={`p-6 h-full transition-colors ${
+                  mode === "text"
+                    ? "border-primary/40 bg-primary/5"
+                    : "hover:border-primary/40"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Type
+                    className={`h-5 w-5 shrink-0 ${
+                      mode === "text" ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  />
+                  <span className="font-semibold text-foreground">打字輸入</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">直接把作文打在下面</p>
+              </Card>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => photoEnabled && setMode("photo")}
+              disabled={!photoEnabled || submitting}
+              className="text-left"
+            >
+              <Card
+                className={`p-6 h-full transition-colors ${
+                  !photoEnabled
+                    ? "opacity-60"
+                    : mode === "photo"
+                      ? "border-primary/40 bg-primary/5"
+                      : "hover:border-primary/40"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Camera
+                    className={`h-5 w-5 shrink-0 ${
+                      photoEnabled && mode === "photo" ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  />
+                  <span
+                    className={`font-semibold ${
+                      photoEnabled ? "text-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    拍照上傳
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {photoEnabled ? "拍下作文，系統會讀出文字讓你確認" : "即將推出"}
+                </p>
+              </Card>
+            </button>
           </div>
 
+          {mode === "photo" ? <PhotoEssayComposer /> : (
           <Card className="p-6">
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -186,6 +238,7 @@ const EssayCompose = () => {
               </div>
             </div>
           </Card>
+          )}
         </div>
       </div>
 
