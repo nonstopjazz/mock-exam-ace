@@ -102,7 +102,42 @@ type PassLabel =
 /**
  * admin 是 service-role client、caller 是呼叫者身分的 client。
  * 需要 auth.uid() / is_admin() 生效的 RPC 一律走 caller，資料庫才擋得到。
+ *
+ * ── 為什麼有 gate 這一層 ──────────────────────────────────────────
+ * 這條分析流程有兩個進入點，它們的「身分」本質上不同：
+ *
+ *   老師按下按鈕      呼叫者是登入的管理員 → 走 caller，資料庫 is_admin() 把關
+ *   佇列 worker 推進  呼叫者是排程，沒有人的 JWT → 走 service_role 專用的 RPC
+ *
+ * 兩者只在「怎麼取得分析列」與「怎麼把綜合層推到 RUNNING」這兩個動作上不同，
+ * 其餘（DeepSeek 呼叫、驗證、落地、狀態轉移）完全一樣。把這兩個動作抽成
+ * gate，worker 就能重用同一份分析邏輯，而不必放寬既有 RPC 的權限——
+ * writing_enqueue_analysis 與 writing_retry_synthesis 維持「只有登入的管理員
+ * 叫得到」，一個字都沒改。
  */
+export interface RunGate {
+  /** 取得（或建立）這篇正在飛行的分析列。回傳 id，或一句給人看的錯誤。 */
+  ensureAnalysis(essayId: string): Promise<{ id?: string; error?: string }>;
+  /** 把綜合層推到 RUNNING。失敗時回傳一句給人看的錯誤。 */
+  beginSynthesis(analysisId: string): Promise<{ error?: string }>;
+}
+
+/** 老師端的預設 gate：兩個動作都走呼叫者身分，資料庫再驗一次 is_admin()。 */
+export function callerGate(caller: SupabaseClient): RunGate {
+  return {
+    async ensureAnalysis(essayId) {
+      const { data, error } = await caller.rpc("writing_enqueue_analysis", { p_essay_id: essayId });
+      if (error) return { error: error.message };
+      if (typeof data !== "string") return { error: "無法排入分析" };
+      return { id: data };
+    },
+    async beginSynthesis(analysisId) {
+      const { error } = await caller.rpc("writing_retry_synthesis", { p_analysis_id: analysisId });
+      return error ? { error: error.message } : {};
+    },
+  };
+}
+
 interface RunContext {
   res: VercelLikeResponse;
   admin: SupabaseClient;
@@ -110,6 +145,12 @@ interface RunContext {
   essayId: string;
   apiKey: string;
   signal: AbortSignal;
+  /** 省略時用 callerGate(caller)，也就是老師端原本的行為。 */
+  gate?: RunGate;
+}
+
+function gateOf(ctx: RunContext): RunGate {
+  return ctx.gate ?? callerGate(ctx.caller);
 }
 
 interface Stage1Result {
@@ -261,18 +302,16 @@ function readProgress(raw: unknown): Stage1Progress {
   return base;
 }
 
-async function runStage1(ctx: RunContext) {
+export async function runStage1(ctx: RunContext) {
   const admin = ctx.admin;
   const requestStartedAt = Date.now();
 
-  // 排入佇列走呼叫者身分，資料庫再擋一次「只有管理員能觸發」。
-  // 重試請求也走同一條路——授權在每一次請求都重做一遍，不因為是續跑就放寬。
-  const { data: analysisId, error: enqueueError } = await ctx.caller.rpc(
-    "writing_enqueue_analysis",
-    { p_essay_id: ctx.essayId },
-  );
+  // 取得分析列。老師端走呼叫者身分，資料庫再擋一次「只有管理員能觸發」；
+  // worker 走 service_role 專用的 RPC，它永遠不建立新列，只認既有的工作。
+  // 授權在每一次請求都重做一遍，不因為是續跑就放寬。
+  const { id: analysisId, error: enqueueError } = await gateOf(ctx).ensureAnalysis(ctx.essayId);
   if (enqueueError || typeof analysisId !== "string") {
-    return fail(ctx.res, 400, enqueueError?.message ?? "無法排入分析");
+    return fail(ctx.res, 400, enqueueError ?? "無法排入分析");
   }
 
   const { data: current } = await admin
@@ -670,7 +709,7 @@ function telemetrySummary(telemetry: Record<string, PassTelemetry>) {
  *
  * 這裡不重跑、也不可能重跑 Stage 1：四軸資料在 ANALYZED 之後由 trigger 凍結。
  */
-async function runSynthesisOnly(ctx: RunContext) {
+export async function runSynthesisOnly(ctx: RunContext) {
   const admin = ctx.admin;
   const stage2StartedAt = Date.now();
 
@@ -716,12 +755,11 @@ async function runSynthesisOnly(ctx: RunContext) {
       .eq("id", row.id);
   }
 
-  // 走呼叫者身分：資料庫再確認一次是管理員，並把 synthesis_status 推到 RUNNING。
-  const { error: retryError } = await ctx.caller.rpc("writing_retry_synthesis", {
-    p_analysis_id: row.id,
-  });
+  // 把 synthesis_status 推到 RUNNING。老師端走呼叫者身分，資料庫再確認一次
+  // 是管理員；worker 走 service_role 專用的那一支，內容相同。
+  const { error: retryError } = await gateOf(ctx).beginSynthesis(row.id);
   if (retryError) {
-    return fail(ctx.res, 409, retryError.message);
+    return fail(ctx.res, 409, retryError);
   }
 
   const highScore = row.high_score_feature_analysis as HighScoreAnalysis;

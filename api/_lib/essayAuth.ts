@@ -81,8 +81,71 @@ export interface AccessDenied {
 
 const deny = (status: number, error: string): AccessDenied => ({ denied: true, status, error });
 
-export function isDenied(result: EssayAccess | AccessDenied): result is AccessDenied {
+/** 泛型，才能同時用在 requireEssayAccess 與 requireAdmin 的結果上。 */
+export function isDenied<T>(result: T | AccessDenied): result is AccessDenied {
   return (result as AccessDenied).denied === true;
+}
+
+/** requireAdmin 的結果：沒有「目標作文」這個概念，其餘與 EssayAccess 相同。 */
+export interface AdminAccess {
+  user: User;
+  admin: SupabaseClient;
+  caller: SupabaseClient;
+}
+
+/**
+ * L13 的步驟 1–3，但對象不是某一篇作文而是「這個人是不是管理員」。
+ *
+ * 給需要跨多篇作文的端點用（例如批次排入佇列）——那些端點沒有單一的
+ * essay_id 可以交給 requireEssayAccess。逐篇的擁有權檢查改由資料庫的
+ * RPC 負責：writing_enqueue_analysis_batch() 內部會再驗一次 is_admin()，
+ * 並且逐篇檢查狀態與正規文字是否齊備。
+ *
+ * 與 requireEssayAccess 一樣：授權通過之前，service-role client 不存在。
+ */
+export async function requireAdmin(
+  req: VercelLikeRequest,
+): Promise<AdminAccess | AccessDenied> {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !anonKey || !serviceKey) {
+    console.error("[essayAuth] 缺少 Supabase 環境變數");
+    return deny(500, "伺服器設定不完整");
+  }
+
+  const authHeader = readHeader(req, "authorization");
+  if (!authHeader.startsWith("Bearer ")) {
+    return deny(401, "請先登入");
+  }
+
+  const caller = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data: userData, error: userError } = await caller.auth.getUser();
+  const user = userData?.user;
+  if (userError || !user) {
+    return deny(401, "登入狀態無效或已過期");
+  }
+
+  const { data: adminFlag, error: adminError } = await caller.rpc("is_admin");
+  if (adminError) {
+    console.error("[essayAuth] is_admin() 呼叫失敗:", adminError.message);
+    return deny(500, "無法確認權限");
+  }
+  // is_admin() 對未登入者回傳 NULL，不是 false，所以嚴格等於 true。
+  if (adminFlag !== true) {
+    return deny(403, "沒有執行這項操作的權限");
+  }
+
+  const admin = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  return { user, admin, caller };
 }
 
 /**
