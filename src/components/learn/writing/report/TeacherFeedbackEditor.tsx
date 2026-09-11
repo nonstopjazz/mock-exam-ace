@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +16,20 @@ import { useTeacherFeedback } from "@/hooks/learn/useTeacherFeedback";
  *    寫不寫講評、什麼時候寫，都不影響那件事。老師也可以完全不寫，
  *    改在課堂上口頭講。
  */
-export const TeacherFeedbackEditor = ({ essayId }: { essayId: string }) => {
+export const TeacherFeedbackEditor = ({
+  essayId,
+  extraAction,
+}: {
+  essayId: string;
+  /**
+   * 額外的按鈕，放在「儲存講評」旁邊。
+   *
+   * 拿得到 saveDraft()，是因為草稿的所有權在這個元件裡——批改頁要做
+   * 「儲存並下一篇」就必須能把當下這份草稿寫下去，而不是叫老師先按一次儲存
+   * 再按一次下一篇。saveDraft() 在沒有改動時不會發出任何請求。
+   */
+  extraAction?: (api: { dirty: boolean; saving: boolean; saveDraft: () => Promise<boolean> }) => ReactNode;
+}) => {
   const { feedback, loading, save } = useTeacherFeedback(essayId);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
@@ -37,6 +50,16 @@ export const TeacherFeedbackEditor = ({ essayId }: { essayId: string }) => {
     } else {
       toast.error(result.error ?? "儲存失敗");
     }
+  };
+
+  /** 給 extraAction 用：沒改動就什麼都不做，回傳是否可以安全地往下走。 */
+  const saveDraft = async (): Promise<boolean> => {
+    if (!dirty) return true;
+    setSaving(true);
+    const result = await save(draft);
+    setSaving(false);
+    if (!result.ok) toast.error(result.error ?? "儲存失敗");
+    return result.ok;
   };
 
   return (
@@ -70,6 +93,7 @@ export const TeacherFeedbackEditor = ({ essayId }: { essayId: string }) => {
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {draft.trim() ? "儲存講評" : "清除講評"}
             </Button>
+            {extraAction?.({ dirty, saving, saveDraft })}
             {feedback ? (
               <span className="text-xs text-muted-foreground">
                 上次更新：

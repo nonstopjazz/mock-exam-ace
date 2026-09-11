@@ -16,6 +16,7 @@ import {
   PenLine,
 } from 'lucide-react';
 import { PRODUCT_CONFIG } from '@/config/product';
+import { useWritingPendingCount } from '@/hooks/learn/useWritingPendingCount';
 
 interface AdminCardProps {
   title: string;
@@ -58,6 +59,10 @@ function AdminCard({ title, description, icon, href, badge, stats }: AdminCardPr
 }
 
 export default function AdminHome() {
+  // 待處理的作文篇數。v1 的通知就只有這個數字——沒有信、沒有推播、
+  // 沒有即時通知中心。老師進到管理中心就看得到還有幾篇沒處理。
+  const writingPending = useWritingPendingCount();
+
   const adminModules = [
     {
       title: '使用者管理',
@@ -75,9 +80,10 @@ export default function AdminHome() {
     },
     {
       title: '作文批改',
-      description: '批改佇列、AI 分析報告、老師講評',
+      description: '收件匣、批次 AI 分析、老師講評',
       icon: <PenLine className="h-6 w-6" />,
       href: '/admin/writing',
+      badge: writingPending && writingPending > 0 ? `${writingPending} 篇待處理` : undefined,
     },
     {
       title: '單字包管理',
