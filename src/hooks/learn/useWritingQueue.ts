@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { EnqueueResult, QueueSummary, WritingQueueRow } from "@/lib/writing/gradingQueue";
+import type {
+  CostEstimate,
+  EnqueueResult,
+  QueueSummary,
+  WritingQueueRow,
+} from "@/lib/writing/gradingQueue";
 
 /**
  * 作文收件匣的資料與批次動作。
@@ -98,6 +103,20 @@ export function useWritingQueue() {
   );
 
   /**
+   * 排入前的用量估算。
+   *
+   * 依據最近已完成分析的【實際 telemetry】，不是寫死的常數——所以 prompt 改版、
+   * 作文變長、重試變多，這個數字都會自己跟上。
+   */
+  const estimate = useCallback(async (count: number): Promise<CostEstimate | null> => {
+    const { data, error: rpcError } = await supabase.rpc("writing_analysis_cost_estimate", {
+      p_count: count,
+    });
+    if (rpcError) return null;
+    return data as unknown as CostEstimate;
+  }, []);
+
+  /**
    * 只踢一腳，不排入任何工作。
    * 鏈被平台中斷之後用這個重新點火；按幾次都沒有副作用。
    */
@@ -134,5 +153,8 @@ export function useWritingQueue() {
     [load],
   );
 
-  return { rows, summary, loading, error, busy, reload: load, enqueue, resume, setReviewed };
+  return {
+    rows, summary, loading, error, busy,
+    reload: load, enqueue, estimate, resume, setReviewed,
+  };
 }

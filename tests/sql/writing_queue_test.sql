@@ -22,6 +22,9 @@
 --   psql -d wq -f supabase/migrations/create_writing_teacher_reviews.sql
 --   psql -d wq -f supabase/migrations/create_writing_queue_rpcs.sql
 --   psql -d wq -f supabase/migrations/update_writing_admin_queue.sql
+--   psql -d wq -f supabase/migrations/create_push_subscriptions_table.sql
+--   psql -d wq -f supabase/migrations/create_writing_pending_digest.sql
+--   psql -d wq -f supabase/migrations/create_writing_cost_guardrails.sql
 --   psql -d wq -f tests/sql/writing_queue_test.sql
 --
 -- 這份測試針對的是「M. 安全／可靠性規則」那一條一條：兩個管理員同時開始、
@@ -62,6 +65,10 @@ DECLARE
   v_bool BOOLEAN;
   v_sum JSONB;
   v_axis JSONB := '{"ok": true}'::jsonb;
+  v_cost_essay UUID; v_cost_an UUID;
+  v_cap1 UUID; v_cap2 UUID; v_cap3 UUID; v_cap_enqueued UUID;
+  v_batch_capped JSONB;
+  v_big1 BIGINT; v_big2 BIGINT;
 BEGIN
   -- ── 準備 ────────────────────────────────────────────────
   INSERT INTO auth.users (email) VALUES ('q-admin@test') RETURNING id INTO v_admin;
@@ -387,6 +394,186 @@ BEGIN
     INTO v_bool;
   PERFORM pg_temp.expect('收件匣回傳老師檢閱狀態', v_bool, 'reviewed=' || v_bool);
 
+
+  -- ══════════════════════════════════════════════════════
+  -- 9. 每日提醒讀到的數字必須與老師看到的一模一樣
+  -- ══════════════════════════════════════════════════════
+
+  -- 這是這兩支函式存在的唯一理由：定義只有一份。
+  -- 若哪天有人把其中一支改成自己查表，這一條會立刻紅掉。
+  PERFORM pg_temp.expect('🛑 排程與老師讀到的摘要完全相同',
+    writing_pending_digest() = writing_queue_summary(),
+    'digest=' || (writing_pending_digest()->>'pending_total')
+      || ' summary=' || (writing_queue_summary()->>'pending_total'));
+
+  -- 排程的入口不看 is_admin()——它本來就沒有身分
+  PERFORM set_config('test.is_admin', 'false', true);
+  BEGIN
+    v_sum := writing_pending_digest();
+    PERFORM pg_temp.expect('排程入口不需要管理員身分',
+      (v_sum->>'pending_total')::int >= 0, 'pending=' || (v_sum->>'pending_total'));
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.expect('排程入口不需要管理員身分', false, SQLERRM);
+  END;
+  PERFORM set_config('test.is_admin', 'true', true);
+
+  -- 推播對象：依 email 找得到，而且找不到的 email 不會炸
+  INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+  VALUES (v_admin, 'https://push.example/abc', 'p256dh-key', 'auth-key');
+
+  SELECT count(*) INTO v_int
+    FROM writing_reminder_push_targets(ARRAY['q-admin@test']);
+  PERFORM pg_temp.expect('推播對象依 email 找得到', v_int = 1, 'targets=' || v_int);
+
+  SELECT count(*) INTO v_int
+    FROM writing_reminder_push_targets(ARRAY['Q-ADMIN@TEST']);
+  PERFORM pg_temp.expect('email 比對不分大小寫', v_int = 1, 'targets=' || v_int);
+
+  SELECT count(*) INTO v_int
+    FROM writing_reminder_push_targets(ARRAY['nobody@test']);
+  PERFORM pg_temp.expect('不存在的 email 回傳空集合，不報錯', v_int = 0, 'targets=' || v_int);
+
+  SELECT count(*) INTO v_int FROM writing_reminder_push_targets(NULL);
+  PERFORM pg_temp.expect('NULL 收件人回傳空集合，不報錯', v_int = 0, 'targets=' || v_int);
+
+
+  -- ══════════════════════════════════════════════════════
+  -- 10. 成本護欄 A：估算建立在真實 telemetry 上
+  -- ══════════════════════════════════════════════════════
+
+  -- 造一篇跑完的分析，帶上兩種形狀的 telemetry：
+  --   stage1_telemetry    是【物件】，key 是 pass 名稱
+  --   synthesis_telemetry 是【單一】 PassTelemetry
+  -- 兩者的解析方式不同，這裡兩種都要走到。
+  INSERT INTO writing_submissions (student_id, title, status, submitted_at)
+    VALUES (v_stu_a, '成本樣本', 'SUBMITTED', now() - interval '10 hours') RETURNING id INTO v_cost_essay;
+  INSERT INTO writing_texts (essay_id, content, provenance)
+    VALUES (v_cost_essay, 'Cost sample.', 'TYPED');
+
+  INSERT INTO writing_analyses (essay_id, status, requested_by, analysis_version)
+    VALUES (v_cost_essay, 'QUEUED', v_admin, 1) RETURNING id INTO v_cost_an;
+
+  UPDATE writing_analyses SET status = 'ANALYZING', started_at = now() WHERE id = v_cost_an;
+  UPDATE writing_analyses
+     SET competency_analysis = v_axis, error_analysis = v_axis,
+         high_score_feature_analysis = v_axis,
+         status = 'ANALYZED', synthesis_status = 'PENDING',
+         -- 四支 pass，每支一次呼叫：8000 prompt / 3000 completion
+         stage1_telemetry = jsonb_build_object(
+           'competency',        jsonb_build_object('records', jsonb_build_array(
+             jsonb_build_object('promptTokens', 8000, 'completionTokens', 3000))),
+           'error',             jsonb_build_object('records', jsonb_build_array(
+             jsonb_build_object('promptTokens', 8000, 'completionTokens', 3000))),
+           'high_score_h1_h3',  jsonb_build_object('records', jsonb_build_array(
+             jsonb_build_object('promptTokens', 8000, 'completionTokens', 3000))),
+           'high_score_h4_h5',  jsonb_build_object('records', jsonb_build_array(
+             jsonb_build_object('promptTokens', 8000, 'completionTokens', 3000))))
+   WHERE id = v_cost_an;
+
+  UPDATE writing_analyses
+     SET synthesis_status = 'RUNNING', synthesis_started_at = now() WHERE id = v_cost_an;
+  UPDATE writing_analyses
+     SET synthesis_status = 'COMPLETED', synthesis_completed_at = now(),
+         overall_evaluation = v_axis, next_steps = v_axis,
+         synthesis_telemetry = jsonb_build_object('records', jsonb_build_array(
+           jsonb_build_object('promptTokens', 2000, 'completionTokens', 800)))
+   WHERE id = v_cost_an;
+  UPDATE writing_analyses
+     SET status = 'COMPLETED', completed_at = now() WHERE id = v_cost_an;
+
+  SELECT u.calls, u.prompt_tokens, u.completion_tokens INTO v_int, v_big1, v_big2
+    FROM writing_analysis_usage(v_cost_an) u;
+  PERFORM pg_temp.expect('用量把 stage1（物件）與綜合層（單一）兩種形狀都算進去',
+    v_int = 5 AND v_big1 = 34000 AND v_big2 = 12800,
+    'calls=' || v_int || ' prompt=' || v_big1 || ' completion=' || v_big2);
+
+  v_sum := writing_analysis_cost_estimate(10);
+  PERFORM pg_temp.expect('估算取自真實 telemetry 的中位數',
+    (v_sum->>'sample_size')::int = 1
+      AND (v_sum->>'per_essay_calls')::int = 5
+      AND (v_sum->>'projected_calls')::int = 50
+      AND (v_sum->>'projected_prompt_tokens')::bigint = 340000,
+    'sample=' || (v_sum->>'sample_size') || ' projected_calls=' || (v_sum->>'projected_calls'));
+
+  PERFORM set_config('test.is_admin', 'false', true);
+  BEGIN
+    PERFORM writing_analysis_cost_estimate(1);
+    PERFORM pg_temp.expect('🛑 非管理員不得讀成本估算', false, '沒有 raise');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.expect('🛑 非管理員不得讀成本估算', true, SQLERRM);
+  END;
+  PERFORM set_config('test.is_admin', 'true', true);
+
+
+  -- ══════════════════════════════════════════════════════
+  -- 11. 成本護欄 B：每日上限
+  -- ══════════════════════════════════════════════════════
+
+  PERFORM pg_temp.expect('每日上限是 150', writing_daily_analysis_cap() = 150,
+    'cap=' || writing_daily_analysis_cap());
+
+  -- 三篇乾淨的作文，等一下拿來撞上限
+  INSERT INTO writing_submissions (student_id, title, status, submitted_at)
+    VALUES (v_stu_b, '額度一', 'SUBMITTED', now()) RETURNING id INTO v_cap1;
+  INSERT INTO writing_submissions (student_id, title, status, submitted_at)
+    VALUES (v_stu_b, '額度二', 'SUBMITTED', now()) RETURNING id INTO v_cap2;
+  INSERT INTO writing_submissions (student_id, title, status, submitted_at)
+    VALUES (v_stu_b, '額度三', 'SUBMITTED', now()) RETURNING id INTO v_cap3;
+  INSERT INTO writing_texts (essay_id, content, provenance)
+    VALUES (v_cap1, 'a', 'TYPED'), (v_cap2, 'b', 'TYPED'), (v_cap3, 'c', 'TYPED');
+
+  -- 把今天的用量灌到「只剩 1 個名額」。
+  -- 用 FAILED 是因為唯一部分索引只管 QUEUED/ANALYZING/ANALYZED，FAILED 不受限，
+  -- 可以掛在同一篇作文上湊數量而不影響其他斷言。
+  INSERT INTO writing_analyses (essay_id, status, requested_by, analysis_version, failed_at)
+  SELECT v_cost_essay, 'FAILED', v_admin, 100 + g, now()
+    FROM generate_series(1, writing_daily_analysis_cap() - 1 - writing_daily_analysis_used()) g;
+
+  PERFORM pg_temp.expect('今天只剩一個名額',
+    writing_daily_analysis_used() = writing_daily_analysis_cap() - 1,
+    'used=' || writing_daily_analysis_used());
+
+  -- 一次排三篇：第一篇進得去，後兩篇明確回報 DAILY_CAP
+  v_batch_capped := writing_enqueue_analysis_batch(ARRAY[v_cap1, v_cap2, v_cap3]);
+  v_batch := v_batch_capped;
+  PERFORM pg_temp.expect('撞到上限時只排入剩下的名額',
+    (v_batch->>'enqueued')::int = 1 AND (v_batch->>'capped')::int = 2,
+    'enqueued=' || (v_batch->>'enqueued') || ' capped=' || (v_batch->>'capped'));
+
+  SELECT count(*) INTO v_int
+    FROM jsonb_array_elements(v_batch->'items') i WHERE i->>'result' = 'DAILY_CAP';
+  PERFORM pg_temp.expect('沒排到的那幾篇明確標成 DAILY_CAP', v_int = 2, 'capped_items=' || v_int);
+
+  -- 額度用完之後：不新增任何列，而且明講是額度滿了
+  v_int := (SELECT count(*)::int FROM writing_analyses);
+  v_batch := writing_enqueue_analysis_batch(ARRAY[v_cap2]);
+  PERFORM pg_temp.expect('🛑 額度用完後不再新建任何分析',
+    (v_batch->>'enqueued')::int = 0
+      AND (v_batch->>'daily_cap_reached')::boolean
+      AND (SELECT count(*)::int FROM writing_analyses) = v_int,
+    'enqueued=' || (v_batch->>'enqueued') || ' reached=' || (v_batch->>'daily_cap_reached'));
+
+  v_sum := writing_analysis_cost_estimate(5);
+  PERFORM pg_temp.expect('估算會回報今天的額度狀況',
+    (v_sum->>'daily_remaining')::int = 0 AND (v_sum->>'would_exceed_daily_cap')::boolean,
+    'remaining=' || (v_sum->>'daily_remaining'));
+
+  -- 已經在佇列裡的不該再吃額度，就算今天額度已經滿了也一樣：
+  -- 它不會新建任何列，也就不花新的錢。整批拒絕會讓「重新點一下看進度」失敗。
+  --
+  -- ⚠️ 拿到最後一個名額的是哪一篇要從結果裡找——批次內部會依 uuid 排序，
+  --    不是傳入的順序。
+  SELECT (i->>'essay_id')::uuid INTO v_cap_enqueued
+    FROM jsonb_array_elements(v_batch_capped->'items') i
+   WHERE i->>'result' = 'ENQUEUED';
+
+  v_int := writing_daily_analysis_used();
+  v_batch := writing_enqueue_analysis_batch(ARRAY[v_cap_enqueued]);
+  PERFORM pg_temp.expect('額度滿了，已在佇列中的重排仍然可以（且不吃額度）',
+    v_batch->'items'->0->>'result' = 'ALREADY_ACTIVE'
+      AND writing_daily_analysis_used() = v_int,
+    (v_batch->'items'->0->>'result') || ' used=' || writing_daily_analysis_used());
+
 END;
 $test$;
 
@@ -432,6 +619,63 @@ WHERE n.nspname = 'public'
                     'writing_queue_release', 'writing_queue_ensure_analysis',
                     'writing_queue_begin_synthesis', 'writing_queue_summary',
                     'writing_set_teacher_reviewed', 'writing_admin_queue');
+
+-- 成本護欄：估算與用量只給登入者，anon 不行
+INSERT INTO t(name, verdict, detail)
+SELECT
+  p.proname || '：authenticated 有 EXECUTE、anon 沒有',
+  CASE WHEN has_function_privilege('authenticated', p.oid, 'EXECUTE')
+        AND NOT has_function_privilege('anon', p.oid, 'EXECUTE')
+       THEN 'PASS' ELSE 'FAIL' END,
+  NULL
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('writing_analysis_cost_estimate', 'writing_analysis_usage',
+                    'writing_daily_analysis_cap', 'writing_daily_analysis_used');
+
+INSERT INTO t(name, verdict, detail)
+SELECT
+  p.proname || ' 的 search_path 釘住',
+  CASE WHEN p.proconfig::text LIKE '%search_path=%' THEN 'PASS' ELSE 'FAIL' END,
+  coalesce(p.proconfig::text, 'NULL')
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('writing_analysis_cost_estimate', 'writing_analysis_usage',
+                    'writing_daily_analysis_cap', 'writing_daily_analysis_used');
+
+-- 🛑 定義本身（internal）對【所有】角色零 EXECUTE——包含 service_role。
+-- 它沒有任何授權檢查，唯一的合法呼叫者是兩支帶守門的包裝。
+INSERT INTO t(name, verdict, detail)
+SELECT
+  '🛑 writing_pending_summary_internal 對 ' || r.rolname || ' 沒有 EXECUTE',
+  CASE WHEN has_function_privilege(r.rolname, p.oid, 'EXECUTE') THEN 'FAIL' ELSE 'PASS' END,
+  NULL
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+CROSS JOIN (VALUES ('anon'), ('authenticated'), ('service_role')) AS r(rolname)
+WHERE n.nspname = 'public' AND p.proname = 'writing_pending_summary_internal';
+
+-- 排程專用的兩支：只有 service_role
+INSERT INTO t(name, verdict, detail)
+SELECT
+  '🛑 ' || p.proname || ' 只有 service_role 叫得動',
+  CASE WHEN has_function_privilege('service_role', p.oid, 'EXECUTE')
+        AND NOT has_function_privilege('anon', p.oid, 'EXECUTE')
+        AND NOT has_function_privilege('authenticated', p.oid, 'EXECUTE')
+       THEN 'PASS' ELSE 'FAIL' END,
+  NULL
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('writing_pending_digest', 'writing_reminder_push_targets');
+
+INSERT INTO t(name, verdict, detail)
+SELECT
+  p.proname || ' 的 search_path 釘住',
+  CASE WHEN p.proconfig::text LIKE '%search_path=%' THEN 'PASS' ELSE 'FAIL' END,
+  coalesce(p.proconfig::text, 'NULL')
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('writing_pending_summary_internal', 'writing_pending_digest',
+                    'writing_reminder_push_targets');
 
 -- writing_teacher_reviews：所有角色零 grant，而且 RLS 開著
 INSERT INTO t(name, verdict, detail)

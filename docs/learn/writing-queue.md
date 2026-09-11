@@ -9,24 +9,25 @@
 
 | 做了 | 沒做 |
 |---|---|
-| 收件匣：學生姓名、班級、五種分析狀態、五個篩選 | 每日 22:00 提醒信（**沒有 email 基礎設施，暫時擱置**） |
+| 收件匣：學生姓名、班級、五種分析狀態、五個篩選 | email 提醒（**專案沒有寄信能力，暫時擱置**） |
+| 每日待處理提醒（Web Push，共用既有的 20:00 排程） | 22:00 的獨立排程 |
 | 多選 + 「批次開始 AI 分析（N）」 | 即時通知中心 |
 | 伺服器端佇列，concurrency = 1 | concurrency ≥ 2 |
 | 「重試失敗項目」 | 自動無限重試 |
 | 老師檢閱狀態 + 「儲存並下一篇」 | 強制填寫講評（講評仍然選填） |
-| `/admin` 上的「N 篇待處理」徽章 | 推播 |
+| `/admin` 上的「N 篇待處理」徽章 | 即時／逐篇通知 |
+| 成本護欄：事前估算 + 每日 150 篇上限 | 成本看板 |
 
-**提醒信為什麼沒做**：這個專案完全沒有寄信的能力。
-`api/send-daily-reminders.ts` 是 **Web Push**（`web-push` + VAPID），不是 email；
-repo 裡沒有 Resend／SendGrid／Nodemailer／SES 任何一個。要寄信必須引入新平台。
-判斷「待處理」的 SQL 已經寫好了（`writing_queue_summary()`），之後決定通道時
-補一支端點即可，資料層不用再動。
+**為什麼是推播不是信**：這個專案完全沒有寄信的能力 —— repo 裡沒有
+Resend／SendGrid／Nodemailer／SES 任何一個。既有的每日提醒
+（`api/send-daily-reminders.ts`）本來就是 **Web Push**（`web-push` + VAPID），
+所以作文提醒沿用同一個管道、同一條排程。要改成 email 得先引入新平台。
 
 ---
 
 ## 上線順序
 
-### 1. 🔴 四份 SQL：先在 gsat-staging 執行並確認，再在 production 執行
+### 1. 🔴 六份 SQL：先在 gsat-staging 執行並確認，再在 production 執行
 
 依這個順序（有相依）：
 
@@ -35,6 +36,8 @@ repo 裡沒有 Resend／SendGrid／Nodemailer／SES 任何一個。要寄信必�
 2. create_writing_teacher_reviews.sql   ← 老師檢閱狀態
 3. create_writing_queue_rpcs.sql        ← 依賴 1
 4. update_writing_admin_queue.sql       ← 依賴 1 與 2
+5. create_writing_pending_digest.sql    ← 依賴 3（每日提醒用）
+6. create_writing_cost_guardrails.sql   ← 依賴 3（會取代 writing_enqueue_analysis_batch）
 ```
 
 跑完之後自己看一眼：
@@ -61,15 +64,22 @@ SELECT r AS role,
 SELECT writing_admin_queue()->0->>'student_name';
 ```
 
-### 2. 環境變數
-
-**不需要新的。** worker 與批次端點用的都是已經有的：
+### 2. 環境變數：只有一個要新設
 
 | 變數 | 用途 |
 |---|---|
-| `CRON_SECRET` | worker 端點的唯一鑰匙（已經有了） |
+| **`WRITING_REMINDER_ADMIN_EMAIL`** | **要新設**。收每日提醒的 email，逗號分隔。沒設就完全不送提醒（其餘功能不受影響） |
+| `CRON_SECRET` | worker 與提醒端點的鑰匙（已經有了） |
 | `DEEPSEEK_API_KEY` | 分析（已經有了） |
 | `SUPABASE_SERVICE_ROLE_KEY` | worker 寫入（已經有了） |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | 推播（已經有了，學生的單字提醒在用） |
+| `VITE_DEEPSEEK_PRICE_INPUT_PER_M` | **選填**。每百萬 input token 的美金價。設了，批次確認框才顯示金額 |
+| `VITE_DEEPSEEK_PRICE_OUTPUT_PER_M` | **選填**。每百萬 output token 的美金價 |
+
+`WRITING_REMINDER_ADMIN_EMAIL` 與兩個 `VITE_DEEPSEEK_PRICE_*` 都**不是 secret**
+（一個是 email、兩個是公開定價），在 Vercel 加的時候不要勾 Sensitive —— 勾了
+自己也讀不回來。真正該當 secret 的只有 `CRON_SECRET`、`DEEPSEEK_API_KEY`、
+`SUPABASE_SERVICE_ROLE_KEY`、`VAPID_PRIVATE_KEY`。
 
 `WORKER_SELF_URL` 是選填的覆寫。平常靠 Vercel 自己注入的 `VERCEL_URL`
 就能找到自己，不用設。
@@ -77,6 +87,119 @@ SELECT writing_admin_queue()->0->>'student_name';
 ### 3. `vercel.json` 沒有改
 
 佇列**不靠排程推進**，所以沒有新增 cron。原本那兩條維持不變。
+
+---
+
+## 每日待處理提醒
+
+```
+Vercel Cron  0 12 * * *（台灣 20:00）
+      ↓
+/api/send-daily-reminders        ← 既有的學生背單字提醒
+      ├─ 送學生的單字推播（原本就有的邏輯，沒動）
+      └─ sendWritingReviewReminders()   ← 多的一行
+               ↓
+         writing_pending_digest()   有待處理才送，沒有就完全不送
+               ↓
+         推播給 WRITING_REMINDER_ADMIN_EMAIL 名單上的人
+```
+
+### 要設一個環境變數
+
+| 變數 | 說明 |
+|---|---|
+| `WRITING_REMINDER_ADMIN_EMAIL` | 收提醒的 email，逗號分隔。**沒設就完全不送**，不猜 |
+
+為什麼不從 `is_admin()` 撈：正式環境的 `is_admin()` 是寫死比對單一 email，
+而且只回答「現在這個人是不是管理員」，無法反過來列舉。在提醒程式裡把那個
+email 再寫一次，等於讓授權規則有兩份。
+
+⚠️ **收件人那個帳號必須先在瀏覽器開啟通知權限**，否則沒有推播訂閱可送。
+端點會在 log 裡說「有 N 篇待處理，但收件人沒有任何推播訂閱」——那不是程式壞了。
+
+### 通知長什麼樣
+
+```
+有 12 篇作文待處理
+202609 週六寫作大師班 8 篇、高二英文班 4 篇
+4 篇 AI 已完成待檢閱
+最早提交：昨天
+```
+
+點下去直接到 `/admin/writing`。
+
+**沒有待處理就什麼都不送。** 每天一則「目前沒有待處理」的通知，三天之後就會被
+當成雜訊關掉，連帶真的有事的那天也看不到。
+
+### 手動試跑
+
+```
+GET /api/send-writing-review-reminders?dryRun=1
+Authorization: Bearer <CRON_SECRET>
+```
+
+只算不送，回傳會送出的標題與內文。
+
+### 想改成別的時間
+
+`/api/send-writing-review-reminders` 是完整的獨立端點，只是目前沒有掛 cron。
+要改成 22:00（台灣）就在 `vercel.json` 加一條：
+
+```json
+{ "path": "/api/send-writing-review-reminders", "schedule": "0 14 * * *" }
+```
+
+然後把 `api/send-daily-reminders.ts` 結尾那一次 `sendWritingReviewReminders()`
+呼叫拿掉，免得一天送兩次。⚠️ 先確認你的 Vercel 方案允許三條 cron。
+
+---
+
+## 成本護欄
+
+兩道，防的不是同一件事：
+
+| | 擋什麼 | 在哪裡 | 繞得過嗎 |
+|---|---|---|---|
+| **A 事前估算** | 誤判 —— 老師不知道「50 篇」是多少錢 | 前端確認框 | 可以（是前端） |
+| **B 每日上限** | bug 與手滑 —— 迴圈重排、連按十次 | 資料庫 | 不行 |
+
+### A：批次確認框
+
+按下「批次開始 AI 分析」會先出現：
+
+```
+開始分析 14 篇作文？
+
+  預估 AI 呼叫          約 70 次
+  預估 token           約 655K
+  預估費用             約 US$0.18     ← 只在設了單價時出現
+
+依據最近 12 篇已完成分析的實際用量推算，實際會有出入。
+今天已排入 22 / 150 篇
+```
+
+數字來自 `writing_analyses.stage1_telemetry` / `synthesis_telemetry` 裡**真實記錄
+的 token 數**，取最近 20 篇已完成分析的中位數（不是平均——一篇重試很多次的離群值
+會把平均拉歪）。所以 prompt 改版、作文變長、重試率上升，這個估算都會自己跟上。
+
+🛑 **單價不寫在程式或資料庫裡。** 寫死一個價格，等 DeepSeek 調價那天，這個給老師
+決策用的金額會安靜地開始說謊。沒設單價時就只顯示呼叫次數與 token（那些是量測值，
+永遠不會過期）。要顯示金額就去 DeepSeek 的定價頁抄當下的數字，設那兩個
+`VITE_DEEPSEEK_PRICE_*`。
+
+### B：每日 150 篇上限
+
+在 `writing_daily_analysis_cap()` 裡，**刻意不做成參數或設定值** —— 能被呼叫端
+調整的上限，在真正需要它的那一天（某個迴圈失控時）就不是上限了。要改請改那支函式
+並重新套用，那應該是個刻意的決定。
+
+- 「今天」是**台灣時間**，不是 UTC。老師晚上 9 點排的那一批算在他心裡的那一天
+- 重新分析也算 —— 重跑一篇花的錢和第一次一樣
+- **已經在佇列裡的（ALREADY_ACTIVE）與已完成被跳過的不吃額度** —— 它們不會新建
+  任何列，也就不花新的錢。所以額度滿了也不會整批拒絕，只把真的要新建的那幾篇標成
+  `DAILY_CAP`；否則「老師重新點一下看進度」這種無害的操作也會失敗
+
+150 的由來：預期尖峰約 50–60 篇／天，取約 2.5 倍。
 
 ---
 
@@ -137,8 +260,9 @@ SELECT writing_admin_queue()->0->>'student_name';
 
 ## 「待處理」的定義
 
-只有一個地方說了算，徽章、收件匣、之後的提醒信都讀同一支
-（`writing_queue_summary()`）：
+只有一個地方說了算 —— `writing_pending_summary_internal()`。徽章、收件匣與
+每日提醒讀的都是它（分別透過 `writing_queue_summary()` 與
+`writing_pending_digest()` 兩個帶守門的入口）：
 
 ```sql
 writing_submissions.status = 'SUBMITTED'
@@ -150,7 +274,7 @@ AND NOT EXISTS (SELECT 1 FROM writing_teacher_reviews WHERE essay_id = s.id)
 變成 SUBMITTED，`writing_texts` 再擋一層）、不完整的提交、以及已處理完的。
 
 **「已檢閱」只由老師明確按下「完成檢閱」產生**，不由開啟頁面、捲動、AI 完成
-或有沒有講評推導。這件事很重要：檢閱狀態若能被推導，提醒信會開始說謊。
+或有沒有講評推導。這件事很重要：檢閱狀態若能被推導，每日提醒會開始說謊。
 
 `by_class` 的注意事項：一個學生可能同時在多個班，那篇作文會在每個班各算一次，
 所以各班數字相加可能大於 `pending_total`。硬挑一個「主要班級」會讓某個班的
@@ -160,7 +284,7 @@ AND NOT EXISTS (SELECT 1 FROM writing_teacher_reviews WHERE essay_id = s.id)
 
 ## 測試
 
-資料庫層有自動測試（**69 項**）：
+資料庫層有自動測試（**101 項**）：
 
 ```bash
 createdb wq
@@ -171,7 +295,9 @@ for f in create_writing_submissions create_writing_texts add_writing_texts_word_
          add_writing_analyses_analyzed_at add_writing_analyses_telemetry \
          create_writing_teacher_feedback create_learn_classes_tasks \
          add_writing_queue_lease create_writing_teacher_reviews \
-         create_writing_queue_rpcs update_writing_admin_queue; do
+         create_writing_queue_rpcs update_writing_admin_queue \
+         create_push_subscriptions_table create_writing_pending_digest \
+         create_writing_cost_guardrails; do
   psql -d wq -f supabase/migrations/$f.sql
 done
 psql -d wq -f tests/sql/writing_queue_test.sql
@@ -181,6 +307,7 @@ psql -d wq -f tests/sql/writing_queue_test.sql
 
 | # | 驗什麼 | 通過條件 |
 |---|---|---|
+| 0 | 提醒試跑 | `?dryRun=1` 回傳的篇數與 `/admin` 徽章一致；沒有待處理時回 `NOTHING_PENDING` |
 | 1 | 批次 | 勾 3 篇 → 按一次 → 三篇依序完成，不需要再操作 |
 | 2 | concurrency | 分析途中查 `writing_analyses`，同時只有一列握著未過期租約 |
 | 3 | 關瀏覽器 | 排 3 篇後立刻關掉分頁，10 分鐘後回來看進度有前進 |
@@ -193,6 +320,8 @@ psql -d wq -f tests/sql/writing_queue_test.sql
 | 10 | 檢閱 | 「儲存並下一篇」→ 講評有存、狀態變成已處理、跳到下一篇 |
 | 11 | 待處理數字 | 標記檢閱後，`/admin` 的徽章數字跟著減少 |
 | 12 | 權限 | 用學生帳號呼叫 `writing_enqueue_analysis_batch` → 被拒 |
+| 13 | 估算 | 確認框的呼叫次數與 `writing_analysis_usage()` 對最近幾篇算出來的一致 |
+| 14 | 每日上限 | 把 `writing_daily_analysis_cap()` 暫時改成 2 → 排 3 篇 → 1 篇 `DAILY_CAP`，改回 150 |
 
 ---
 
@@ -227,3 +356,9 @@ psql -d wq -f tests/sql/writing_queue_test.sql
 **批次上限 50，寫在資料庫裡。**
 一次排 200 篇不是使用情境，是誤操作，而每一篇都是真金白銀的 DeepSeek 呼叫。
 前端也擋，但前端可以被繞過。
+
+**「待處理」的定義只有一份，而且沒有人叫得動它。**
+`writing_pending_summary_internal()` 對【所有】角色零 EXECUTE，包含 service_role。
+兩個入口各自帶守門：老師走 `writing_queue_summary()`（`is_admin()`），排程走
+`writing_pending_digest()`（只有 service_role）。兩邊回傳的是同一支函式的結果，
+所以徽章說 12 篇、提醒就不可能說 9 篇。測試裡有一條直接斷言兩者相等。
