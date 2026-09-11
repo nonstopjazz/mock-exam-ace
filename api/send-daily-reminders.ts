@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 import { timingSafeEqual } from 'node:crypto';
+import { sendWritingReviewReminders } from './_lib/writingReviewReminder.js';
 
 export const config = {
   maxDuration: 30,
@@ -207,5 +208,21 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  return res.status(200).json({ sent, failed, cleaned, total: pushTargets.length });
+  // ── 順手帶一腳：老師的作文待處理提醒 ──────────────────────────
+  //
+  // 擁有者要求共用同一條排程，所以這裡多一個呼叫。作文那邊的邏輯完全住在
+  // api/_lib/writingReviewReminder.ts —— 這支端點不知道什麼叫「待處理」，
+  // 也不該知道。
+  //
+  // 包在 try/catch 裡：作文提醒壞掉【不得】影響上面那則已經送完的單字廣播，
+  // 也不該讓這一次排程被記成失敗。
+  let writing: unknown = { skipped: 'NOT_ATTEMPTED' };
+  try {
+    writing = await sendWritingReviewReminders(supabase);
+  } catch (err) {
+    console.error('[send-daily-reminders] 作文提醒失敗:', err instanceof Error ? err.message : err);
+    writing = { error: err instanceof Error ? err.message : 'unknown' };
+  }
+
+  return res.status(200).json({ sent, failed, cleaned, total: pushTargets.length, writing });
 }

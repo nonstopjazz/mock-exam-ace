@@ -22,6 +22,8 @@
 --   psql -d wq -f supabase/migrations/create_writing_teacher_reviews.sql
 --   psql -d wq -f supabase/migrations/create_writing_queue_rpcs.sql
 --   psql -d wq -f supabase/migrations/update_writing_admin_queue.sql
+--   psql -d wq -f supabase/migrations/create_push_subscriptions_table.sql
+--   psql -d wq -f supabase/migrations/create_writing_pending_digest.sql
 --   psql -d wq -f tests/sql/writing_queue_test.sql
 --
 -- 這份測試針對的是「M. 安全／可靠性規則」那一條一條：兩個管理員同時開始、
@@ -387,6 +389,48 @@ BEGIN
     INTO v_bool;
   PERFORM pg_temp.expect('收件匣回傳老師檢閱狀態', v_bool, 'reviewed=' || v_bool);
 
+
+  -- ══════════════════════════════════════════════════════
+  -- 9. 每日提醒讀到的數字必須與老師看到的一模一樣
+  -- ══════════════════════════════════════════════════════
+
+  -- 這是這兩支函式存在的唯一理由：定義只有一份。
+  -- 若哪天有人把其中一支改成自己查表，這一條會立刻紅掉。
+  PERFORM pg_temp.expect('🛑 排程與老師讀到的摘要完全相同',
+    writing_pending_digest() = writing_queue_summary(),
+    'digest=' || (writing_pending_digest()->>'pending_total')
+      || ' summary=' || (writing_queue_summary()->>'pending_total'));
+
+  -- 排程的入口不看 is_admin()——它本來就沒有身分
+  PERFORM set_config('test.is_admin', 'false', true);
+  BEGIN
+    v_sum := writing_pending_digest();
+    PERFORM pg_temp.expect('排程入口不需要管理員身分',
+      (v_sum->>'pending_total')::int >= 0, 'pending=' || (v_sum->>'pending_total'));
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.expect('排程入口不需要管理員身分', false, SQLERRM);
+  END;
+  PERFORM set_config('test.is_admin', 'true', true);
+
+  -- 推播對象：依 email 找得到，而且找不到的 email 不會炸
+  INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+  VALUES (v_admin, 'https://push.example/abc', 'p256dh-key', 'auth-key');
+
+  SELECT count(*) INTO v_int
+    FROM writing_reminder_push_targets(ARRAY['q-admin@test']);
+  PERFORM pg_temp.expect('推播對象依 email 找得到', v_int = 1, 'targets=' || v_int);
+
+  SELECT count(*) INTO v_int
+    FROM writing_reminder_push_targets(ARRAY['Q-ADMIN@TEST']);
+  PERFORM pg_temp.expect('email 比對不分大小寫', v_int = 1, 'targets=' || v_int);
+
+  SELECT count(*) INTO v_int
+    FROM writing_reminder_push_targets(ARRAY['nobody@test']);
+  PERFORM pg_temp.expect('不存在的 email 回傳空集合，不報錯', v_int = 0, 'targets=' || v_int);
+
+  SELECT count(*) INTO v_int FROM writing_reminder_push_targets(NULL);
+  PERFORM pg_temp.expect('NULL 收件人回傳空集合，不報錯', v_int = 0, 'targets=' || v_int);
+
 END;
 $test$;
 
@@ -432,6 +476,40 @@ WHERE n.nspname = 'public'
                     'writing_queue_release', 'writing_queue_ensure_analysis',
                     'writing_queue_begin_synthesis', 'writing_queue_summary',
                     'writing_set_teacher_reviewed', 'writing_admin_queue');
+
+-- 🛑 定義本身（internal）對【所有】角色零 EXECUTE——包含 service_role。
+-- 它沒有任何授權檢查，唯一的合法呼叫者是兩支帶守門的包裝。
+INSERT INTO t(name, verdict, detail)
+SELECT
+  '🛑 writing_pending_summary_internal 對 ' || r.rolname || ' 沒有 EXECUTE',
+  CASE WHEN has_function_privilege(r.rolname, p.oid, 'EXECUTE') THEN 'FAIL' ELSE 'PASS' END,
+  NULL
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+CROSS JOIN (VALUES ('anon'), ('authenticated'), ('service_role')) AS r(rolname)
+WHERE n.nspname = 'public' AND p.proname = 'writing_pending_summary_internal';
+
+-- 排程專用的兩支：只有 service_role
+INSERT INTO t(name, verdict, detail)
+SELECT
+  '🛑 ' || p.proname || ' 只有 service_role 叫得動',
+  CASE WHEN has_function_privilege('service_role', p.oid, 'EXECUTE')
+        AND NOT has_function_privilege('anon', p.oid, 'EXECUTE')
+        AND NOT has_function_privilege('authenticated', p.oid, 'EXECUTE')
+       THEN 'PASS' ELSE 'FAIL' END,
+  NULL
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('writing_pending_digest', 'writing_reminder_push_targets');
+
+INSERT INTO t(name, verdict, detail)
+SELECT
+  p.proname || ' 的 search_path 釘住',
+  CASE WHEN p.proconfig::text LIKE '%search_path=%' THEN 'PASS' ELSE 'FAIL' END,
+  coalesce(p.proconfig::text, 'NULL')
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('writing_pending_summary_internal', 'writing_pending_digest',
+                    'writing_reminder_push_targets');
 
 -- writing_teacher_reviews：所有角色零 grant，而且 RLS 開著
 INSERT INTO t(name, verdict, detail)
