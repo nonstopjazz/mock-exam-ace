@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { WritingLoading } from "@/components/learn/writing/writingShared";
+import { BatchAnalyzeDialog } from "@/components/admin/writing/BatchAnalyzeDialog";
 import { useWritingQueue } from "@/hooks/learn/useWritingQueue";
 import {
   ANALYSIS_STATE_LABEL,
@@ -35,6 +36,7 @@ import {
   describeEnqueue,
   isEnqueueable,
   type AnalysisState,
+  type CostEstimate,
   type WritingQueueRow,
 } from "@/lib/writing/gradingQueue";
 
@@ -97,6 +99,11 @@ const WritingGrading = () => {
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("PENDING");
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("ALL");
 
+  // 確認框：這是唯一會直接花錢的動作，按下去之前先讓老師看到規模。
+  const [pending, setPending] = useState<{ ids: string[]; label: string } | null>(null);
+  const [estimate, setEstimate] = useState<CostEstimate | null>(null);
+  const [estimating, setEstimating] = useState(false);
+
   const classOptions = useMemo(() => {
     const names = new Set<string>();
     for (const row of queue.rows) for (const name of row.class_names ?? []) names.add(name);
@@ -157,8 +164,21 @@ const WritingGrading = () => {
     });
   };
 
-  const runBatch = async (ids: string[], label: string) => {
+  /** 先估算再確認。估不出來也照樣開框——確認本身比數字更重要。 */
+  const askBatch = async (ids: string[], label: string) => {
     if (ids.length === 0) return;
+    setPending({ ids, label });
+    setEstimate(null);
+    setEstimating(true);
+    setEstimate(await queue.estimate(ids.length));
+    setEstimating(false);
+  };
+
+  const runBatch = async () => {
+    if (!pending) return;
+    const { ids, label } = pending;
+    setPending(null);
+
     const outcome = await queue.enqueue(ids);
     if (!outcome.ok) {
       toast.error(`${label}失敗：${outcome.error}`);
@@ -166,11 +186,17 @@ const WritingGrading = () => {
     }
     setSelected(new Set());
     const result = outcome.result;
-    if (result) {
-      toast.success(describeEnqueue(result));
-      if (result.kicked === false) {
-        toast.warning("工作已排入，但沒能啟動處理。請按「繼續處理佇列」。");
-      }
+    if (!result) return;
+
+    toast.success(describeEnqueue(result));
+    // 撞到上限是需要老師知道的事，不能只混在成功訊息裡帶過。
+    if (result.capped > 0) {
+      toast.warning(
+        `今天的分析額度已滿（${result.daily_used}/${result.daily_cap}），有 ${result.capped} 篇沒有排入。明天會重新計算。`,
+      );
+    }
+    if (result.kicked === false) {
+      toast.warning("工作已排入，但沒能啟動處理。請按「繼續處理佇列」。");
     }
   };
 
@@ -362,7 +388,7 @@ const WritingGrading = () => {
                 {failedVisible.length > 0 ? (
                   <Button
                     variant="outline"
-                    onClick={() => void runBatch(failedVisible, "重試")}
+                    onClick={() => void askBatch(failedVisible, "重試")}
                     disabled={queue.busy}
                   >
                     <RotateCcw className="h-4 w-4" />
@@ -371,7 +397,7 @@ const WritingGrading = () => {
                 ) : null}
 
                 <Button
-                  onClick={() => void runBatch(selectedVisible, "批次分析")}
+                  onClick={() => void askBatch(selectedVisible, "批次分析")}
                   disabled={queue.busy || selectedVisible.length === 0}
                 >
                   {queue.busy ? (
@@ -479,6 +505,15 @@ const WritingGrading = () => {
               </div>
             </Card>
           )}
+
+          <BatchAnalyzeDialog
+            open={pending !== null}
+            count={pending?.ids.length ?? 0}
+            estimate={estimate}
+            loading={estimating}
+            onConfirm={() => void runBatch()}
+            onCancel={() => setPending(null)}
+          />
         </div>
       </div>
     </Layout>

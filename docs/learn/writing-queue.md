@@ -16,6 +16,7 @@
 | 「重試失敗項目」 | 自動無限重試 |
 | 老師檢閱狀態 + 「儲存並下一篇」 | 強制填寫講評（講評仍然選填） |
 | `/admin` 上的「N 篇待處理」徽章 | 即時／逐篇通知 |
+| 成本護欄：事前估算 + 每日 150 篇上限 | 成本看板 |
 
 **為什麼是推播不是信**：這個專案完全沒有寄信的能力 —— repo 裡沒有
 Resend／SendGrid／Nodemailer／SES 任何一個。既有的每日提醒
@@ -26,7 +27,7 @@ Resend／SendGrid／Nodemailer／SES 任何一個。既有的每日提醒
 
 ## 上線順序
 
-### 1. 🔴 五份 SQL：先在 gsat-staging 執行並確認，再在 production 執行
+### 1. 🔴 六份 SQL：先在 gsat-staging 執行並確認，再在 production 執行
 
 依這個順序（有相依）：
 
@@ -36,6 +37,7 @@ Resend／SendGrid／Nodemailer／SES 任何一個。既有的每日提醒
 3. create_writing_queue_rpcs.sql        ← 依賴 1
 4. update_writing_admin_queue.sql       ← 依賴 1 與 2
 5. create_writing_pending_digest.sql    ← 依賴 3（每日提醒用）
+6. create_writing_cost_guardrails.sql   ← 依賴 3（會取代 writing_enqueue_analysis_batch）
 ```
 
 跑完之後自己看一眼：
@@ -71,6 +73,13 @@ SELECT writing_admin_queue()->0->>'student_name';
 | `DEEPSEEK_API_KEY` | 分析（已經有了） |
 | `SUPABASE_SERVICE_ROLE_KEY` | worker 寫入（已經有了） |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | 推播（已經有了，學生的單字提醒在用） |
+| `VITE_DEEPSEEK_PRICE_INPUT_PER_M` | **選填**。每百萬 input token 的美金價。設了，批次確認框才顯示金額 |
+| `VITE_DEEPSEEK_PRICE_OUTPUT_PER_M` | **選填**。每百萬 output token 的美金價 |
+
+`WRITING_REMINDER_ADMIN_EMAIL` 與兩個 `VITE_DEEPSEEK_PRICE_*` 都**不是 secret**
+（一個是 email、兩個是公開定價），在 Vercel 加的時候不要勾 Sensitive —— 勾了
+自己也讀不回來。真正該當 secret 的只有 `CRON_SECRET`、`DEEPSEEK_API_KEY`、
+`SUPABASE_SERVICE_ROLE_KEY`、`VAPID_PRIVATE_KEY`。
 
 `WORKER_SELF_URL` 是選填的覆寫。平常靠 Vercel 自己注入的 `VERCEL_URL`
 就能找到自己，不用設。
@@ -142,6 +151,55 @@ Authorization: Bearer <CRON_SECRET>
 
 然後把 `api/send-daily-reminders.ts` 結尾那一次 `sendWritingReviewReminders()`
 呼叫拿掉，免得一天送兩次。⚠️ 先確認你的 Vercel 方案允許三條 cron。
+
+---
+
+## 成本護欄
+
+兩道，防的不是同一件事：
+
+| | 擋什麼 | 在哪裡 | 繞得過嗎 |
+|---|---|---|---|
+| **A 事前估算** | 誤判 —— 老師不知道「50 篇」是多少錢 | 前端確認框 | 可以（是前端） |
+| **B 每日上限** | bug 與手滑 —— 迴圈重排、連按十次 | 資料庫 | 不行 |
+
+### A：批次確認框
+
+按下「批次開始 AI 分析」會先出現：
+
+```
+開始分析 14 篇作文？
+
+  預估 AI 呼叫          約 70 次
+  預估 token           約 655K
+  預估費用             約 US$0.18     ← 只在設了單價時出現
+
+依據最近 12 篇已完成分析的實際用量推算，實際會有出入。
+今天已排入 22 / 150 篇
+```
+
+數字來自 `writing_analyses.stage1_telemetry` / `synthesis_telemetry` 裡**真實記錄
+的 token 數**，取最近 20 篇已完成分析的中位數（不是平均——一篇重試很多次的離群值
+會把平均拉歪）。所以 prompt 改版、作文變長、重試率上升，這個估算都會自己跟上。
+
+🛑 **單價不寫在程式或資料庫裡。** 寫死一個價格，等 DeepSeek 調價那天，這個給老師
+決策用的金額會安靜地開始說謊。沒設單價時就只顯示呼叫次數與 token（那些是量測值，
+永遠不會過期）。要顯示金額就去 DeepSeek 的定價頁抄當下的數字，設那兩個
+`VITE_DEEPSEEK_PRICE_*`。
+
+### B：每日 150 篇上限
+
+在 `writing_daily_analysis_cap()` 裡，**刻意不做成參數或設定值** —— 能被呼叫端
+調整的上限，在真正需要它的那一天（某個迴圈失控時）就不是上限了。要改請改那支函式
+並重新套用，那應該是個刻意的決定。
+
+- 「今天」是**台灣時間**，不是 UTC。老師晚上 9 點排的那一批算在他心裡的那一天
+- 重新分析也算 —— 重跑一篇花的錢和第一次一樣
+- **已經在佇列裡的（ALREADY_ACTIVE）與已完成被跳過的不吃額度** —— 它們不會新建
+  任何列，也就不花新的錢。所以額度滿了也不會整批拒絕，只把真的要新建的那幾篇標成
+  `DAILY_CAP`；否則「老師重新點一下看進度」這種無害的操作也會失敗
+
+150 的由來：預期尖峰約 50–60 篇／天，取約 2.5 倍。
 
 ---
 
@@ -226,7 +284,7 @@ AND NOT EXISTS (SELECT 1 FROM writing_teacher_reviews WHERE essay_id = s.id)
 
 ## 測試
 
-資料庫層有自動測試（**83 項**）：
+資料庫層有自動測試（**101 項**）：
 
 ```bash
 createdb wq
@@ -238,7 +296,8 @@ for f in create_writing_submissions create_writing_texts add_writing_texts_word_
          create_writing_teacher_feedback create_learn_classes_tasks \
          add_writing_queue_lease create_writing_teacher_reviews \
          create_writing_queue_rpcs update_writing_admin_queue \
-         create_push_subscriptions_table create_writing_pending_digest; do
+         create_push_subscriptions_table create_writing_pending_digest \
+         create_writing_cost_guardrails; do
   psql -d wq -f supabase/migrations/$f.sql
 done
 psql -d wq -f tests/sql/writing_queue_test.sql
@@ -261,6 +320,8 @@ psql -d wq -f tests/sql/writing_queue_test.sql
 | 10 | 檢閱 | 「儲存並下一篇」→ 講評有存、狀態變成已處理、跳到下一篇 |
 | 11 | 待處理數字 | 標記檢閱後，`/admin` 的徽章數字跟著減少 |
 | 12 | 權限 | 用學生帳號呼叫 `writing_enqueue_analysis_batch` → 被拒 |
+| 13 | 估算 | 確認框的呼叫次數與 `writing_analysis_usage()` 對最近幾篇算出來的一致 |
+| 14 | 每日上限 | 把 `writing_daily_analysis_cap()` 暫時改成 2 → 排 3 篇 → 1 篇 `DAILY_CAP`，改回 150 |
 
 ---
 

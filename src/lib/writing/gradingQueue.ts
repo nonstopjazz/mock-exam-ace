@@ -104,9 +104,31 @@ export interface EnqueueResult {
   batch_id: string;
   requested: number;
   enqueued: number;
+  /** 因為撞到每日上限而沒排到的篇數 */
+  capped: number;
+  daily_used: number;
+  daily_cap: number;
+  daily_cap_reached: boolean;
   items: { essay_id: string; analysis_id: string | null; result: string }[];
   kicked?: boolean;
   kickReason?: string;
+}
+
+/** 排入前的用量估算。writing_analysis_cost_estimate() 的回傳形狀。 */
+export interface CostEstimate {
+  requested: number;
+  /** 估算依據了幾篇已完成的分析。0 = 還沒有資料可以估 */
+  sample_size: number;
+  per_essay_calls: number;
+  per_essay_prompt_tokens: number;
+  per_essay_completion_tokens: number;
+  projected_calls: number;
+  projected_prompt_tokens: number;
+  projected_completion_tokens: number;
+  daily_used: number;
+  daily_cap: number;
+  daily_remaining: number;
+  would_exceed_daily_cap: boolean;
 }
 
 /** 把批次結果講成一句老師看得懂的話——包含被跳過的那幾篇為什麼被跳過。 */
@@ -119,6 +141,7 @@ export function describeEnqueue(result: EnqueueResult): string {
     SKIPPED_COMPLETED: "已經分析完成",
     NOT_SUBMITTED: "不是已送出的作文",
     NO_TEXT: "沒有可分析的文字",
+    DAILY_CAP: "超過今天的分析額度",
   };
   const counts = new Map<string, number>();
   for (const item of skipped) {
