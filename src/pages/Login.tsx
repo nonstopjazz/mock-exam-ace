@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -174,7 +174,15 @@ export default function Login() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="login-password">密碼</Label>
+                      <div className="flex items-center justify-between gap-2">
+                        <Label htmlFor="login-password">密碼</Label>
+                        <Link
+                          to="/auth/forgot-password"
+                          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors shrink-0"
+                        >
+                          忘記密碼？
+                        </Link>
+                      </div>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input

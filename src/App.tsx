@@ -33,6 +33,8 @@ import ClassDetail from "./pages/admin/ClassDetail";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import ClaimPack from "./pages/ClaimPack";
 import ParentDashboard from "./pages/learn/ParentDashboard";
 import TeacherSessionWorkspace from "./pages/learn/TeacherSessionWorkspace";
@@ -114,6 +116,13 @@ const App = () => (
             {/* Auth routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            {/*
+              兩條都必須是公開路由：走到這裡的人正是「登不進去」的那群。
+              /auth/reset-password 還必須列進 Supabase 的 Redirect URLs 允許清單，
+              而且三個站各有自己的網域（redirectTo 用 window.location.origin）。
+            */}
+            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
 
             {/* Claim pack route */}
             <Route path="/claim/:token" element={<ClaimPack />} />
