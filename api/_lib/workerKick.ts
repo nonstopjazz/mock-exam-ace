@@ -6,7 +6,7 @@
  * 也就不受 Vercel 方案的 cron 頻率限制。
  *
  * ⚠️ 這一腳【必須帶 CRON_SECRET】。「是自己打自己」不是放行的理由——
- *    這個端點會花錢呼叫 DeepSeek，任何人都打得到的話就是一個帳單放大器。
+ *    這個端點會花錢呼叫模型，任何人都打得到的話就是一個帳單放大器。
  *
  * 為什麼不是真的 fire-and-forget：
  * serverless 的函式一旦 return，平台隨時可以凍結它，還沒送出的 outbound 請求
@@ -33,8 +33,13 @@ export interface KickResult {
 
 /**
  * @param depth 這是第幾棒。只用來擋住失控的無限串接，不影響佇列語意。
+ * @param path  要踢哪一個 worker。作文與口說各有一條獨立的鏈，
+ *              各自的佇列與 concurrency 互不影響。
  */
-export async function kickWorker(depth = 0): Promise<KickResult> {
+export async function kickWorker(
+  depth = 0,
+  path = "/api/writing-queue-worker",
+): Promise<KickResult> {
   const secret = process.env.CRON_SECRET;
   if (!secret) return { kicked: false, reason: "CRON_SECRET_NOT_CONFIGURED" };
 
@@ -42,7 +47,7 @@ export async function kickWorker(depth = 0): Promise<KickResult> {
   if (!origin) return { kicked: false, reason: "SELF_URL_UNKNOWN" };
 
   try {
-    await fetch(`${origin}/api/writing-queue-worker`, {
+    await fetch(`${origin}${path}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${secret}`,
