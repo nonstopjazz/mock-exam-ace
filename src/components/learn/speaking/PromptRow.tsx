@@ -1,5 +1,5 @@
-import { Check, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StatusDot } from "./StatusDot";
 
 interface PromptRowProps {
   label: string;
@@ -30,20 +30,14 @@ export function PromptRow({ label, meta, practiced, active, onSelect }: PromptRo
       onClick={onSelect}
       aria-pressed={active}
       className={cn(
-        "flex w-full items-start gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
+        "flex w-full items-start gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors",
         "hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        active && "bg-primary/10 text-foreground",
+        active && "bg-muted ring-1 ring-primary/40",
       )}
     >
-      {practiced ? (
-        <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-label="已練過" />
-      ) : (
-        <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/40" aria-hidden />
-      )}
-      <span className="min-w-0">
-        <span className={cn("block break-words", practiced && "text-muted-foreground")}>
-          {label}
-        </span>
+      <StatusDot state={practiced ? "done" : "todo"} className="mt-1.5" />
+      <span className="min-w-0 flex-1">
+        <span className="block break-words">{label}</span>
         {meta && <span className="block text-xs text-muted-foreground">{meta}</span>}
       </span>
     </button>

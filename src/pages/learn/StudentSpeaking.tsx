@@ -11,6 +11,13 @@ import type { SpeakingPrompt } from "@/lib/speaking/types";
 /**
  * 口說練習 —— 選題 → 錄音 → 上傳
  *
+ * 【版面：清單常駐，題目選了不會消失】
+ *
+ *   選一題之後，錄音面板出現在清單【下方】，清單留在原處並把選中那一行
+ *   highlight 起來。一開始我讓清單被面板取代，理由是「同時出現會讓人不知道
+ *   要看哪裡」——那是錯的：練口說是一題接一題的，錄完想馬上換下一題時，
+ *   清單消失等於每一題都要多按一次「換一題」。
+ *
  * 這一批【沒有】AI 批改。畫面上因此不提分數、不提「分析中」，
  * 只說錄音存下來了、可以回頭聽。功能還沒做就先在畫面上承諾，
  * 是最快讓學生不再相信這個網站的做法。
@@ -45,22 +52,19 @@ const StudentSpeaking = () => {
             </div>
           </div>
 
-          {/* 選好題目之後，錄音面板取代選題區——同時出現會讓人不知道要看哪裡 */}
-          {selected ? (
-            <div className="mb-10">
-              <SpeakingRecorderPanel
-                prompt={selected}
-                onSaved={handleSaved}
-                onChangePrompt={() => setSelected(null)}
-              />
-            </div>
-          ) : (
-            <div className="mb-10">
-              <PromptPicker practiced={practicedPrompts.practiced} onSelect={setSelected} />
+          <PromptPicker
+            practiced={practicedPrompts.practiced}
+            selectedId={selected?.id ?? null}
+            onSelect={setSelected}
+          />
+
+          {selected && (
+            <div className="mt-6">
+              <SpeakingRecorderPanel prompt={selected} onSaved={handleSaved} />
             </div>
           )}
 
-          <div>
+          <div className="mt-10">
             <h2 className="mb-4 text-lg font-semibold text-foreground">我練過的</h2>
             <RecordingHistory
               items={history.items}

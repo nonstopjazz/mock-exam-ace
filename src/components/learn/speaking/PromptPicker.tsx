@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Accordion,
@@ -11,13 +12,15 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { AlertCircle, Loader2, Mic, Search, SkipForward } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useSpeakingPrompts } from "@/hooks/learn/useSpeakingPrompts";
 import { PromptRow } from "./PromptRow";
-import type { SpeakingPrompt } from "@/lib/speaking/types";
+import { StatusDot } from "./StatusDot";
+import { topicDotState, type SpeakingPrompt } from "@/lib/speaking/types";
 
 interface PromptPickerProps {
   practiced: Set<string>;
+  /** 目前選中的那一題。清單選完不會消失，所以要看得出選的是哪一個。 */
+  selectedId: string | null;
   onSelect: (prompt: SpeakingPrompt) => void;
 }
 
@@ -26,27 +29,6 @@ const PARTS = [
   { value: 2, label: "Part 2", hint: "個人陳述" },
   { value: 3, label: "Part 3", hint: "深入討論" },
 ] as const;
-
-/**
- * 主題的進度點：沒碰過 / 練了一些 / 全部練完。
- *
- * 101 個主題排下來，「8/8」和「0/8」在掃視時長得一樣——要逐個讀數字才分得出來。
- * 一個顏色點讓「哪些還沒碰」變成一眼的事，數字留給想知道確切進度的人。
- */
-function TopicDot({ done, total }: { done: number; total: number }) {
-  const state = done === 0 ? "none" : done >= total ? "all" : "some";
-  return (
-    <span
-      aria-label={state === "all" ? "全部練過" : state === "some" ? "練了一部分" : "還沒練過"}
-      className={cn(
-        "h-2 w-2 shrink-0 rounded-full",
-        state === "all" && "bg-success",
-        state === "some" && "bg-primary",
-        state === "none" && "border border-muted-foreground/40",
-      )}
-    />
-  );
-}
 
 /** 一題在清單裡顯示的那一行字。Part 2 是題卡標題，Part 1/3 是問題本身。 */
 const labelOf = (prompt: SpeakingPrompt) =>
@@ -71,7 +53,7 @@ const labelOf = (prompt: SpeakingPrompt) =>
  *   學生想練「音樂」相關的題目時，不會想在 101 個主題裡一個個展開找。
  *   搜尋時直接列出命中的題目、跳過主題那一層——這時候分組只會礙事。
  */
-export function PromptPicker({ practiced, onSelect }: PromptPickerProps) {
+export function PromptPicker({ practiced, selectedId, onSelect }: PromptPickerProps) {
   const [part, setPart] = useState<1 | 2 | 3>(1);
   const [query, setQuery] = useState("");
   const { prompts, loading, error, refetch } = useSpeakingPrompts(part);
@@ -119,11 +101,17 @@ export function PromptPicker({ practiced, onSelect }: PromptPickerProps) {
 
   return (
     <Card className="p-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-foreground">選一題</h2>
-          <p className="text-sm text-muted-foreground">
-            {loading ? "載入中…" : `${matches.length} 題，已練過 ${doneCount} 題`}
+          {/* 圖例。紅點綠點要有人講一次是什麼意思，否則它只是兩個顏色。 */}
+          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
+            <StatusDot state="done" />
+            練過
+            <span className="mx-1">·</span>
+            <StatusDot state="todo" />
+            還沒
+            <span className="ml-1">點一下開始錄音</span>
           </p>
         </div>
         <Tabs value={String(part)} onValueChange={(v) => setPart(Number(v) as 1 | 2 | 3)}>
@@ -140,18 +128,20 @@ export function PromptPicker({ practiced, onSelect }: PromptPickerProps) {
         </Tabs>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜尋題目或主題"
-            className="pl-9"
-          />
-        </div>
+      {/* 進度：在 800 題的 Part 裡，「我到哪了」是最想知道的一件事 */}
+      <div className="mb-3 flex items-center gap-3">
+        {/* 軌道覆寫成 bg-muted：Progress 預設的軌道是 bg-secondary（深青），
+            進度 0 的時候整條是實心深色，看起來像已經全部練完了。 */}
+        <Progress
+          value={matches.length ? (doneCount / matches.length) * 100 : 0}
+          className="h-2 min-w-0 flex-1 bg-muted"
+        />
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          {doneCount}/{matches.length} 已練過
+        </span>
         <Button
           variant="outline"
+          size="sm"
           onClick={nextUnpracticed}
           disabled={loading || doneCount === matches.length}
           className="shrink-0"
@@ -160,6 +150,16 @@ export function PromptPicker({ practiced, onSelect }: PromptPickerProps) {
           <span className="hidden sm:inline">下一題沒練過的</span>
           <span className="sm:hidden">沒練過的</span>
         </Button>
+      </div>
+
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="搜尋題目或主題"
+          className="pl-9"
+        />
       </div>
 
       {loading ? (
@@ -196,7 +196,7 @@ export function PromptPicker({ practiced, onSelect }: PromptPickerProps) {
                   label={labelOf(prompt)}
                   meta={prompt.topic?.trim() || undefined}
                   practiced={practiced.has(prompt.id)}
-                  active={false}
+                  active={prompt.id === selectedId}
                   onSelect={() => onSelect(prompt)}
                 />
               ))}
@@ -207,7 +207,7 @@ export function PromptPicker({ practiced, onSelect }: PromptPickerProps) {
                 <AccordionItem key={topic.name} value={topic.name} className="px-2">
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex w-full items-center gap-2 pr-2 min-w-0">
-                      <TopicDot done={topic.done} total={topic.list.length} />
+                      <StatusDot state={topicDotState(topic.done, topic.list.length)} />
                       <span className="min-w-0 flex-1 text-left text-sm font-medium truncate">
                         {topic.name}
                       </span>
@@ -225,7 +225,7 @@ export function PromptPicker({ practiced, onSelect }: PromptPickerProps) {
                           key={prompt.id}
                           label={labelOf(prompt)}
                           practiced={practiced.has(prompt.id)}
-                          active={false}
+                          active={prompt.id === selectedId}
                           onSelect={() => onSelect(prompt)}
                         />
                       ))}
