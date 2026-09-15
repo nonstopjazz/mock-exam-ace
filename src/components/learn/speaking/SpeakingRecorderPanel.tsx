@@ -3,33 +3,29 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ProgressBar } from "@/components/ProgressBar";
+import { Progress } from "@/components/ui/progress";
 import { AlertCircle, CheckCircle2, Loader2, Mic, RotateCcw, Square, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useSpeakingRecorder } from "@/hooks/learn/useSpeakingRecorder";
+import { Part2Timers } from "./Part2Timers";
 import { formatBytes, formatDuration } from "@/lib/speaking/audio";
 import { MIN_RECORD_SECONDS, RETENTION_DAYS } from "@/config/speaking";
-import { promptBody, promptHeadline, type SpeakingPrompt } from "@/lib/speaking/types";
+import type { SpeakingPrompt } from "@/lib/speaking/types";
 
 interface SpeakingRecorderPanelProps {
   prompt: SpeakingPrompt;
   /** 上傳成功後通知外面重新載入「我練過的」。 */
   onSaved: () => void;
-  onChangePrompt: () => void;
 }
 
 /**
- * 錄音面板：講 → 試聽 → 上傳。
+ * 題卡 + 錄音。
  *
  * 刻意不做的事：不在這裡顯示分數、也不承諾什麼時候會有批改。
  * 這一批只做到「錄音存下來」，畫面上就只說到這裡——
  * 寫「AI 分析中」而後面沒有東西接，比什麼都不寫更糟。
  */
-export function SpeakingRecorderPanel({
-  prompt,
-  onSaved,
-  onChangePrompt,
-}: SpeakingRecorderPanelProps) {
+export function SpeakingRecorderPanel({ prompt, onSaved }: SpeakingRecorderPanelProps) {
   const recorder = useSpeakingRecorder(prompt.id);
   const [saving, setSaving] = useState(false);
 
@@ -49,39 +45,63 @@ export function SpeakingRecorderPanel({
     }
   };
 
-  const body = promptBody(prompt);
+  const isPart2 = prompt.part === 2;
 
   return (
     <Card className="p-6">
-      {/* 題目：錄音時看得到題目是最基本的要求 */}
-      <div className="mb-6">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <Badge variant="secondary" className="shrink-0">
-            Part {prompt.part}
-          </Badge>
-          <Button variant="ghost" size="sm" onClick={onChangePrompt} className="shrink-0">
-            換一題
-          </Button>
+      {/* ── 題卡 ───────────────────────────────────────── */}
+      <div className="mb-4 rounded-lg border border-border bg-muted/20 p-4">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{isPart2 ? "Part 2 — 題卡" : `Part ${prompt.part}`}</Badge>
+          {!isPart2 && prompt.topic?.trim() && (
+            <Badge variant="outline" className="max-w-full truncate">
+              {prompt.topic}
+            </Badge>
+          )}
         </div>
-        <h2 className="text-lg font-semibold text-foreground break-words">
-          {promptHeadline(prompt)}
-        </h2>
-        {body && (
-          <p className="mt-2 text-sm text-muted-foreground whitespace-pre-line break-words">
-            {body}
+
+        {isPart2 ? (
+          <>
+            <p className="whitespace-pre-line break-words font-semibold text-foreground">
+              {prompt.title}
+            </p>
+            {prompt.cue?.trim() && (
+              <p className="mt-2 whitespace-pre-line break-words text-sm text-muted-foreground">
+                {prompt.cue}
+              </p>
+            )}
+            {prompt.bullets.length > 0 && (
+              <>
+                {/* cue 是空的時候補上這一句。舊題庫整批沒有 cue，
+                    而「You should say:」本來就是題卡的固定格式，不是題目內容。 */}
+                {!prompt.cue?.trim() && (
+                  <p className="mt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    You should say:
+                  </p>
+                )}
+                <ul className="mt-1 list-inside list-disc space-y-0.5 text-sm text-foreground">
+                  {prompt.bullets.map((bullet, index) => (
+                    <li key={index} className="whitespace-pre-line break-words">
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
+        ) : (
+          <p className="whitespace-pre-line break-words text-base font-medium leading-relaxed text-foreground">
+            {prompt.question}
           </p>
         )}
-        {prompt.part === 2 && prompt.bullets.length > 0 && (
-          <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-            {prompt.bullets.map((bullet, index) => (
-              <li key={index} className="flex gap-2">
-                <span className="text-primary shrink-0">·</span>
-                <span className="break-words">{bullet}</span>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
+
+      {/* ── Part 2 的兩個計時器 ──────────────────────────── */}
+      {isPart2 && (
+        <div className="mb-4">
+          <Part2Timers recording={recorder.phase === "recording"} />
+        </div>
+      )}
 
       {!recorder.supported && (
         <Alert variant="destructive" className="mb-4">
@@ -101,32 +121,29 @@ export function SpeakingRecorderPanel({
 
       {/* 錄音中：秒數 + 剩餘時間 */}
       {recorder.phase === "recording" && (
-        <div className="mb-6 space-y-3">
+        <div className="mb-4 space-y-2">
           <div className="flex items-baseline gap-2">
             <span className="relative flex h-3 w-3 shrink-0">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
               <span className="relative inline-flex h-3 w-3 rounded-full bg-destructive" />
             </span>
-            <span className="text-3xl font-bold text-foreground tabular-nums">
+            <span className="text-3xl font-bold tabular-nums text-foreground">
               {formatDuration(recorder.elapsed)}
             </span>
             <span className="text-sm text-muted-foreground">
               / {formatDuration(recorder.maxSeconds)}
             </span>
           </div>
-          {/* showValues={false}：秒數已經在上面用 m:ss 顯示過了，
-              再印一次「12.4 / 180」只是噪音。 */}
-          <ProgressBar
-            current={Math.min(Math.round(recorder.elapsed), recorder.maxSeconds)}
-            max={recorder.maxSeconds}
-            showValues={false}
+          <Progress
+            value={(Math.min(recorder.elapsed, recorder.maxSeconds) / recorder.maxSeconds) * 100}
+            className="h-2"
           />
         </div>
       )}
 
       {/* 試聽 */}
       {recorder.blobUrl && recorder.phase !== "done" && (
-        <div className="mb-6 space-y-2">
+        <div className="mb-4 space-y-2">
           <audio controls src={recorder.blobUrl} className="w-full" />
           <p className="text-xs text-muted-foreground">
             {formatDuration(recorder.elapsed)}
@@ -137,7 +154,7 @@ export function SpeakingRecorderPanel({
       )}
 
       {recorder.phase === "done" && (
-        <Alert className="mb-6">
+        <Alert className="mb-4">
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription>
             已上傳。錄音檔會保存 {RETENTION_DAYS} 天，這段期間你都可以回來重聽。
@@ -145,7 +162,7 @@ export function SpeakingRecorderPanel({
         </Alert>
       )}
 
-      {/* 操作 */}
+      {/* ── 操作 ───────────────────────────────────────── */}
       <div className="flex flex-wrap gap-3">
         {(recorder.phase === "idle" || recorder.phase === "error") && (
           <Button onClick={() => void recorder.start()} disabled={!recorder.supported}>
@@ -202,7 +219,7 @@ export function SpeakingRecorderPanel({
 
       <p className="mt-4 text-xs text-muted-foreground">
         最長 {formatDuration(recorder.maxSeconds)}，時間到會自動停止；少於 {MIN_RECORD_SECONDS}{" "}
-        秒的不會上傳。
+        秒的不會上傳。上面的清單可以直接換下一題。
       </p>
     </Card>
   );

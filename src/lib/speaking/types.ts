@@ -76,3 +76,12 @@ export function promptBody(prompt: SpeakingPrompt): string {
   if (prompt.part === 2) return prompt.cue?.trim() || "";
   return prompt.question?.trim() || "";
 }
+
+/** 一個點的三種狀態：都沒練 / 練了一些 / 全部練完。 */
+export type DotState = "todo" | "partial" | "done";
+
+export function topicDotState(done: number, total: number): DotState {
+  if (done === 0) return "todo";
+  if (done >= total) return "done";
+  return "partial";
+}

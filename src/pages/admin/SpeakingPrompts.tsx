@@ -1,17 +1,28 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, ArrowLeft, Loader2, Mic, Plus, Settings2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Mic,
+  Plus,
+  Search,
+  Settings2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAdminSpeakingPrompts } from "@/hooks/learn/useAdminSpeakingPrompts";
 import { useFeatureAccess } from "@/hooks/learn/useFeatureAccess";
 import { PromptEditorDialog } from "@/components/admin/speaking/PromptEditorDialog";
 import { FEATURE } from "@/config/speaking";
-import { promptBody, promptHeadline, type AdminSpeakingPrompt } from "@/lib/speaking/types";
+import type { AdminSpeakingPrompt } from "@/lib/speaking/types";
 
 /**
  * 口說題庫（管理端）
@@ -20,6 +31,9 @@ import { promptBody, promptHeadline, type AdminSpeakingPrompt } from "@/lib/spea
  * 題庫做好了但沒開放給任何人，是這個功能最容易發生的狀況——
  * 那個數字是 0 的時候，老師應該在這裡就看到，而不是等學生說「我沒有這個頁面」。
  */
+/** 一頁幾題。50 列在桌機上約一個半螢幕，捲一下就到底。 */
+const PAGE_SIZE = 50;
+
 const PARTS = [
   { value: "all", label: "全部" },
   { value: "1", label: "Part 1" },
@@ -31,13 +45,31 @@ export default function SpeakingPrompts() {
   const { prompts, loading, error, refetch, save, setActive } = useAdminSpeakingPrompts();
   const { access } = useFeatureAccess(FEATURE);
   const [part, setPart] = useState("all");
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<AdminSpeakingPrompt | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const visible = useMemo(
-    () => (part === "all" ? prompts : prompts.filter((p) => String(p.part) === part)),
-    [prompts, part],
-  );
+  const matches = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return prompts.filter((p) => {
+      if (part !== "all" && String(p.part) !== part) return false;
+      if (!needle) return true;
+      return [p.topic, p.question, p.title, p.cue, ...(p.bullets ?? [])]
+        .filter(Boolean)
+        .some((field) => field!.toLowerCase().includes(needle));
+    });
+  }, [prompts, part, query]);
+
+  // 題庫有 1,945 題。一次列出來不是慢，是找不到東西——
+  // 所以先篩選，再分頁，一頁 50 列。
+  const pageCount = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount - 1);
+  const visible = matches.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE);
+
+  // 換篩選條件就回到第一頁。留在第 12 頁而篩選後只剩 3 頁，畫面會是空的。
+  useEffect(() => setPage(0), [part, query]);
+
   const activeCount = prompts.filter((p) => p.is_active).length;
 
   const openNew = () => {
@@ -121,8 +153,13 @@ export default function SpeakingPrompts() {
           </Card>
         </div>
 
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold text-foreground">題目</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-foreground">題目</h2>
+            <p className="text-sm text-muted-foreground">
+              {loading ? "載入中…" : `符合 ${matches.length} 題`}
+            </p>
+          </div>
           <Tabs value={part} onValueChange={setPart}>
             <TabsList>
               {PARTS.map((option) => (
@@ -132,6 +169,16 @@ export default function SpeakingPrompts() {
               ))}
             </TabsList>
           </Tabs>
+        </div>
+
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="搜尋題目、主題或要點"
+            className="pl-9"
+          />
         </div>
 
         {loading ? (
@@ -154,8 +201,20 @@ export default function SpeakingPrompts() {
           <Card className="p-6">
             <div className="text-center py-12 text-muted-foreground">
               <Mic className="h-12 w-12 mx-auto mb-4 opacity-40" />
-              <p>{prompts.length === 0 ? "題庫還是空的" : "這個 Part 還沒有題目"}</p>
-              <p className="text-sm mt-2">點右上角「新增題目」建立第一題</p>
+              <p>
+                {prompts.length === 0
+                  ? "題庫還是空的"
+                  : query.trim()
+                    ? "沒有符合的題目"
+                    : "這個 Part 還沒有題目"}
+              </p>
+              <p className="text-sm mt-2">
+                {prompts.length === 0
+                  ? "點右上角「新增題目」建立第一題"
+                  : query.trim()
+                    ? "換個關鍵字，或清空搜尋看全部"
+                    : "換一個 Part 看看"}
+              </p>
             </div>
           </Card>
         ) : (
@@ -181,12 +240,18 @@ export default function SpeakingPrompts() {
                         </span>
                       )}
                     </div>
+                    {/* 題目在上、主題在下。
+                        管理頁跟學生的選題畫面不一樣：同一個主題連著八題，
+                        主題當標題就是同一行粗體字重複八次，而老師要找的那一句
+                        反而變成底下的灰字。 */}
                     <p className="font-semibold text-foreground break-words">
-                      {promptHeadline(prompt)}
+                      {prompt.part === 2
+                        ? prompt.title?.trim() || "（沒有標題）"
+                        : prompt.question?.trim() || "（沒有題目）"}
                     </p>
-                    {promptBody(prompt) && (
-                      <p className="mt-1 text-sm text-muted-foreground break-words line-clamp-2">
-                        {promptBody(prompt)}
+                    {prompt.topic?.trim() && (
+                      <p className="mt-1 text-sm text-muted-foreground break-words">
+                        {prompt.topic}
                       </p>
                     )}
                   </div>
@@ -202,6 +267,32 @@ export default function SpeakingPrompts() {
               </div>
             ))}
           </Card>
+        )}
+
+        {!loading && !error && pageCount > 1 && (
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((n) => Math.max(0, n - 1))}
+              disabled={current === 0}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              上一頁
+            </Button>
+            <span className="text-sm text-muted-foreground tabular-nums">
+              第 {current + 1} / {pageCount} 頁
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((n) => Math.min(pageCount - 1, n + 1))}
+              disabled={current >= pageCount - 1}
+            >
+              下一頁
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         )}
 
         <PromptEditorDialog
