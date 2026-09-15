@@ -8,6 +8,7 @@ import { LearningRhythm } from "@/components/learn/student/LearningRhythm";
 import { MyVocabulary } from "@/components/learn/student/MyVocabulary";
 import { RecentEssays } from "@/components/learn/student/RecentEssays";
 import { GrammarSnapshot } from "@/components/learn/student/GrammarSnapshot";
+import { SpeakingEntry } from "@/components/learn/student/SpeakingEntry";
 
 /**
  * Student Dashboard —— v2，全部真實資料。
@@ -74,6 +75,11 @@ const StudentDashboard = () => {
           <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
             <AbilitySnapshot />
             <LearningRhythm />
+          </div>
+
+          {/* 4.5 口說練習 —— 沒被開放的人整區不會出現 */}
+          <div className="mt-10">
+            <SpeakingEntry />
           </div>
 
           {/* 5. 字卡收藏 */}

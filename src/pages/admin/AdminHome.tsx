@@ -14,6 +14,7 @@ import {
   GraduationCap,
   School,
   PenLine,
+  Mic,
 } from 'lucide-react';
 import { PRODUCT_CONFIG } from '@/config/product';
 import { useWritingPendingCount } from '@/hooks/learn/useWritingPendingCount';
@@ -84,6 +85,13 @@ export default function AdminHome() {
       icon: <PenLine className="h-6 w-6" />,
       href: '/admin/writing',
       badge: writingPending && writingPending > 0 ? `${writingPending} 篇待處理` : undefined,
+    },
+    {
+      title: '口說練習',
+      description: '口說題庫、開放對象（預設不對任何人開放）',
+      icon: <Mic className="h-6 w-6" />,
+      href: '/admin/speaking',
+      badge: '新功能',
     },
     {
       title: '單字包管理',

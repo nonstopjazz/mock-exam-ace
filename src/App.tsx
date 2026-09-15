@@ -9,6 +9,7 @@ import { Navbar } from "./components/layout/Navbar";
 import { LockedPage } from "./components/gates/LockedPage";
 import { PhaseGate } from "./components/gates/PhaseGate";
 import { FeatureGate } from "./components/gates/FeatureGate";
+import { StudentFeatureGate } from "@/components/gates/StudentFeatureGate";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { RequireAdmin } from "./components/auth/RequireAdmin";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -30,6 +31,8 @@ import WritingGrading from "./pages/admin/WritingGrading";
 import WritingGradingDetail from "./pages/admin/WritingGradingDetail";
 import ClassesAdmin from "./pages/admin/ClassesAdmin";
 import ClassDetail from "./pages/admin/ClassDetail";
+import SpeakingPrompts from "./pages/admin/SpeakingPrompts";
+import FeatureAccessAdmin from "./pages/admin/FeatureAccessAdmin";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -43,6 +46,7 @@ import StudentTasks from "./pages/learn/StudentTasks";
 import StudentWriting from "./pages/learn/StudentWriting";
 import EssayCompose from "./pages/learn/EssayCompose";
 import EssayDetail from "./pages/learn/EssayDetail";
+import StudentSpeaking from "./pages/learn/StudentSpeaking";
 import ExamList from "./pages/ExamList";
 import ExamNew from "./pages/ExamNew";
 import ExamResult from "./pages/ExamResult";
@@ -147,6 +151,9 @@ const App = () => (
           <Route path="/learn/student/writing" element={<FeatureGate featureId="writing_submission" title="作文提交" description="作文功能暫時關閉，稍後會再開放。"><ProtectedRoute><StudentWriting /></ProtectedRoute></FeatureGate>} />
           <Route path="/learn/student/writing/new" element={<FeatureGate featureId="writing_submission" title="作文提交" description="作文功能暫時關閉，稍後會再開放。"><ProtectedRoute><EssayCompose /></ProtectedRoute></FeatureGate>} />
           <Route path="/learn/student/writing/:essayId" element={<FeatureGate featureId="writing_submission" title="作文提交" description="作文功能暫時關閉，稍後會再開放。"><ProtectedRoute><EssayDetail /></ProtectedRoute></FeatureGate>} />
+          {/* 口說練習：預設不對任何人開放，由 /admin/feature-access 決定看得到的人。
+              這道閘只管畫面——每一支 speaking_* RPC 都會自己再檢查一次。 */}
+          <Route path="/learn/student/speaking" element={<StudentFeatureGate feature="speaking" title="口說練習" description="口說練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><StudentSpeaking /></ProtectedRoute></StudentFeatureGate>} />
 
           {/* Phase 2: Exam routes (gated by backend phase) */}
           <Route path="/exams" element={<PhaseGate requiredPhase={2} title="學測模考" description="模考功能即將推出，敬請期待！"><ExamList /></PhaseGate>} />
@@ -198,6 +205,17 @@ const App = () => (
           <Route path="/admin/classes/:classId" element={
             <RequireAdmin>
               <ClassDetail />
+            </RequireAdmin>
+          } />
+          {/* 口說：題庫，以及「這個功能開放給誰」 */}
+          <Route path="/admin/speaking" element={
+            <RequireAdmin>
+              <SpeakingPrompts />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/feature-access" element={
+            <RequireAdmin>
+              <FeatureAccessAdmin />
             </RequireAdmin>
           } />
           <Route path="/admin/exams" element={
