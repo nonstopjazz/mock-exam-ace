@@ -15,9 +15,11 @@ import {
   School,
   PenLine,
   Mic,
+  Sparkles,
 } from 'lucide-react';
 import { PRODUCT_CONFIG } from '@/config/product';
 import { useWritingPendingCount } from '@/hooks/learn/useWritingPendingCount';
+import { useSpeakingPendingCount } from '@/hooks/learn/useSpeakingPendingCount';
 
 interface AdminCardProps {
   title: string;
@@ -63,6 +65,9 @@ export default function AdminHome() {
   // 待處理的作文篇數。v1 的通知就只有這個數字——沒有信、沒有推播、
   // 沒有即時通知中心。老師進到管理中心就看得到還有幾篇沒處理。
   const writingPending = useWritingPendingCount();
+  // 待批改的口說則數。與作文的徽章同一個道理：老師進到管理中心
+  // 就看得到還有多少沒處理，不必自己點進去數。
+  const speakingPending = useSpeakingPendingCount();
 
   const adminModules = [
     {
@@ -92,6 +97,14 @@ export default function AdminHome() {
       icon: <Mic className="h-6 w-6" />,
       href: '/admin/speaking',
       badge: '新功能',
+    },
+    {
+      title: '口說批改',
+      description: '勾選學生的錄音，批次送 AI 批改',
+      icon: <Sparkles className="h-6 w-6" />,
+      href: '/admin/speaking/grading',
+      badge:
+        speakingPending && speakingPending > 0 ? `${speakingPending} 則待批改` : undefined,
     },
     {
       title: '單字包管理',
