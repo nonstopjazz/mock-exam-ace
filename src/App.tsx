@@ -32,6 +32,7 @@ import WritingGradingDetail from "./pages/admin/WritingGradingDetail";
 import ClassesAdmin from "./pages/admin/ClassesAdmin";
 import ClassDetail from "./pages/admin/ClassDetail";
 import SpeakingPrompts from "./pages/admin/SpeakingPrompts";
+import SpeakingGrading from "./pages/admin/SpeakingGrading";
 import FeatureAccessAdmin from "./pages/admin/FeatureAccessAdmin";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -211,6 +212,11 @@ const App = () => (
           <Route path="/admin/speaking" element={
             <RequireAdmin>
               <SpeakingPrompts />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/speaking/grading" element={
+            <RequireAdmin>
+              <SpeakingGrading />
             </RequireAdmin>
           } />
           <Route path="/admin/feature-access" element={

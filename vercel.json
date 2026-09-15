@@ -21,6 +21,10 @@
     {
       "path": "/api/writing-images-cleanup",
       "schedule": "20 19 * * *"
+    },
+    {
+      "path": "/api/speaking-cleanup",
+      "schedule": "40 19 * * *"
     }
   ]
 }

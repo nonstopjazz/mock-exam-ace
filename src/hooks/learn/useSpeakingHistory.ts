@@ -1,38 +1,34 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { BUCKET, SIGNED_URL_TTL_SECONDS } from "@/config/speaking";
-import type { SpeakingRecording } from "@/lib/speaking/types";
+import type { SpeakingPractice } from "@/lib/speaking/types";
 
 /**
- * 我練過的。
+ * 我練過的，以及每一則的批改結果。
  *
- * 直接查表，不經 RPC：speaking_recordings 對 authenticated 只有一條
- * SELECT 政策（auth.uid() = student_id），所以這一句查詢天生只看得到自己的。
+ * 走 speaking_my_practices() 而不是直接查表：批改結果在 speaking_analyses，
+ * 那張表對所有角色零 grant。理由是欄位——學生該看到分數與回饋，不該看到
+ * error_detail、telemetry、租約。RLS 是列層級的，遮不掉欄位，所以入口是
+ * 一支明確列出可給欄位的函式。
  *
  * 播放網址是現取的 signed URL。bucket 是私有的，沒有固定網址可以存下來——
  * 這是刻意的，錄音是學生的聲音。
  */
-export function useSpeakingHistory(limit = 20) {
-  const [items, setItems] = useState<SpeakingRecording[]>([]);
+export function useSpeakingHistory(limit = 30) {
+  const [items, setItems] = useState<SpeakingPractice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
-    const { data, error: queryError } = await supabase
-      .from("speaking_recordings")
-      .select(
-        "id, prompt_id, prompt_part, prompt_text, storage_path, mime_type, file_bytes, " +
-          "duration_seconds, uploaded_at, file_deleted_at, status, error_detail, created_at",
-      )
-      .order("created_at", { ascending: false })
-      .limit(limit);
-
-    if (queryError) {
-      setError(queryError.message);
+    const { data, error: rpcError } = await supabase.rpc("speaking_my_practices", {
+      p_limit: limit,
+    });
+    if (rpcError) {
+      setError(rpcError.message);
       setItems([]);
     } else {
-      setItems((data as unknown as SpeakingRecording[]) ?? []);
+      setItems((data as unknown as SpeakingPractice[]) ?? []);
     }
     setLoading(false);
   }, [limit]);
@@ -45,7 +41,7 @@ export function useSpeakingHistory(limit = 20) {
    * 取得播放網址。檔案已過保存期就回 null——
    * 這時畫面要說「錄音檔已超過保存期限」，不是顯示一個播不出來的播放器。
    */
-  const playbackUrl = useCallback(async (item: SpeakingRecording): Promise<string | null> => {
+  const playbackUrl = useCallback(async (item: SpeakingPractice): Promise<string | null> => {
     if (!item.storage_path || item.file_deleted_at) return null;
     const { data, error: urlError } = await supabase.storage
       .from(BUCKET)
