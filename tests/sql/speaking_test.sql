@@ -63,7 +63,7 @@ DO $test$
 DECLARE
   v_admin UUID; v_a UUID; v_b UUID; v_c UUID;
   v_class UUID; v_class_archived UUID;
-  v_p1 UUID; v_p2 UUID; v_p_off UUID;
+  v_p1 UUID; v_p2 UUID; v_p_off UUID; v_p_nocue UUID;
   v_rec UUID; v_rec_b UUID;
   v_txt TEXT; v_int INTEGER; v_bool BOOLEAN; v_json JSONB;
 BEGIN
@@ -191,11 +191,20 @@ BEGIN
   -- ══════════════════════════════════════════════════════
 
   PERFORM pg_temp.be(v_admin, true);
+
+  -- cue 是【選填】的。既有題庫的 Part 2 有 101 題，cue 整批是空的——
+  -- cue 就是「You should say:」那句固定的引導語，屬於畫面而不是題目。
+  -- 這一題建得出來，而且下面會檢查它開得起練習（cue 是 NULL 時，
+  -- 快照文字若用 || 串接會整串變成 NULL）。
+  v_p_nocue := speaking_admin_upsert_prompt(NULL, 2, NULL, NULL, '只有標題的 Part 2',
+                                            NULL, ARRAY['要點一','要點二']);
+  PERFORM pg_temp.expect('Part 2 沒有 cue 也建得出來', v_p_nocue IS NOT NULL, NULL);
+
   BEGIN
-    PERFORM speaking_admin_upsert_prompt(NULL, 2, NULL, NULL, '只有標題', NULL, '{}');
-    PERFORM pg_temp.expect('Part 2 少了 cue 建不出來', false, '沒有 raise');
+    PERFORM speaking_admin_upsert_prompt(NULL, 2, NULL, NULL, '   ', 'You should say:', '{}');
+    PERFORM pg_temp.expect('Part 2 少了 title 建不出來', false, '沒有 raise');
   EXCEPTION WHEN OTHERS THEN
-    PERFORM pg_temp.expect('Part 2 少了 cue 建不出來', true, 'CHECK 擋下');
+    PERFORM pg_temp.expect('Part 2 少了 title 建不出來', true, 'CHECK 擋下');
   END;
 
   BEGIN
@@ -216,8 +225,9 @@ BEGIN
 
   PERFORM pg_temp.be(v_a);
   v_json := speaking_available_prompts(NULL);
+  -- 3 題：v_p1、v_p2，再加上上面那題沒有 cue 的 Part 2（v_p_off 已停用）
   PERFORM pg_temp.expect('開放的學生看得到啟用中的題目',
-    jsonb_array_length(v_json) = 2, 'count=' || jsonb_array_length(v_json));
+    jsonb_array_length(v_json) = 3, 'count=' || jsonb_array_length(v_json));
 
   SELECT count(*) INTO v_int
     FROM jsonb_array_elements(v_json) e WHERE (e->>'id')::uuid = v_p_off;
@@ -251,6 +261,22 @@ BEGIN
 
   SELECT status INTO v_txt FROM speaking_recordings WHERE id = v_rec;
   PERFORM pg_temp.expect('剛開始的練習是 PENDING', v_txt = 'PENDING', v_txt);
+
+  -- 🛑 迴歸測試：cue 是 NULL 的 Part 2。
+  --    快照文字原本是 title || E'\n' || cue || … 串出來的，cue 一旦是 NULL
+  --    整串就變成 NULL，接著撞上 prompt_text 的 NOT NULL——學生按下去就拿到
+  --    一句資料庫錯誤。既有題庫的 Part 2 有 101 題 cue 全是空的，
+  --    也就是說每一題都會踩到。改用 concat_ws 之後才不會。
+  PERFORM pg_temp.be(v_a);
+  DECLARE v_rec_nocue UUID;
+  BEGIN
+    v_rec_nocue := speaking_start_practice(v_p_nocue);
+    SELECT prompt_text INTO v_txt FROM speaking_recordings WHERE id = v_rec_nocue;
+    PERFORM pg_temp.expect('cue 是 NULL 的 Part 2 也開得起練習',
+      v_txt LIKE '%只有標題的 Part 2%' AND v_txt LIKE '%要點一%', left(v_txt, 40));
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.expect('cue 是 NULL 的 Part 2 也開得起練習', false, SQLERRM);
+  END;
 
   -- 🛑 改題之後，既有練習看到的還是當時那一題
   PERFORM pg_temp.be(v_admin, true);
@@ -393,14 +419,15 @@ BEGIN
   EXECUTE 'SET ROLE authenticated';
   SELECT count(*) INTO v_n FROM public.speaking_recordings;
   EXECUTE 'RESET ROLE';
-  PERFORM pg_temp.expect('🛑 學生只看得到自己的練習', v_n = 1, 'visible=' || v_n);
+  -- 小安有 2 筆：Part 2 那次，加上 cue 是 NULL 的那次迴歸測試
+  PERFORM pg_temp.expect('🛑 學生只看得到自己的練習', v_n = 2, 'visible=' || v_n);
 
   PERFORM set_config('request.jwt.claim.sub', v_a::text, true);
   PERFORM set_config('test.is_admin', 'true', true);
   EXECUTE 'SET ROLE authenticated';
   SELECT count(*) INTO v_n FROM public.speaking_recordings;
   EXECUTE 'RESET ROLE';
-  PERFORM pg_temp.expect('管理員看得到全部', v_n = 2, 'visible=' || v_n);
+  PERFORM pg_temp.expect('管理員看得到全部', v_n = 3, 'visible=' || v_n);
 END;
 $rls$;
 
