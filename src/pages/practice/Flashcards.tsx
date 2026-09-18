@@ -352,8 +352,11 @@ const Flashcards = () => {
         {/* Card Container */}
         {currentCard && (
           <div className="relative mb-8" style={{ perspective: "1000px" }}>
+            {/* Both faces stack in one grid cell and the inactive one is removed
+                from flow, so the container follows the visible face's height —
+                long back-side content no longer overlaps the nav controls */}
             <div
-              className={`relative transition-all duration-500 cursor-pointer ${
+              className={`grid grid-cols-1 transition-all duration-500 cursor-pointer ${
                 isFlipped ? "[transform:rotateY(180deg)]" : ""
               }`}
               style={{ transformStyle: "preserve-3d" }}
@@ -361,8 +364,8 @@ const Flashcards = () => {
             >
               {/* Front Side */}
               <Card
-                className={`min-h-[400px] p-8 flex flex-col items-center justify-center ${
-                  isFlipped ? "invisible" : ""
+                className={`relative [grid-area:1/1] min-h-[400px] p-8 flex flex-col items-center justify-center ${
+                  isFlipped ? "hidden" : ""
                 }`}
                 style={{ backfaceVisibility: "hidden" }}
               >
@@ -403,7 +406,7 @@ const Flashcards = () => {
                     發音
                   </Button>
 
-                  <h2 className="text-6xl font-bold text-foreground mb-4">
+                  <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-4 break-words">
                     {currentCard.word}
                   </h2>
                   <p className="text-2xl text-muted-foreground">{currentCard.ipa}</p>
@@ -418,8 +421,8 @@ const Flashcards = () => {
 
               {/* Back Side */}
               <Card
-                className={`absolute inset-0 min-h-[400px] p-8 ${
-                  !isFlipped ? "invisible" : ""
+                className={`relative [grid-area:1/1] min-h-[400px] p-8 ${
+                  !isFlipped ? "hidden" : ""
                 }`}
                 style={{
                   backfaceVisibility: "hidden",
@@ -436,7 +439,8 @@ const Flashcards = () => {
                   </Badge>
                 </div>
 
-                <div className="space-y-6">
+                {/* pt-10 clears the absolutely positioned badges above */}
+                <div className="space-y-6 pt-10">
                   {/* Translation */}
                   <div className="text-center py-4">
                     <h3 className="text-sm font-semibold text-muted-foreground mb-2">Translation</h3>
@@ -521,13 +525,13 @@ const Flashcards = () => {
         )}
 
         {/* Navigation Controls */}
-        <div className="flex items-center justify-center gap-4 mb-6">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mb-6">
           <Button
             variant="outline"
             size="lg"
             onClick={handlePrevious}
             disabled={currentIndex === 0}
-            className="gap-2"
+            className="gap-2 px-4 sm:px-8"
           >
             <ChevronLeft className="h-5 w-5" />
             Previous
@@ -537,7 +541,7 @@ const Flashcards = () => {
             variant="default"
             size="lg"
             onClick={handleFlip}
-            className="gap-2 px-8"
+            className="gap-2 px-6 sm:px-8"
           >
             <FlipVertical2 className="h-5 w-5" />
             Flip
@@ -548,7 +552,7 @@ const Flashcards = () => {
             size="lg"
             onClick={handleNext}
             disabled={currentIndex === totalCards - 1}
-            className="gap-2"
+            className="gap-2 px-4 sm:px-8"
           >
             Next
             <ChevronRight className="h-5 w-5" />
