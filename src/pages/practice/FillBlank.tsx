@@ -18,14 +18,9 @@ import { useVocabularyStore } from "@/store/vocabularyStore";
 import type { VocabularyWord } from "@/data/vocabulary/types";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
-import { usePackItems, PackItem } from "@/hooks/useUserPacks";
-
-const convertPackItemToVocabularyWord = (item: PackItem): VocabularyWord => ({
-  id: item.id, word: item.word, translation: item.definition || '', ipa: item.phonetic || '',
-  partOfSpeech: item.part_of_speech || '', example: item.example_sentence || '',
-  exampleTranslation: '', synonyms: [], antonyms: [], level: 1, tags: [],
-  difficulty: 'medium', category: '', extraNotes: '',
-});
+import { usePackItems } from "@/hooks/useUserPacks";
+import { packItemToVocabularyWord } from "@/lib/lexical/mapper";
+import { recordPracticeAttempt, newSessionId } from "@/lib/lexical/attempts";
 
 interface FillBlankQuestion {
   id: string;
@@ -77,7 +72,7 @@ const generateFillBlankQuestions = (words: VocabularyWord[], count: number, allW
 const FillBlank = () => {
   const navigate = useNavigate();
   const { celebrate } = useConfetti();
-  const { getAllWords: storeGetAllWords, getWordsForQuiz, updateWordProgress, getFilteredWordCount } = useVocabularyStore();
+  const { getAllWords: storeGetAllWords, getWordsForQuiz, getFilteredWordCount } = useVocabularyStore();
 
   const [selectedSource, setSelectedSource] = useState<VocabularySource>('local');
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
@@ -91,6 +86,9 @@ const FillBlank = () => {
   const [score, setScore] = useState(0);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [questionCount, setQuestionCount] = useState(10);
+  // Phase 6：作答證據
+  const [sessionId] = useState(() => newSessionId());
+  const [startedAt, setStartedAt] = useState(() => Date.now());
 
   const currentQuestion = questions[currentIndex];
 
@@ -100,7 +98,7 @@ const FillBlank = () => {
     if (selectedSource === 'pack') {
       if (!selectedPackId || packLoading || packError) return;
       if (packItems.length < 4) { toast.error("單字不足", { description: "至少需要 4 個有例句的單字" }); return; }
-      wordList = packItems.map(convertPackItemToVocabularyWord);
+      wordList = packItems.map(packItemToVocabularyWord);
       pool = wordList;
     } else {
       if (getFilteredWordCount() < 4) { toast.error("單字不足"); return; }
@@ -114,6 +112,7 @@ const FillBlank = () => {
     setShowResult(false);
     setScore(0);
     setAnswers([]);
+    setStartedAt(Date.now());
     setPhase('playing');
   };
 
@@ -125,11 +124,16 @@ const FillBlank = () => {
     setAnswers(prev => [...prev, correct]);
     if (correct) setScore(prev => prev + 1);
 
-    if (selectedSource === 'pack' && selectedPackId) {
-      updateWordProgress(currentQuestion.id, correct, undefined, 'pack', selectedPackId);
-    } else {
-      updateWordProgress(currentQuestion.id, correct, undefined, 'level');
-    }
+    recordPracticeAttempt({
+      wordId: currentQuestion.id,
+      source: selectedSource === 'pack' ? 'pack' : 'level',
+      packId: selectedPackId,
+      exerciseType: 'fill_blank',
+      skillDimension: 'context',
+      correct,
+      responseTimeMs: Date.now() - startedAt,
+      sessionId,
+    });
   };
 
   const handleNext = () => {
@@ -137,6 +141,7 @@ const FillBlank = () => {
       setCurrentIndex(prev => prev + 1);
       setSelectedAnswer(null);
       setShowResult(false);
+      setStartedAt(Date.now());
     } else {
       if (score / questions.length >= 0.8) celebrate();
       setPhase('finished');

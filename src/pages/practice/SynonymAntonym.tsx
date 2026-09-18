@@ -18,14 +18,9 @@ import { useVocabularyStore } from "@/store/vocabularyStore";
 import type { VocabularyWord } from "@/data/vocabulary/types";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
-import { usePackItems, PackItem } from "@/hooks/useUserPacks";
-
-const convertPackItemToVocabularyWord = (item: PackItem): VocabularyWord => ({
-  id: item.id, word: item.word, translation: item.definition || '', ipa: item.phonetic || '',
-  partOfSpeech: item.part_of_speech || '', example: item.example_sentence || '',
-  exampleTranslation: '', synonyms: [], antonyms: [], level: 1, tags: [],
-  difficulty: 'medium', category: '', extraNotes: '',
-});
+import { usePackItems } from "@/hooks/useUserPacks";
+import { packItemToVocabularyWord } from "@/lib/lexical/mapper";
+import { recordPracticeAttempt, newSessionId } from "@/lib/lexical/attempts";
 
 type QuestionType = 'synonym' | 'antonym';
 
@@ -80,7 +75,7 @@ const generateSAQuestions = (words: VocabularyWord[], count: number, allWords: V
 const SynonymAntonym = () => {
   const navigate = useNavigate();
   const { celebrate } = useConfetti();
-  const { getAllWords: storeGetAllWords, getWordsForQuiz, updateWordProgress, getFilteredWordCount } = useVocabularyStore();
+  const { getAllWords: storeGetAllWords, getWordsForQuiz, getFilteredWordCount } = useVocabularyStore();
 
   const [selectedSource, setSelectedSource] = useState<VocabularySource>('local');
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
@@ -93,6 +88,9 @@ const SynonymAntonym = () => {
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
   const [questionCount, setQuestionCount] = useState(10);
+  // Phase 6：作答證據
+  const [sessionId] = useState(() => newSessionId());
+  const [startedAt, setStartedAt] = useState(() => Date.now());
 
   const currentQuestion = questions[currentIndex];
 
@@ -101,7 +99,7 @@ const SynonymAntonym = () => {
     let pool: VocabularyWord[] | undefined = undefined;
     if (selectedSource === 'pack') {
       if (!selectedPackId || packLoading || packError) return;
-      wordList = packItems.map(convertPackItemToVocabularyWord);
+      wordList = packItems.map(packItemToVocabularyWord);
       pool = wordList;
     } else {
       if (getFilteredWordCount() < 4) { toast.error("單字不足"); return; }
@@ -117,6 +115,7 @@ const SynonymAntonym = () => {
     setSelectedAnswer(null);
     setShowResult(false);
     setScore(0);
+    setStartedAt(Date.now());
     setPhase('playing');
   };
 
@@ -127,11 +126,18 @@ const SynonymAntonym = () => {
     const correct = index === currentQuestion.correctIndex;
     if (correct) setScore(prev => prev + 1);
 
-    if (selectedSource === 'pack' && selectedPackId) {
-      updateWordProgress(currentQuestion.id, correct, undefined, 'pack', selectedPackId);
-    } else {
-      updateWordProgress(currentQuestion.id, correct, undefined, 'level');
-    }
+    recordPracticeAttempt({
+      wordId: currentQuestion.id,
+      source: selectedSource === 'pack' ? 'pack' : 'level',
+      packId: selectedPackId,
+      exerciseType: 'synonym_antonym',
+      skillDimension: 'lexical_connection',
+      correct,
+      responseTimeMs: Date.now() - startedAt,
+      sessionId,
+      // 資料庫看得出學生是同義弱還是反義弱 —— 舊系統這件事完全沒記。
+      metadata: { question_type: currentQuestion.type, asked_target: currentQuestion.correctWord },
+    });
   };
 
   const handleNext = () => {
@@ -139,6 +145,7 @@ const SynonymAntonym = () => {
       setCurrentIndex(prev => prev + 1);
       setSelectedAnswer(null);
       setShowResult(false);
+      setStartedAt(Date.now());
     } else {
       if (score / questions.length >= 0.8) celebrate();
       setPhase('finished');

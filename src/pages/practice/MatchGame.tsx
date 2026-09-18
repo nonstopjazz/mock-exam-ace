@@ -17,14 +17,9 @@ import { useVocabularyStore } from "@/store/vocabularyStore";
 import type { VocabularyWord } from "@/data/vocabulary/types";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
-import { usePackItems, PackItem } from "@/hooks/useUserPacks";
-
-const convertPackItemToVocabularyWord = (item: PackItem): VocabularyWord => ({
-  id: item.id, word: item.word, translation: item.definition || '', ipa: item.phonetic || '',
-  partOfSpeech: item.part_of_speech || '', example: item.example_sentence || '',
-  exampleTranslation: '', synonyms: [], antonyms: [], level: 1, tags: [],
-  difficulty: 'medium', category: '', extraNotes: '',
-});
+import { usePackItems } from "@/hooks/useUserPacks";
+import { packItemToVocabularyWord } from "@/lib/lexical/mapper";
+import { recordPracticeAttempt, recordEvidenceOnly, newSessionId } from "@/lib/lexical/attempts";
 
 interface MatchTile {
   id: string;
@@ -39,7 +34,7 @@ const PAIR_COUNT = 6;
 const MatchGame = () => {
   const navigate = useNavigate();
   const { celebrate } = useConfetti();
-  const { getWordsForQuiz, updateWordProgress, getFilteredWordCount } = useVocabularyStore();
+  const { getWordsForQuiz, getFilteredWordCount } = useVocabularyStore();
 
   const [selectedSource, setSelectedSource] = useState<VocabularySource>('local');
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
@@ -56,6 +51,12 @@ const MatchGame = () => {
   const [totalRounds, setTotalRounds] = useState(0);
   const [allWords, setAllWords] = useState<VocabularyWord[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Phase 6：這個 mode 本來就在算 attempts 與 elapsed，但兩個值都只活在
+  // React state、連結算畫面都沒顯示。現在它們會落地。
+  // wrongByWord 記每個字被配錯幾次（誤點的兩張牌各算一次）。
+  const [sessionId] = useState(() => newSessionId());
+  const selectedAtRef = useRef<number>(Date.now());
+  const wrongByWord = useRef<Record<string, number>>({});
 
   useEffect(() => {
     if (phase === 'playing' && matchedCount < PAIR_COUNT) {
@@ -78,6 +79,7 @@ const MatchGame = () => {
     setMatchedCount(0);
     setAttempts(0);
     setElapsed(0);
+    wrongByWord.current = {};
   };
 
   const startGame = () => {
@@ -85,7 +87,7 @@ const MatchGame = () => {
     if (selectedSource === 'pack') {
       if (!selectedPackId || packLoading || packError) return;
       if (packItems.length < PAIR_COUNT) { toast.error("單字不足", { description: `至少需要 ${PAIR_COUNT} 個單字` }); return; }
-      wordList = packItems.map(convertPackItemToVocabularyWord);
+      wordList = packItems.map(packItemToVocabularyWord);
     } else {
       if (getFilteredWordCount() < PAIR_COUNT) { toast.error("單字不足"); return; }
       wordList = getWordsForQuiz(PAIR_COUNT * 5);
@@ -104,13 +106,17 @@ const MatchGame = () => {
 
     if (!selected) {
       setSelected(tile);
+      selectedAtRef.current = Date.now();
       return;
     }
 
     if (selected.id === tile.id) { setSelected(null); return; }
-    if (selected.type === tile.type) { setSelected(tile); return; }
+    if (selected.type === tile.type) { setSelected(tile); selectedAtRef.current = Date.now(); return; }
 
     setAttempts(prev => prev + 1);
+
+    const responseTimeMs = Date.now() - selectedAtRef.current;
+    const source = selectedSource === 'pack' ? 'pack' as const : 'level' as const;
 
     if (selected.wordId === tile.wordId) {
       setTiles(prev => prev.map(t => t.wordId === tile.wordId ? { ...t, matched: true } : t));
@@ -118,11 +124,18 @@ const MatchGame = () => {
       setMatchedCount(newCount);
       setSelected(null);
 
-      if (selectedSource === 'pack' && selectedPackId) {
-        updateWordProgress(tile.wordId, true, undefined, 'pack', selectedPackId);
-      } else {
-        updateWordProgress(tile.wordId, true, undefined, 'level');
-      }
+      recordPracticeAttempt({
+        wordId: tile.wordId,
+        source,
+        packId: selectedPackId,
+        exerciseType: 'match',
+        skillDimension: 'meaning',
+        correct: true,
+        responseTimeMs,
+        // 這個字在配對成功前被點錯幾次
+        attemptCount: (wrongByWord.current[tile.wordId] ?? 0) + 1,
+        sessionId,
+      });
 
       if (newCount === PAIR_COUNT) {
         if (round < totalRounds - 1) {
@@ -137,6 +150,33 @@ const MatchGame = () => {
         }
       }
     } else {
+      // Phase 6：誤點【開始留紀錄】。改版前這裡完全不寫入任何東西。
+      //
+      // 🛑 但刻意【不動熟練度】——規格明講 attempt history 與 mastery update
+      //    要分離。誤點一次就扣熟練度會讓配對遊戲變成懲罰性的，
+      //    而且配錯的兩張牌到底是哪個字答錯了也說不清楚。
+      //    所以兩邊的字各留一筆證據，熟練度不變。
+      for (const wrongId of [selected.wordId, tile.wordId]) {
+        wrongByWord.current[wrongId] = (wrongByWord.current[wrongId] ?? 0) + 1;
+        recordEvidenceOnly({
+          wordId: wrongId,
+          source,
+          packId: selectedPackId,
+          exerciseType: 'match',
+          skillDimension: 'meaning',
+          correct: false,
+          responseTimeMs,
+          attemptCount: wrongByWord.current[wrongId],
+          sessionId,
+          metadata: {
+            event: 'wrong_pair',
+            picked_english: selected.type === 'english' ? selected.text : tile.text,
+            picked_chinese: selected.type === 'chinese' ? selected.text : tile.text,
+            elapsed_seconds: elapsed,
+          },
+        });
+      }
+
       setWrongPair([selected.id, tile.id]);
       setTimeout(() => { setWrongPair(null); setSelected(null); }, 600);
     }

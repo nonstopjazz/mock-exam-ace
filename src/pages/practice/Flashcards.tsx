@@ -24,33 +24,14 @@ import { useVocabularyStore } from "@/store/vocabularyStore";
 import { VocabularyWord } from "@/data/vocabulary";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
-import { usePackItems, PackItem } from "@/hooks/useUserPacks";
-
-// Convert PackItem to VocabularyWord format
-const convertPackItemToVocabularyWord = (item: PackItem, index: number): VocabularyWord => ({
-  id: item.id,
-  word: item.word,
-  translation: item.definition || '',
-  ipa: item.phonetic || '',
-  partOfSpeech: item.part_of_speech || '',
-  example: item.example_sentence || '',
-  exampleTranslation: '',
-  synonyms: [],
-  antonyms: [],
-  level: 1,
-  tags: [],
-  difficulty: 'medium',
-  category: '',
-  extraNotes: '',
-  audioUrl: item.audio_url,
-  exampleAudioUrl: item.example_audio_url,
-});
+import { usePackItems } from "@/hooks/useUserPacks";
+import { packItemToVocabularyWord } from "@/lib/lexical/mapper";
+import { recordPracticeAttempt, recordEvidenceOnly, newSessionId } from "@/lib/lexical/attempts";
 
 const Flashcards = () => {
   const navigate = useNavigate();
   const {
     getWordsForFlashcards,
-    updateWordProgress,
     getWordProgress,
   } = useVocabularyStore();
   const { play, isPlaying } = useAudioPlayer();
@@ -70,6 +51,10 @@ const Flashcards = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [shuffled, setShuffled] = useState(false);
+  // Phase 6：翻卡是 exposure，不是客觀測驗。這裡記的是「看過」，
+  // 不是「答對」——所以 correct 永遠是 null。
+  const [sessionId] = useState(() => newSessionId());
+  const [shownAt, setShownAt] = useState(() => Date.now());
 
   const totalCards = cards.length;
   const currentCard = cards[currentIndex];
@@ -104,7 +89,7 @@ const Flashcards = () => {
         });
         return;
       }
-      studyWords = packItems.map((item, index) => convertPackItemToVocabularyWord(item, index));
+      studyWords = packItems.map(packItemToVocabularyWord);
     } else {
       // Use local vocabulary
       studyWords = getWordsForFlashcards();
@@ -122,10 +107,26 @@ const Flashcards = () => {
     setCards(studyWords);
     setCurrentIndex(0);
     setIsFlipped(false);
+    setShownAt(Date.now());
     setPhase('study');
   };
 
   const handleFlip = () => {
+    // 翻到背面 = 看過答案。留下 exposure 證據，但【不動熟練度】：
+    // 看過一張卡片不構成任何客觀的作答結果。
+    if (!isFlipped && currentCard) {
+      recordEvidenceOnly({
+        wordId: currentCard.id,
+        source: selectedSource === 'pack' ? 'pack' : 'level',
+        packId: selectedPackId,
+        exerciseType: 'flashcard',
+        skillDimension: 'self_assessment',
+        correct: null,
+        responseTimeMs: Date.now() - shownAt,
+        sessionId,
+        metadata: { event: 'exposure' },
+      });
+    }
     setIsFlipped(!isFlipped);
   };
 
@@ -133,6 +134,7 @@ const Flashcards = () => {
     if (currentIndex < totalCards - 1) {
       setCurrentIndex(prev => prev + 1);
       setIsFlipped(false);
+      setShownAt(Date.now());
     } else {
       toast.success("Flashcards Complete!", {
         description: `You reviewed ${totalCards} cards.`
@@ -144,18 +146,34 @@ const Flashcards = () => {
     if (currentIndex > 0) {
       setCurrentIndex(prev => prev - 1);
       setIsFlipped(false);
+      setShownAt(Date.now());
     }
   };
 
   const handleLevelUp = () => {
     if (!currentCard) return;
 
-    // Update progress (unified tracking)
-    if (selectedSource === 'pack' && selectedPackId) {
-      updateWordProgress(currentCard.id, true, 'easy', 'pack', selectedPackId);
-    } else {
-      updateWordProgress(currentCard.id, true, 'easy', 'level');
-    }
+    // 🛑 「Mark as Known」是【學生自評】，不是客觀測驗結果。
+    //
+    //    相容層保留舊行為：self_rating='easy' 仍然讓熟練度 +1，
+    //    與改版前一模一樣。
+    //    但 correct 刻意留 null —— 它不會被計入 correct_count，
+    //    所以之後要區分「自己說會」與「考出來會」時，資料分得開。
+    recordPracticeAttempt({
+      wordId: currentCard.id,
+      source: selectedSource === 'pack' ? 'pack' : 'level',
+      packId: selectedPackId,
+      exerciseType: 'flashcard',
+      skillDimension: 'self_assessment',
+      correct: null,
+      selfRating: 'easy',
+      // 舊行為：這裡本來傳 isCorrect=true，所以 user_word_progress.correct_count 會 +1。
+      // 相容層原樣保留，新表則記成「自評」。
+      legacyCorrect: true,
+      responseTimeMs: Date.now() - shownAt,
+      sessionId,
+      metadata: { event: 'mark_as_known' },
+    });
     toast.success("Progress Updated!", {
       description: `${currentCard.word} marked as known.`
     });
