@@ -2,19 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSiteId } from '@/hooks/useSiteIdentifier';
+import { parsePackItems } from '@/lib/lexical/mapper';
+import type { PackItemRow } from '@/lib/lexical/types';
 
-export interface PackItem {
-  id: string;
-  pack_id: string;
-  word: string;
-  definition: string | null;
-  part_of_speech: string | null;
-  example_sentence: string | null;
-  phonetic: string | null;
-  sort_order: number;
-  audio_url: string | null;
-  example_audio_url: string | null;
-}
+/**
+ * pack_items 一列。
+ *
+ * 型別現在由 `src/lib/lexical/types.ts` 的 zod schema 推導出來，
+ * 而不是在這裡手寫一份、再用 `as` 硬塞。這樣「TypeScript 說的」
+ * 與「執行期真的驗過的」永遠是同一件事。
+ */
+export type PackItem = PackItemRow;
 
 export interface UserPack {
   id: string;
@@ -309,7 +307,7 @@ export function usePackWithItems(packId: string | undefined) {
           progress: claimData.progress || 0,
           claimed_at: claimData.claimed_at,
           last_studied_at: claimData.last_studied_at,
-          items: itemsData || [],
+          items: parsePackItems(itemsData),
         });
       } catch (err) {
         console.error('Exception fetching pack:', err);
@@ -376,7 +374,9 @@ export function usePackItems(packId: string | null) {
           return;
         }
 
-        setItems(itemsData || []);
+        // 執行期驗證：不合格的列會被丟掉並記在 console，
+        // 而不是靠 `as` 假裝它一定長對。
+        setItems(parsePackItems(itemsData));
       } catch (err) {
         console.error('Exception fetching pack items:', err);
         setError('載入失敗');
@@ -449,7 +449,7 @@ export function useMultiPackItems(packIds: string[]) {
           return;
         }
 
-        setItems(itemsData || []);
+        setItems(parsePackItems(itemsData));
       } catch (err) {
         console.error('Exception fetching pack items:', err);
         setError('載入失敗');

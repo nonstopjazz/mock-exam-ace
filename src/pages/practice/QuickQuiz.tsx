@@ -24,25 +24,9 @@ import { useVocabularyStore } from "@/store/vocabularyStore";
 import type { VocabularyWord } from "@/data/vocabulary/types";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
-import { usePackItems, PackItem } from "@/hooks/useUserPacks";
-
-// Convert PackItem to VocabularyWord format
-const convertPackItemToVocabularyWord = (item: PackItem): VocabularyWord => ({
-  id: item.id,
-  word: item.word,
-  translation: item.definition || '',
-  ipa: item.phonetic || '',
-  partOfSpeech: item.part_of_speech || '',
-  example: item.example_sentence || '',
-  exampleTranslation: '',
-  synonyms: [],
-  antonyms: [],
-  level: 1,
-  tags: [],
-  difficulty: 'medium',
-  category: '',
-  extraNotes: '',
-});
+import { usePackItems } from "@/hooks/useUserPacks";
+import { packItemToVocabularyWord } from "@/lib/lexical/mapper";
+import { recordPracticeAttempt, newSessionId } from "@/lib/lexical/attempts";
 
 interface QuizQuestion {
   id: string;
@@ -88,7 +72,6 @@ const QuickQuiz = () => {
   const {
     getAllWords: storeGetAllWords,
     getWordsForQuiz,
-    updateWordProgress,
     getFilteredWordCount,
   } = useVocabularyStore();
 
@@ -112,6 +95,9 @@ const QuickQuiz = () => {
   const [timeLeft, setTimeLeft] = useState(15);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [questionCount, setQuestionCount] = useState(10);
+  // Phase 6：作答證據。這個 mode 本來就有 15 秒倒數，但剩餘秒數從未被保存。
+  const [sessionId] = useState(() => newSessionId());
+  const [startedAt, setStartedAt] = useState(() => Date.now());
 
   const totalQuestions = questions.length;
   const currentQuestion = questions[currentQuestionIndex];
@@ -147,7 +133,7 @@ const QuickQuiz = () => {
         });
         return;
       }
-      words = packItems.map(item => convertPackItemToVocabularyWord(item));
+      words = packItems.map(item => packItemToVocabularyWord(item));
       wordPool = words; // Use pack items as the word pool for wrong answers
     } else {
       // Use local vocabulary
@@ -170,6 +156,7 @@ const QuickQuiz = () => {
     setCombo(0);
     setTimeLeft(15);
     setAnswers([]);
+    setStartedAt(Date.now());
     setPhase('playing');
   };
 
@@ -191,12 +178,17 @@ const QuickQuiz = () => {
     setCombo(0);
     setAnswers(prev => [...prev, false]);
 
-    // Update progress (unified tracking)
-    if (selectedSource === 'pack' && selectedPackId) {
-      updateWordProgress(currentQuestion.id, false, undefined, 'pack', selectedPackId);
-    } else {
-      updateWordProgress(currentQuestion.id, false, undefined, 'level');
-    }
+    recordPracticeAttempt({
+      wordId: currentQuestion.id,
+      source: selectedSource === 'pack' ? 'pack' : 'level',
+      packId: selectedPackId,
+      exerciseType: 'quick_quiz',
+      skillDimension: 'meaning',
+      correct: false,
+      responseTimeMs: Date.now() - startedAt,
+      sessionId,
+      metadata: { event: 'timeout' },
+    });
     toast.error("Time's up!");
   };
 
@@ -208,12 +200,16 @@ const QuickQuiz = () => {
     const isCorrect = index === currentQuestion.correctAnswer;
     setAnswers(prev => [...prev, isCorrect]);
 
-    // Update progress (unified tracking)
-    if (selectedSource === 'pack' && selectedPackId) {
-      updateWordProgress(currentQuestion.id, isCorrect, undefined, 'pack', selectedPackId);
-    } else {
-      updateWordProgress(currentQuestion.id, isCorrect, undefined, 'level');
-    }
+    recordPracticeAttempt({
+      wordId: currentQuestion.id,
+      source: selectedSource === 'pack' ? 'pack' : 'level',
+      packId: selectedPackId,
+      exerciseType: 'quick_quiz',
+      skillDimension: 'meaning',
+      correct: isCorrect,
+      responseTimeMs: Date.now() - startedAt,
+      sessionId,
+    });
 
     if (isCorrect) {
       const newCombo = combo + 1;
@@ -240,6 +236,7 @@ const QuickQuiz = () => {
       setSelectedAnswer(null);
       setShowResult(false);
       setTimeLeft(15);
+      setStartedAt(Date.now());
     } else {
       setPhase("finished");
       if (score >= 300) {

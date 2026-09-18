@@ -22,34 +22,13 @@ import { useVocabularyStore, DAILY_REVIEW_LIMIT } from "@/store/vocabularyStore"
 import { VocabularyWord } from "@/data/vocabulary";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
-import { useMultiPackItems, PackItem } from "@/hooks/useUserPacks";
+import { useMultiPackItems } from "@/hooks/useUserPacks";
+import { packItemToVocabularyWord } from "@/lib/lexical/mapper";
+import { recordPracticeAttempt, newSessionId } from "@/lib/lexical/attempts";
 import { useUserStats } from "@/hooks/useUserStats";
 
-// Extended VocabularyWord with pack_id for tracking
-interface ExtendedVocabularyWord extends VocabularyWord {
-  pack_id?: string;
-}
-
-// Convert PackItem to VocabularyWord format
-const convertPackItemToVocabularyWord = (item: PackItem): ExtendedVocabularyWord => ({
-  id: item.id,
-  word: item.word,
-  translation: item.definition || '',
-  ipa: item.phonetic || '',
-  partOfSpeech: item.part_of_speech || '',
-  example: item.example_sentence || '',
-  exampleTranslation: '',
-  synonyms: [],
-  antonyms: [],
-  level: 1,
-  tags: [],
-  difficulty: 'medium',
-  category: '',
-  extraNotes: '',
-  audioUrl: item.audio_url,
-  exampleAudioUrl: item.example_audio_url,
-  pack_id: item.pack_id,
-});
+// 共用 mapper 回傳的 pack 字詞一定帶 pack_id；level 字詞沒有。
+type ExtendedVocabularyWord = VocabularyWord & { pack_id?: string };
 
 const SRSReview = () => {
   const navigate = useNavigate();
@@ -58,7 +37,6 @@ const SRSReview = () => {
     getWordsForSRS,
     getDueWords,
     getOverallProgress,
-    updateWordProgress,
     getWordProgress,
     getFilteredWordCount,
   } = useVocabularyStore();
@@ -95,6 +73,11 @@ const SRSReview = () => {
   const [reviewedCount, setReviewedCount] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [wordLimit, setWordLimit] = useState(20);
+  // Phase 6：作答證據。shownAt 是這張卡出現的時間，
+  // revealedAt 是按下「顯示答案」的時間 —— 兩者的差就是 reveal 前的思考時間。
+  const [sessionId] = useState(() => newSessionId());
+  const [shownAt, setShownAt] = useState(() => Date.now());
+  const [revealMs, setRevealMs] = useState<number | null>(null);
 
   const currentCard = cards[currentIndex];
   const totalCards = cards.length;
@@ -112,6 +95,8 @@ const SRSReview = () => {
     setCurrentIndex(0);
     setReviewedCount(0);
     setShowAnswer(false);
+    setShownAt(Date.now());
+    setRevealMs(null);
     setPhase('review');
   };
 
@@ -153,7 +138,7 @@ const SRSReview = () => {
         return;
       }
       // Convert and shuffle pack items from all selected packs
-      const allPackWords = packItems.map(item => convertPackItemToVocabularyWord(item));
+      const allPackWords = packItems.map(packItemToVocabularyWord);
       reviewWords = [...allPackWords].sort(() => Math.random() - 0.5).slice(0, wordLimit);
     } else {
       // Use local vocabulary
@@ -172,6 +157,8 @@ const SRSReview = () => {
     setCurrentIndex(0);
     setReviewedCount(0);
     setShowAnswer(false);
+    setShownAt(Date.now());
+    setRevealMs(null);
     setPhase('review');
   };
 
@@ -186,12 +173,22 @@ const SRSReview = () => {
 
     const result = responseMap[response];
 
-    // Update progress (unified tracking)
-    if (selectedSource === 'pack' && currentCard.pack_id) {
-      updateWordProgress(currentCard.id, result.isCorrect, response, 'pack', currentCard.pack_id);
-    } else {
-      updateWordProgress(currentCard.id, result.isCorrect, response, 'level');
-    }
+    // 🛑 SRS 的三顆按鈕是【自評】，不是客觀測驗。
+    //    correct 記成 null，self_rating 才是這次真正的證據。
+    //    legacyCorrect 原樣送進舊的 updateWordProgress()，
+    //    讓 user_word_progress 的數字與改版前完全一致。
+    recordPracticeAttempt({
+      wordId: currentCard.id,
+      source: selectedSource === 'pack' && currentCard.pack_id ? 'pack' : 'level',
+      packId: currentCard.pack_id ?? null,
+      exerciseType: 'srs',
+      skillDimension: 'self_assessment',
+      correct: null,
+      selfRating: response,
+      legacyCorrect: result.isCorrect,
+      responseTimeMs: revealMs,
+      sessionId,
+    });
 
     toast.success(`Marked: ${result.label}`, {
       description: `Next review: ${result.nextReview}`
@@ -202,6 +199,8 @@ const SRSReview = () => {
     if (currentIndex < totalCards - 1) {
       setCurrentIndex(prev => prev + 1);
       setShowAnswer(false);
+      setShownAt(Date.now());
+      setRevealMs(null);
     } else {
       // Record review stats (for logged-in users, syncs to database)
       recordReview(totalCards);
@@ -465,7 +464,12 @@ const SRSReview = () => {
               {!showAnswer && (
                 <div className="text-center">
                   <Button
-                    onClick={() => setShowAnswer(true)}
+                    onClick={() => {
+                      // reveal 前的思考時間。只在第一次按下時記，
+                      // 之後的重新渲染不會把它洗掉。
+                      setRevealMs(prev => prev ?? Date.now() - shownAt);
+                      setShowAnswer(true);
+                    }}
                     className="gap-2"
                     size="lg"
                   >

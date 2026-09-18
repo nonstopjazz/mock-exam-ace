@@ -38,11 +38,19 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
     CREATE ROLE anon NOLOGIN;
   END IF;
+  -- service_role 也是 Supabase 提供的，不是應用程式建立的。
+  -- migration 裡的 REVOKE/GRANT ... service_role 在本機會因為角色不存在而整份失敗，
+  -- 所以替身要補上它。
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN
+    CREATE ROLE service_role NOLOGIN BYPASSRLS;
+  END IF;
 END $$;
 
 -- storage.buckets 的替身，讓 preflight 腳本能在本機驗證
 CREATE SCHEMA IF NOT EXISTS storage;
 CREATE TABLE IF NOT EXISTS storage.buckets (id TEXT PRIMARY KEY, public BOOLEAN DEFAULT false);
 
-GRANT USAGE ON SCHEMA public, auth TO authenticated, anon;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated, anon;
+GRANT USAGE ON SCHEMA public, auth TO authenticated, anon, service_role;
+-- 複製 Supabase 的預設權限行為：新表一建立就對這三個角色全開。
+-- 這正是 migration 必須點名 REVOKE 的原因，本機要能重現才測得到。
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated, anon, service_role;
