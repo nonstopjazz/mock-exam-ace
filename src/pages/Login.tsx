@@ -10,11 +10,12 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import type { AuthError } from '@supabase/supabase-js';
 import { POST_LOGIN_LANDING } from '@/config/landing';
 
 // Google icon component
-const GoogleIcon = () => (
-  <svg className="h-5 w-5" viewBox="0 0 24 24">
+const GoogleIcon = ({ className = 'h-5 w-5' }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24">
     <path
       fill="currentColor"
       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -34,6 +35,19 @@ const GoogleIcon = () => (
   </svg>
 );
 
+/**
+ * 這次失敗是不是「帳號或密碼不對」。
+ *
+ * 只有這一種錯誤才提示 Google —— 「Email not confirmed」之類的錯誤
+ * 跟登入方式無關，那時候叫人去按 Google 只會更混亂。
+ *
+ * 優先看 error code；舊版或某些邊界情況拿不到 code，才退回比對訊息字串。
+ */
+function isInvalidCredentials(error: AuthError): boolean {
+  return error.code === 'invalid_credentials'
+    || /invalid login credentials/i.test(error.message);
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -44,6 +58,15 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * 要不要提示「你可能是用 Google 註冊的」。
+   *
+   * 🛑 這是一句【固定文案】，不查資料庫、不看這個 email 到底存不存在、
+   *    也不看它用哪個 provider。任何一次帳密不符都顯示同一句話，
+   *    所以它不會變成「這個 email 有沒有註冊過」的探測工具
+   *    —— 跟 /auth/forgot-password 的考量一致。
+   */
+  const [showGoogleHint, setShowGoogleHint] = useState(false);
 
   const returnUrl = searchParams.get('returnUrl') || POST_LOGIN_LANDING;
 
@@ -56,6 +79,7 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     setError(null);
+    setShowGoogleHint(false);
     const { error } = await signInWithGoogle();
     if (error) {
       setError(error.message);
@@ -65,12 +89,14 @@ export default function Login() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setShowGoogleHint(false);
     setIsSubmitting(true);
 
     const { error } = await signInWithEmail(email, password);
 
     if (error) {
       setError(error.message);
+      setShowGoogleHint(isInvalidCredentials(error));
       setIsSubmitting(false);
     } else {
       toast({
@@ -84,6 +110,7 @@ export default function Login() {
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setShowGoogleHint(false);
     setIsSubmitting(true);
 
     if (password.length < 6) {
@@ -261,6 +288,36 @@ export default function Login() {
                 <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-md">
                   <AlertCircle className="h-4 w-4" />
                   <span>{error}</span>
+                </div>
+              )}
+
+              {/*
+                用 Google 註冊的帳號沒有密碼，密碼欄怎麼填都會得到
+                「Invalid login credentials」。改版前這裡沒有任何指引，
+                使用者只會以為自己記錯密碼，然後去按「忘記密碼」——
+                而那條路對他們同樣沒用。
+
+                按鈕是刻意放在這裡的：手機上錯誤訊息出現在卡片底部，
+                最上面那顆 Google 按鈕已經滑出畫面外了。
+              */}
+              {showGoogleHint && (
+                <div role="status" className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                  <p className="text-sm text-foreground">
+                    如果你當初是用 Google 註冊的，請改用 Google 登入。
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    用 Google 註冊的帳號沒有設定過密碼，所以這裡輸入什麼都會失敗。
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={handleGoogleLogin}
+                    disabled={isSubmitting}
+                  >
+                    <GoogleIcon className="h-4 w-4" />
+                    使用 Google 帳號繼續
+                  </Button>
                 </div>
               )}
 
