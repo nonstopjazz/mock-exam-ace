@@ -22,7 +22,44 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <!--
+      #root 裡這段是「JS 沒跑起來」的保底畫面。
+
+      React 的 createRoot().render() 掛載時會清掉容器內原有的節點，所以
+      正常情況下使用者永遠看不到它；只有在 JS 檔沒載到、被擋掉、或解析失敗
+      時才會留在畫面上。
+
+      在這之前這個 div 是空的，那種情況下整頁就是一片米白 ——
+      使用者只能回報「空白頁面」，我們拿不到任何線索。
+
+      刻意用行內樣式而不是 Tailwind：真正要保底的情境包含「CSS 也沒載到」。
+      var() 的第二個參數是 index.css 沒生效時的退路，數值與 :root 一致。
+    -->
+    <div id="root">
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+                  font-family:Inter,'Noto Sans TC',system-ui,-apple-system,sans-serif;
+                  background:hsl(var(--background, 42 45% 96%));
+                  color:hsl(var(--foreground, 25 35% 15%));">
+        <div style="max-width:420px;width:100%;text-align:center;
+                    background:hsl(var(--card, 40 40% 98%));
+                    border:1px solid hsl(var(--border, 40 25% 85%));
+                    border-radius:12px;padding:24px;">
+          <h1 style="margin:0 0 8px;font-size:1.25rem;font-weight:700;">載入失敗</h1>
+          <p style="margin:0 0 20px;font-size:0.875rem;line-height:1.6;
+                    color:hsl(var(--muted-foreground, 25 20% 45%));">
+            網頁沒有正常載入。多半是網路不穩或瀏覽器快取到舊版本，
+            重新整理通常就好了。如果一直這樣，請清除這個網站的資料再開一次。
+          </p>
+          <button type="button" onclick="location.reload()"
+                  style="width:100%;height:44px;border:0;border-radius:8px;cursor:pointer;
+                         font-size:0.9375rem;font-weight:600;
+                         background:hsl(var(--primary, 38 92% 50%));
+                         color:hsl(var(--primary-foreground, 0 0% 100%));">
+            重新整理
+          </button>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -16,6 +16,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { PhaseProvider } from "./contexts/PhaseContext";
 import { IS_PRODUCTION } from "./config/features";
 import { useDocumentHead } from "./hooks/useDocumentHead";
+import { ErrorBoundary } from "@/components/errors/ErrorBoundary";
 
 // Admin pages
 import PacksAdmin from "./pages/admin/PacksAdmin";
@@ -101,16 +102,30 @@ function DocumentHead({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * 兩層錯誤邊界，位置是刻意的：
+ *
+ *   外層（shell）—— 包住所有 provider。AuthProvider / PhaseProvider /
+ *     useDocumentHead 這一層丟錯時，內層根本還沒掛上，只有它接得到。
+ *     這一層就是「整頁空白」真正的來源。
+ *
+ *   內層（page）—— 只包 <Routes>。某一頁壞掉時，provider 與 Toaster
+ *     還活著，使用者按「重新整理」以外的路也還在。
+ *
+ * 最近的邊界優先接手，所以頁面層的錯誤不會驚動外層。
+ */
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <DocumentHead>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-          <PhaseProvider>
-          <Routes>
+  <ErrorBoundary label="shell">
+    <QueryClientProvider client={queryClient}>
+      <DocumentHead>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+            <PhaseProvider>
+            <ErrorBoundary label="page">
+            <Routes>
             {/* Main app routes */}
             <Route path="/" element={<Home />} />
 
@@ -296,13 +311,15 @@ const App = () => (
           <Route path="/practice/profile" element={<PhaseGate requiredPhase={1} title="個人檔案" description="個人檔案功能即將推出，敬請期待！"><ProtectedRoute><Navbar /><PracticeProfile /></ProtectedRoute></PhaseGate>} />
 
             <Route path="*" element={<NotFound />} />
-          </Routes>
-          </PhaseProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </DocumentHead>
-  </QueryClientProvider>
+            </Routes>
+            </ErrorBoundary>
+            </PhaseProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </DocumentHead>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
