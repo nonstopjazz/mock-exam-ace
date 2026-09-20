@@ -211,12 +211,23 @@ RLS 沒有 policy 會回 0 列；沒有 grant 會直接報錯。
 | # | 項目 | 說明 |
 |---|---|---|
 | 1 | **iLearn 復原** | 見第 0 節。SQL 寫好了，沒執行。 |
-| 2 | **`learn_feature_enabled()` 的 `left_at` 缺漏** | **這是權限漏洞**：學生退出班級後，仍然保有該班的功能權限。比顯示問題嚴重。建議獨立一支 migration、獨立一個 PR。 |
+| 2 | ~~**`learn_feature_enabled()` 的 `left_at` 缺漏**~~ | ✅ **已實作，commit `bf2186a`**，但 **SQL 還沒在 production 執行**。見下方。 |
 
 `left_at` 是軟移除，「在籍」的判準是 `left_at IS NULL`。三項獨立證據確認這是 bug：
 兩個部分索引都帶這個條件；擁有這張表的模組 5/5 查詢點都帶；模組外 4/4 都沒帶。
 
-要修的四處：
+### ✅ 2026-09-20 更新：修正已經寫好並測過，但還沒執行
+
+production 實測：**已退出 1 人、在籍 21 人、總計 22 人** → 不是潛在 bug，現在就在發生。
+
+- `supabase/migrations/fix_class_membership_left_at.sql`（🟢 只要在 production 執行一次）
+- `supabase/migrations/fix_class_membership_left_at.rollback.sql`
+- `supabase/tests/class_membership_left_at_test.sql`（23 個 assertion，本機 PostgreSQL 16 全過）
+
+共改 6 個查詢點、4 支函式。`writing_pending_digest()` 本身沒有 membership 查詢，
+真正的修正在它委派的 `writing_pending_summary_internal()`，連帶修正 `writing_queue_summary()`。
+
+原本盤點時列的四處：
 
 | 對象 | 修法 | 標示 |
 |---|---|---|
