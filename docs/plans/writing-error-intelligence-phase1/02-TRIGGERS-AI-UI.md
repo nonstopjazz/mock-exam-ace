@@ -1,5 +1,16 @@
 # Trigger / AI / UI（交付項 8 / 9 / 10 + §A / §B / §G / §H / §I）
 
+> ## ⚠️ 優先順序已於 2026-09-20 修訂
+>
+> 本文件的**資料架構結論仍然有效**，但「第一版要做什麼」已經改變。
+> 請先讀 **[`04-PHASE-1A-REVISION.md`](./04-PHASE-1A-REVISION.md)**。
+>
+> 重點差異：Phase 1A 的主軸從 Persistent Error Detection 改為 **Error Finder**
+> （一次出現即可查到），`student_writing_error_profiles` / `writing_error_alerts` /
+> weekly cron / AI digest 全部延後到 1B / Phase 2，且 **D1–D7 都不再是動工的 blocker**。
+
+
+
 ## 8. Weekly trigger architecture（§G-2）
 
 ### 沿用既有基礎建設，不新建

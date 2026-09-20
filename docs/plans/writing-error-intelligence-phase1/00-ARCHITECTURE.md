@@ -1,5 +1,16 @@
 # Writing Error Intelligence — Phase 1 Implementation Plan
 
+> ## ⚠️ 優先順序已於 2026-09-20 修訂
+>
+> 本文件的**資料架構結論仍然有效**，但「第一版要做什麼」已經改變。
+> 請先讀 **[`04-PHASE-1A-REVISION.md`](./04-PHASE-1A-REVISION.md)**。
+>
+> 重點差異：Phase 1A 的主軸從 Persistent Error Detection 改為 **Error Finder**
+> （一次出現即可查到），`student_writing_error_profiles` / `writing_error_alerts` /
+> weekly cron / AI digest 全部延後到 1B / Phase 2，且 **D1–D7 都不再是動工的 blocker**。
+
+
+
 > **只做規劃。** 沒有修改任何程式碼、資料庫、Prompt、UI；沒有建立 migration；沒有 commit。
 > 嚴格沿用既有 `writing-v2` taxonomy（17 個 `WRITE_ERR_*`），不建立新 taxonomy。
 > 基準：`main` @ `02d4a68`
