@@ -187,7 +187,7 @@ SELECT id FROM writing_analyses
 
 | # | 決定 | 選項 | 建議 |
 |---|---|---|---|
-| **D8** | 「依學生查看」時，Error multiselect 的語意 | **S-a** 選了 ARTICLE → 只列出每位學生的 ARTICLE 那一列<br>**S-b** 選了 ARTICLE → 列出**犯過 ARTICLE 的學生**，但每位仍顯示他**全部**的 error code，選中的加標記 | **S-b** |
+| **D8** | 「依學生查看」時，Error multiselect 的語意 | **S-a** 選了 ARTICLE → 只列出每位學生的 ARTICLE 那一列<br>**S-b** 選了 ARTICLE → 列出**犯過 ARTICLE 的學生**，但每位仍顯示他**全部**的 error code，選中的加標記 | ✅ **已採用 S-b**（2026-09-20 確認） |
 
 **為什麼建議 S-b**：老師的核心需求是「**不要漏掉某個學生曾經犯過哪些值得 follow-up 的錯**」。
 S-a 會把老師剛剛特地打開的那份完整清單又砍掉，等於自己打自己。
@@ -435,34 +435,97 @@ SELECT f.id, f.essay_id, f.essay_submitted_at, f.essay_topic,
 - **不做「代表性挑選」**。`02` §H 的 deterministic 選樣規則是為了餵 AI digest 而設計的，
   1A 沒有 AI，老師要看的是**全部**（按時間排序、可捲動），不是被挑過的三則
 
-### 6.5 寫入路徑 —— `writing_sync_error_findings(p_essay_id)`
+### 6.5 寫入路徑 —— `writing_sync_error_findings(p_analysis_id)`
+
+**簽名改用 `p_analysis_id`**（原本寫 `p_essay_id`）。理由是實際的呼叫點：
+`api/analyze-writing.ts` 的 `performSynthesis()` 只拿得到 `analysisId`，
+`ctx.essayId` 不在那個函式的作用域裡（`RunContext` 沒有傳進去）。
+改成收 `analysis_id` 並由函式內部解析出 `essay_id`，呼叫點就是一行，不必多一次來回查詢。
+
+這不影響正確性：函式拿到 `analysis_id` 之後，**仍然是回頭找「該 essay 最高的 COMPLETED 版次」**，
+而不是直接用傳進來的那一版。所以就算呼叫端傳了一個過時的 analysis_id，結果一樣正確。
 
 ```
-輸入：essay_id（不是 analysis_id —— 因為要找「這篇目前有效的分析」）
+輸入：analysis_id
 
-1. 找出該 essay 最高的 COMPLETED analysis_version
+1. 由 analysis_id 解析出 essay_id
+2. 找出該 essay 最高的 COMPLETED analysis_version
      沒有 → DELETE 該 essay 的 findings，return（這篇目前沒有有效分析）
-2. 解析該分析的 error_analysis JSONB
-3. 交易內：DELETE 該 essay 既有 findings → INSERT 新的
-4. 回傳 (deleted, inserted) 供稽核
+3. 解析該分析的 error_analysis JSONB
+4. 交易內：DELETE 該 essay 既有 findings → INSERT 新的
+5. 回傳 (essay_id, deleted, inserted) 供稽核
 
 冪等：同樣輸入跑兩次，結果與跑一次相同
 ```
 
-**A9 的呼叫點**（`api/analyze-writing.ts`，標記 COMPLETED 之後）：
+回填用的是內部變體 `writing_sync_error_findings_for_essay(p_essay_id)`，兩者共用同一段邏輯。
+
+---
+
+### 🔴 6.5.1 A9 的錯誤處理 —— 原本的寫法是無效的
+
+**先前這份文件在這裡寫的程式碼是錯的**，而且錯得很危險。原本寫的是：
 
 ```ts
-// findings 是物化視圖，不是真相。同步失敗不該讓分析結果失敗——
-// 分析已經寫進 writing_analyses 了，findings 隨時可以用 backfill 補。
+// ❌ 錯誤示範：這個 catch 永遠不會被觸發
 try {
   await supabase.rpc('writing_sync_error_findings', { p_essay_id: essayId });
 } catch (err) {
-  console.error('[analyze-writing] findings 同步失敗，稍後可用 backfill 補', err);
+  console.error('...', err);
 }
 ```
 
-🛑 **這個 try/catch 是設計的一部分，不是偷懶。** 不包起來的話，一個 findings 的問題
-會讓一次成功的（而且已經花過錢的）作文分析被判定為失敗。
+`supabase.rpc()` **不會 throw**，它回傳 `{ data, error }`。上面那段 `catch` 捕捉不到任何東西，
+等於把所有同步失敗**靜默吞掉** —— 正好是最不該發生的那種失敗模式。
+
+#### 查證結果（不是推測）
+
+| 查的東西 | 結果 |
+|---|---|
+| `@supabase/supabase-js` / `@supabase/postgrest-js` 版本 | 都是 **2.90.1** |
+| 這個 repo 有沒有用 `.throwOnError()` | **沒有**，所以 `shouldThrowOnError = false` |
+| PostgreSQL 層的錯誤（例如 RPC RAISE EXCEPTION） | 回 `{ error }`，**不 throw** |
+| 傳輸層失敗（fetch 掛掉、網路斷線） | `postgrest-js/dist/index.cjs:154` 的 `res.catch((fetchError) => ...)` **把它攔下來轉成 `{ error }`**，一樣**不 throw** |
+| 既有程式碼的既定樣板 | `api/analyze-writing.ts:129-131`、`:135-136` 都是 `const { error } = await ...; if (error) ...` |
+
+➡️ **`if (error)` 是唯一有效的機制，而且它同時涵蓋資料庫錯誤與網路錯誤。**
+
+#### 正確的寫法
+
+呼叫點：`api/analyze-writing.ts`，在 `status: "COMPLETED"` 更新成功之後、
+`return { ok: true, ... }` 之前（目前是 `:873-882`）。
+
+```ts
+// findings 是 error_analysis 的物化視圖，不是真相本身。
+// 分析結果此刻已經落地，同步失敗不該讓一次成功（而且已經花過錢）的分析被判定為失敗。
+// 但也【絕對不能默默吞掉】—— 吞掉的話 findings 會缺資料，而且沒有人會知道。
+const { error: syncError } = await admin.rpc("writing_sync_error_findings", {
+  p_analysis_id: analysisId,
+});
+
+if (syncError) {
+  // 用 console.error（不是 warn）：這是需要有人處理的狀況，只是不必當場失敗。
+  // analysisId 一定要帶，否則事後無法用 backfill 針對性地補。
+  console.error("[analyze-writing] findings 同步失敗，分析本身已完成，請用 backfill 補:", {
+    analysisId,
+    code: syncError.code,
+    message: syncError.message,
+    details: syncError.details,
+    hint: syncError.hint,
+  });
+}
+```
+
+#### 三條硬性要求（測試要守住）
+
+| # | 要求 | 怎麼驗 |
+|---|---|---|
+| **E1** | 同步失敗**不改變** `performSynthesis` 的回傳值 | 讓 RPC 拋錯，斷言仍然回 `{ ok: true }`、`writing_analyses.status` 仍是 `COMPLETED` |
+| **E2** | 同步失敗**一定留下含 `analysisId` 的 `console.error`** | spy `console.error`，斷言被呼叫且內容含 analysisId |
+| **E3** | **不得靜默忽略** —— 沒有 `if (error)` 就不算完成 | code review 檢查項；`await admin.rpc(...)` 後面沒有接 `if (error)` 一律退回 |
+
+> ⚠️ `try/catch` 可以留著當最外層防護（例如 client 本身被設定壞掉這種非 postgrest 路徑的例外），
+> 但它**不能是唯一的機制**，也不能取代 `if (error)`。單獨的 try/catch 等於沒有處理。
 
 ---
 
@@ -617,7 +680,65 @@ try {
 
 Phase 1A 的整個價值都建立在「findings 表裡有資料」。**回填沒跑完，功能等於不存在。**
 
-### 動工前必須先知道的數字（唯讀）
+### ✅ 2026-09-20 已量測（production）
+
+| | |
+|---|---|
+| 分析總數 | **52** |
+| 已完成（COMPLETED） | **44** |
+| 有效作文數 | **44** |
+| `writing_analyses` 表大小 | 3000 kB |
+| `error_analysis` JSONB 總量 | 86 kB（壓縮後） |
+
+**結論：回填不是風險。** 44 篇作文、86 kB JSONB，一批就跑得完，秒級。
+原本列為 R1 的「回填量體未知」**解除**；§9 的分批、續跑機制仍然要做（正確性與可重跑性），
+但不再需要為了效能而分批，也不需要挑低峰時段。
+
+R3（即時 GROUP BY 變慢）同樣解除：44 篇作文的 findings 量級在數百列，
+單表 GROUP BY 是微秒級。**這再次確認 Phase 1A 不需要 profiles 快取表。**
+
+⚠️ 兩點要注意：
+- `sum(pg_column_size(...))` 回的是**壓縮後**的大小，實際 JSON 文字會大數倍。但即使 5 倍也只有 400 kB。
+- 52 − 44 = **8 筆非 COMPLETED 的分析**。這 8 筆是什麼狀態、有沒有「較新的 FAILED 蓋過較舊的 COMPLETED」，
+  直接決定 §0 那個修正是不是真的有用。見下方「動工前還要確認的兩件事」。
+
+### 動工前還要確認的兩件事（唯讀）
+
+```sql
+-- ① 那 8 筆非 COMPLETED 是什麼？有沒有「新的失敗版蓋過舊的成功版」？
+SELECT a.status,
+       count(*)::int AS 筆數,
+       count(*) FILTER (
+         WHERE EXISTS (
+           SELECT 1 FROM writing_analyses b
+            WHERE b.essay_id = a.essay_id
+              AND b.status = 'COMPLETED'
+              AND b.analysis_version < a.analysis_version))::int
+         AS 蓋過較舊成功版的筆數
+  FROM writing_analyses a
+ WHERE a.status <> 'COMPLETED'
+ GROUP BY a.status
+ ORDER BY 2 DESC;
+```
+「蓋過較舊成功版的筆數 > 0」→ §0 的修正**現在就在保護真實資料**，不是理論問題。
+
+```sql
+-- ② 回填之後 findings 表會有幾列？（決定 UNIQUE 與索引的實際壓力）
+SELECT count(*)::int                        AS 預估findings列數,
+       count(DISTINCT a.essay_id)::int      AS 涵蓋作文數,
+       count(DISTINCT f ->> 'code')::int    AS 出現過的error_code種類,
+       round(avg(cnt), 1)                   AS 每篇平均findings
+  FROM writing_analyses a
+  CROSS JOIN LATERAL jsonb_array_elements(a.error_analysis -> 'findings') f
+  CROSS JOIN LATERAL (
+    SELECT jsonb_array_length(a.error_analysis -> 'findings') AS cnt) c
+ WHERE a.status = 'COMPLETED';
+```
+⚠️ 這一支的 `error_analysis -> 'findings'` 路徑**要先確認與 `analysisContract.ts` 一致**；
+若回報 `cannot extract elements from a scalar` 之類的錯誤，代表實際 JSONB 形狀與預期不同 ——
+那正是 R2 要防的，也正是應該在寫 A3 之前知道的事。
+
+### 原本的量體查詢（已執行，保留紀錄）
 
 ```sql
 SELECT count(*)                                                    AS 分析總數,
@@ -658,9 +779,9 @@ O2 配合 8.6 的第一種空狀態訊息，老師隨時知道自己看到的是
 
 | # | 風險 | 影響 | 緩解 |
 |---|---|---|---|
-| **R1** | **回填量體未知** | 可能比預期久很多 | §9 的查詢先做。分批、可續跑 |
+| ~~R1~~ | ~~回填量體未知~~ | — | ✅ **已解除**：44 篇 / 86 kB，一批跑完。分批機制仍做，但為了可重跑而非效能 |
 | **R2** | `error_analysis` JSONB 的實際形狀與 `analysisContract.ts` 有出入 | 解析失敗或欄位缺漏 | 回填函式對每一篇 try/catch，記錄失敗的 essay_id 而不是整批失敗。先在 staging 對真實資料跑一次 |
-| **R3** | 資料量長大後，即時 GROUP BY 變慢 | 老師等待 | 1A 先量測。真的慢了再做 1B 的 profiles 快取 —— **這正是它被設計出來的理由**，不是提早做 |
+| ~~R3~~ | ~~即時 GROUP BY 變慢~~ | — | ✅ **目前解除**：44 篇作文、findings 數百列。日後資料長大再評估 1B 的 profiles 快取 |
 | **R4** | `writing_admin_queue()` 加 `error_codes[]` 讓本來就重的查詢更重 | 「作文」分頁變慢 | 用 LATERAL + 既有 `(essay_id)` 索引；量測前後差異。⚠️ **這支剛在 PR #128 改過，新 migration 要建立在修正後的版本上** |
 | **R5** | 班級 filter 從名稱改成 id，動到既有行為 | 既有篩選壞掉 | 納入測試，特別測「一個學生多個班」與「沒有班級」 |
 
@@ -678,10 +799,41 @@ O2 配合 8.6 的第一種空狀態訊息，老師隨時知道自己看到的是
 
 | # | 項目 | 何時要決 |
 |---|---|---|
-| D8 | 依學生查看時 multiselect 的語意 | 建議 S-b，UI 做出來看過再定也可以（一行的差別） |
 | — | Common Errors 要不要顯示 `per_100_words` | 建議 1A 先不顯示（§6.1 的分母陷阱），1B 一起做對 |
 | — | Drill-down 的 `p_limit` 預設值 | 建議 20，看實際資料再調 |
 | — | 回填期間的 UI 行為 | 建議 O2 |
+
+---
+
+## 10.5 ✅ Baseline（2026-09-20，動工前的現況）
+
+動工前先跑過一次，之後每一批都要能對照這個基準，確認「不是我弄壞的」。
+
+| 檢查 | 結果 |
+|---|---|
+| `supabase/tests/writing_coexistence_test.sql` | ✅ **8 PASS / 0 FAIL** |
+| `supabase/tests/class_membership_left_at_test.sql` | ✅ **23 PASS / 0 FAIL** |
+| `npm run verify:writing-contract` | ✅ PASS |
+| `npm run verify:writing-passes` | ✅ PASS |
+| `npm run build`（含 tsc） | ✅ PASS |
+| `npm run lint` | ⚠️ **既有 124 problems（92 errors / 32 warnings），exit 1** |
+
+### ⚠️ lint 本來就是紅的
+
+`npm run lint` 在**未改任何東西**的情況下就回 exit 1。這是既有狀態，不是 Phase 1A 造成的。
+
+但 Phase 1A 會碰到的五個檔案**目前都是乾淨的**：
+
+| 檔案 | 目前問題數 |
+|---|---|
+| `src/pages/admin/WritingGrading.tsx` | 0 |
+| `api/analyze-writing.ts` | 0 |
+| `src/lib/writing/gradingQueue.ts` | 0 |
+| `src/hooks/learn/useWritingQueue.ts` | 0 |
+| `src/hooks/learn/useAdminClasses.ts` | 0 |
+
+➡️ **驗收標準**：全站總數**不得超過 124**，且上列五個檔案（以及新增的檔案）**必須維持 0**。
+不要順手去修別人的 92 個 error —— 那會讓 Phase 1A 的 diff 變得無法審查。
 
 ---
 
