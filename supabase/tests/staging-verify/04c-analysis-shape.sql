@@ -14,11 +14,23 @@
 --   coverage 是 SERVER_DERIVED 的，由 findings 推導而來，
 --   所以 sum(coverage.count) 理論上應該【等於】findings 的數量。
 --
--- 判讀：
---   * 「兩者一致」必須全部是 true。
---     有 false → findings 與 coverage 對不起來，【停下來查清楚】，不要往 production 推。
---   * 「taxonomy」若出現一個以上的版本 → 見下方說明。
---   * 「findings數 = 0 且 coverage_count總和 = 0」→ 真的零錯誤，正常。
+-- 判讀（順序很重要，先看 coverage項數）：
+--
+--   1. 「coverage項數」全部是 0
+--      → 這批分析【根本沒有寫 coverage】，「兩者一致」那一欄就沒有意義，
+--        不要當成警訊。改看 findings數 本身，並到 writing_analyses 直接看那幾篇。
+--
+--   2. 「coverage項數」> 0 時，「兩者一致」必須是 true。
+--      false → findings 與 coverage 對不起來，【停下來查清楚】，不要往 production 推。
+--
+--   3. 「findings數 = 0」且「coverage項數 > 0」且「coverage_count總和 = 0」
+--      → 真的零錯誤，正常。⚠️ 但這【不代表學生已精熟】（TR-12／TR-13）。
+--
+--   4. 「字數」異常小（例如 1）
+--      → word_count 是以空白切分的，中文沒有空白會整串算成 1 個字。
+--        通常代表那一篇不是英文作文。這種篇數不能拿來算 errors per 100 words。
+--
+--   5. 「taxonomy」若出現一個以上的版本 → 見下方說明。
 --
 -- ⚠️ 關於 taxonomy 版本混用
 --   跨篇統計會把不同 taxonomy 版本的 findings 放在一起數。
