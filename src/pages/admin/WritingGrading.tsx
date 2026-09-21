@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertCircle,
   CheckCircle2,
@@ -29,6 +30,11 @@ import { toast } from "sonner";
 import { WritingLoading } from "@/components/learn/writing/writingShared";
 import { BatchAnalyzeDialog } from "@/components/admin/writing/BatchAnalyzeDialog";
 import { useWritingQueue } from "@/hooks/learn/useWritingQueue";
+import { useAdminClasses } from "@/hooks/learn/useAdminClasses";
+import { ErrorCodeFilter } from "@/components/admin/writing/ErrorCodeFilter";
+import { ErrorTrackingPanel } from "@/components/admin/writing/ErrorTrackingPanel";
+import { ERROR_TAG_BY_CODE } from "@/lib/writing/taxonomy";
+import type { ErrorScope } from "@/lib/writing/errorTracking";
 import {
   ANALYSIS_STATE_LABEL,
   analysisBadge,
@@ -69,6 +75,18 @@ function withinDays(iso: string | null, days: number): boolean {
   return Date.now() - t <= days * 24 * 60 * 60 * 1000;
 }
 
+/** 時間 filter 轉成錯誤追蹤 RPC 要的起點。回 null = 不限 */
+function timeFilterFrom(t: TimeFilter): string | null {
+  if (t === "ALL") return null;
+  const now = new Date();
+  if (t === "TODAY") {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return d.toISOString();
+  }
+  const days = t === "7D" ? 7 : 30;
+  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 function isToday(iso: string | null): boolean {
   if (!iso) return false;
   const d = new Date(iso);
@@ -90,6 +108,22 @@ function relativeTime(iso: string | null): string {
   return new Date(iso).toLocaleDateString("zh-TW");
 }
 
+/**
+ * 一列最多放幾個 error badge。
+ * 實測單篇最多 11 個 code，全部攤開會把學生姓名那一行擠到看不見。
+ * 手機一排只塞得下兩個，所以上限更嚴；兩個上限都用 CSS 切換，
+ * 不用 JS 量視窗寬度（量出來的值在第一次 render 時還是錯的）。
+ */
+const BADGE_LIMIT = 6;
+const BADGE_LIMIT_SM = 3;
+
+/** 有篩選時把被選到的 code 排到前面，老師才不用在一排 badge 裡找自己剛選的那個 */
+function orderedCodes(codes: readonly string[], selectedCodes: readonly string[]): string[] {
+  if (selectedCodes.length === 0) return [...codes];
+  const hit = new Set(selectedCodes);
+  return [...codes].sort((a, b) => Number(hit.has(b)) - Number(hit.has(a)));
+}
+
 const WritingGrading = () => {
   const queue = useWritingQueue();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -98,17 +132,29 @@ const WritingGrading = () => {
   const [stateFilter, setStateFilter] = useState<AnalysisState | "ALL">("ALL");
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("PENDING");
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("ALL");
+  const [errorCodes, setErrorCodes] = useState<string[]>([]);
+  const [tab, setTab] = useState("essays");
+  // 錯誤追蹤的班級篩選要 class_id，而「作文」分頁是用班級【名稱】比對
+  // row.class_names。兩者共用同一個下拉，所以這裡同時留著 id 與 name。
+  const adminClasses = useAdminClasses();
 
   // 確認框：這是唯一會直接花錢的動作，按下去之前先讓老師看到規模。
   const [pending, setPending] = useState<{ ids: string[]; label: string } | null>(null);
   const [estimate, setEstimate] = useState<CostEstimate | null>(null);
   const [estimating, setEstimating] = useState(false);
 
+  // 選項以 learn_admin_classes() 為準（它有 id）；
+  // 佇列裡出現、但已封存或查不到的班級名稱也補進來，免得篩選少了選項。
   const classOptions = useMemo(() => {
-    const names = new Set<string>();
-    for (const row of queue.rows) for (const name of row.class_names ?? []) names.add(name);
-    return [...names].sort();
-  }, [queue.rows]);
+    const byName = new Map<string, { id: string | null; name: string }>();
+    for (const c of adminClasses.classes) byName.set(c.name, { id: c.id, name: c.name });
+    for (const row of queue.rows) {
+      for (const name of row.class_names ?? []) {
+        if (!byName.has(name)) byName.set(name, { id: null, name });
+      }
+    }
+    return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name, "zh-TW"));
+  }, [queue.rows, adminClasses.classes]);
 
   const topicOptions = useMemo(() => {
     const topics = new Set<string>();
@@ -126,9 +172,36 @@ const WritingGrading = () => {
       if (timeFilter === "TODAY" && !isToday(row.submitted_at)) return false;
       if (timeFilter === "7D" && !withinDays(row.submitted_at, 7)) return false;
       if (timeFilter === "30D" && !withinDays(row.submitted_at, 30)) return false;
+      // error_codes 為 null 代表「這篇沒有已完成的分析」，不是「沒有錯誤」。
+      // 老師篩選某個錯誤時，這種作文不該出現。
+      if (errorCodes.length > 0
+          && !errorCodes.some((c) => (row.error_codes ?? []).includes(c))) return false;
       return true;
     });
-  }, [queue.rows, classFilter, topicFilter, stateFilter, reviewFilter, timeFilter]);
+  }, [queue.rows, classFilter, topicFilter, stateFilter, reviewFilter, timeFilter, errorCodes]);
+
+  /** 兩個分頁共用的篩選範圍。四支 RPC 吃同一組，數字才對得起來 */
+  const scope: ErrorScope = useMemo(() => ({
+    classId: classOptions.find((c) => c.name === classFilter)?.id ?? null,
+    from: timeFilterFrom(timeFilter),
+    to: null,
+    topic: topicFilter === "ALL" ? null : topicFilter,
+    codes: errorCodes,
+  }), [classFilter, classOptions, timeFilter, topicFilter, errorCodes]);
+
+  const hasNarrowingFilters =
+    classFilter !== "ALL" || topicFilter !== "ALL" || timeFilter !== "ALL";
+
+  /** 每個 error code 在【目前佇列】裡的作文數，給複選選單顯示規模 */
+  const codeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const row of queue.rows) {
+      for (const code of row.error_codes ?? []) {
+        counts.set(code, (counts.get(code) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [queue.rows]);
 
   // 勾選狀態只在【看得到的】列上有意義：篩選之後被藏起來的不應該偷偷被送出去分析。
   const selectableIds = useMemo(
@@ -309,15 +382,15 @@ const WritingGrading = () => {
             </Alert>
           ) : null}
 
-          {/* ── 篩選 ───────────────────────────────────────────── */}
+          {/* ── 共用篩選（兩個分頁都吃同一組）────────────────── */}
           <Card className="p-6 mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Select value={classFilter} onValueChange={setClassFilter}>
                 <SelectTrigger><SelectValue placeholder="班級" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">所有班級</SelectItem>
-                  {classOptions.map((name) => (
-                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                  {classOptions.map((c) => (
+                    <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -332,6 +405,31 @@ const WritingGrading = () => {
                 </SelectContent>
               </Select>
 
+              <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
+                <SelectTrigger><SelectValue placeholder="提交時間" /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(TIME_LABEL) as TimeFilter[]).map((t) => (
+                    <SelectItem key={t} value={t}>{TIME_LABEL[t]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <ErrorCodeFilter value={errorCodes} onChange={setErrorCodes} counts={codeCounts} />
+            </div>
+          </Card>
+
+          <Tabs value={tab} onValueChange={setTab}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="essays">作文</TabsTrigger>
+              <TabsTrigger value="errors">錯誤追蹤</TabsTrigger>
+              <TabsTrigger value="alerts">提醒</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="essays" className="mt-0">
+
+          {/* ── 作文分頁專屬的篩選 ─────────────────────────────── */}
+          <Card className="p-6 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
                 value={stateFilter}
                 onValueChange={(v) => setStateFilter(v as AnalysisState | "ALL")}
@@ -351,15 +449,6 @@ const WritingGrading = () => {
                   <SelectItem value="PENDING">尚未處理</SelectItem>
                   <SelectItem value="REVIEWED">已處理</SelectItem>
                   <SelectItem value="ALL">全部</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
-                <SelectTrigger><SelectValue placeholder="提交時間" /></SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(TIME_LABEL) as TimeFilter[]).map((t) => (
-                    <SelectItem key={t} value={t}>{TIME_LABEL[t]}</SelectItem>
-                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -467,6 +556,50 @@ const WritingGrading = () => {
                             ? ` · 第 ${row.analysis_version} 次分析`
                             : ""}
                         </p>
+                        {(() => {
+                          // 🛑 null 是「沒有已完成的分析」，[] 是「分析完成、未發現錯誤」。
+                          //    兩者都不代表學會了，所以這裡都不畫成「乾淨」的樣子——只是不畫。
+                          const codes = orderedCodes(row.error_codes ?? [], errorCodes);
+                          if (codes.length === 0) return null;
+                          const shown = codes.slice(0, BADGE_LIMIT);
+                          const rest = codes.length - shown.length;
+                          const restSm = codes.length - BADGE_LIMIT_SM;
+                          return (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {shown.map((code, i) => (
+                                <Badge
+                                  key={code}
+                                  variant="outline"
+                                  className={`text-xs font-normal ${
+                                    i >= BADGE_LIMIT_SM ? "hidden sm:inline-flex" : ""
+                                  } ${
+                                    errorCodes.includes(code)
+                                      ? "bg-accent/10 border-accent/30 text-foreground"
+                                      : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {ERROR_TAG_BY_CODE.get(code)?.zh ?? code}
+                                </Badge>
+                              ))}
+                              {restSm > 0 ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs font-normal text-muted-foreground sm:hidden"
+                                >
+                                  +{restSm}
+                                </Badge>
+                              ) : null}
+                              {rest > 0 ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs font-normal text-muted-foreground hidden sm:inline-flex"
+                                >
+                                  +{rest}
+                                </Badge>
+                              ) : null}
+                            </div>
+                          );
+                        })()}
                         {analysisState(row) === "FAILED" && row.error_detail ? (
                           <p className="text-xs text-destructive mt-1 line-clamp-2">
                             {row.error_detail}
@@ -505,6 +638,24 @@ const WritingGrading = () => {
               </div>
             </Card>
           )}
+
+            </TabsContent>
+
+            <TabsContent value="errors" className="mt-0">
+              <ErrorTrackingPanel scope={scope} hasFilters={hasNarrowingFilters} />
+            </TabsContent>
+
+            <TabsContent value="alerts" className="mt-0">
+              <Card className="p-6">
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>提醒功能尚未啟用</p>
+                  <p className="text-sm mt-2">
+                    目前請用「錯誤追蹤」分頁主動查看。系統不會自動判定哪些學生需要提醒。
+                  </p>
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
           <BatchAnalyzeDialog
             open={pending !== null}
