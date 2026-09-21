@@ -2,6 +2,14 @@
 
 > 🟢 全部唯讀。staging 與 production 都可以安全執行。
 > 一次貼一份（Supabase SQL Editor 只顯示最後一個查詢的結果）。
+>
+> ⚠️ **A/B/C/D 每一份開頭都帶一段「取得管理員身分」。**
+> SQL Editor 沒有 JWT，`auth.uid()` 是 NULL，`is_admin()` 回 NULL，
+> 四支 RPC 會全部回 `42501 僅限管理員` —— 看起來像 migration 壞了，其實沒有。
+> 那一行只是設定 `auth.uid()` 讀的 GUC，**不改資料、不改權限**，
+> 也不會給你任何在 SQL Editor 裡原本沒有的能力。
+>
+> `00-preflight.sql` 的第 7 項在 SQL Editor 裡**本來就會是 false**，那是正常的。
 
 | 檔案 | 對應 | 要看什麼 |
 |---|---|---|
