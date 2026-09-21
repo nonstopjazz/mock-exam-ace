@@ -30,14 +30,11 @@ UNION ALL SELECT '6. 五支新函式尚未存在（預期 0 支）',
            AND p.proname IN ('writing_error_scoped_findings','writing_admin_error_overview',
                              'writing_admin_error_students','writing_admin_student_errors',
                              'writing_admin_error_findings')) = 0
--- ⚠️ 第 7 項用 to_regprocedure 先確認函式存在才呼叫。
---    直接呼叫的話，函式不存在會讓【整個 preflight】報錯，
---    連第 5 項「is_admin() 存在 = false」都看不到 —— 那正是最該看到的訊息。
+-- ⚠️ 若這一整段回報「function public.is_admin() does not exist」，
+--    那個錯誤【本身就是檢查結果】—— 代表第 5 項不成立，四支 RPC 不可能運作。
+--    （CASE 包不住這件事：PostgreSQL 在【解析】階段就要解析函式名稱，
+--      不會等到執行時才判斷分支。to_regprocedure 在這裡救不了。）
 UNION ALL SELECT '7. 你是管理員（否則四支都會回 42501）',
-       CASE WHEN to_regprocedure('public.is_admin()') IS NULL
-            THEN '（is_admin() 不存在，見第 5 項）'
-            ELSE coalesce(public.is_admin(), false)::text END,
-       CASE WHEN to_regprocedure('public.is_admin()') IS NULL
-            THEN false
-            ELSE coalesce(public.is_admin(), false) END
+       coalesce(public.is_admin(), false)::text,
+       coalesce(public.is_admin(), false)
 ORDER BY 1;
