@@ -17,7 +17,8 @@
     "verify:writing-passes": "tsx scripts/verify-writing-passes.ts",
     "audit:writing": "tsx scripts/writing-audit.ts",
     "audit:writing:dryrun": "tsx scripts/_audit-dryrun.ts",
-    "preflight:vercel": "node scripts/preflight-vercel.mjs"
+    "preflight:vercel": "node scripts/preflight-vercel.mjs",
+    "verify:writing-sync-call": "tsx scripts/verify-writing-sync-call.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.17.1",
