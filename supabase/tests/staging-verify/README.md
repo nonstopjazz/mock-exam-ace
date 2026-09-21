@@ -15,6 +15,7 @@
 | 4 | `03-backfill.sql` | ✍️ 回填 | `failed=0`。`remaining` 若 > 0，帶 `last_essay_id` 再跑一次 |
 | 5 | `04-totals.sql` | 唯讀 | 「零錯誤作文數」應等於「分母 − 涵蓋作文數」 |
 | 6 | `04b-code-distribution.sql` | 唯讀 | 各 code 的學生數／作文數／findings 數 |
+| 6.5 | `04c-analysis-shape.sql` | 唯讀 | 🔴 「兩者一致」全部 true。分辨「真的零錯誤」與「findings 流失」 |
 | 7 | **`05-reconcile.sql`** | 唯讀 | 🔴 **13 列全部必須是 0**。任何一列不是 0 就停 |
 | 8 | `05b-sample.sql` | 唯讀 | 給人眼看的抽查 |
 | 9 | `06-targeted-checks.sql` | 唯讀 | 6 列「通過」全部 true |
