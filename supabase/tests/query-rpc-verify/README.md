@@ -19,6 +19,8 @@
 | `B-error-to-students.sql` | A5 | 🛑 清單尾端要有 **1 篇 / 1 finding** 的學生 |
 | `C-student-to-errors.sql` | A6 | 🛑 只出現一次的 code 要在；`is_selected` 只有 ARTICLE 是 true |
 | `D-drilldown.sql` | A7 | 🛑 `correction` 原樣，不截斷（看「修正長度」欄） |
+| `E-queue-error-codes.sql` | A8 | 不該出現「NULL 但分析已完成」 |
+| `E2-queue-sanity.sql` | A8 | 3 列「通過」全部 true |
 
 ## 判讀重點
 
