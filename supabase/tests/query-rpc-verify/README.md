@@ -5,6 +5,7 @@
 
 | 檔案 | 對應 | 要看什麼 |
 |---|---|---|
+| `00-preflight.sql` | — | 7 項「通過」全部 true 才跑 migration |
 | `A-common-errors.sql` | A4 | 依**學生數**排序的前 10 個 code |
 | `A2-meta.sql` | A4 | total / limit / truncated |
 | `B-error-to-students.sql` | A5 | 🛑 清單尾端要有 **1 篇 / 1 finding** 的學生 |
