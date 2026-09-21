@@ -25,7 +25,8 @@
 | 12 | `06c-fingerprint.sql`（再一次） | 唯讀 | 與第 10 步**完全相同** |
 | 13 | `07-error-to-students.sql` | 唯讀 | 誰犯過 `WRITE_ERR_ARTICLE` |
 | 14 | `08-student-to-errors.sql` | 唯讀 | 某位學生的全部 error code |
-| 15 | `09-performance.sql` | 唯讀 | 看 Execution Time 與有沒有吃到 `idx_wef_code_time` |
+| 15 | `09-performance.sql` | 唯讀 | 看 Execution Time。⚠️ 資料量小的時候 Seq Scan 是**正確**的，不是問題 |
+| 16 | `10-common-errors.sql` | 唯讀 | 依**學生數**排序的錯誤總覽（A4 的預覽） |
 
 ## 幾個容易誤判的地方
 

@@ -29,6 +29,25 @@ UNION ALL SELECT '4. writing_texts.word_count 欄位存在',
 UNION ALL SELECT '5. findings表已存在（預期 false＝還沒跑過）',
        (to_regclass('public.writing_error_findings') IS NOT NULL)::text,
        (to_regclass('public.writing_error_findings') IS NULL)
+UNION ALL SELECT '5b. sync 函式已存在（預期 false）',
+       (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+         WHERE n.nspname='public'
+           AND p.proname IN ('writing_sync_error_findings',
+                             'writing_sync_error_findings_for_essay',
+                             'writing_backfill_error_findings'))::text || ' 支',
+       (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+         WHERE n.nspname='public'
+           AND p.proname IN ('writing_sync_error_findings',
+                             'writing_sync_error_findings_for_essay',
+                             'writing_backfill_error_findings')) = 0
+UNION ALL SELECT '5c. 沒有同名但不同定義的既有物件',
+       coalesce((SELECT string_agg(c.relname || '(' || c.relkind::text || ')', ', ')
+                   FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                  WHERE n.nspname='public' AND c.relname = 'writing_error_findings'),
+                '（沒有）'),
+       NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                    WHERE n.nspname='public' AND c.relname='writing_error_findings'
+                      AND c.relkind <> 'r')
 UNION ALL SELECT '6. COMPLETED 分析數',
        (SELECT count(*) FROM public.writing_analyses WHERE status='COMPLETED')::text,
        (SELECT count(*) FROM public.writing_analyses WHERE status='COMPLETED') > 0
