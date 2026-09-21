@@ -156,6 +156,35 @@ SELECT t_assert((SELECT count(*) FROM writing_error_findings
   'S12 essay_submitted_at 有快照');
 
 \echo ''
+\echo '════════ 5b. 同一篇多個 writing_texts 版本（含 created_at 同值）════════'
+-- staging 實際有這種資料。created_at 同值時，若排序沒有唯一鍵當 tiebreaker，
+-- 取到哪一列是不確定的，物化出來的 word_count 會飄。
+-- 兩列的 created_at【完全相同】，而且比既有那一列新，所以只有 tiebreaker 能決定勝負
+INSERT INTO writing_texts (id, essay_id, content, word_count, created_at) VALUES
+ ('aaaa0000-0000-0000-0000-00000000000a', :e1, 'x', 111, now() + interval '1 hour'),
+ ('bbbb0000-0000-0000-0000-00000000000b', :e1, 'x', 999, now() + interval '1 hour');
+SELECT writing_sync_error_findings_for_essay(:e1);
+SELECT t_assert((SELECT DISTINCT essay_word_count FROM writing_error_findings WHERE essay_id=:e1) = 999,
+  'S12b created_at 同值時取 id 較大的那一列（確定性的，不會兩次不同）');
+DO $$
+DECLARE v_first INT; v_same BOOLEAN := true;
+BEGIN
+  SELECT DISTINCT essay_word_count INTO v_first
+    FROM public.writing_error_findings WHERE essay_id='e0000000-0000-0000-0000-000000000001';
+  FOR i IN 1..8 LOOP
+    PERFORM public.writing_sync_error_findings_for_essay('e0000000-0000-0000-0000-000000000001');
+    IF (SELECT DISTINCT essay_word_count FROM public.writing_error_findings
+         WHERE essay_id='e0000000-0000-0000-0000-000000000001') IS DISTINCT FROM v_first THEN
+      v_same := false;
+    END IF;
+  END LOOP;
+  PERFORM t_assert(v_same, 'S12c 連續重跑 8 次，word_count 始終相同（沒有飄）');
+END $$;
+DELETE FROM writing_texts WHERE id IN ('aaaa0000-0000-0000-0000-00000000000a',
+                                       'bbbb0000-0000-0000-0000-00000000000b');
+SELECT writing_sync_error_findings_for_essay(:e1);
+
+\echo ''
 \echo '════════ 6. is_fallback_code 是 GENERATED ════════'
 UPDATE writing_analyses SET error_analysis = '{"taxonomy_version":"writing-v2","findings":[
   {"code":"WRITE_ERR_GRAMMAR_OTHER","quote":"q","reason":"r","correction":"c","primary_skill":"W2"}]}'

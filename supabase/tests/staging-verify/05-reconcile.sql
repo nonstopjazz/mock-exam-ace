@@ -82,7 +82,8 @@ UNION ALL SELECT '13. essay_word_count 與 writing_texts 最新版不符',
        (SELECT count(*) FROM public.writing_error_findings f
         WHERE f.essay_word_count IS DISTINCT FROM (
           SELECT wt.word_count FROM public.writing_texts wt
-           WHERE wt.essay_id=f.essay_id ORDER BY wt.created_at DESC LIMIT 1))::int
+           WHERE wt.essay_id=f.essay_id
+           ORDER BY wt.created_at DESC, wt.id DESC LIMIT 1))::int
 ORDER BY 1;
 
 

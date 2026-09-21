@@ -84,12 +84,18 @@ BEGIN
       'essay_id', p_essay_id, 'deleted', 0, 'inserted', 0, 'skipped', 'ESSAY_NOT_FOUND');
   END IF;
 
-  -- writing_texts 是 append-only，取最新那一版（與 writing_admin_queue() 同一個判準）。
+  -- writing_texts 是 append-only，取最新那一版。
   -- ⚠️ 要的是 word_count 不是 char_count——1B 算的是 errors per 100 【words】。
+  --
+  -- ⚠️ 排序刻意多帶 wt.id：既有的 writing_admin_queue() 只用 created_at DESC，
+  --    但 created_at 可以同值（同一個交易內插入多列時，now() 是相同的）。
+  --    同值時 LIMIT 1 取哪一列是【不確定】的，同一個查詢跑兩次可能拿到不同的
+  --    word_count——物化出來的數字就會飄，而且驗證腳本會報出查不到原因的不一致。
+  --    多帶一個唯一鍵就讓它變成確定的。
   SELECT wt.word_count INTO v_word_count
     FROM public.writing_texts wt
    WHERE wt.essay_id = p_essay_id
-   ORDER BY wt.created_at DESC
+   ORDER BY wt.created_at DESC, wt.id DESC
    LIMIT 1;
 
   DELETE FROM public.writing_error_findings f WHERE f.essay_id = p_essay_id;
