@@ -21,6 +21,7 @@
 | `D-drilldown.sql` | A7 | 🛑 `correction` 原樣，不截斷（看「修正長度」欄） |
 | `E-queue-error-codes.sql` | A8 | 不該出現「NULL 但分析已完成」 |
 | `E2-queue-sanity.sql` | A8 | 3 列「通過」全部 true |
+| `F-a9-health.sql` | A9 | 🔴「已完成但沒有 findings 列」必須是 0；⏱「秒級」代表 A9 正在運作 |
 
 ## 判讀重點
 
