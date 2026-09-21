@@ -206,6 +206,7 @@ S-b 讓 multiselect 扮演「挑出哪些學生」的角色，而「這位學生
 
 | 欄位 | 變更 | 理由 |
 |---|---|---|
+| `finding_index` | ➕ **新增**（INTEGER NOT NULL） | 該 finding 在 `error_analysis -> 'findings'` 陣列裡的序號。同時是去重鍵與原始順序，見 §9 |
 | `essay_topic` | ➕ **新增**（TEXT，快照） | 題目是 1A 的四個 filter 之一。不快照的話每個 aggregation 都要 join 回 `writing_submissions`，而 `essay_topic` 是自由文字、沒有索引 |
 | `class_ids` | ❌ **不加** | 班級語意採 S1（目前在籍），**必須即時 join**。快照會凍結在物化當下，與 S1 矛盾 |
 | `is_latest` | ❌ **不加** | 表裡只放有效版次的 findings，不需要旗標。這也繞開了約束 1 |
@@ -231,14 +232,20 @@ S-b 讓 multiselect 扮演「挑出哪些學生」的角色，而「這位學生
 -- ⑤ 題目篩選（選用，資料量大再加）
 (essay_topic, essay_submitted_at DESC)
 
--- ⑥ 防重複插入
-UNIQUE (essay_id, error_code, quote, correction)
+-- ⑥ 每個 finding 的身分（見 §9「動工前還剩最後一件事」）
+UNIQUE (essay_id, finding_index)
 ```
 
-> ⚠️ UNIQUE 相對 `00` §3.1 **拿掉了 `analysis_id`**。
-> 因為表裡永遠只有「該篇目前有效分析」的 findings，同一篇不會同時存在兩個版次的列。
-> 把 `analysis_id` 放進 UNIQUE 反而會讓「舊版次沒刪乾淨」這種 bug 靜默通過。
-> `analysis_id` 仍然保留為一般欄位（稽核用）。
+> ⚠️ UNIQUE 相對 `00` §3.1 **改了兩次**，最終是 `(essay_id, finding_index)`：
+>
+> 1. 先拿掉 `analysis_id` —— 表裡永遠只有「該篇目前有效分析」的 findings，
+>    同一篇不會同時存在兩個版次的列；把 `analysis_id` 放進去反而會讓
+>    「舊版次沒刪乾淨」這種 bug 靜默通過。`analysis_id` 保留為一般欄位（稽核用）。
+> 2. 再把 `(error_code, quote, correction)` 換成 `finding_index`（JSONB 陣列的序號）——
+>    同一篇裡兩個一模一樣的 finding 是**合法的**（同一個字錯兩次），
+>    用內容當鍵會把它吃掉一個，而**計數正是這個功能的全部意義**。
+>    冪等本來就由交易內的 DELETE → INSERT 保證，不需要 UNIQUE 來達成。
+>    理由與驗證查詢見 §9。
 
 ### 5.3 為什麼 1A 不需要 profiles 表
 
@@ -702,7 +709,122 @@ R3（即時 GROUP BY 變慢）同樣解除：44 篇作文的 findings 量級在�
 - 52 − 44 = **8 筆非 COMPLETED 的分析**。這 8 筆是什麼狀態、有沒有「較新的 FAILED 蓋過較舊的 COMPLETED」，
   直接決定 §0 那個修正是不是真的有用。見下方「動工前還要確認的兩件事」。
 
-### 動工前還要確認的兩件事（唯讀）
+### ✅ 2026-09-20 續測結果
+
+**查詢 ①：8 筆非 COMPLETED 全部是 `FAILED`，其中「蓋過較舊成功版」= 0。**
+
+代表目前**還沒有**「較新的 FAILED 蓋過較舊的 COMPLETED」的情況 —— 那 8 筆應該都是
+「先失敗、重跑才成功」（FAILED 版次比 COMPLETED 低）。
+
+➡️ §0 的修正因此是**預防性的，不是正在救火**。但仍然必須保留：
+只要有人對一篇已完成的作文按重跑而那次失敗，這個情況立刻就會發生，
+而當下的症狀是「這篇作文的錯誤紀錄整批消失」—— 沒有人會馬上發現。
+
+**查詢 ②：JSONB 形狀完全乾淨，回填規模 420 列。**
+
+| | |
+|---|---|
+| 有效作文數 | 44 |
+| **預估 findings 列數** | **420** |
+| 至少一個錯的作文 | 37 |
+| 零錯誤作文 | 7 |
+| 🔴 形狀異常作文數 | **0** ✅ |
+| 🔴 欄位不齊全的 findings | **0** ✅ |
+| 出現過的 code 種類 | **17 / 17（全中）** |
+| `WRITE_ERR_GRAMMAR_OTHER` | 46 筆 |
+
+**R2（JSONB 形狀與 `analysisContract.ts` 有出入）解除。** 44 篇的
+`error_analysis -> 'findings'` 全部是陣列，420 個 finding 全部有
+`quote` / `reason` / `correction` / `primary_skill`。A1 可以安心把這四欄設成 `NOT NULL`。
+
+**CHECK 約束的 17 個 code 也已逐一比對過**：production 實際出現的 17 個
+與 `api/_lib/taxonomy.ts` 的 `ERROR_TAGS` **完全一致，沒有任何一邊多出或少掉**。
+
+### 實際分布（回填後「常見錯誤」會長這樣）
+
+| error_code | 作文數 | findings | 每篇 |
+|---|---|---|---|
+| `WRITE_ERR_ARTICLE` | 32 (73%) | 78 | 2.44 |
+| `WRITE_ERR_PUNCTUATION` | 26 (59%) | 49 | 1.88 |
+| `WRITE_ERR_NUMBER` | 22 (50%) | 38 | 1.73 |
+| `WRITE_ERR_RUN_ON` | 22 (50%) | 36 | 1.64 |
+| `WRITE_ERR_WORD_CLASS` | 20 | 26 | 1.30 |
+| ⚠️ `WRITE_ERR_GRAMMAR_OTHER` | 19 | **46** | **2.42** |
+| `WRITE_ERR_SV_AGREEMENT` | 18 | 33 | 1.83 |
+| `WRITE_ERR_SPELLING` | 13 | 29 | 2.23 |
+| `WRITE_ERR_FRAGMENT` | 13 | 22 | 1.69 |
+| `WRITE_ERR_CHINGLISH` | 12 | 26 | 2.17 |
+| `WRITE_ERR_PRONOUN` | 7 | 9 | 1.29 |
+| `WRITE_ERR_PREP_CLAUSE` | 6 | 7 | 1.17 |
+| `WRITE_ERR_TRANSITIVITY` | 5 | 7 | 1.40 |
+| `WRITE_ERR_WORD_BOUNDARY` | 5 | 7 | 1.40 |
+| `WRITE_ERR_THAT` | 3 | 3 | 1.00 |
+| `WRITE_ERR_COUNTABILITY` | 3 | 3 | 1.00 |
+| `WRITE_ERR_DISCOURSE_STRUCTURE` | **1** | **1** | 1.00 |
+
+三個由這份分布直接證實的設計判斷：
+
+1. **「一次出現也要列」不是理論上的貼心，是這份資料的下半部。**
+   `DISCOURSE_STRUCTURE` 只有 1 篇 1 次，`THAT` 與 `COUNTABILITY` 各 3 篇 3 次。
+   任何形式的 `MIN_ESSAYS` 或 `HAVING count(*) >= 2` **會直接讓最後三個 code 從系統裡消失**。
+   這正是 §6.2 / §6.3「刻意沒有 HAVING」要守住的東西。
+
+2. **`GRAMMAR_OTHER` 的問題比先前量到的更值得處理。**
+   46 / 420 = **全部錯誤訊號的 11%**，findings 數排第 6，比 `SV_AGREEMENT`(33)、
+   `SPELLING`(29)、`CHINGLISH`(26) 都高；而且每篇 2.42 的密度是全部 code 裡第二高
+   （僅次於 ARTICLE 的 2.44）—— **它一旦出現就大量出現**，符合「傾倒場」的特徵。
+   §S2 的「標記但不隱藏」照原案執行。
+
+3. **排序用「作文數」而非「findings 數」是對的。**
+   若照 findings 排，`GRAMMAR_OTHER`(46) 會排在 `WORD_CLASS`(26) 前面，
+   老師會以為「其他文法」是全班第 5 該講的主題 —— 但它根本不是一個可以講解的主題。
+   照作文數排，它落到第 6，且與前面幾名拉開距離。
+
+### 🔴 動工前還剩最後一件事要確認（唯讀）
+
+`00` §3.1 原本設計的 `UNIQUE (essay_id, analysis_id, error_code, quote, correction)`
+（§5.2 已改為去掉 `analysis_id`）**可能會讓回填直接失敗**。
+
+一篇作文裡同一個 code 出現兩次、而且 `quote` 與 `correction` 剛好相同，是**完全合理**的：
+同一個字在文章裡出現兩次、都漏了冠詞，AI 很可能吐出兩個一模一樣的 finding。
+那是**兩個真實的錯誤**，不是重複。
+
+```sql
+-- 實際有沒有「同一篇 + 同 code + 同 quote + 同 correction」出現一次以上？
+WITH latest AS (
+  SELECT DISTINCT ON (a.essay_id) a.essay_id, a.error_analysis
+    FROM writing_analyses a WHERE a.status = 'COMPLETED'
+   ORDER BY a.essay_id, a.analysis_version DESC),
+ex AS (
+  SELECT l.essay_id, f ->> 'code' AS code, f ->> 'quote' AS quote,
+         f ->> 'correction' AS correction
+    FROM latest l
+    CROSS JOIN LATERAL jsonb_array_elements(l.error_analysis -> 'findings') f)
+SELECT count(*)::int                             AS "重複組合數",
+       coalesce(sum(n) - count(*), 0)::int       AS "會被UNIQUE吃掉的findings數"
+  FROM (SELECT essay_id, code, quote, correction, count(*) AS n
+          FROM ex GROUP BY 1,2,3,4 HAVING count(*) > 1) d;
+```
+
+| 結果 | 意思 | 怎麼做 |
+|---|---|---|
+| 兩欄都是 **0** | 目前沒有重複，UNIQUE 不會擋到回填 | 仍建議改用下面的 `finding_index` 方案 —— 現在沒有不代表以後沒有 |
+| **> 0** | UNIQUE **會讓回填失敗**，或（若用 `ON CONFLICT DO NOTHING`）**默默少算** | 必須改用 `finding_index` 方案 |
+
+#### 建議：拿掉 UNIQUE，改用 `finding_index`
+
+| | 原方案 | 建議方案 |
+|---|---|---|
+| 去重鍵 | `UNIQUE (essay_id, error_code, quote, correction)` | `UNIQUE (essay_id, finding_index)` |
+| 冪等靠什麼 | UNIQUE | **本來就靠交易內的 DELETE → INSERT**，UNIQUE 從來不是必要的 |
+| 同一篇兩個相同 finding | ❌ 被吃掉一個，**計數變少** | ✅ 兩列都在，索引 0 與 5 |
+| 額外好處 | — | 保留 JSONB 陣列的原始順序，drill-down 可以照原文順序呈現 |
+
+`finding_index` 就是 `jsonb_array_elements` 的序號（`WITH ORDINALITY`）。
+**計數是這個功能的全部意義**，用一個會丟掉合法重複的約束去換「防重複插入」並不划算 ——
+何況防重複插入這件事，DELETE-then-INSERT 已經做到了。
+
+### 原本的量體查詢（已執行，保留紀錄）
 
 ```sql
 -- ① 那 8 筆非 COMPLETED 是什麼？有沒有「新的失敗版蓋過舊的成功版」？
