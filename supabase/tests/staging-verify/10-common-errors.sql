@@ -1,6 +1,8 @@
 -- 🛑 這個檔案【整份就是一個步驟】，可以整份貼進 Supabase SQL Editor。
--- 🛑 唯讀。
-
+-- 🟢 【唯讀】—— 不會改變任何資料。staging 與 production 都可以安全執行。
+--
+-- 執行順序見 supabase/tests/staging-verify/README.md
+--
 -- =====================================================
 -- V10 Common Errors —— 「哪些錯誤值得下一堂課全班統一講解」
 --

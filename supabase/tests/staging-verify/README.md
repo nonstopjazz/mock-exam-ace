@@ -1,6 +1,16 @@
 # Phase 1A 第 1 批 —— staging 驗證步驟
 
-> 🛑 **只在 gsat-staging 執行。不要在 production。**
+> ⚠️ **目錄名稱是歷史遺留的。** 這套腳本 staging 與 production 都適用，
+> 2026-09-21 的 production rollout 就是用它跑完的。
+>
+> **分界是「唯讀」還是「會寫入」，不是哪個環境** —— 每一份檔案的第 2 行都標示了：
+>
+> | 標示 | 意思 |
+> |---|---|
+> | 🟢 【唯讀】 | 不改任何資料，兩個環境都安全 |
+> | ✍️ 【會寫入】 | 只有 `03-backfill.sql`。冪等，但執行前確認連到的環境 |
+>
+> 兩支 migration（`create_writing_error_findings*.sql`）當然也會寫入。
 >
 > Supabase SQL Editor **只顯示最後一個查詢的結果**，所以這裡刻意**一個步驟一個檔案**。
 > 每個檔案都可以整份貼進去執行，不需要從中間挑段落。

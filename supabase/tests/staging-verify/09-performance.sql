@@ -1,5 +1,5 @@
 -- 🛑 這個檔案【整份就是一個步驟】，可以整份貼進 Supabase SQL Editor。
--- 🛑 只在 gsat-staging 執行，不要在 production。
+-- 🟢 【唯讀】—— 不會改變任何資料。staging 與 production 都可以安全執行。
 --
 -- 執行順序見 supabase/tests/staging-verify/README.md
 --
