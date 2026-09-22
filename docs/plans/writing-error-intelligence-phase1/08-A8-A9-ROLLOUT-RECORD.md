@@ -99,10 +99,34 @@ SELECT jsonb_pretty(public.writing_backfill_error_findings(200));
 | A1–A3 findings 表與回填 | ✅ production |
 | A4–A7 四支查詢 RPC | ✅ production |
 | A8 `error_codes` | ✅ production |
-| **A9 自動同步** | ⏳ **程式碼完成，未部署** |
-| UI | ❌ 未開始 |
+| **A9 自動同步** | ✅ **production，已實測**（見下一節） |
+| UI | ✅ production（PR #129） |
 
-**Phase 1A 的資料層到此全部完成。** 剩下 A9 部署與 UI。
+**Phase 1A 全部完成，而且每一項都有證據。**
+
+---
+
+## A9 實測記錄（2026-09-22）
+
+部署後送一篇作文走完整分析，**沒有跑任何回填**，然後跑 `F-a9-health.sql`：
+
+| 物化來源 | 作文數 | 最早分析完成 | 最晚分析完成 |
+|---|---|---|---|
+| ⏱ 秒級 → A9 自動同步 | **1** | 2026-09-22 | 2026-09-22 |
+| ⚪ 零錯誤的作文（本來就沒有列） | 8 | 2026-09-07 | 2026-09-21 |
+| 📦 小時級以上 → 手動回填 | 37 | 2026-09-08 | 2026-09-20 |
+
+**判定：A9 正常。** 三件事同時成立才算數，這次三件都成立：
+
+1. 秒級那一格從 **0 → 1** —— findings 是在分析標記 COMPLETED 之後幾秒內寫入的
+2. 回填那格仍是 **37**（沒有變 38）—— 這次沒有跑回填，所以那筆不可能是回填產生的
+3. **🔴「已完成但沒有 findings 列」沒有出現** —— 沒有任何一篇分析完卻沒物化
+
+⚠️ 這次驗到的是【有錯誤的作文】。零錯誤的作文仍然驗不出來（沒有列就沒有
+`created_at` 可比），那是這個方法已知的盲點，不是缺陷。零錯誤那條路徑只能看
+Vercel log 沒有出現「findings 同步失敗」來反證。
+
+從此之後 `writing_backfill_error_findings` 只在補歷史資料時才需要。
 
 ---
 
@@ -110,7 +134,7 @@ SELECT jsonb_pretty(public.writing_backfill_error_findings(200));
 
 | # | 項目 |
 |---|---|
-| 1 | `analysisContract.ts` 7 處過時 taxonomy 數字 → `docs/tech-debt/analysiscontract-stale-taxonomy-counts.md` |
+| 1 | ~~`analysisContract.ts` 7 處過時 taxonomy 數字~~ → 已於 2026-09-22 修正（PR #131） |
 | 2 | 約 15% 的 `correction` 是整句改寫 → 影響 A7 drill-down 版面 |
 | 3 | `essay_topic` 多數是 null → 題目 filter 對現有資料幾乎無效，UI 不能把它當主要分群維度 |
 | 4 | `writing_admin_queue()` 的 `ORDER BY wt.created_at DESC` 缺 tiebreaker |
