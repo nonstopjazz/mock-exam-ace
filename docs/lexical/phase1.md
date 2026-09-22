@@ -323,11 +323,35 @@ SELECT * FROM lexical_progress_coexistence;          -- 新舊進度並存狀況
 
 ```
 createdb lex
-psql -v ON_ERROR_STOP=1 -d lex -f supabase/tests/_local_harness.sql
-# ... 依 §3 順序套用 baseline 與 lexical migration
+for f in \
+  supabase/tests/_local_harness.sql \
+  supabase/schema.sql \
+  supabase/migrations/create_user_profiles_table.sql \
+  supabase/migrations/create_level_words_table.sql \
+  supabase/migrations/create_user_word_progress_table.sql \
+  supabase/migrations/unify_word_progress_tracking.sql \
+  supabase/migrations/create_user_stats_table.sql \
+  supabase/migrations/add_audio_to_pack_items.sql \
+  supabase/migrations/add_site_to_user_pack_claims.sql \
+  supabase/migrations/add_skill_type_to_packs.sql \
+  supabase/migrations/create_lexical_core.sql \
+  supabase/migrations/create_lexical_relations.sql \
+  supabase/migrations/create_lexical_pack_items.sql \
+  supabase/migrations/create_lexical_progress.sql \
+  supabase/migrations/create_lexical_rpcs.sql \
+  supabase/migrations/migrate_level_words_to_lexical.sql \
+  supabase/migrations/migrate_pack_items_to_lexical.sql \
+  supabase/migrations/migrate_lexical_relations_from_arrays.sql \
+  supabase/migrations/create_lexical_migration_report.sql
+do psql -v ON_ERROR_STOP=1 -d lex -f "$f"; done
+
 psql -v ON_ERROR_STOP=1 -d lex -f supabase/tests/lexical_phase1_test.sql
 === 全部通過 ===
 ```
+
+⚠️ baseline 的這幾支是【測試才需要】的，不是上線步驟 —— 正式環境早就有這些表了。
+   本機少跑任何一支，錯誤訊息都只會說「某個欄位不存在」，看不出少的是哪一支，
+   所以這裡把實際跑得起來的完整清單列出來，不要再讓人自己拼。
 
 涵蓋：四個 match 分類、冪等性、不合併的證據（C6/C7）、同一 item 跨兩 pack 只有一份 mastery、
 關係不猜、相容公式逐條比對、attempt 與 mastery 分離、RLS 跨學生隔離、anon 全擋、舊表未動。
