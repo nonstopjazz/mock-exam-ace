@@ -1,16 +1,20 @@
-import { Link, useParams } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, FileQuestion, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, FileQuestion, Loader2, Trash2 } from "lucide-react";
 import { useEssay } from "@/hooks/useEssays";
 import { useWritingReport } from "@/hooks/learn/useWritingReport";
 import { useTeacherFeedback } from "@/hooks/learn/useTeacherFeedback";
 import { EssayStatusBadge, WritingLoading } from "@/components/learn/writing/writingShared";
 import { formatEssayDate } from "@/components/learn/writing/writingFormat";
 import { EssayPhotos } from "@/components/learn/writing/EssayPhotos";
+import { DeleteDraftDialog } from "@/components/learn/writing/DeleteDraftDialog";
+import { useDeleteEssayDraft } from "@/hooks/learn/useDeleteEssayDraft";
 import { WritingReportView } from "@/components/learn/writing/report/WritingReportView";
 import { TeacherFeedbackSection } from "@/components/learn/writing/report/TeacherFeedbackSection";
 
@@ -24,6 +28,28 @@ const EssayDetail = () => {
   const { essay, text, loading, error, notFound, refetch } = useEssay(essayId);
   const report = useWritingReport(essayId);
   const teacherFeedback = useTeacherFeedback(essayId);
+  const navigate = useNavigate();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleter = useDeleteEssayDraft();
+
+  /**
+   * 刪除只出現在草稿上。已送出的作文不可變，而且它底下掛著 AI 分析、
+   * error findings、老師講評與檢閱紀錄，全部是 ON DELETE CASCADE ——
+   * 那種刪除要逐筆確認，不該是一顆按鈕。伺服器也會再擋一次（409）。
+   */
+  const onDelete = () => {
+    if (!essayId || !essay) return;
+    void (async () => {
+      const outcome = await deleter.remove(essayId);
+      setDeleteOpen(false);
+      if (!outcome.ok) {
+        toast.error(outcome.error ?? "刪除失敗");
+        return;
+      }
+      toast.success("草稿已刪除");
+      navigate("/learn/student/writing", { replace: true });
+    })();
+  };
 
   return (
     <Layout>
@@ -97,9 +123,26 @@ const EssayDetail = () => {
                   <div className="text-center py-12 text-muted-foreground">
                     <p>這篇作文還沒完成</p>
                     <p className="text-sm mt-2">回去把辨識出來的文字確認一下就可以送出</p>
-                    <Button asChild variant="outline" size="sm" className="mt-4">
-                      <Link to="/learn/student/writing/new">繼續完成</Link>
-                    </Button>
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                      <Button asChild variant="outline" size="sm">
+                        <Link to="/learn/student/writing/new">繼續完成</Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground"
+                        onClick={() => setDeleteOpen(true)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        刪除這篇草稿
+                      </Button>
+                    </div>
+                    {essay.submission_type === "image" ? (
+                      <p className="text-xs mt-3">
+                        照片讀不出文字、怎麼重試都一樣的時候，多半是那張照片上傳時就壞了 ——
+                        刪掉重拍會比一直重試快。
+                      </p>
+                    ) : null}
                   </div>
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
@@ -169,6 +212,15 @@ const EssayDetail = () => {
               ) : report.report ? (
                 <WritingReportView report={report.report} />
               ) : null}
+
+              <DeleteDraftDialog
+                open={deleteOpen}
+                title={essay.title}
+                isPhoto={essay.submission_type === "image"}
+                deleting={deleter.deleting}
+                onCancel={() => setDeleteOpen(false)}
+                onConfirm={onDelete}
+              />
             </>
           )}
         </div>

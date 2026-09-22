@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 import { countWords } from "@/lib/writing/wordCount";
 import { useImageEssayComposer } from "@/hooks/learn/useImageEssayComposer";
+import { useDeleteEssayDraft } from "@/hooks/learn/useDeleteEssayDraft";
+import { DeleteDraftDialog } from "@/components/learn/writing/DeleteDraftDialog";
 import {
   ACCEPTED_IMAGE_TYPES,
   ARCHIVE_BUCKET,
@@ -88,6 +90,43 @@ function useArchiveThumbnails(essayId: string | null, enabled: boolean) {
   return urls;
 }
 
+/**
+ * 重拍某一頁。
+ *
+ * 用隱藏的 file input，而不是另開一個「管理照片」的畫面 —— 學生在這個當下
+ * 只想做一件事：把讀不開的那一張換掉。capture 讓手機直接開相機。
+ */
+function RetakePageButton({
+  pageNumber,
+  onPick,
+}: {
+  pageNumber: number;
+  onPick: (file: File) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPTED_IMAGE_TYPES}
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          // 清掉 value，連續挑同一個檔案也會再觸發 change。
+          e.target.value = "";
+          if (file) onPick(file);
+        }}
+      />
+      <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
+        <Camera className="h-4 w-4" />
+        重拍第 {pageNumber} 張
+      </Button>
+    </>
+  );
+}
+
 export function PhotoEssayComposer() {
   const navigate = useNavigate();
   const composer = useImageEssayComposer();
@@ -98,6 +137,8 @@ export function PhotoEssayComposer() {
   const [studentNotes, setStudentNotes] = useState("");
   const [picked, setPicked] = useState<Picked[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleter = useDeleteEssayDraft();
 
   const cameraInput = useRef<HTMLInputElement>(null);
   const libraryInput = useRef<HTMLInputElement>(null);
@@ -160,19 +201,55 @@ export function PhotoEssayComposer() {
 
   // ── 未完成的草稿 ────────────────────────────────────────────
   if (composer.resumable && composer.phase === "select" && !composer.essayId) {
+    const draft = composer.resumable;
     return (
-      <Card className="p-6 border-primary/20 bg-gradient-to-b from-primary/[0.05] to-card">
-        <h2 className="font-semibold text-foreground">你有一篇還沒完成的作文</h2>
-        <p className="text-sm text-muted-foreground mt-2">
-          「{composer.resumable.title}」，已經上傳 {composer.resumable.pageCount} 張照片。
-        </p>
-        <div className="flex flex-wrap gap-3 mt-4">
-          <Button onClick={() => void composer.resume()}>繼續這一篇</Button>
-          <Button variant="outline" onClick={() => window.location.reload()}>
-            重新開始一篇
-          </Button>
-        </div>
-      </Card>
+      <>
+        <Card className="p-6 border-primary/20 bg-gradient-to-b from-primary/[0.05] to-card">
+          <h2 className="font-semibold text-foreground">你有一篇還沒完成的作文</h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            「{draft.title}」，已經上傳 {draft.pageCount} 張照片。
+          </p>
+          <div className="flex flex-wrap gap-3 mt-4">
+            <Button onClick={() => void composer.resume()}>繼續這一篇</Button>
+            {/* 這裡不能用 window.location.reload()：重新整理之後 effect 會再撈到
+                同一篇草稿，這張卡原封不動回來，按鈕看起來像壞掉的。 */}
+            <Button variant="outline" onClick={composer.dismissResumable}>
+              重新開始一篇
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-muted-foreground"
+              onClick={() => setDeleteOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+              刪掉這一篇
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            照片壞掉、怎麼試都讀不出文字的時候，刪掉重拍會比一直重試快。
+          </p>
+        </Card>
+
+        <DeleteDraftDialog
+          open={deleteOpen}
+          title={draft.title}
+          isPhoto
+          deleting={deleter.deleting}
+          onCancel={() => setDeleteOpen(false)}
+          onConfirm={() => {
+            void (async () => {
+              const outcome = await deleter.remove(draft.essayId);
+              setDeleteOpen(false);
+              if (!outcome.ok) {
+                toast.error(outcome.error ?? "刪除失敗");
+                return;
+              }
+              composer.forgetResumable(draft.essayId);
+              toast.success("草稿已刪除");
+            })();
+          }}
+        />
+      </>
     );
   }
 
@@ -208,22 +285,37 @@ export function PhotoEssayComposer() {
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <div className="space-y-1">
-                {composer.failedPages.map((page) => (
-                  <p key={page.pageNumber}>
-                    第 {page.pageNumber} 張照片沒有處理成功，請重拍這一張。
-                  </p>
-                ))}
+              <div className="space-y-3">
+                {composer.failedPages.map((page) =>
+                  /* 兩種失敗要給兩種出路：
+                     NORMALIZE_FAILED = 這個檔案讀不開，再試幾次都一樣 → 只能換一張
+                     UPLOADED         = 還沒輪到處理（上次逾時之類）→ 再試一次就好 */
+                  page.state === "NORMALIZE_FAILED" ? (
+                    <div key={page.pageNumber} className="flex flex-wrap items-center gap-2">
+                      <span>第 {page.pageNumber} 張照片讀不開，重試沒有用，請換一張。</span>
+                      <RetakePageButton
+                        pageNumber={page.pageNumber}
+                        onPick={(file) => void composer.replacePage(page.pageNumber, file)}
+                      />
+                    </div>
+                  ) : (
+                    <div key={page.pageNumber} className="flex flex-wrap items-center gap-2">
+                      <span>第 {page.pageNumber} 張照片還沒有處理完成。</span>
+                      <Button variant="outline" size="sm" onClick={() => void composer.retry()}>
+                        <RefreshCw className="h-4 w-4" />
+                        再試一次
+                      </Button>
+                    </div>
+                  ),
+                )}
+
+                {/* 🛑 這一段不能省：重拍失敗（照片讀不開、上傳中斷）時，錯誤
+                    訊息只存在 composer.error 裡，而下面那個分支永遠輪不到 ——
+                    少了這裡，學生會看到「按了重拍但什麼也沒發生」。 */}
+                {composer.error ? (
+                  <p className="font-medium">{composer.error}</p>
+                ) : null}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3"
-                onClick={() => void composer.retry()}
-              >
-                <RefreshCw className="h-4 w-4" />
-                再試一次
-              </Button>
             </AlertDescription>
           </Alert>
         ) : composer.error ? (

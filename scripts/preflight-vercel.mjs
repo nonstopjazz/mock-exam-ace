@@ -79,6 +79,26 @@ try {
   check("轉譯", false, String(err.stderr ?? err).slice(0, 400));
 }
 
+// ── Hobby 方案的函式數量上限 ─────────────────────────────────────────
+//
+// Vercel Hobby 一個部署最多 12 支 Serverless Function。超過就【整個部署失敗】，
+// 而且看不出是這個原因：本機 `npm run build` 完全正常，因為那是部署限制，
+// 不是建置錯誤。2026-09-22 實測過 —— 加到第 13 支時，三個吃同一個 repo 的
+// Vercel 專案在三分鐘內同時變紅。
+//
+// 底線開頭的檔案與目錄（api/_lib/**）不算函式，所以共用模組放在那裡。
+// 要再加端點而數量已經滿了，就把動作合進現有的端點（授權模型相同才可以），
+// 或是升級方案 —— 但不要讓它在部署時才炸。
+const FUNCTION_LIMIT = 12;
+{
+  const functions = apiSources().filter((s) => !s.split("/").some((seg) => seg.startsWith("_")));
+  check(
+    `serverless function 數量 ≤ ${FUNCTION_LIMIT}（Hobby 上限）`,
+    functions.length <= FUNCTION_LIMIT,
+    `${functions.length} 支：${functions.map((s) => s.replace("api/", "")).join(" ")}`,
+  );
+}
+
 console.log("\n用 Node 真正的 ESM 解析器載入（少寫副檔名就會失敗）");
 
 /** 每一支有 default export 的端點都要載得起來 */

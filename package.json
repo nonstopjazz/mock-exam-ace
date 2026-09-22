@@ -18,7 +18,9 @@
     "audit:writing": "tsx scripts/writing-audit.ts",
     "audit:writing:dryrun": "tsx scripts/_audit-dryrun.ts",
     "preflight:vercel": "node scripts/preflight-vercel.mjs",
-    "verify:writing-sync-call": "tsx scripts/verify-writing-sync-call.ts"
+    "verify:writing-sync-call": "tsx scripts/verify-writing-sync-call.ts",
+    "verify:essay-delete-order": "tsx scripts/verify-essay-delete-order.ts",
+    "verify:image-replace": "tsx scripts/verify-image-replace.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.17.1",
