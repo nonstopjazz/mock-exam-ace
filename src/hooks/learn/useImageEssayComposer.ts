@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { prepareImage } from "@/lib/writing/prepareImage";
-import { MAX_PAGES, RAW_BUCKET } from "@/config/writingImages";
+import { uploadRawPage } from "@/lib/writing/uploadRawPage";
+import { MAX_PAGES } from "@/config/writingImages";
 
 /**
  * 拍照作文的流程
@@ -219,21 +219,17 @@ export function useImageEssayComposer() {
 
         for (let i = 0; i < files.length; i++) {
           setProgress({ current: i + 1, total: files.length });
-          const prepared = await prepareImage(files[i]);
           const pageNumber = i + 1;
-          const path = `${user.id}/${id}/${pageNumber}-${crypto.randomUUID()}.${prepared.extension}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from(RAW_BUCKET)
-            .upload(path, prepared.blob, { contentType: prepared.contentType, upsert: false });
-          if (uploadError) throw new Error(`第 ${pageNumber} 張上傳失敗：${uploadError.message}`);
+          // 上傳【並確認真的完整上傳】。截斷的照片在這裡就被擋掉，
+          // 不會變成一頁永遠正規化不了的資料。
+          const uploaded = await uploadRawPage(files[i], user.id, id!, pageNumber);
 
           const { error: registerError } = await supabase.rpc("register_writing_image", {
             p_essay_id: id,
             p_page_number: pageNumber,
-            p_raw_path: path,
-            p_raw_bytes: prepared.blob.size,
-            p_raw_mime: prepared.contentType,
+            p_raw_path: uploaded.path,
+            p_raw_bytes: uploaded.bytes,
+            p_raw_mime: uploaded.contentType,
           });
           if (registerError) throw new Error(`第 ${pageNumber} 張登記失敗：${registerError.message}`);
         }
@@ -252,6 +248,47 @@ export function useImageEssayComposer() {
     if (!essayId) return;
     await runProcess(essayId);
   }, [essayId, runProcess]);
+
+  /**
+   * 重拍某一頁。
+   *
+   * 一頁正規化失敗之後，重試是拿同一個壞檔再解一次 —— 結果必然相同，
+   * 而第二段辨識要求每一頁都成功。所以壞掉的那一張只能換掉，不能重試。
+   *
+   * 換完直接重跑處理：已經 NORMALIZED 的頁面會被跳過，只處理這一張。
+   */
+  const replacePage = useCallback(
+    async (pageNumber: number, file: File) => {
+      if (!essayId || !user) return;
+      setError(null);
+      setPhase("uploading");
+      setProgress({ current: 1, total: 1 });
+
+      try {
+        const uploaded = await uploadRawPage(file, user.id, essayId, pageNumber);
+        const res = await fetch("/api/writing-image-replace", {
+          method: "POST",
+          headers: await authHeaders(),
+          body: JSON.stringify({
+            essayId,
+            pageNumber,
+            rawPath: uploaded.path,
+            rawBytes: uploaded.bytes,
+            rawMime: uploaded.contentType,
+          }),
+        });
+        const payload = (await res.json()) as { error?: string };
+        if (!res.ok) throw new Error(payload.error ?? "更換照片失敗");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "更換照片失敗");
+        setPhase("review");
+        return;
+      }
+
+      await runProcess(essayId);
+    },
+    [essayId, user, runProcess],
+  );
 
   /** 送出。provenance（OCR / OCR_CORRECTED）由資料庫比對決定，這裡不宣稱。 */
   const submit = useCallback(async (): Promise<string | null> => {
@@ -289,6 +326,7 @@ export function useImageEssayComposer() {
     progress,
     resumable,
     resume,
+    replacePage,
     dismissResumable,
     forgetResumable,
     start,

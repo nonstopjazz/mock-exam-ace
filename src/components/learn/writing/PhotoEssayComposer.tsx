@@ -90,6 +90,43 @@ function useArchiveThumbnails(essayId: string | null, enabled: boolean) {
   return urls;
 }
 
+/**
+ * 重拍某一頁。
+ *
+ * 用隱藏的 file input，而不是另開一個「管理照片」的畫面 —— 學生在這個當下
+ * 只想做一件事：把讀不開的那一張換掉。capture 讓手機直接開相機。
+ */
+function RetakePageButton({
+  pageNumber,
+  onPick,
+}: {
+  pageNumber: number;
+  onPick: (file: File) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPTED_IMAGE_TYPES}
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          // 清掉 value，連續挑同一個檔案也會再觸發 change。
+          e.target.value = "";
+          if (file) onPick(file);
+        }}
+      />
+      <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
+        <Camera className="h-4 w-4" />
+        重拍第 {pageNumber} 張
+      </Button>
+    </>
+  );
+}
+
 export function PhotoEssayComposer() {
   const navigate = useNavigate();
   const composer = useImageEssayComposer();
@@ -248,22 +285,37 @@ export function PhotoEssayComposer() {
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <div className="space-y-1">
-                {composer.failedPages.map((page) => (
-                  <p key={page.pageNumber}>
-                    第 {page.pageNumber} 張照片沒有處理成功，請重拍這一張。
-                  </p>
-                ))}
+              <div className="space-y-3">
+                {composer.failedPages.map((page) =>
+                  /* 兩種失敗要給兩種出路：
+                     NORMALIZE_FAILED = 這個檔案讀不開，再試幾次都一樣 → 只能換一張
+                     UPLOADED         = 還沒輪到處理（上次逾時之類）→ 再試一次就好 */
+                  page.state === "NORMALIZE_FAILED" ? (
+                    <div key={page.pageNumber} className="flex flex-wrap items-center gap-2">
+                      <span>第 {page.pageNumber} 張照片讀不開，重試沒有用，請換一張。</span>
+                      <RetakePageButton
+                        pageNumber={page.pageNumber}
+                        onPick={(file) => void composer.replacePage(page.pageNumber, file)}
+                      />
+                    </div>
+                  ) : (
+                    <div key={page.pageNumber} className="flex flex-wrap items-center gap-2">
+                      <span>第 {page.pageNumber} 張照片還沒有處理完成。</span>
+                      <Button variant="outline" size="sm" onClick={() => void composer.retry()}>
+                        <RefreshCw className="h-4 w-4" />
+                        再試一次
+                      </Button>
+                    </div>
+                  ),
+                )}
+
+                {/* 🛑 這一段不能省：重拍失敗（照片讀不開、上傳中斷）時，錯誤
+                    訊息只存在 composer.error 裡，而下面那個分支永遠輪不到 ——
+                    少了這裡，學生會看到「按了重拍但什麼也沒發生」。 */}
+                {composer.error ? (
+                  <p className="font-medium">{composer.error}</p>
+                ) : null}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3"
-                onClick={() => void composer.retry()}
-              >
-                <RefreshCw className="h-4 w-4" />
-                再試一次
-              </Button>
             </AlertDescription>
           </Alert>
         ) : composer.error ? (
