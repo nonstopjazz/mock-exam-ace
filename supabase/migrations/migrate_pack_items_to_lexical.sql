@@ -32,6 +32,7 @@ DECLARE
   v_count       INTEGER;
   v_note        TEXT;
   v_type        TEXT;
+  v_pos_norm    TEXT;
   n_exact       INTEGER := 0;
   n_new         INTEGER := 0;
   n_ambiguous   INTEGER := 0;
@@ -77,18 +78,24 @@ BEGIN
 
     v_count := coalesce(v_count, 0);
 
+    -- 🛑 比對用正規化：noun 與 n. 是同一件事，但字串不相等。
+    --    看不懂的寫法（v.n.、phr. …）回 NULL＝不合併，寧可多一筆待確認。
+    --    原始的 part_of_speech 與 item_type 完全不受影響，見下面的 INSERT。
+    v_pos_norm := public.lexical_normalise_pos(r_item.part_of_speech, v_lemma);
+
     IF v_count = 1
-       AND btrim(coalesce(r_item.part_of_speech, '')) <> ''
+       AND v_pos_norm IS NOT NULL
        AND EXISTS (
          SELECT 1 FROM public.lexical_items i
          WHERE i.id = v_candidates[1]
-           AND lower(btrim(coalesce(i.part_of_speech, ''))) = lower(btrim(r_item.part_of_speech))
+           AND public.lexical_normalise_pos(i.part_of_speech, i.lemma) = v_pos_norm
        )
     THEN
-      -- 唯一候選 ＋ 兩邊詞性都有且相同 → 可以安全確認是同一個字
+      -- 唯一候選 ＋ 兩邊詞性都認得出來且正規化後相同 → 可以安全確認是同一個字
       v_target := v_candidates[1];
       v_method := 'exact_safe_match';
-      v_note   := 'lemma 唯一命中且詞性相符：' || r_item.part_of_speech;
+      v_note   := format('lemma 唯一命中且詞性相符（原始「%s」正規化為 %s）',
+                         r_item.part_of_speech, v_pos_norm);
       n_exact  := n_exact + 1;
 
     ELSIF v_count = 0 THEN
@@ -101,14 +108,23 @@ BEGIN
       v_method := 'ambiguous_match';
       v_note   := format('lemma 命中 %s 個候選，但%s，未合併，另建新項目待人工確認',
                     v_count,
-                    CASE WHEN btrim(coalesce(r_item.part_of_speech,'')) = ''
-                         THEN 'pack 這一筆沒有詞性'
-                         ELSE '詞性不符或候選不只一個' END);
+                    CASE
+                      WHEN v_count > 1 THEN '候選不只一個'
+                      WHEN btrim(coalesce(r_item.part_of_speech, '')) = ''
+                        THEN 'pack 這一筆沒有詞性'
+                      WHEN v_pos_norm IS NULL
+                        THEN format('詞性寫法「%s」無法安全對應到單一詞性',
+                                    r_item.part_of_speech)
+                      ELSE format('詞性不符（pack 是 %s）', v_pos_norm)
+                    END);
       n_ambiguous := n_ambiguous + 1;
     END IF;
 
     -- ── 需要建立新項目的情況 ──────────────────────────
     IF v_method IN ('new_item_created', 'ambiguous_match') THEN
+      -- 🛑 存進去的是【原始】的 part_of_speech 與依空白判定的 item_type。
+      --    正規化只用於上面的比對，canonical 項目不會因此失去
+      --    「這是 phrase」或「老師原本寫的是 noun phrase」這兩個資訊。
       INSERT INTO public.lexical_items (
         item_type, display_form, lemma,
         translation, part_of_speech, ipa, example,
