@@ -20,19 +20,14 @@ import { useVocabularyStore } from "@/store/vocabularyStore";
 import type { VocabularyWord } from "@/data/vocabulary/types";
 import { VocabularySelector } from "@/components/vocabulary/VocabularySelector";
 import { CollectionPackSelector, VocabularySource } from "@/components/vocabulary/CollectionPackSelector";
-import { usePackItems, PackItem } from "@/hooks/useUserPacks";
-
-const convertPackItemToVocabularyWord = (item: PackItem): VocabularyWord => ({
-  id: item.id, word: item.word, translation: item.definition || '', ipa: item.phonetic || '',
-  partOfSpeech: item.part_of_speech || '', example: item.example_sentence || '',
-  exampleTranslation: '', synonyms: [], antonyms: [], level: 1, tags: [],
-  difficulty: 'medium', category: '', extraNotes: '',
-});
+import { usePackItems } from "@/hooks/useUserPacks";
+import { packItemToVocabularyWord } from "@/lib/lexical/mapper";
+import { recordPracticeAttempt, newSessionId } from "@/lib/lexical/attempts";
 
 const SpellingPractice = () => {
   const navigate = useNavigate();
   const { celebrate } = useConfetti();
-  const { getAllWords: storeGetAllWords, getWordsForQuiz, updateWordProgress, getFilteredWordCount } = useVocabularyStore();
+  const { getWordsForQuiz, getFilteredWordCount } = useVocabularyStore();
 
   const [selectedSource, setSelectedSource] = useState<VocabularySource>('local');
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
@@ -49,6 +44,11 @@ const SpellingPractice = () => {
   const [total, setTotal] = useState(0);
   const [questionCount, setQuestionCount] = useState(10);
   const [showHint, setShowHint] = useState(false);
+  // Phase 6：作答證據。startedAt 用來算 response_time_ms，
+  // wrongTries 是這一題按錯幾次（清除／重排都算一次嘗試）。
+  const [sessionId] = useState(() => newSessionId());
+  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [wrongTries, setWrongTries] = useState(0);
 
   const currentWord = words[currentIndex];
 
@@ -66,7 +66,7 @@ const SpellingPractice = () => {
     if (selectedSource === 'pack') {
       if (!selectedPackId || packLoading || packError) return;
       if (packItems.length < 2) { toast.error("單字不足", { description: "至少需要 2 個單字" }); return; }
-      wordList = packItems.map(convertPackItemToVocabularyWord);
+      wordList = packItems.map(packItemToVocabularyWord);
     } else {
       if (getFilteredWordCount() < 2) { toast.error("單字不足"); return; }
       wordList = getWordsForQuiz(questionCount * 2);
@@ -80,6 +80,8 @@ const SpellingPractice = () => {
     setShowHint(false);
     setShuffledLetters(shuffleWord(selected[0].word));
     setSelectedLetters([]);
+    setWrongTries(0);
+    setStartedAt(Date.now());
     setPhase('playing');
   };
 
@@ -97,11 +99,19 @@ const SpellingPractice = () => {
       setTotal(prev => prev + 1);
       if (correct) setScore(prev => prev + 1);
 
-      if (selectedSource === 'pack' && selectedPackId) {
-        updateWordProgress(currentWord.id, correct, undefined, 'pack', selectedPackId);
-      } else {
-        updateWordProgress(currentWord.id, correct, undefined, 'level');
-      }
+      // Phase 6：頁面只負責判定結果並記錄，熟練度由相容層決定。
+      recordPracticeAttempt({
+        wordId: currentWord.id,
+        source: selectedSource === 'pack' ? 'pack' : 'level',
+        packId: selectedPackId,
+        exerciseType: 'spelling',
+        skillDimension: 'form_recall',
+        correct,
+        responseTimeMs: Date.now() - startedAt,
+        attemptCount: wrongTries + 1,
+        usedHint: showHint,
+        sessionId,
+      });
     }
   };
 
@@ -120,6 +130,8 @@ const SpellingPractice = () => {
       setSelectedLetters([]);
       setShowResult(false);
       setShowHint(false);
+      setWrongTries(0);
+      setStartedAt(Date.now());
     } else {
       if (score / total >= 0.8) celebrate();
       setPhase('finished');
@@ -128,6 +140,7 @@ const SpellingPractice = () => {
 
   const handleClear = () => {
     if (showResult) return;
+    setWrongTries(prev => prev + 1);
     setShuffledLetters(shuffleWord(currentWord.word));
     setSelectedLetters([]);
   };
