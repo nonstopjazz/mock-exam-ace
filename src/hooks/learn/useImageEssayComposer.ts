@@ -167,6 +167,19 @@ export function useImageEssayComposer() {
   }, [resumable, runProcess]);
 
   /**
+   * 放掉「繼續這一篇」的提示，直接開新的一篇。
+   *
+   * 這裡不能用重新整理：effect 會再撈一次同一篇草稿，提示原封不動回來 ——
+   * 於是「重新開始一篇」看起來什麼也沒發生。草稿還在，只是這一次不碰它。
+   */
+  const dismissResumable = useCallback(() => setResumable(null), []);
+
+  /** 草稿被刪掉之後把提示收掉，不然畫面還指著一篇已經不存在的作文。 */
+  const forgetResumable = useCallback((id: string) => {
+    setResumable((prev) => (prev?.essayId === id ? null : prev));
+  }, []);
+
+  /**
    * 建立草稿 → 上傳每一張 → 登記 → 處理。
    *
    * 中途失敗會留下草稿與已上傳的頁面：那是刻意的，重試時不必重傳。
@@ -276,6 +289,8 @@ export function useImageEssayComposer() {
     progress,
     resumable,
     resume,
+    dismissResumable,
+    forgetResumable,
     start,
     retry,
     submit,
