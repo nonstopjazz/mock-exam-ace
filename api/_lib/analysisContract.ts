@@ -122,7 +122,7 @@ export interface ErrorFinding {
   readonly fallback_rationale?: string;
 }
 
-/** 全 16 個 code 都必須出現，count = 0 也要明講。 */
+/** 全部 canonical code 都必須出現，count = 0 也要明講。 */
 export interface ErrorCoverageEntry {
   readonly code: string;
   readonly count: number;
@@ -625,7 +625,7 @@ export function validateCompetencyAnalysis(
  *
  * 【coverage 由伺服器推導，不再向模型索取】
  *
- * 以前模型要同時回 findings 與一份 16 個 code 的 coverage，兩者對不上就整支重做。
+ * 以前模型要同時回 findings 與一份涵蓋全部 code 的 coverage，兩者對不上就整支重做。
  * 2026-09-05 的偏弱作文量測顯示這是一個會自我強化的失敗迴圈：那一次 44 筆
  * findings，模型在四個 code 上都把數量少算了（ARTICLE 4 vs 5、SV_AGREEMENT 3 vs 4、
  * WORD_CLASS 2 vs 3、SPELLING 8 vs 11），全部低估、方向一致——那是算術記帳，
@@ -634,9 +634,9 @@ export function validateCompetencyAnalysis(
  *
  * count 本來就是 findings 的函數，伺服器數得又快又對。所以現在：
  *   • 模型只負責 findings——那是它真正在做的語言判斷
- *   • 伺服器從【已驗證的】findings 建出 16 個 code 的完整 coverage
+ *   • 伺服器從【已驗證的】findings 建出全部 code 的完整 coverage
  *
- * 覆蓋完整性沒有減弱：16 個 code 一定全部到齊，而且現在是【保證】到齊，
+ * 覆蓋完整性沒有減弱：每一個 code 一定全部到齊，而且現在是【保證】到齊，
  * 不再依賴模型記得列。減弱的只有「模型自己宣稱它數過」這個沒有實際效力的儀式。
  *
  * ⚠️ count = 0 仍然只代表「本篇未發現此類錯誤」，不代表已精熟（TR-12／TR-13）。
@@ -704,15 +704,19 @@ export function validateErrorAnalysis(
       });
       return;
     }
-    // fallback 要付舉證責任。寫不出「為什麼其他 15 類都不適用」，
+    // fallback 要付舉證責任。寫不出「為什麼其他類別都不適用」，
     // 通常就代表有更具體的類別可以用——那正是我們要擋的情況。
     if (code === ERROR_FALLBACK_CODE && !isNonEmptyString(item.fallback_rationale)) {
       issues.push({
         kind: "MISSING_JUSTIFICATION",
         path,
+        // 🛑 這個字串會【原封不動送回模型】（deepseek.ts 的 repairInstruction
+        //    把 issue.detail folded 進重試訊息）。所以數字必須是真的：
+        //    之前寫死 15，但 taxonomy 早就是 17 個 code，等於每次重試都主動
+        //    餵給模型一個錯的事實。改成算出來的，taxonomy 再變也不會再錯。
         detail:
           `${ERROR_FALLBACK_CODE} 必須附 fallback_rationale，` +
-          "說明為什麼其他 15 個具體類別都不適用",
+          `說明為什麼其他 ${ALL_ERROR_CODES.length - 1} 個具體類別都不適用`,
       });
       return;
     }
@@ -873,9 +877,9 @@ function checkFallbackConsistency(
 }
 
 /**
- * 從已驗證的 findings 建出 16 個 canonical error code 的完整 coverage。
+ * 從已驗證的 findings 建出【全部】canonical error code 的完整 coverage。
  *
- * 一定回傳 16 筆、順序固定為 canonical 順序、count 為非負整數。
+ * 一定回傳 ALL_ERROR_CODES.length 筆、順序固定為 canonical 順序、count 為非負整數。
  * 只數【通過驗證】的 findings——被引用查核或欄位檢查擋下來的那些不算數，
  * 否則捏造的證據會把 count 灌水。
  */

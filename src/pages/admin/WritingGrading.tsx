@@ -416,6 +416,15 @@ const WritingGrading = () => {
 
               <ErrorCodeFilter value={errorCodes} onChange={setErrorCodes} counts={codeCounts} />
             </div>
+
+            {/* 只在真的選了班級時才說 —— 沒選班級的時候這句話沒有意義。
+                這是 S1 語意的後果，老師不知道的話會以為資料掉了。 */}
+            {classFilter !== "ALL" ? (
+              <p className="text-xs text-muted-foreground mt-4">
+                班級只算<span className="text-foreground">目前在籍</span>的學生。學生退出班級之後，
+                他過去在這個班寫的作文不會出現在這裡 —— 那些作文還在，用學生姓名或「所有班級」找得到。
+              </p>
+            ) : null}
           </Card>
 
           <Tabs value={tab} onValueChange={setTab}>
