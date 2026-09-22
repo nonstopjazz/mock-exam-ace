@@ -266,11 +266,12 @@ export function useImageEssayComposer() {
 
       try {
         const uploaded = await uploadRawPage(file, user.id, essayId, pageNumber);
-        const res = await fetch("/api/writing-image-replace", {
+        const res = await fetch("/api/writing-draft-edit", {
           method: "POST",
           headers: await authHeaders(),
           body: JSON.stringify({
             essayId,
+            action: "replace-page",
             pageNumber,
             rawPath: uploaded.path,
             rawBytes: uploaded.bytes,

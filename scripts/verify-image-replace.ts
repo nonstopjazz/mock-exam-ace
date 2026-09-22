@@ -18,7 +18,7 @@
  *    結果是換了照片，辨識出來的還是舊的那一張。
  */
 
-import { replaceImagePage, type ReplaceInput } from "../api/writing-image-replace";
+import { replaceImagePage, type ReplaceInput } from "../api/_lib/draftEdit";
 
 let failures = 0;
 

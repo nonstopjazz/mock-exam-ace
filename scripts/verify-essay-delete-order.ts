@@ -18,7 +18,7 @@
  *    所有檢查，而那正是這支端點要避免的行為。
  */
 
-import { deleteDraftEssay } from "../api/writing-essay-delete";
+import { deleteDraftEssay } from "../api/_lib/draftEdit";
 
 let failures = 0;
 

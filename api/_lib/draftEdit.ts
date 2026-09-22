@@ -1,45 +1,124 @@
 /**
- * POST /api/writing-image-replace —— 重傳某一頁照片
+ * 草稿維護的核心動作：刪掉一整篇、或換掉其中一頁。
  *
- * 請求： { "essayId": "<uuid>", "pageNumber": 1,
- *          "rawPath": "<uid>/<essayId>/1-<uuid>.jpg",
- *          "rawBytes": 1234567, "rawMime": "image/jpeg" }
- * 回應： { replaced: true, staleFiles: number }
+ * 住在 _lib/ 有兩個理由：
+ *   1. 底線開頭的目錄不會被 Vercel 當成 serverless function ——
+ *      Hobby 方案一個部署只能有 12 支，而這個專案已經用滿了。
+ *      （13 支的那一次部署，三個專案同時失敗。）
+ *   2. 這兩件事的正確性【全在順序上】，必須能被測試直接呼叫。
+ *      見 scripts/verify-essay-delete-order.ts 與 verify-image-replace.ts。
  *
- * 瀏覽器先把新照片直傳 Storage（10 MB 的照片穿不過 serverless 的請求本文上限），
- * 再打這支端點把那一頁換掉。
- *
- *
- * 為什麼需要這支端點
- *
- *   一頁正規化失敗（照片壞掉、上傳被截斷）之後，那一頁永遠是 NORMALIZE_FAILED，
- *   而第二段辨識要求【每一頁】都 NORMALIZED 才會跑。所以整篇作文再也無法辨識，
- *   按幾次「再試一次」都一樣 —— 重試是拿同一個壞檔再解一次。
- *
- *   在此之前唯一的出路是把整篇草稿刪掉重來。這支端點讓學生只重拍壞掉的那一張。
- *
- *
- * 🛑 路徑歸屬要在這裡再驗一次。register_writing_image() 有同樣的檢查，理由寫在
- *    那支 RPC 上：伺服器是用 service-role 去 Storage 取檔的，那把鑰匙繞過 RLS。
- *    路徑若能亂填，伺服器就會忠實地把別人的作文抓來辨識，再寫進這篇作文裡。
- *    這支端點同樣用 service-role 寫入，所以同樣的檢查必須自己做一遍 ——
- *    不能因為「RPC 那邊驗過了」就省略，這裡根本不會經過那支 RPC。
+ * 授權與 DRAFT 檢查都在路由那一層（api/writing-draft-edit.ts）做完才進來。
+ * 這裡只負責「刪得對」與「換得對」。
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  isDenied,
-  requireEssayAccess,
-  type VercelLikeRequest,
-  type VercelLikeResponse,
-} from "./_lib/essayAuth.js";
-
-export const config = {
-  maxDuration: 30,
-};
 
 const RAW_BUCKET = "writing-raw";
 const ARCHIVE_BUCKET = "writing-archive";
+
+interface ImageRow {
+  raw_path: string | null;
+  raw_deleted_at: string | null;
+  archive_path: string | null;
+  archive_deleted_at: string | null;
+}
+
+/**
+ * 刪掉一個 bucket 裡的一批檔案。
+ *
+ * Storage 的 remove() 對【不存在】的路徑不算錯誤，只是不會出現在回傳的清單裡。
+ * 這正是我們要的：已經被清理工作帶走的檔案不該讓刪除失敗，
+ * 但真正的錯誤（權限、bucket 不存在、網路）必須讓整件事停下來。
+ */
+async function removeAll(
+  admin: SupabaseClient,
+  bucket: string,
+  paths: string[],
+): Promise<{ removed: number; error: string | null }> {
+  if (paths.length === 0) return { removed: 0, error: null };
+  const { data, error } = await admin.storage.from(bucket).remove(paths);
+  if (error) return { removed: 0, error: `${bucket}: ${error.message}` };
+  return { removed: data?.length ?? 0, error: null };
+}
+
+/** 刪除的結果。成功與失敗都有形狀，呼叫端不必猜。 */
+export type DeleteOutcome =
+  | { ok: true; files: { removed: number; missing: number } }
+  | { ok: false; status: number; error: string };
+
+/**
+ * 真正做事的部分：先清檔案，全部成功才刪資料列。
+ *
+ * 抽成獨立的 export 而不是寫死在 handler 裡，是為了【可測試性】——
+ * 順序反了就會留下孤兒檔案，那是這支端點存在的全部理由，
+ * 必須測得到。見 scripts/verify-essay-delete-order.ts。
+ *
+ * 呼叫端負責授權與 DRAFT 檢查；這裡只負責刪得對。
+ */
+export async function deleteDraftEssay(
+  admin: SupabaseClient,
+  essayId: string,
+): Promise<DeleteOutcome> {
+  // ── 1. 先把這篇的檔案清乾淨 ────────────────────────────────
+  const { data: images, error: imagesError } = await admin
+    .from("writing_images")
+    .select("raw_path, raw_deleted_at, archive_path, archive_deleted_at")
+    .eq("essay_id", essayId);
+
+  if (imagesError) {
+    console.error("[writing-essay-delete] 讀取圖片列失敗:", imagesError.message);
+    return { ok: false, status: 500, error: "無法讀取這篇作文的照片，請稍後再試" };
+  }
+
+  const rows = (images ?? []) as ImageRow[];
+  // 已標記刪除的仍然一併送進 remove()：標記與實際檔案可能不同步
+  // （清理工作刪檔成功、標記失敗就是這種狀態），多刪一次不會有副作用。
+  const rawPaths = rows.map((r) => r.raw_path).filter((p): p is string => Boolean(p));
+  const archivePaths = rows.map((r) => r.archive_path).filter((p): p is string => Boolean(p));
+
+  const [raw, archive] = await Promise.all([
+    removeAll(admin, RAW_BUCKET, rawPaths),
+    removeAll(admin, ARCHIVE_BUCKET, archivePaths),
+  ]);
+
+  const errors = [raw.error, archive.error].filter((e): e is string => Boolean(e));
+  if (errors.length > 0) {
+    // 🛑 檔案沒清掉就【不刪資料列】—— 留著這一列，至少檔案還找得到。
+    //    這裡讓步的話，這支端點就沒有存在的意義了。
+    console.error("[writing-essay-delete] 刪除檔案失敗，保留資料列:", { essayId, errors });
+    return {
+      ok: false,
+      status: 502,
+      error: "照片沒有刪除成功，所以這篇作文暫時保留。請稍後再試一次。",
+    };
+  }
+
+  // ── 2. 檔案清乾淨了，才刪資料列 ────────────────────────────
+  // writing_images / writing_ocr_runs / writing_texts / writing_analyses 等
+  // 七張子表都是 ON DELETE CASCADE，所以刪這一列就會一起走。
+  const { error: deleteError } = await admin
+    .from("writing_submissions")
+    .delete()
+    .eq("id", essayId)
+    .eq("status", "DRAFT"); // 競態保險：這中間被送出就不要刪
+
+  if (deleteError) {
+    console.error("[writing-essay-delete] 刪除作文失敗:", deleteError.message);
+    return { ok: false, status: 500, error: "刪除失敗，請稍後再試" };
+  }
+
+  const removed = raw.removed + archive.removed;
+  return {
+    ok: true,
+    files: {
+      removed,
+      // 已經被清理工作帶走、或從來沒上傳成功的：不是錯誤，但值得回報。
+      missing: rawPaths.length + archivePaths.length - removed,
+    },
+  };
+}
+
 
 export interface ReplaceInput {
   essayId: string;
@@ -188,45 +267,16 @@ export async function replaceImagePage(
   return { ok: true, staleFiles: stale };
 }
 
-export default async function handler(req: VercelLikeRequest, res: VercelLikeResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "只接受 POST" });
-  }
+/**
+ * 🛑 這兩個守衛不是多餘的。tsconfig.check.json 的 strictNullChecks 是關的，
+ *    那個設定下 TypeScript【不會】用 `ok: false` 這個判別式自動窄化 union ——
+ *    `if (!outcome.ok) outcome.status` 會直接是型別錯誤。
+ *    api/_lib/essayAuth.ts 的 isDenied() 也是為了同一件事存在。
+ */
+export function deleteFailed(o: DeleteOutcome): o is Extract<DeleteOutcome, { ok: false }> {
+  return o.ok === false;
+}
 
-  const body = (req.body ?? {}) as Record<string, unknown>;
-  const essayId = typeof body.essayId === "string" ? body.essayId : "";
-  const pageNumber = typeof body.pageNumber === "number" ? body.pageNumber : NaN;
-  const rawPath = typeof body.rawPath === "string" ? body.rawPath : "";
-
-  const access = await requireEssayAccess(req, essayId);
-  if (isDenied(access)) {
-    return res.status(access.status).json({ error: access.error });
-  }
-  const { admin, essay } = access;
-
-  if (essay.status !== "DRAFT") {
-    return res.status(409).json({ error: "已經送出的作文不能再更換照片" });
-  }
-  if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > 5) {
-    return res.status(400).json({ error: "頁碼不正確" });
-  }
-  if (!rawPath) {
-    return res.status(400).json({ error: "缺少檔案路徑" });
-  }
-
-  const outcome = await replaceImagePage(admin, {
-    essayId,
-    pageNumber,
-    rawPath,
-    rawBytes: typeof body.rawBytes === "number" ? body.rawBytes : null,
-    rawMime: typeof body.rawMime === "string" ? body.rawMime : null,
-    // 🛑 用作文擁有者，不是呼叫者：管理員代為重傳時，路徑仍然必須在
-    //    學生自己的資料夾底下（Storage 的路徑規則綁的是學生）。
-    ownerId: essay.student_id,
-  });
-
-  if (!outcome.ok) {
-    return res.status(outcome.status).json({ error: outcome.error });
-  }
-  return res.status(200).json({ replaced: true, staleFiles: outcome.staleFiles });
+export function replaceFailed(o: ReplaceOutcome): o is Extract<ReplaceOutcome, { ok: false }> {
+  return o.ok === false;
 }
