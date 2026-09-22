@@ -38,6 +38,17 @@ export interface WritingQueueRow {
   /** 有沒有寫過講評。與 teacher_reviewed 是兩件事——講評是選填的 */
   has_feedback: boolean | null;
   class_names: string[] | null;
+  /**
+   * 這一篇目前有效分析的 distinct error code（writing-v2 的 WRITE_ERR_*）。
+   *
+   * 🛑 null 與 [] 是兩件事：
+   *      null → 這篇【沒有已完成的分析】，所以沒有錯誤資料
+   *      []   → 有已完成的分析，但未發現錯誤
+   *    UI 的錯誤篩選對 null 要視為「沒有資料」而不是「沒有錯誤」。
+   *
+   * 🛑 [] 是「本篇未發現此類錯誤」，【不是】「已經學會了」（TR-12／TR-13）。
+   */
+  error_codes: string[] | null;
 }
 
 /** 老師會用來篩選的六種分析狀態。每一種都對應得到資料庫裡的欄位組合。 */

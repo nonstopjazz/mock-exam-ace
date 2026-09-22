@@ -792,6 +792,62 @@ export async function runSynthesisOnly(ctx: RunContext) {
   });
 }
 
+/* ──────────────── findings 物化 ──────────────── */
+
+/**
+ * 把這次分析的錯誤 findings 同步進 writing_error_findings。
+ *
+ * writing_error_findings 是 error_analysis 的【物化視圖】，不是真相本身。
+ * 所以同步失敗【不該】讓一次成功（而且已經花過錢）的分析被判定為失敗 ——
+ * 但也【絕對不能默默吞掉】：吞掉的話 findings 會缺資料，而且沒有人會知道。
+ *
+ * 🛑 `supabase.rpc()` 不會 throw，它回傳 { data, error }。
+ *    只包 try/catch 【捕捉不到任何東西】，等於把所有失敗靜默忽略。
+ *    查證過（2026-09-21，@supabase/postgrest-js 2.90.1）：
+ *      · 這個 repo 沒有用 .throwOnError()，所以 shouldThrowOnError = false
+ *      · PostgreSQL 層的錯誤 → 回 { error }
+ *      · 傳輸層失敗（fetch 掛掉）→ postgrest-js/dist/index.cjs:154 的
+ *        res.catch((fetchError) => ...) 把它攔下來轉成 { error }
+ *    ➡️ `if (error)` 是唯一有效的機制，而且它同時涵蓋這兩種失敗。
+ *
+ * try/catch 仍然留著，但只當【最外層防護】（例如 client 本身被設定壞掉這種
+ * 非 postgrest 路徑的例外），它不是、也不能是主要機制。
+ *
+ * 抽成獨立函式是為了可測試：scripts/verify-writing-sync-call.ts 會用受控的
+ * 替身 client 驗證「失敗不拋出」「失敗一定留 log」「成功不留 log」三件事。
+ */
+export async function syncErrorFindings(
+  admin: SupabaseClient,
+  analysisId: string,
+): Promise<void> {
+  try {
+    const { error } = await admin.rpc("writing_sync_error_findings", {
+      p_analysis_id: analysisId,
+    });
+
+    if (error) {
+      // console.error 不是 warn：這是需要有人處理的狀況，只是不必當場失敗。
+      // analysisId 一定要帶，否則事後無法針對性地用 backfill 補。
+      console.error(
+        "[analyze-writing] findings 同步失敗，分析本身已完成，請用 writing_backfill_error_findings 補:",
+        {
+          analysisId,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        },
+      );
+    }
+  } catch (err) {
+    console.error(
+      "[analyze-writing] findings 同步拋出非預期例外，分析本身已完成:",
+      { analysisId, err },
+    );
+  }
+}
+
+
 /* ──────────────── 綜合層本體 ──────────────── */
 
 interface SynthesisOutcome {
@@ -879,6 +935,10 @@ async function performSynthesis(args: {
     console.error("[analyze-writing] 標記完成失敗:", completeError.message);
     return { ok: false, detail: "標記完成失敗" };
   }
+
+  // 報告已經 ready，findings 才跟上。順序不能反 ——
+  // findings 是 error_analysis 的投影，來源還沒定案就同步等於同步到一半的狀態。
+  await syncErrorFindings(admin, analysisId);
 
   return { ok: true, detail: "", telemetry: pass.telemetry };
 }
