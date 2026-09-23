@@ -6,8 +6,10 @@
 --
 -- 🛑 這是本批唯一會【遺失無法重建資料】的回滾：
 --    lexical_attempts 是原生新資料（每一次作答的細節），舊表沒有這些東西，
---    刪掉就真的沒有了。student_lexical_mastery 則可以從
---    user_word_progress 重新匯入（那張表完全沒有被動過，仍然是完整的）。
+--    刪掉就真的沒有了。student_lexical_mastery 累積的熟練度同樣會消失 ——
+--    舊表 user_word_progress 完全沒有被動過、仍然完整，但【沒有】任何一支
+--    migration 會把它匯入新表（產品決策：不做 backfill，新表從 0 開始），
+--    所以不要把它當成可以還原 mastery 的備份。
 --
 --    要保留 attempt 證據的話，回滾前先備份：
 --      CREATE TABLE lexical_attempts_backup AS SELECT * FROM lexical_attempts;

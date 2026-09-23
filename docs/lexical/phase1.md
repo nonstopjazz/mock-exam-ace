@@ -144,7 +144,9 @@ create_lexical_core.rollback.sql
 **沒有任何一支 migration 是破壞性的。** 全鏈回滾後實測：`level_words` 8 列、`pack_items` 6 列、`user_word_progress` 1 列、`packs` 2 列全部完好，lexical 相關物件歸零。
 
 ⚠️ **唯一會遺失的東西**：`lexical_attempts`。它是原生新資料（每一次作答的細節），舊表沒有等價物，刪掉無法重建。`create_lexical_progress.rollback.sql` 的開頭有備份指令。
-`student_lexical_mastery` 可以從完好的 `user_word_progress` 重新匯入。
+`student_lexical_mastery` 回滾後同樣會消失。舊表 `user_word_progress` 完好無損，
+但**沒有**任何一支 migration 會把它匯入新表（見 §6「不做 backfill」），
+所以回滾的實際效果是「新的 mastery 累積歸零、舊路徑照常運作」。
 
 ---
 
@@ -271,6 +273,32 @@ practice page
 規格要求不刪 legacy。更實際的理由：七個頁面的**讀取**端還完全靠 `user_word_progress`
 （`getWordsForSRS` / `getDueWords` / `getOverallProgress` 都讀 zustand 的 `wordProgress`）。
 這次只接上寫入端；讀取端切換是下一階段的事。
+
+### 🛑 不做 backfill（產品決策，2026-09-23）
+
+`student_lexical_mastery` 與 `lexical_attempts` **從 0 開始累積**，不從
+`user_word_progress` 匯入任何歷史。Phase 1 沒有寫 backfill migration，
+之後也不打算寫全站通用的那一支。
+
+理由：目前實際使用這套單字系統的學生非常少，`user_word_progress` 的既有資料
+不是重要的 production learning history。為了把它轉成新的 evidence semantics
+（`correct` 三態、per-attempt 記錄）而寫一支全站 migration，代價高於價值。
+
+因此：
+
+| | |
+|---|---|
+| `user_word_progress` 舊表與資料 | **保留，不刪除**，供歷史參考 |
+| 新表的起點 | 現在。新系統的**正式起點**就是 0 |
+| backfill 是 Phase 1.1 的前置條件嗎 | **不是。** 讀取端切換不要求先把 legacy aggregate 轉成新語意 |
+| 日後真的有學生需要歷史 | 針對**特定學生**做一次性 migration / manual seed，不做全站 backfill |
+
+⚠️ 這代表切換讀取端的那一刻，學生看到的熟練度會從新表的累積值起算，
+而不是延續舊表的數字。這是**已接受**的行為，不是待修的落差。
+
+實際觀測到的差距見 `docs/lexical/phase1-production-rollout.md` §9。
+
+---
 
 ### 職責變化
 
