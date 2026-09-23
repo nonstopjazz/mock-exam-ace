@@ -35,6 +35,78 @@ REVOKE ALL ON FUNCTION lexical_touch_updated_at() FROM PUBLIC, anon, authenticat
 
 
 -- =====================================================
+-- 0b. lexical_normalise_pos —— 詞性【比對用】正規化
+--
+-- 🛑 只給比對用。原始的 part_of_speech 一個字都不改，item_type 也不受影響。
+--
+-- 為什麼需要它（production 實測，2026-09-22）
+--
+--   兩邊用兩套記法寫同一件事：
+--     level_words  n. 3181 / v. 1219 / adj. 1001 / adv. 72（另有 n、v、adj 少量無句點）
+--     pack_items   noun 544 / adjective 97 / verb 69（另有 n. 56 / adj. 10 / v. 6）
+--
+--   直接做字串比較的結果：1120 筆 pack item 只有 26 筆合併得成，234 筆判為
+--   ambiguous —— 其中 233 筆的候選數是 1，也就是【題庫裡就是同一個字】，
+--   只是一邊寫 noun 一邊寫 n.。那 233 筆若照樣建成新項目，同一個字的熟練度
+--   會從此一分為二，而且要合併回去得連 attempt 一起搬。
+--
+--   正規化之後：exact 26 → 236，ambiguous 234 → 24。三條安全條件一條都沒放寬。
+--
+-- 🛑 刻意【不】處理的寫法（回傳 NULL＝不合併）：
+--     v.n. / n./v. / noun / verb / adj.n. / n, adj  → 一筆掛兩個詞性，真的有歧義
+--     phr. / phrasal verb / idiom / collocation / expression → 沒有明確等價的單一詞性
+--   看不懂就不要猜：回 NULL 只是「不合併」，代價是多一筆待確認；
+--   猜錯的代價是兩個不同的字被併成一個，而且不可逆。
+--
+-- 片語標籤（noun phrase / verb phrase / adjective phrase）另有一層保護：
+--   只有在【文字本身真的是多字】時才採用。單字被誤標成 noun phrase 時回 NULL，
+--   不會因為映射就被當成普通名詞合併掉。p_lemma 沒給時一律回 NULL（不能驗證就不採用）。
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION lexical_normalise_pos(
+  p_pos   TEXT,
+  p_lemma TEXT DEFAULT NULL
+)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+SET search_path = ''
+AS $$
+  SELECT CASE
+           WHEN s.t = '' THEN NULL
+           -- 逗號或斜線＝一筆掛了多個詞性，不處理
+           WHEN s.t ~ '[,/]' THEN NULL
+
+           WHEN s.t IN ('n.',    'n',    'noun')        THEN 'NOUN'
+           WHEN s.t IN ('v.',    'v',    'verb')        THEN 'VERB'
+           WHEN s.t IN ('adj.',  'adj',  'adjective')   THEN 'ADJ'
+           WHEN s.t IN ('adv.',  'adv',  'adverb')      THEN 'ADV'
+           WHEN s.t IN ('prep.', 'prep', 'preposition') THEN 'PREP'
+           WHEN s.t IN ('conj.', 'conj', 'conjunction') THEN 'CONJ'
+           WHEN s.t IN ('pron.', 'pron', 'pronoun')     THEN 'PRON'
+
+           -- 片語標籤：文字必須真的是多字，否則不採用
+           WHEN s.t = 'noun phrase'      THEN CASE WHEN s.multiword THEN 'NOUN' ELSE NULL END
+           WHEN s.t = 'verb phrase'      THEN CASE WHEN s.multiword THEN 'VERB' ELSE NULL END
+           WHEN s.t = 'adjective phrase' THEN CASE WHEN s.multiword THEN 'ADJ'  ELSE NULL END
+
+           ELSE NULL
+         END
+    FROM (
+      SELECT regexp_replace(lower(btrim(coalesce(p_pos, ''))), '\s+', ' ', 'g') AS t,
+             (btrim(coalesce(p_lemma, '')) LIKE '% %')                           AS multiword
+    ) s;
+$$;
+
+COMMENT ON FUNCTION lexical_normalise_pos IS
+  '詞性比對用正規化（noun↔n.、verb↔v.…）。只影響比對，不改寫任何欄位。看不懂的寫法回 NULL＝不合併。片語標籤只在文字本身是多字時才採用。';
+
+-- 只有 migration 與後端會用到；學生端沒有理由呼叫。
+REVOKE ALL ON FUNCTION lexical_normalise_pos(TEXT, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION lexical_normalise_pos(TEXT, TEXT) TO authenticated, service_role;
+
+
+-- =====================================================
 -- 1. lexical_items：所有語彙內容的 canonical source
 -- =====================================================
 

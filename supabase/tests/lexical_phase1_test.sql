@@ -83,6 +83,13 @@ INSERT INTO level_words (id, word, ipa, translation, part_of_speech, example, ex
   -- 同形異義：同一個 lemma 兩個詞性 → 之後用來製造 ambiguous
   ('7001','book','/bʊk/','書','n.','I read a book.','我讀了一本書。','{}','{}',2,'beginner','名詞','{}',NULL),
   ('7002','book','/bʊk/','預訂','v.','I will book a room.','我要訂房。','{}','{}',4,'intermediate','動詞','{}',NULL),
+  -- 詞性正規化用：題庫一律是 n. / v. 這種縮寫記法
+  ('7010','atmosphere','/ˈætməsfɪr/','氣氛','n.','The atmosphere was tense.','氣氛緊張。','{}','{}',4,'intermediate','名詞','{}',NULL),
+  ('7011','absorb','/əbˈzɔːrb/','吸收','v.','Plants absorb water.','植物吸收水分。','{}','{}',4,'intermediate','動詞','{}',NULL),
+  ('7012','give up','/ɡɪv ʌp/','放棄','v.','Do not give up.','不要放棄。','{}','{}',3,'beginner','動詞','{}',NULL),
+  ('7013','ozone','/ˈoʊzoʊn/','臭氧','n.','The ozone layer.','臭氧層。','{}','{}',5,'advanced','名詞','{}',NULL),
+  ('7014','dissolve','/dɪˈzɑːlv/','溶解','v.','Sugar dissolves.','糖會溶解。','{}','{}',4,'intermediate','動詞','{}',NULL),
+  ('7015','verify','/ˈverɪfaɪ/','驗證','v.','Verify the result.','驗證結果。','{}','{}',5,'advanced','動詞','{}',NULL),
   -- 壞資料：空字串
   ('9999','   ',NULL,NULL,NULL,NULL,NULL,'{}','{}',2,NULL,NULL,'{}',NULL);
 
@@ -107,7 +114,26 @@ INSERT INTO pack_items (id, pack_id, word, definition, part_of_speech, example_s
   -- 唯一命中但 pack 這筆沒詞性 → 不得合併，列 ambiguous
   ('dddddddd-0000-0000-0000-000000000005','11111111-1111-1111-1111-111111111111','consist','組成',NULL,'Consists of.',4),
   -- 壞資料
-  ('dddddddd-0000-0000-0000-000000000006','11111111-1111-1111-1111-111111111111','  ','空的',NULL,NULL,5);
+  ('dddddddd-0000-0000-0000-000000000006','11111111-1111-1111-1111-111111111111','  ','空的',NULL,NULL,5),
+  -- ── 詞性寫法不同，但講的是同一件事 → 應該合併 ──────────────
+  -- noun ↔ n.
+  ('dddddddd-0000-0000-0000-000000000007','11111111-1111-1111-1111-111111111111','atmosphere','氣氛','noun','The atmosphere.',6),
+  -- verb ↔ v.
+  ('dddddddd-0000-0000-0000-000000000008','11111111-1111-1111-1111-111111111111','absorb','吸收','verb','Absorb it.',7),
+  -- noun phrase ↔ n.，而且文字真的是多字
+  ('dddddddd-0000-0000-0000-000000000009','11111111-1111-1111-1111-111111111111','artificial intelligence','人工智慧','noun phrase','AI.',8),
+  -- verb phrase ↔ v.，文字也真的是多字
+  ('dddddddd-0000-0000-0000-00000000000a','11111111-1111-1111-1111-111111111111','give up','放棄','verb phrase','Never give up.',9),
+  -- ── 不可以合併的三種 ───────────────────────────────────────
+  -- 一筆掛兩個詞性
+  ('dddddddd-0000-0000-0000-00000000000b','11111111-1111-1111-1111-111111111111','dissolve','溶解','v.n.','Dissolve it.',10),
+  -- 沒有明確等價詞性的寫法
+  ('dddddddd-0000-0000-0000-00000000000c','11111111-1111-1111-1111-111111111111','verify','驗證','phr.','Verify.',11),
+  -- 單字被誤標成 noun phrase：題庫的 ozone 是 n.，若粗暴映射就會被合併掉
+  ('dddddddd-0000-0000-0000-00000000000d','11111111-1111-1111-1111-111111111111','ozone','臭氧','noun phrase','Ozone.',12),
+  -- 題庫沒有這個字，但詞性【認得出來】→ 新建項目時必須存老師原本寫的 noun，
+  --    不是正規化後的 NOUN。這一筆是「正規化只用於比對」唯一驗得到的地方。
+  ('dddddddd-0000-0000-0000-00000000000e','11111111-1111-1111-1111-111111111111','biodiversity','生物多樣性','noun','Biodiversity matters.',13);
 
 -- 舊進度：用來證明 migration 不會動到它
 INSERT INTO user_word_progress (user_id, word_id, mastery_level, next_review_time, review_count, correct_count, source)
@@ -122,7 +148,7 @@ VALUES ('aaaaaaaa-0000-0000-0000-000000000001','2936',3,1700000000000,5,4,'level
 
 \echo ''
 \echo '--- A. Phase 7a：level_words 匯入 ---'
-SELECT t_assert((SELECT count(*) FROM lexical_items WHERE legacy_level_word_id IS NOT NULL) = 7,
+SELECT t_assert((SELECT count(*) FROM lexical_items WHERE legacy_level_word_id IS NOT NULL) = 13,
   'A1 七列有效 level_words 都建立了 canonical 項目（空字串那列不算）');
 SELECT t_assert((SELECT item_type FROM lexical_items WHERE legacy_level_word_id='2255') = 'phrase',
   'A2 含空白的 artificial intelligence 判定為 phrase');
@@ -141,7 +167,7 @@ SELECT t_assert((SELECT lexical_item_id FROM lexical_legacy_map WHERE legacy_sou
 \echo ''
 \echo '--- B. Phase 7a 冪等性 ---'
 \ir ../migrations/migrate_level_words_to_lexical.sql
-SELECT t_assert((SELECT count(*) FROM lexical_items WHERE legacy_level_word_id IS NOT NULL) = 7,
+SELECT t_assert((SELECT count(*) FROM lexical_items WHERE legacy_level_word_id IS NOT NULL) = 13,
   'B1 重跑 migration 不會產生第二份');
 
 \echo ''
@@ -173,6 +199,95 @@ SELECT t_assert(
      AND legacy_id='dddddddd-0000-0000-0000-000000000005')
   <> (SELECT id FROM lexical_items WHERE legacy_level_word_id='1339'),
   'C7 沒詞性的 consist 沒有被併進官方的 consist');
+
+\echo ''
+\echo '--- C2. 詞性正規化：只影響比對，不改任何欄位 ---'
+
+-- 函式本身
+SELECT t_assert(lexical_normalise_pos('noun','atmosphere')      = 'NOUN', 'N1 noun → NOUN');
+SELECT t_assert(lexical_normalise_pos('n.','atmosphere')        = 'NOUN', 'N2 n. → NOUN');
+SELECT t_assert(lexical_normalise_pos('  NOUN  ','atmosphere')  = 'NOUN', 'N3 大小寫與前後空白不影響');
+SELECT t_assert(lexical_normalise_pos('verb','absorb')          = 'VERB', 'N4 verb → VERB');
+SELECT t_assert(lexical_normalise_pos('adjective','x')          = 'ADJ',  'N5 adjective → ADJ');
+SELECT t_assert(lexical_normalise_pos('noun phrase','a b')      = 'NOUN', 'N6 noun phrase + 多字 → NOUN');
+SELECT t_assert(lexical_normalise_pos('verb phrase','give up')  = 'VERB', 'N7 verb phrase + 多字 → VERB');
+SELECT t_assert(lexical_normalise_pos('noun phrase','ozone')    IS NULL,  'N8 單字被標成 noun phrase → NULL（不合併）');
+SELECT t_assert(lexical_normalise_pos('noun phrase',NULL)       IS NULL,  'N9 沒有文字可驗證時不採用片語標籤');
+SELECT t_assert(lexical_normalise_pos('v.n.','dissolve')          IS NULL,  'N10 v.n. 一筆兩個詞性 → NULL');
+SELECT t_assert(lexical_normalise_pos('n./v.','dissolve')         IS NULL,  'N11 n./v. → NULL');
+SELECT t_assert(lexical_normalise_pos('noun / verb','x')        IS NULL,  'N12 noun / verb → NULL');
+SELECT t_assert(lexical_normalise_pos('phr.','verify')            IS NULL,  'N13 phr. 沒有等價詞性 → NULL');
+SELECT t_assert(lexical_normalise_pos('phrasal verb','give up') IS NULL,  'N14 phrasal verb 先不映射');
+SELECT t_assert(lexical_normalise_pos('idiom','a b')            IS NULL,  'N15 idiom 先不映射');
+SELECT t_assert(lexical_normalise_pos('collocation','a b')      IS NULL,  'N16 collocation 先不映射');
+SELECT t_assert(lexical_normalise_pos('expression','a b')       IS NULL,  'N17 expression 先不映射');
+SELECT t_assert(lexical_normalise_pos('',  'x')                 IS NULL,  'N18 空字串 → NULL');
+SELECT t_assert(lexical_normalise_pos(NULL,'x')                 IS NULL,  'N19 NULL → NULL');
+
+-- 走完整 migration 之後的實際分類
+SELECT t_assert((SELECT match_method FROM lexical_legacy_map WHERE legacy_source='pack_item'
+                 AND legacy_id='dddddddd-0000-0000-0000-000000000007') = 'exact_safe_match',
+  'N20 pack 的 noun 對上題庫的 n. → 合併');
+SELECT t_assert((SELECT match_method FROM lexical_legacy_map WHERE legacy_source='pack_item'
+                 AND legacy_id='dddddddd-0000-0000-0000-000000000008') = 'exact_safe_match',
+  'N21 pack 的 verb 對上題庫的 v. → 合併');
+SELECT t_assert((SELECT match_method FROM lexical_legacy_map WHERE legacy_source='pack_item'
+                 AND legacy_id='dddddddd-0000-0000-0000-000000000009') = 'exact_safe_match',
+  'N22 noun phrase + 相同多字 lemma → 合併');
+SELECT t_assert((SELECT match_method FROM lexical_legacy_map WHERE legacy_source='pack_item'
+                 AND legacy_id='dddddddd-0000-0000-0000-00000000000a') = 'exact_safe_match',
+  'N23 verb phrase + 相同多字 lemma → 合併');
+SELECT t_assert((SELECT match_method FROM lexical_legacy_map WHERE legacy_source='pack_item'
+                 AND legacy_id='dddddddd-0000-0000-0000-00000000000b') = 'ambiguous_match',
+  'N24 v.n. → 不合併');
+SELECT t_assert((SELECT match_method FROM lexical_legacy_map WHERE legacy_source='pack_item'
+                 AND legacy_id='dddddddd-0000-0000-0000-00000000000c') = 'ambiguous_match',
+  'N25 phr. 沒有對照 → 不合併');
+SELECT t_assert((SELECT match_method FROM lexical_legacy_map WHERE legacy_source='pack_item'
+                 AND legacy_id='dddddddd-0000-0000-0000-00000000000d') = 'ambiguous_match',
+  'N26 單字被誤標成 noun phrase → 不合併');
+
+-- 合併的那幾筆，確實指向題庫【原本那一列】，不是新建的
+SELECT t_assert(
+  (SELECT lexical_item_id FROM lexical_legacy_map WHERE legacy_source='pack_item'
+     AND legacy_id='dddddddd-0000-0000-0000-000000000007')
+  = (SELECT id FROM lexical_items WHERE legacy_level_word_id='7010'),
+  'N27 atmosphere 併進題庫原本的那一列（不是另建）');
+SELECT t_assert(
+  (SELECT lexical_item_id FROM lexical_legacy_map WHERE legacy_source='pack_item'
+     AND legacy_id='dddddddd-0000-0000-0000-000000000009')
+  = (SELECT id FROM lexical_items WHERE legacy_level_word_id='2255'),
+  'N28 artificial intelligence 併進題庫原本的那一列');
+
+-- 不合併的那幾筆，沒有被塞進題庫那一列
+SELECT t_assert(
+  (SELECT lexical_item_id FROM lexical_legacy_map WHERE legacy_source='pack_item'
+     AND legacy_id='dddddddd-0000-0000-0000-00000000000d')
+  <> (SELECT id FROM lexical_items WHERE legacy_level_word_id='7013'),
+  'N29 誤標的 ozone 另建新項目，沒有被併進官方的 ozone');
+
+-- 🛑 正規化【只用於比對】：原始欄位與 item_type 都不能被改寫
+SELECT t_assert((SELECT part_of_speech FROM lexical_items i
+                  JOIN lexical_legacy_map m ON m.lexical_item_id = i.id
+                 WHERE m.legacy_id='dddddddd-0000-0000-0000-00000000000d') = 'noun phrase',
+  'N30 新建項目保留老師原本寫的 noun phrase，沒有被改成 n.');
+SELECT t_assert((SELECT item_type FROM lexical_items i
+                  JOIN lexical_legacy_map m ON m.lexical_item_id = i.id
+                 WHERE m.legacy_id='dddddddd-0000-0000-0000-00000000000d') = 'word',
+  'N31 誤標成 noun phrase 的單字，item_type 仍然是 word');
+SELECT t_assert((SELECT part_of_speech FROM lexical_items WHERE legacy_level_word_id='7010') = 'n.',
+  'N32 被合併的題庫項目，原始詞性仍然是 n.（沒有被 pack 的 noun 覆寫）');
+-- 🛑 M4 型的錯誤（把正規化結果寫回欄位）只有這一筆驗得到：
+--    biodiversity 的 noun 認得出來（正規化成 NOUN），而且它是新建的項目。
+SELECT t_assert((SELECT part_of_speech FROM lexical_items i
+                  JOIN lexical_legacy_map m ON m.lexical_item_id = i.id
+                 WHERE m.legacy_id='dddddddd-0000-0000-0000-00000000000e') = 'noun',
+  'N34 新建項目存的是老師原本寫的 noun，不是正規化後的 NOUN');
+SELECT t_assert((SELECT match_method FROM lexical_legacy_map WHERE legacy_source='pack_item'
+                 AND legacy_id='dddddddd-0000-0000-0000-00000000000e') = 'new_item_created',
+  'N35 biodiversity 題庫沒有 → new_item_created');
+SELECT t_assert((SELECT item_type FROM lexical_items WHERE legacy_level_word_id='2255') = 'phrase',
+  'N33 多字項目的 item_type 仍然是 phrase，沒有因為正規化而遺失');
 
 \echo ''
 \echo '--- D. Phase 3：同一個 canonical item 可以在多個 pack ---'
@@ -462,9 +577,9 @@ SELECT t_assert((SELECT mastery_level FROM user_word_progress WHERE word_id='293
   'S2 舊的 mastery_level 沒有被改');
 SELECT t_assert((SELECT next_review_time FROM user_word_progress WHERE word_id='2936') = 1700000000000,
   'S3 舊的 Unix 毫秒時間沒有被改');
-SELECT t_assert((SELECT count(*) FROM level_words) = 8,
+SELECT t_assert((SELECT count(*) FROM level_words) = 14,
   'S4 level_words 一列都沒有被刪');
-SELECT t_assert((SELECT count(*) FROM pack_items) = 6,
+SELECT t_assert((SELECT count(*) FROM pack_items) = 14,
   'S5 pack_items 一列都沒有被刪');
 SELECT t_assert((SELECT synonyms FROM level_words WHERE id='2936') @> ARRAY['insist'],
   'S6 level_words.synonyms 原始 text[] 完全沒被動過（回滾後可重建）');
@@ -473,10 +588,10 @@ SELECT t_assert((SELECT synonyms FROM level_words WHERE id='2936') @> ARRAY['ins
 \echo '--- T. Migration report ---'
 SELECT t_assert((SELECT count(*) FROM lexical_migration_report WHERE legacy_source='pack_item') >= 3,
   'T1 pack_item 至少落在三個分類');
-SELECT t_assert((SELECT count(*) FROM lexical_migration_needs_review) = 4,
-  'T2 需要人工確認的有 4 筆（pack 2 ambiguous + pack 1 manual + level_word 1 manual）');
-SELECT t_assert((SELECT count(*) FROM lexical_migration_needs_review WHERE legacy_source='pack_item') = 3,
-  'T2b 其中 pack_item 佔 3 筆');
+SELECT t_assert((SELECT count(*) FROM lexical_migration_needs_review) = 7,
+  'T2 需要人工確認的有 7 筆（pack 5 ambiguous + pack 1 manual + level_word 1 manual）');
+SELECT t_assert((SELECT count(*) FROM lexical_migration_needs_review WHERE legacy_source='pack_item') = 6,
+  'T2b 其中 pack_item 佔 6 筆');
 SELECT t_assert((SELECT count(*) FROM lexical_duplicate_candidates) >= 1,
   'T3 重複 lemma 有被列出來（book 有三份）');
 SELECT t_assert((SELECT count(*) FROM lexical_unresolved_relations_report) >= 1,
