@@ -162,7 +162,14 @@ COMMENT ON COLUMN lexical_items.legacy_level_word_id IS
 COMMENT ON COLUMN lexical_items.level IS
   '沿用自 level_words.level（2–6）。pack_items 匯入的列為 NULL。';
 
+-- lemma 的兩個索引都需要，不是重複：
+--   lower(lemma) 給「不確定大小寫」的查詢用；
+--   lemma 本身給 migration 與比對用 —— 它們寫的是 WHERE lemma = $1，
+--   而運算式索引【對不上】那種述語，只會走 Seq Scan。
+--   實測（5542 + 1120 的量體）：單次查詢 0.55ms → 0.047ms，
+--   關係匯入 14.4 秒 → 1.3 秒。lemma 寫入時一律已經小寫，兩者結果相同。
 CREATE INDEX IF NOT EXISTS lexical_items_lemma_idx        ON lexical_items (lower(lemma));
+CREATE INDEX IF NOT EXISTS lexical_items_lemma_exact_idx  ON lexical_items (lemma);
 CREATE INDEX IF NOT EXISTS lexical_items_type_idx         ON lexical_items (item_type);
 CREATE INDEX IF NOT EXISTS lexical_items_level_idx        ON lexical_items (level) WHERE level IS NOT NULL;
 CREATE INDEX IF NOT EXISTS lexical_items_display_form_idx ON lexical_items (lower(display_form));
