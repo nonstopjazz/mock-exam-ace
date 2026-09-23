@@ -52,9 +52,16 @@ REVOKE ALL ON FUNCTION lexical_touch_updated_at() FROM PUBLIC, anon, authenticat
 --
 --   正規化之後：exact 26 → 236，ambiguous 234 → 24。三條安全條件一條都沒放寬。
 --
--- 🛑 刻意【不】處理的寫法（回傳 NULL＝不合併）：
---     v.n. / n./v. / noun / verb / adj.n. / n, adj  → 一筆掛兩個詞性，真的有歧義
---     phr. / phrasal verb / idiom / collocation / expression → 沒有明確等價的單一詞性
+-- 🛑 刻意【不】處理的寫法（回傳 NULL＝不合併）。
+--    下面每一項都是【一個完整的字串值】，不是用斜線分隔的清單 ——
+--    production 實際出現過的複合標籤長這樣：
+--      「v.n.」「n./v.」「adj.n.」「noun / verb」「verb / noun」「noun/verb」「n, adj」
+--        → 一筆掛兩個詞性，真的有歧義，選哪一個都是猜
+--      「phr.」「phrasal verb」「idiom」「collocation」「expression」
+--        → 沒有明確等價的單一詞性
+--
+--    ⚠️ 不要把「noun / verb」誤讀成 noun 和 verb 兩項：那兩個【單獨出現時】
+--       上面已經分別對應到 NOUN 與 VERB，只有黏在同一個欄位裡才不處理。
 --   看不懂就不要猜：回 NULL 只是「不合併」，代價是多一筆待確認；
 --   猜錯的代價是兩個不同的字被併成一個，而且不可逆。
 --
