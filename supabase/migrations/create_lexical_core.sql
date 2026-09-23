@@ -240,7 +240,14 @@ REVOKE ALL ON TABLE lexical_legacy_map FROM PUBLIC, anon, authenticated;
 
 -- 已登入者【只能讀】。寫入一律走 migration 或 admin 函式。
 GRANT SELECT ON TABLE lexical_items      TO authenticated;
-GRANT SELECT ON TABLE lexical_legacy_map TO authenticated;
+
+-- 🛑 lexical_legacy_map 刻意【不發】authenticated 的 SELECT。
+--    它是內部帳（match_method、candidate_count、人工確認備註），
+--    前端沒有任何路徑會讀它：record_lexical_attempt() 是 SECURITY DEFINER，
+--    legacy id → canonical id 的查表在伺服器端完成。
+--    隔壁的 lexical_unresolved_relations 同理。
+--    （2026-09-23 收窄；已經跑過舊版的環境用
+--      restrict_lexical_legacy_map_read.sql 補。）
 
 -- 🛑 service_role 的 grant 保留：它繞過 RLS 但【不繞過 grant】，
 --    收掉之後後端與排程就動不了這兩張表。
@@ -253,7 +260,7 @@ CREATE POLICY lexical_items_read ON lexical_items
 DROP POLICY IF EXISTS lexical_legacy_map_read ON lexical_legacy_map;
 CREATE POLICY lexical_legacy_map_read ON lexical_legacy_map
   FOR SELECT TO authenticated
-  USING (true);
+  USING (is_admin());
 
 -- 寫入政策：只有 admin。
 -- 用既有的 is_admin()，不自己重寫一套 email 比對。

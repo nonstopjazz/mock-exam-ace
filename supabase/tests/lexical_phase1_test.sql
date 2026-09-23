@@ -4,12 +4,25 @@
 -- ⚠️ psql 專用（用到 \set / \echo）。不要貼進 Supabase SQL Editor。
 --
 -- 執行方式（本機臨時資料庫，勿指向正式環境）：
---   createdb lex
---   psql -v ON_ERROR_STOP=1 -d lex -f supabase/tests/_local_harness.sql
---   psql -v ON_ERROR_STOP=1 -d lex -f supabase/migrations/create_user_profiles_table.sql
---   psql -v ON_ERROR_STOP=1 -d lex -f supabase/schema.sql
---   ... （其餘 baseline 與 lexical migration，順序見 docs/lexical/phase1.md）
---   psql -v ON_ERROR_STOP=1 -d lex -f supabase/tests/lexical_phase1_test.sql
+--   bash supabase/tests/run-lexical-phase1.sh
+--
+-- 那支腳本把下面這串依序跑完，順序不能改（後面的 migration 依賴前面的）：
+--   _local_harness.sql                       ← auth.uid() 等 Supabase 替身
+--   schema.sql
+--   create_user_profiles_table
+--   create_level_words_table
+--   create_user_word_progress_table
+--   unify_word_progress_tracking             ← 少了它 user_word_progress 沒有 source 欄
+--   create_user_stats_table
+--   add_audio_to_pack_items
+--   add_premium_memberships
+--   add_site_to_user_pack_claims             ← 少了它 user_pack_claims 沒有 site 欄
+--   create_lexical_core / _relations / _pack_items / _progress / _rpcs
+--   migrate_level_words / migrate_pack_items / migrate_relations
+--   create_lexical_migration_report
+--   restrict_lexical_legacy_map_read         ← 對新環境是 no-op（core 已收窄），
+--                                              跑它是為了驗證重複執行不會壞
+--   本檔
 --
 -- 重點不在快樂路徑，而在：
 --   * 跨學生隔離（RLS）
@@ -288,6 +301,36 @@ SELECT t_assert((SELECT match_method FROM lexical_legacy_map WHERE legacy_source
   'N35 biodiversity 題庫沒有 → new_item_created');
 SELECT t_assert((SELECT item_type FROM lexical_items WHERE legacy_level_word_id='2255') = 'phrase',
   'N33 多字項目的 item_type 仍然是 phrase，沒有因為正規化而遺失');
+
+\echo ''
+\echo '--- C3. lexical_legacy_map 是內部帳，學生讀不到 ---'
+
+SELECT t_assert(
+  has_table_privilege('authenticated', 'public.lexical_legacy_map', 'SELECT') = false,
+  'GR1 authenticated 沒有 lexical_legacy_map 的 SELECT grant');
+SELECT t_assert(
+  has_table_privilege('anon', 'public.lexical_legacy_map', 'SELECT') = false,
+  'GR2 anon 更沒有');
+SELECT t_assert(
+  has_table_privilege('service_role', 'public.lexical_legacy_map', 'SELECT'),
+  'GR3 service_role 仍然讀得到（後端與 migration 要用）');
+-- 兩層都要收：將來有人補了 grant，政策仍然擋得住。
+SELECT t_assert(
+  (SELECT qual FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'lexical_legacy_map'
+      AND policyname = 'lexical_legacy_map_read') LIKE '%is_admin%',
+  'GR4 讀取政策是 is_admin()，不是 USING (true)');
+-- 對照組：隔壁那張表本來就是這樣處理的，兩者應該一致。
+SELECT t_assert(
+  has_table_privilege('authenticated', 'public.lexical_unresolved_relations', 'SELECT') = false,
+  'GR5 lexical_unresolved_relations 同樣不給（兩張內部表處理一致）');
+-- 教學內容則相反，學生要讀得到。
+SELECT t_assert(
+  has_table_privilege('authenticated', 'public.lexical_items', 'SELECT'),
+  'GR6 lexical_items 仍然可讀（收窄沒有波及教學內容）');
+SELECT t_assert(
+  has_table_privilege('authenticated', 'public.lexical_relations', 'SELECT'),
+  'GR7 lexical_relations 仍然可讀');
 
 \echo ''
 \echo '--- D. Phase 3：同一個 canonical item 可以在多個 pack ---'
