@@ -264,10 +264,27 @@ ${errorCount} 類全部走完，才算完成這一支任務。
 
 ${EVIDENCE_RULE}
 
-每一筆 finding 都必須給 correction——【改寫後的正確英文句子】。
-correction 是那一段原文修好之後的樣子，不是給學生的指示。
-  ✓ 「Many student thinks…」→「Many students think…」
-  ✗ 「Many student thinks…」→「Please write your essay in English.」
+每一筆 finding 都必須給 correction——【把 quote 修好之後的樣子】。
+
+🛑 correction 的範圍必須與 quote【相同】。quote 引了多少，correction 就還多少，
+   不要多給、不要少給，也不要順手改掉這一筆錯誤以外的東西。
+
+  ✓ quote「Many student thinks」→ correction「Many students think」
+  ✗ quote「Many student thinks」→ correction「Many students think that studying abroad
+     is a valuable experience for young people.」
+     （補了 quote 裡沒有的內容，學生看不出到底哪個字錯了）
+  ✗ quote「Many student thinks」→ correction「Please write your essay in English.」
+     （那是指示，不是修好的文字）
+
+   quote 只有幾個字，correction 就只有幾個字。
+   quote 本來就是一整句時，correction 才會是一整句——那是 quote 決定的，不是你決定的。
+
+   為什麼要這樣：學生看到的是「原文 → 修正」兩行並排。
+   範圍一致時，差異一眼就看得出來；correction 自己擴寫成一整段，
+   學生只會看到兩段長得不一樣的英文，不知道自己錯在哪裡。
+
+🛑 一筆 finding 只修【一個】錯誤。同一段文字有兩個錯，就開兩筆 finding，
+   各自引用、各自修正，不要在一個 correction 裡一次改完。
 
 也不可以把錯誤代碼拿來傳達與錯誤無關的訊息。
 如果整篇不是英文，那不是拼寫錯誤——findings 留空，
@@ -282,14 +299,14 @@ ${OUTPUT_RULE}
       "code": "WRITE_ERR_SV_AGREEMENT",
       "quote": "學生原文逐字片段",
       "reason": "為什麼這是錯的（繁體中文）",
-      "correction": "改寫後的正確英文句子",
+      "correction": "把 quote 修好之後的樣子，範圍與 quote 相同",
       "primary_skill": "WRITE_GRAMMAR_BASIC"
     },
     {
       "code": "WRITE_ERR_GRAMMAR_OTHER",
       "quote": "學生原文逐字片段",
       "reason": "為什麼這是錯的（繁體中文）",
-      "correction": "改寫後的正確英文句子",
+      "correction": "把 quote 修好之後的樣子，範圍與 quote 相同",
       "primary_skill": "WRITE_GRAMMAR_BASIC",
       "fallback_rationale": "動詞語態錯誤，不屬於冠詞／單複數／SV 一致／詞類／代名詞／that／介係詞任何一類"
     }

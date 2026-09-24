@@ -11,6 +11,8 @@ import {
 import { ZERO_ERROR_LABEL } from "@/lib/writing/analysisContract";
 import type { WritingReport } from "@/hooks/learn/useWritingReport";
 import { AiBadge, EvidenceQuote, StatePill } from "./reportShared";
+import { diffCorrection } from "@/lib/writing/correctionDiff";
+import { DiffText } from "@/components/writing/DiffText";
 import { COMPETENCY_LABEL, HIGH_SCORE_LABEL, OVERALL_LABEL } from "./reportLabels";
 
 /**
@@ -158,22 +160,32 @@ export const WritingReportView = ({ report }: { report: WritingReport }) => {
                   <p className="text-sm text-muted-foreground">這篇作文沒有找到需要標記的錯誤。</p>
                 ) : (
                   <ul className="space-y-5">
-                    {errorFindings.map((f, i) => (
-                      <li key={i} className="space-y-2">
-                        <Badge
-                          variant="outline"
-                          className="text-xs font-normal bg-accent/10 border-accent/20 text-foreground"
-                        >
-                          {ERROR_TAG_BY_CODE.get(f.code)?.zh ?? f.code}
-                        </Badge>
-                        <EvidenceQuote>{f.quote}</EvidenceQuote>
-                        <p className="text-sm text-foreground">
-                          <span className="text-muted-foreground">改成：</span>
-                          {f.correction}
-                        </p>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{f.reason}</p>
-                      </li>
-                    ))}
+                    {errorFindings.map((f, i) => {
+                      // 原文與修正共用同一次比對，切法才會一致。
+                      const diff = diffCorrection(f.quote, f.correction);
+                      return (
+                        <li key={i} className="space-y-2">
+                          <Badge
+                            variant="outline"
+                            className="text-xs font-normal bg-accent/10 border-accent/20 text-foreground"
+                          >
+                            {ERROR_TAG_BY_CODE.get(f.code)?.zh ?? f.code}
+                          </Badge>
+                          <EvidenceQuote>
+                            {diff.worthShowing ? <DiffText segments={diff.quote} /> : f.quote}
+                          </EvidenceQuote>
+                          <p className="text-sm text-foreground break-words">
+                            <span className="text-muted-foreground">改成：</span>
+                            {diff.worthShowing ? (
+                              <DiffText segments={diff.correction} />
+                            ) : (
+                              f.correction
+                            )}
+                          </p>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{f.reason}</p>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
 

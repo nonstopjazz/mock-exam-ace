@@ -15,6 +15,8 @@ import {
   AlertCircle, ChevronDown, ExternalLink, Loader2, Users,
 } from "lucide-react";
 import { ERROR_TAG_BY_CODE } from "@/lib/writing/taxonomy";
+import { diffCorrection } from "@/lib/writing/correctionDiff";
+import { DiffText } from "@/components/writing/DiffText";
 import {
   essayCountTone,
   type ErrorScope,
@@ -330,7 +332,10 @@ export function ErrorTrackingPanel({ scope, hasFilters }: Props) {
                               </div>
                             ) : detail ? (
                               <div className="space-y-4 pb-2">
-                                {detail.rows.map((f) => (
+                                {detail.rows.map((f) => {
+                                  // 兩行共用同一次比對，切法才會一致。
+                                  const diff = diffCorrection(f.quote, f.correction);
+                                  return (
                                   <div key={f.finding_id} className="rounded-lg bg-muted/40 p-4">
                                     <div className="flex flex-wrap items-center gap-2 mb-2">
                                       <span className="text-xs text-muted-foreground">
@@ -348,11 +353,19 @@ export function ErrorTrackingPanel({ scope, hasFilters }: Props) {
                                     <dl className="space-y-1.5 text-sm">
                                       <div className="flex gap-2">
                                         <dt className="text-muted-foreground shrink-0 w-10">原文</dt>
-                                        <dd className="text-foreground break-words min-w-0">{f.quote}</dd>
+                                        <dd className="text-foreground break-words min-w-0">
+                                          {diff.worthShowing ? <DiffText segments={diff.quote} /> : f.quote}
+                                        </dd>
                                       </div>
                                       <div className="flex gap-2">
                                         <dt className="text-muted-foreground shrink-0 w-10">修正</dt>
-                                        <dd className="text-success break-words min-w-0">{f.correction}</dd>
+                                        <dd className="break-words min-w-0">
+                                          {diff.worthShowing ? (
+                                            <DiffText segments={diff.correction} />
+                                          ) : (
+                                            <span className="text-success">{f.correction}</span>
+                                          )}
+                                        </dd>
                                       </div>
                                       <div className="flex gap-2">
                                         <dt className="text-muted-foreground shrink-0 w-10">說明</dt>
@@ -360,7 +373,8 @@ export function ErrorTrackingPanel({ scope, hasFilters }: Props) {
                                       </div>
                                     </dl>
                                   </div>
-                                ))}
+                                  );
+                                })}
                                 {detail.truncated ? (
                                   <p className="text-xs text-warning">
                                     只顯示前 {detail.limit} 筆，共 {detail.total} 筆。
