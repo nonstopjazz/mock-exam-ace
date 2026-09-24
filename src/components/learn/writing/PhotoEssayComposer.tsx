@@ -177,11 +177,15 @@ export function PhotoEssayComposer() {
       toast.error("請先填標題");
       return;
     }
+    if (essayTopic.trim().length === 0) {
+      toast.error("請先填題目說明");
+      return;
+    }
     void composer.start(
       picked.map((p) => p.file),
       {
         title,
-        essayTopic: essayTopic.trim() || undefined,
+        essayTopic: essayTopic.trim(),
         essayDate,
         studentNotes: studentNotes.trim() || undefined,
       },
@@ -449,14 +453,19 @@ export function PhotoEssayComposer() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="photo-topic">題目說明</Label>
+            <Label htmlFor="photo-topic">
+              題目說明 <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="photo-topic"
               value={essayTopic}
               onChange={(e) => setEssayTopic(e.target.value)}
-              placeholder="老師出的題目或提示（可留空）"
+              placeholder="老師出的題目或提示"
               maxLength={500}
             />
+            <p className="text-sm text-muted-foreground">
+              批改時會一起看題目，才判斷得出有沒有切題。
+            </p>
           </div>
 
           <div className="space-y-3">

@@ -49,7 +49,11 @@ const EssayCompose = () => {
   // 「字數」= 單字數，與資料庫的 writing_texts.word_count 同一個定義
   const wordCount = countWords(content);
   const charCount = content.length;
-  const canSubmit = title.trim().length > 0 && content.trim().length > 0 && !submitting;
+  const canSubmit =
+    title.trim().length > 0 &&
+    essayTopic.trim().length > 0 &&
+    content.trim().length > 0 &&
+    !submitting;
 
   const handleSubmit = async () => {
     setConfirmOpen(false);
@@ -58,7 +62,7 @@ const EssayCompose = () => {
       const essayId = await submitTextEssay({
         title,
         content,
-        essayTopic: essayTopic.trim() || undefined,
+        essayTopic: essayTopic.trim(),
         essayDate,
         studentNotes: studentNotes.trim() || undefined,
       });
@@ -176,15 +180,20 @@ const EssayCompose = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="essay-topic">題目說明</Label>
+                <Label htmlFor="essay-topic">
+                  題目說明 <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="essay-topic"
                   value={essayTopic}
                   onChange={(e) => setEssayTopic(e.target.value)}
-                  placeholder="老師出的題目或提示（可留空）"
+                  placeholder="老師出的題目或提示"
                   maxLength={500}
                   disabled={submitting}
                 />
+                <p className="text-sm text-muted-foreground">
+                  批改時會一起看題目，才判斷得出有沒有切題。
+                </p>
               </div>
 
               <div className="space-y-2">

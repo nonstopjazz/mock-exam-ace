@@ -20,7 +20,8 @@
     "preflight:vercel": "node scripts/preflight-vercel.mjs",
     "verify:writing-sync-call": "tsx scripts/verify-writing-sync-call.ts",
     "verify:essay-delete-order": "tsx scripts/verify-essay-delete-order.ts",
-    "verify:image-replace": "tsx scripts/verify-image-replace.ts"
+    "verify:image-replace": "tsx scripts/verify-image-replace.ts",
+    "verify:correction-diff": "tsx scripts/verify-correction-diff.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.17.1",
