@@ -259,23 +259,86 @@
 
 ---
 
-## 10. 不相關的後續觀察（unrelated follow-up）
+## 10. 收窄之後的行為驗證
 
-**同一次作答被記錄兩次。** `airline` 有兩筆相隔一秒的 attempt，
-`response_time_ms` 都是 465；而舊表的 `review_count` 是 6、其他字是 5。
+`restrict_lexical_legacy_map_read.sql` 執行後（`收窄後_登入者可讀 = false`、
+`service_role仍可讀 = true`、`政策數 = 2`），用學生帳號實際作答 20 題：
 
-**兩條路徑都記了兩次**，代表送出動作本身發生了兩次（頁面重複觸發），
-**不是 Phase 1 造成的**，也不是雙寫的問題。
+| | 收窄前 | 收窄後 |
+|---|---|---|
+| `lexical_attempts` | 30 | **50** |
 
-未查明，未處理。與本次 rollout 無關，另列追蹤。
+20 題 → 20 筆，**1:1**。`record_lexical_attempt()` 在 `authenticated`
+完全沒有 `lexical_legacy_map` SELECT 權限的情況下仍然解析得出 canonical id ——
+SECURITY DEFINER 如預期在伺服器端查表。這是「收窄不會影響作答」這句話
+唯一缺的 production 證據，現在補上了。
 
 ---
 
-## 11. 尚未完成
+## 11. 重複記錄：1 / 50，偶發
+
+⚠️ **這一節推翻了本文件先前的說法。** 原本寫「送出動作本身發生了兩次」，
+把一次偶發講成了常態。用兩批資料查完之後，正確的說法是下面這樣。
+
+第一批 30 筆裡有 5 個字各 2 筆。逐筆看時間與反應時間：
+
+| 字數 | 兩筆的間隔 | `response_time_ms` | 判定 |
+|---|---|---|---|
+| 4 | 約 35 秒（05:44:4x → 05:45:2x） | **不同** | 真的重練了一次，資料正確 |
+| 1 | **1.0 秒**（05:45:25.098 → 05:45:26.111） | **完全相同** | **重複寫入** |
+
+人不可能在一秒內用完全相同的反應時間再答一次。所以真正重複的只有**一筆**。
+
+第二批（收窄後）20 題 20 筆，**沒有任何重複**。
+
+**結論：50 筆裡 1 筆重複，發生過一次，不是系統性的。**
+它仍然代表送出的地方**沒有防連點** —— 快速點兩下就會多記一筆。
+資料量小的時候看得見，量大了就淹掉了。
+
+這不是 Phase 1 造成的（舊表 `user_word_progress` 的 `review_count`
+當時也多了一次），與雙寫無關。**未處理**，列入待辦。
+
+那一筆多出來的 attempt **刻意留著**：`lexical_attempts` 是 append-only
+的事實記錄，為了一筆去對 production 下 DELETE，風險大於收益。
+
+---
+
+## 12. `affected_mastery = false` 的 9 筆：設計如此
+
+50 筆裡有 9 筆沒有動到熟練度，而且那 9 個字裡有 5 個連
+`student_lexical_mastery` 的列都沒有。查下來全部一致：
+
+| exercise_type | skill_dimension | correct | self_rating | 筆數 |
+|---|---|---|---|---|
+| `flashcard` | `self_assessment` | NULL | NULL | 9 |
+
+也就是**翻卡看過，但沒有評「會／不會」**。`create_lexical_rpcs.sql:162`：
+
+```sql
+v_applied := p_apply_mastery
+             AND (p_correct IS NOT NULL OR p_self_rating IS NOT NULL);
+```
+
+兩者皆 NULL → 不動熟練度，而且那一支**直接 `RETURN`，不建 mastery 列**。
+所以那 5 個字沒有 mastery 列不是漏寫，是它們從來沒有被評過。**沒有 bug。**
+
+這正是新舊系統要分開的東西：舊系統沒有「看過」這個概念，
+新系統把「曝光」留成證據卻不讓它影響熟練度。
+
+⚠️ 一個讀資料時要注意的地方：`skill_dimension` 被記成 `self_assessment`，
+但這一次其實**沒有發生任何自評**。列舉值裡沒有 `exposure`
+（見 `create_lexical_progress.sql` 的註解：「同一個 flashcard 既是 exposure
+也是 self_assessment」）。所以**不能只看 `skill_dimension` 就當成學生評過**，
+要靠 `self_rating IS NULL` 才分得出「看過」與「評過」。
+
+---
+
+## 13. 尚未完成
 
 | 項目 | 狀態 |
 |---|---|
-| `lexical_legacy_map` 權限收窄 | 獨立 migration，見 `restrict_lexical_legacy_map_read.sql` |
+| `lexical_legacy_map` 權限收窄 | ✅ **已完成**，2026-09-23 於 production 執行，並在 §10 以實際作答驗證 |
+| 送出沒有防連點 | 未處理。見 §11 —— 50 筆裡造成 1 筆重複 |
 | `conjunction` 等疑似題庫標錯的詞性 | 未處理，留待人工 |
 | 26 筆 ambiguous / 12957 筆未解決關係 | **刻意不處理**。未解決關係 97% 是 `no_match`（題庫的同義詞欄位寫了題庫本身沒有的字），那是原始資料的性質，多數永遠不需要處理 —— 它不是待辦清單 |
 | Phase 1.1 canonical read path | 未開始 |
