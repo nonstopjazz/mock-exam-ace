@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Layout } from "@/components/layout/Layout";
@@ -16,6 +16,7 @@ import { EssayPhotos } from "@/components/learn/writing/EssayPhotos";
 import { DeleteDraftDialog } from "@/components/learn/writing/DeleteDraftDialog";
 import { useDeleteEssayDraft } from "@/hooks/learn/useDeleteEssayDraft";
 import { WritingReportView } from "@/components/learn/writing/report/WritingReportView";
+import { useMyErrorOverview } from "@/hooks/learn/useMyErrors";
 import { TeacherFeedbackSection } from "@/components/learn/writing/report/TeacherFeedbackSection";
 
 /**
@@ -27,6 +28,13 @@ const EssayDetail = () => {
   const { essayId } = useParams<{ essayId: string }>();
   const { essay, text, loading, error, notFound, refetch } = useEssay(essayId);
   const report = useWritingReport(essayId);
+  // 跨作文的次數。只影響「你在 N 篇裡犯過」那一行——載入失敗或還沒回來時
+  // 那一行不出現，報告本身完全不受影響。
+  const { overview: myErrors } = useMyErrorOverview();
+  const myErrorCounts = useMemo(
+    () => Object.fromEntries(myErrors.rows.map((r) => [r.error_code, r.essay_count])),
+    [myErrors.rows],
+  );
   const teacherFeedback = useTeacherFeedback(essayId);
   const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -210,7 +218,10 @@ const EssayDetail = () => {
                   </div>
                 </Card>
               ) : report.report ? (
-                <WritingReportView report={report.report} />
+                <WritingReportView
+                  report={report.report}
+                  myErrorEssayCounts={myErrorCounts}
+                />
               ) : null}
 
               <DeleteDraftDialog

@@ -64,6 +64,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authentic
 \ir ../migrations/create_writing_error_findings.sql
 \ir ../migrations/create_writing_error_findings_sync.sql
 \ir ../migrations/create_writing_error_query_rpcs.sql
+\ir ../migrations/create_writing_my_errors_1_overview.sql
+\ir ../migrations/create_writing_my_errors_2_findings.sql
 
 -- ── 資料 ─────────────────────────────────────────────────────────
 -- Amy  ：高二A 在籍。ARTICLE 多、另有數個只出現一次的 code
@@ -412,6 +414,124 @@ SELECT t_assert(
 SELECT t_assert(
   (writing_admin_student_errors(NULL,NULL,NULL,'不存在的題目',NULL) ->> 'student_total')::int = 0,
   'T45 A6 查無學生時不會炸（v_students 為空的路徑）');
+
+\echo ''
+\echo '════════ 11. 學生版：writing_my_error_* ════════'
+--
+-- 🛑 這一段最重要的是【跨學生隔離】。老師版靠 is_admin() 擋，
+--    學生版沒有任何 student_id 參數——授權不是靠檢查參數，是靠參數不存在。
+--    所以要證明的是：切換 auth.uid() 就只會看到那個人的資料，
+--    而且沒有任何辦法從外面指定別人。
+
+-- Amy 的形狀（見上方 fixture）：
+--   ARTICLE ×3（2 篇）、SV_AGREEMENT ×2（1 篇）、
+--   PUNCTUATION ×1（1 篇）、GRAMMAR_OTHER ×1（1 篇）、CHINGLISH ×1（1 篇，7 月）
+SELECT set_config('test.uid','a0000000-0000-0000-0000-000000000001',false);
+
+SELECT t_assert(
+  (writing_my_error_overview() -> 'rows' -> 0 ->> 'error_code') = 'WRITE_ERR_ARTICLE',
+  'T46 排第一的是出現在最多篇作文裡的錯（ARTICLE，2 篇）');
+SELECT t_assert(
+  ((writing_my_error_overview() -> 'rows' -> 0 ->> 'essay_count')::int = 2
+   AND (writing_my_error_overview() -> 'rows' -> 0 ->> 'occurrence_count')::int = 3),
+  'T47 ARTICLE 是 2 篇 / 3 次');
+SELECT t_assert(
+  NOT (writing_my_error_overview() -> 'rows' -> 0 ? 'student_count'),
+  'T48 【沒有】student_count 欄位（對一個人來說永遠是 1，只會佔位置）');
+SELECT t_assert(
+  (writing_my_error_overview() ->> 'essay_total')::int = 3,
+  'T49 essay_total 是我有 findings 的作文數（Amy 有 3 篇）');
+
+-- 🛑 門檻測試：只犯過一次的也必須列出來，與老師版同一條規則
+SELECT t_assert(
+  EXISTS (SELECT 1 FROM jsonb_array_elements(writing_my_error_overview() -> 'rows') r
+           WHERE r ->> 'error_code' = 'WRITE_ERR_PUNCTUATION'),
+  'T50 只犯過一次的 code 也在清單裡（沒有 HAVING 門檻）');
+
+-- ── 跨學生隔離 ────────────────────────────────────────
+-- Bob 只有 1 筆 ARTICLE。切過去之後絕對不能看到 Amy 的任何東西。
+SELECT set_config('test.uid','a0000000-0000-0000-0000-000000000002',false);
+SELECT t_assert(
+  (writing_my_error_overview() ->> 'total')::int = 1,
+  'T51 Bob 只看得到自己的 1 個 code');
+SELECT t_assert(
+  (writing_my_error_overview() -> 'rows' -> 0 ->> 'occurrence_count')::int = 1,
+  'T52 Bob 的 ARTICLE 是 1 次，不是 Amy 的 3 次');
+SELECT t_assert(
+  (SELECT count(*)::int FROM jsonb_array_elements(
+     writing_my_error_findings('WRITE_ERR_ARTICLE') -> 'rows')) = 1,
+  'T53 Bob 的 drill-down 只有自己那 1 筆');
+SELECT t_assert(
+  NOT EXISTS (SELECT 1 FROM jsonb_array_elements(
+                writing_my_error_findings() -> 'rows') r
+               WHERE r ->> 'quote' IN ('go to park','is best','visited museum')),
+  'T54 Bob 的 drill-down 裡沒有任何一句是 Amy 寫的');
+
+-- ── 退出班級的學生仍然看得到自己的資料 ────────────────
+-- 🛑 班級是【老師】的篩選維度。學生看自己的錯誤與班級無關，
+--    退出班級不該讓他看不到自己寫過的東西。
+SELECT set_config('test.uid','a0000000-0000-0000-0000-000000000003',false);
+SELECT t_assert(
+  (writing_my_error_overview() ->> 'total')::int = 1,
+  'T55 已退出班級的 Cara 仍然看得到自己的錯誤');
+
+-- ── 沒有作文的人 ──────────────────────────────────────
+SELECT set_config('test.uid','a0000000-0000-0000-0000-00000000009f',false);
+SELECT t_assert(
+  writing_my_error_overview() -> 'rows' = '[]'::jsonb
+  AND (writing_my_error_overview() ->> 'essay_total')::int = 0,
+  'T56 沒有任何 findings 的人回空陣列，不是 NULL');
+
+-- ── 未登入 ────────────────────────────────────────────
+SELECT set_config('test.uid','',false);
+DO $t57$ BEGIN
+  PERFORM writing_my_error_overview();
+  RAISE EXCEPTION 'FAIL  T57 未登入卻查得到';
+EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM LIKE 'FAIL %' THEN RAISE; END IF;
+  RAISE NOTICE 'PASS  T57 未登入被擋（%）', left(SQLERRM, 20);
+END $t57$;
+
+-- ── drill-down 的內容與排序 ───────────────────────────
+SELECT set_config('test.uid','a0000000-0000-0000-0000-000000000001',false);
+SELECT t_assert(
+  (SELECT count(*)::int FROM jsonb_array_elements(
+     writing_my_error_findings('WRITE_ERR_ARTICLE') -> 'rows')) = 3,
+  'T58 Amy 的 ARTICLE drill-down 有 3 筆');
+SELECT t_assert(
+  (writing_my_error_findings('WRITE_ERR_ARTICLE') -> 'rows' -> 0 ->> 'essay_submitted_at')::date
+    >= (writing_my_error_findings('WRITE_ERR_ARTICLE') -> 'rows' -> 2 ->> 'essay_submitted_at')::date,
+  'T59 drill-down 依時間新到舊');
+-- 🛑 整句改寫的 correction 不可以被截斷——畫面要拿它跟 quote 做逐詞比對
+SELECT t_assert(
+  (SELECT max(length(r ->> 'correction')) FROM jsonb_array_elements(
+     writing_my_error_findings('WRITE_ERR_PUNCTUATION') -> 'rows') r) > 100,
+  'T60 超過 100 字元的 correction 原樣回傳，沒有被截斷');
+SELECT t_assert(
+  writing_my_error_findings('不存在的code') -> 'rows' = '[]'::jsonb,
+  'T61 查不存在的 code 回空陣列');
+
+-- ── 權限 ──────────────────────────────────────────────
+SELECT t_assert(
+  (SELECT bool_and(p.prosecdef AND p.proconfig::text = '{"search_path=\"\""}')
+     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public' AND p.proname LIKE 'writing_my_error%'),
+  'T62 兩支都是 SECURITY DEFINER + SET search_path = ''''');
+SELECT t_assert(
+  NOT has_function_privilege('anon','writing_my_error_overview(integer)','EXECUTE')
+  AND NOT has_function_privilege('anon','writing_my_error_findings(text,integer)','EXECUTE'),
+  'T63 anon 兩支都叫不動');
+SELECT t_assert(
+  has_function_privilege('authenticated','writing_my_error_overview(integer)','EXECUTE')
+  AND has_function_privilege('authenticated','writing_my_error_findings(text,integer)','EXECUTE'),
+  'T64 登入者兩支都叫得動');
+-- 🛑 這一條守住整個設計：函式不可以有 student_id 之類的參數。
+--    有了參數，授權就變成「記得檢查」；沒有參數，就沒有東西可以忘記檢查。
+SELECT t_assert(
+  (SELECT bool_and(pg_get_function_arguments(p.oid) NOT LIKE '%student%')
+     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public' AND p.proname LIKE 'writing_my_error%'),
+  'T65 兩支都沒有 student 參數（對象只能是 auth.uid()）');
 
 \echo ''
 \echo '全部通過。'

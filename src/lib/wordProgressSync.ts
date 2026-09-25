@@ -1,8 +1,12 @@
 import { supabase } from './supabase';
 import type { WordProgress } from '@/store/vocabularyStore';
+import { toWordProgressMap, type WordProgressRow } from './wordProgressMap';
 
 /**
- * 從 Supabase 載入使用者的所有單字學習進度
+ * 從 Supabase 載入使用者的所有單字學習進度。
+ *
+ * key 的形狀由 toWordProgressMap() 決定，那裡有一條【不可以加前綴】的規則
+ * 與它的由來（2026-09-24 的題庫進度不累積事故）。
  */
 export async function fetchAllWordProgress(): Promise<Record<string, WordProgress>> {
   const { data, error } = await supabase.rpc('get_all_word_progress');
@@ -16,27 +20,7 @@ export async function fetchAllWordProgress(): Promise<Record<string, WordProgres
     return {};
   }
 
-  const progressMap: Record<string, WordProgress> = {};
-
-  for (const item of data.progress) {
-    // Use composite key for pack items to avoid collision with level words
-    const key = item.source === 'pack' && item.pack_id
-      ? `pack:${item.pack_id}:${item.word_id}`
-      : item.word_id;
-
-    progressMap[key] = {
-      wordId: item.word_id,
-      masteryLevel: item.mastery_level,
-      nextReviewTime: Number(item.next_review_time),
-      reviewCount: item.review_count,
-      correctCount: item.correct_count,
-      lastReviewTime: item.last_review_time ? Number(item.last_review_time) : null,
-      source: item.source || 'level',
-      packId: item.pack_id || null,
-    };
-  }
-
-  return progressMap;
+  return toWordProgressMap(data.progress as WordProgressRow[]);
 }
 
 /**

@@ -7,6 +7,7 @@ import { AbilitySnapshot } from "@/components/learn/student/AbilitySnapshot";
 import { LearningRhythm } from "@/components/learn/student/LearningRhythm";
 import { MyVocabulary } from "@/components/learn/student/MyVocabulary";
 import { RecentEssays } from "@/components/learn/student/RecentEssays";
+import { CommonMistakes } from "@/components/learn/student/CommonMistakes";
 import { GrammarSnapshot } from "@/components/learn/student/GrammarSnapshot";
 import { SpeakingEntry } from "@/components/learn/student/SpeakingEntry";
 
@@ -69,6 +70,12 @@ const StudentDashboard = () => {
                  還沒有任何作文時整區不出現（作文既有的 UX） */}
           <div className="mt-10">
             <RecentEssays />
+          </div>
+
+          {/* 2.5 最近常錯 —— 緊接在作文後面，因為它講的就是那些作文。
+                 沒有批改完成的作文時整區不出現 */}
+          <div className="mt-6">
+            <CommonMistakes />
           </div>
 
           {/* 3–4. 摘要與紀錄：兩欄 */}
