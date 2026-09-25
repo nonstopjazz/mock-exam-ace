@@ -3,7 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Sparkles, AlertCircle, ListChecks, Target } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Sparkles, AlertCircle, ListChecks, Target, Repeat2 } from "lucide-react";
 import {
   COMPETENCY_CATEGORY_BY_CODE, COMPETENCY_SKILL_BY_CODE,
   ERROR_TAG_BY_CODE, HIGH_SCORE_CATEGORIES, HIGH_SCORE_FEATURE_BY_CODE,
@@ -73,7 +74,19 @@ const HighlightList = ({
   );
 };
 
-export const WritingReportView = ({ report }: { report: WritingReport }) => {
+export const WritingReportView = ({
+  report,
+  myErrorEssayCounts,
+}: {
+  report: WritingReport;
+  /**
+   * error code → 這個錯出現在【我】幾篇作文裡。
+   *
+   * 只有學生端會傳。老師看學生的作文時不傳 —— 傳了會變成顯示
+   * 老師自己的錯誤次數，那是另一個人的資料。
+   */
+  myErrorEssayCounts?: Record<string, number>;
+}) => {
   const competency = report.competency_analysis;
   const errors = report.error_analysis;
   const highScore = report.high_score_feature_analysis;
@@ -183,6 +196,20 @@ export const WritingReportView = ({ report }: { report: WritingReport }) => {
                             )}
                           </p>
                           <p className="text-sm text-muted-foreground leading-relaxed">{f.reason}</p>
+                          {/*
+                            跨作文的提醒。只在【2 篇以上】才出現——
+                            只有這一篇時這行等於在說「你犯過這個錯」，
+                            而學生正在看的就是那個錯，沒有新資訊。
+                          */}
+                          {(myErrorEssayCounts?.[f.code] ?? 0) >= 2 ? (
+                            <Link
+                              to="/learn/student/writing?tab=errors"
+                              className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
+                            >
+                              <Repeat2 className="h-4 w-4 shrink-0" />
+                              這個錯你在 {myErrorEssayCounts?.[f.code]} 篇作文裡犯過
+                            </Link>
+                          ) : null}
                         </li>
                       );
                     })}

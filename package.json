@@ -22,7 +22,8 @@
     "verify:essay-delete-order": "tsx scripts/verify-essay-delete-order.ts",
     "verify:image-replace": "tsx scripts/verify-image-replace.ts",
     "verify:correction-diff": "tsx scripts/verify-correction-diff.ts",
-    "verify:word-progress-key": "tsx scripts/verify-word-progress-key.ts"
+    "verify:word-progress-key": "tsx scripts/verify-word-progress-key.ts",
+    "verify:my-errors": "node tests/preview/validate-my-errors.mjs"
   },
   "dependencies": {
     "@blocknote/core": "^0.17.1",

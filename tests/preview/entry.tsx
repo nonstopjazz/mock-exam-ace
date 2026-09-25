@@ -8,11 +8,13 @@ import SpellingPractice from "@/pages/practice/SpellingPractice";
 import FillBlank from "@/pages/practice/FillBlank";
 import MatchGame from "@/pages/practice/MatchGame";
 import SynonymAntonym from "@/pages/practice/SynonymAntonym";
+import { MyErrorsPanel } from "@/components/learn/writing/MyErrorsPanel";
 
 const PAGES: Record<string, React.ComponentType> = {
   srs: SRSReview, quiz: QuickQuiz, flashcards: Flashcards,
   spelling: SpellingPractice, "fill-blank": FillBlank,
   match: MatchGame, "synonym-antonym": SynonymAntonym,
+  "my-errors": MyErrorsPanel,
 };
 
 const name = new URLSearchParams(location.search).get("page") || "quiz";
