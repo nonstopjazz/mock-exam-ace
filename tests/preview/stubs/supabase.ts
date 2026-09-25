@@ -7,8 +7,23 @@ export const supabase = {
   async rpc(fn: string, args: Record<string, unknown>) {
     window.__rpc.push({ fn, args });
     if (fn === 'writing_my_error_overview') {
-      if (new URLSearchParams(location.search).get('empty')) {
+      const q = new URLSearchParams(location.search);
+      if (q.get('empty')) {
         return { data: { rows: [], total: 0, limit: 20, truncated: false, essay_total: 0 }, error: null };
+      }
+      // 稀疏狀態：2026-09 的真實形狀是平均每人 2.5 篇作文，
+      // 所以大多數 code 都只出現在 1 篇裡。這一頁在那種資料下
+      // 不可以看起來像壞掉或像沒資料。
+      if (q.get('sparse')) {
+        return { data: {
+          essay_total: 2, total: 2, limit: 20, truncated: false,
+          rows: [
+            { error_code: 'WRITE_ERR_ARTICLE',     essay_count: 1, occurrence_count: 1,
+              is_fallback_code: false, first_seen_at: '2026-09-20T00:00:00Z', last_seen_at: '2026-09-20T00:00:00Z' },
+            { error_code: 'WRITE_ERR_SPELLING',    essay_count: 1, occurrence_count: 1,
+              is_fallback_code: false, first_seen_at: '2026-09-18T00:00:00Z', last_seen_at: '2026-09-18T00:00:00Z' },
+          ],
+        }, error: null };
       }
       return { data: {
         essay_total: 4, total: 3, limit: 20, truncated: false,

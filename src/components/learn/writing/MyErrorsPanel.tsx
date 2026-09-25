@@ -36,6 +36,9 @@ export function MyErrorsPanel() {
   const { byCode, loadingCode, errorCode, load } = useMyErrorFindings();
   const [open, setOpen] = useState<string | null>(null);
 
+  // 有沒有東西可以排？全部並列時就沒有。
+  const hasRanking = overview.rows.some((r) => r.essay_count > 1);
+
   const toggle = (code: string) => {
     const next = open === code ? null : code;
     setOpen(next);
@@ -75,7 +78,13 @@ export function MyErrorsPanel() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        從你 {overview.essay_total} 篇批改完成的作文整理出來，出現在越多篇的排越前面。
+        從你 {overview.essay_total} 篇批改完成的作文整理出來
+        {/*
+          🛑 只有在真的分得出先後時才說「排越前面」。
+             作文還少的時候每個錯都只出現在 1 篇裡，全部並列——
+             這時候承諾一個畫面上看不到的排序，只會讓學生以為自己漏看了什麼。
+        */}
+        {hasRanking ? "，出現在越多篇的排越前面" : ""}。
       </p>
 
       <div className="space-y-3">
@@ -106,8 +115,10 @@ export function MyErrorsPanel() {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      共 {row.occurrence_count} 次
-                      {row.last_seen_at ? ` · 最近一次 ${shortDate(row.last_seen_at)}` : ""}
+                      {/* 只犯過一次時「共 1 次」與旁邊的「1 篇作文」是同一件事，不重複講 */}
+                      {row.occurrence_count > 1 ? `共 ${row.occurrence_count} 次` : ""}
+                      {row.occurrence_count > 1 && row.last_seen_at ? " · " : ""}
+                      {row.last_seen_at ? `最近一次 ${shortDate(row.last_seen_at)}` : ""}
                     </p>
                   </div>
                   <ChevronDown

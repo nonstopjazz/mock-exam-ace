@@ -34,6 +34,7 @@ async function open(qs) {
 
   const body = await p.locator('body').innerText();
   ok(/從你 4 篇批改完成的作文整理出來/.test(body), '有顯示分母（4 篇）');
+  ok(/排越前面/.test(body), '真的分得出先後時才說明排序規則');
   ok(/3 篇作文/.test(body) && /共 7 次/.test(body), '第一項顯示 3 篇 / 共 7 次');
   ok(/只出現一次|1 篇作文/.test(body), '只犯過一次的 code 也列出來了（無門檻）');
 
@@ -69,7 +70,23 @@ async function open(qs) {
   await p.close();
 }
 
-// ── 2. 沒有資料 ───────────────────────────────────────
+// ── 2. 稀疏資料（2026-09 的真實形狀：平均每人 2.5 篇）──
+// 🛑 這一段是渲染出來才發現的。資料稠密時完全看不出問題：
+//    每一列都是 1 篇時，「出現在越多篇的排越前面」承諾了一個
+//    畫面上不存在的排序；而「1 篇作文」＋「共 1 次」是同一件事講兩遍。
+{
+  const { p, errs } = await open('&sparse=1');
+  await p.waitForTimeout(400);
+  ok(errs.length === 0, `稀疏資料沒有 runtime 錯誤 ${errs.slice(0,1).join('')}`);
+  const body = await p.locator('body').innerText();
+  ok(!/排越前面/.test(body), '全部並列時【不】宣稱有排序');
+  ok(!/共 1 次/.test(body), '只犯過一次時不重複顯示「共 1 次」');
+  ok(/最近一次/.test(body), '仍然看得到最近一次的日期');
+  ok(/1 篇作文/.test(body), '仍然看得到篇數');
+  await p.close();
+}
+
+// ── 3. 沒有資料 ───────────────────────────────────────
 {
   const { p, errs } = await open('&empty=1');
   await p.waitForTimeout(400);
