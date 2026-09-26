@@ -67,7 +67,7 @@ export default function ReadingStats() {
       <Button variant="ghost" size="sm" asChild className="shrink-0 gap-1 md:gap-2">
         <Link to="/learn/student/reading">
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">文章列表</span>
+          <span className="hidden sm:inline">閱讀練習</span>
         </Link>
       </Button>
     </div>

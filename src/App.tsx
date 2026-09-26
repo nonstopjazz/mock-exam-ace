@@ -37,7 +37,8 @@ import SpeakingGrading from "./pages/admin/SpeakingGrading";
 import FeatureAccessAdmin from "./pages/admin/FeatureAccessAdmin";
 import ReadingImport from "./pages/admin/ReadingImport";
 import ReadingPublish from "./pages/admin/ReadingPublish";
-import StudentReading from "./pages/learn/StudentReading";
+import ReadingHome from "./pages/learn/ReadingHome";
+import ReadingArticles from "./pages/learn/ReadingArticles";
 import ReadingPractice from "./pages/learn/ReadingPractice";
 import ReadingStats from "./pages/learn/ReadingStats";
 import Home from "./pages/Home";
@@ -178,7 +179,10 @@ const App = () => (
               🛑 這道閘只管畫面。真正的把關在 reading_get_passage 與
                  reading_start_session 裡，它們各自再檢查一次
                  learn_feature_enabled('reading')——藏起來的頁面仍然打得到 RPC。 */}
-          <Route path="/learn/student/reading" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><StudentReading /></ProtectedRoute></StudentFeatureGate>} />
+          <Route path="/learn/student/reading" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><ReadingHome /></ProtectedRoute></StudentFeatureGate>} />
+          {/* 🛑 靜態路段（articles / stats）要排在 :passageId 前面。React Router v6
+                 本身就把靜態排在動態之前，但寫在前面才讀得出意圖。 */}
+          <Route path="/learn/student/reading/articles" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><ReadingArticles /></ProtectedRoute></StudentFeatureGate>} />
           <Route path="/learn/student/reading/stats" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><ReadingStats /></ProtectedRoute></StudentFeatureGate>} />
           <Route path="/learn/student/reading/:passageId" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><ReadingPractice /></ProtectedRoute></StudentFeatureGate>} />
           <Route path="/learn/student/speaking" element={<StudentFeatureGate feature="speaking" title="口說練習" description="口說練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><StudentSpeaking /></ProtectedRoute></StudentFeatureGate>} />

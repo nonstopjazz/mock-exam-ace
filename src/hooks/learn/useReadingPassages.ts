@@ -11,11 +11,17 @@ import type { ReadingPassageListItem } from "@/lib/reading/studentTypes";
  *
  * 🛑 【不選 passage_text】。清單不需要全文，而一次抓 296 篇的內文
  *    是好幾 MB。少選一個欄位比之後做分頁有用得多。
+ *
+ * 🛑 只留 PUBLISHED。RLS 對學生已經只回 PUBLISHED，但對 admin 回全部——
+ *    而 admin 同時也是學生。DRAFT 的文章只有 1–5 題，放進「開始練習」
+ *    就會讓那一篇拿不出六題。學生端要看見學生的世界，草稿在 /admin 看。
  */
 
 export interface PassageWithProgress extends ReadingPassageListItem {
   /** 沒練過是 null */
   sessionStatus: "IN_PROGRESS" | "SUBMITTED" | null;
+  /** 只有 IN_PROGRESS 時有意義：用來挑「最後做到一半的那一篇」 */
+  startedAt: string | null;
 }
 
 export function useReadingPassages() {
@@ -29,7 +35,8 @@ export function useReadingPassages() {
 
     const { data: passages, error: passageError } = await supabase
       .from("reading_passages")
-      .select("passage_id, title, cefr_level, content_family, subdomain")
+      .select("passage_id, title, cefr_level, content_family, subdomain, status")
+      .eq("status", "PUBLISHED")
       .order("passage_id");
 
     if (passageError) {
@@ -45,22 +52,36 @@ export function useReadingPassages() {
       .select("passage_id, status, started_at")
       .order("started_at", { ascending: false });
 
-    const byPassage = new Map<string, "IN_PROGRESS" | "SUBMITTED">();
+    type Progress = {
+      status: "IN_PROGRESS" | "SUBMITTED";
+      startedAt: string | null;
+    };
+    const byPassage = new Map<string, Progress>();
+    // sessions 依 started_at 遞減，所以第一筆碰到的就是最後開始的那一筆
     for (const row of (sessions ?? []) as {
-      passage_id: string; status: "IN_PROGRESS" | "SUBMITTED" | "ABANDONED";
+      passage_id: string;
+      status: "IN_PROGRESS" | "SUBMITTED" | "ABANDONED";
+      started_at: string;
     }[]) {
       if (row.status === "ABANDONED") continue;
       // 已經交過就是交過，別被後來又開的 IN_PROGRESS 蓋掉
       const current = byPassage.get(row.passage_id);
-      if (current === "SUBMITTED") continue;
-      byPassage.set(row.passage_id, row.status);
+      if (current?.status === "SUBMITTED") continue;
+      byPassage.set(row.passage_id, {
+        status: row.status,
+        startedAt: current?.startedAt ?? row.started_at,
+      });
     }
 
     setItems(
-      ((passages ?? []) as ReadingPassageListItem[]).map((p) => ({
-        ...p,
-        sessionStatus: byPassage.get(p.passage_id) ?? null,
-      })),
+      ((passages ?? []) as ReadingPassageListItem[]).map((p) => {
+        const progress = byPassage.get(p.passage_id);
+        return {
+          ...p,
+          sessionStatus: progress?.status ?? null,
+          startedAt: progress?.startedAt ?? null,
+        };
+      }),
     );
     setLoading(false);
   }, []);
