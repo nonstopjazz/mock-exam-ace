@@ -39,6 +39,7 @@ import ReadingImport from "./pages/admin/ReadingImport";
 import ReadingPublish from "./pages/admin/ReadingPublish";
 import StudentReading from "./pages/learn/StudentReading";
 import ReadingPractice from "./pages/learn/ReadingPractice";
+import ReadingStats from "./pages/learn/ReadingStats";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -178,6 +179,7 @@ const App = () => (
                  reading_start_session 裡，它們各自再檢查一次
                  learn_feature_enabled('reading')——藏起來的頁面仍然打得到 RPC。 */}
           <Route path="/learn/student/reading" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><StudentReading /></ProtectedRoute></StudentFeatureGate>} />
+          <Route path="/learn/student/reading/stats" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><ReadingStats /></ProtectedRoute></StudentFeatureGate>} />
           <Route path="/learn/student/reading/:passageId" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><ReadingPractice /></ProtectedRoute></StudentFeatureGate>} />
           <Route path="/learn/student/speaking" element={<StudentFeatureGate feature="speaking" title="口說練習" description="口說練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><StudentSpeaking /></ProtectedRoute></StudentFeatureGate>} />
 

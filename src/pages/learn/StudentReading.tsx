@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, BookOpen, CheckCircle2, Loader2, PlayCircle, Search } from "lucide-react";
+import { AlertCircle, BarChart3, BookOpen, CheckCircle2, Loader2, PlayCircle, Search } from "lucide-react";
 import { useReadingPassages } from "@/hooks/learn/useReadingPassages";
 
 /**
@@ -49,11 +49,19 @@ export default function StudentReading() {
               </p>
             </div>
           </div>
-          {items.length > 0 && (
-            <span className="text-sm text-muted-foreground shrink-0">
-              練過 {doneCount} / {items.length}
-            </span>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {items.length > 0 && (
+              <span className="text-sm text-muted-foreground hidden sm:inline">
+                練過 {doneCount} / {items.length}
+              </span>
+            )}
+            <Button variant="ghost" size="sm" asChild className="gap-1 md:gap-2">
+              <Link to="/learn/student/reading/stats">
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden md:inline">我的統計</span>
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {error && (

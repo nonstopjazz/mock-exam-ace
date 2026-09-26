@@ -27,7 +27,8 @@
     "reading:dry-run": "tsx scripts/reading-dry-run.ts",
     "verify:reading-parser": "tsx scripts/verify-reading-parser.ts",
     "reading:emit-sql": "tsx scripts/reading-emit-import-sql.ts",
-    "verify:reading-answer-state": "tsx scripts/verify-reading-answer-state.ts"
+    "verify:reading-answer-state": "tsx scripts/verify-reading-answer-state.ts",
+    "verify:reading-stats": "tsx scripts/verify-reading-stats-shaping.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.17.1",
