@@ -60,15 +60,24 @@ SELECT id, 'beta', NULL FROM reading_questions
 -- 作答：SM 對、MI 對、SD 錯、CO 錯、CD 對、VC 對
 INSERT INTO reading_sessions (id, student_id, passage_id, status, submitted_at)
 VALUES ('aaaaaaaa-0000-0000-0000-00000000000a', :stu, 'S1', 'SUBMITTED', now());
+-- 🛑 selected_answer / first_answer 存的是【學生看到的位置】，不是題庫的
+--    原始標籤（正解一律 'B'）。直接塞 'B' 的話，這份 fixture 描述的是一個
+--    亂序上線後不可能出現的狀態，而 changed_away_from_correct 會默默算錯。
 INSERT INTO reading_attempts (session_id, question_id, student_id, selected_answer, is_correct,
                               response_time_ms, answer_change_count, first_answer)
 SELECT 'aaaaaaaa-0000-0000-0000-00000000000a', q.id, :stu,
-       CASE WHEN q.construct IN ('SD','CO') THEN 'A' ELSE 'B' END,
+       CASE WHEN q.construct IN ('SD','CO')
+            THEN chr(65 + (ascii(d.right_pos) - 65 + 1) % 4)  -- 正解【隔壁】那個位置
+            ELSE d.right_pos END,
        q.construct NOT IN ('SD','CO'),
        CASE q.construct WHEN 'SM' THEN 120000 ELSE 30000 END,
        CASE WHEN q.construct = 'SD' THEN 1 ELSE 0 END,
-       CASE WHEN q.construct = 'SD' THEN 'B' ELSE NULL END
-  FROM reading_questions q WHERE q.passage_id='S1';
+       -- SD：本來選對（正解的位置），後來改掉了
+       CASE WHEN q.construct = 'SD' THEN d.right_pos ELSE NULL END
+  FROM reading_questions q
+  CROSS JOIN LATERAL (SELECT reading_option_to_display(
+           'aaaaaaaa-0000-0000-0000-00000000000a', q.id, 'B') AS right_pos) d
+ WHERE q.passage_id='S1';
 
 -- 另一位學生也作答，用來確認統計不會把別人的算進來
 INSERT INTO reading_sessions (id, student_id, passage_id)

@@ -31,6 +31,20 @@ LANGUAGE sql STABLE SECURITY DEFINER AS $$
   SELECT coalesce(current_setting('app.is_admin', true), 'false')::boolean;
 $$;
 
+-- learn_feature_enabled() 由 /learn 的開放控制 migration 建立，不是平台的一部分。
+-- 但閱讀的 RPC 會呼叫它，所以本機要有一個替身，否則測試載入 RPC 就會失敗。
+--
+-- 🛑 預設【開著】，並且讀 GUC——寫死 true 的話，想驗「沒被開放的人叫不動」
+--    的測試就沒有辦法把它關掉，而那正是最需要被驗的一條。
+--
+-- 🛑 要【驗閘門本身】的測試不可以靠這個替身：它永遠回 true，會讓
+--    「沒被開放的人取不到題」這種斷言假通過。那種測試要載入真的
+--    create_learn_feature_access.sql（以及它依賴的 create_learn_classes_tasks.sql）。
+CREATE OR REPLACE FUNCTION learn_feature_enabled(p_feature TEXT) RETURNS BOOLEAN
+LANGUAGE sql STABLE AS $$
+  SELECT coalesce(current_setting('app.feature_enabled', true), 'true')::boolean;
+$$;
+
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
     CREATE ROLE authenticated NOLOGIN;

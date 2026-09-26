@@ -58,6 +58,12 @@ END $$;
 \ir ../migrations/create_reading_student_rpc_2_submit.sql
 \ir ../migrations/create_reading_student_rpc_3_start.sql
 \ir ../migrations/create_reading_student_rpc_4_finish.sql
+-- 🛑 選項亂序也要載進來。少了它，這份測試驗的是一個
+--    production 永遠不會出現的組態——那比沒有測試更糟。
+\ir ../migrations/create_reading_shuffle_1_perm.sql
+\ir ../migrations/create_reading_shuffle_2_fetch.sql
+\ir ../migrations/create_reading_shuffle_3_submit.sql
+\ir ../migrations/create_reading_shuffle_4_finish.sql
 
 -- ── 資料 ─────────────────────────────────────────────
 -- FULL   六題齊全 → 可以上架
@@ -227,6 +233,24 @@ SELECT t_expect_error(
 
 
 \echo ''
+
+-- ── 亂序之後，「正解」不再是固定的字母 ──────────────────
+-- 🛑 送出題庫裡的原始標籤會被判錯，而且是【正確的】行為。
+--    測試要送的是「正解在這個 session 裡顯示在哪個位置」。
+CREATE OR REPLACE FUNCTION t_right(p_session UUID, p_construct TEXT,
+                                   p_passage TEXT DEFAULT 'FULL') RETURNS CHAR(1)
+LANGUAGE sql AS $$
+  SELECT reading_option_to_display(p_session, q.id, k.correct_answer)
+    FROM reading_questions q JOIN reading_question_keys k ON k.question_id = q.id
+   WHERE q.passage_id = p_passage AND q.construct = p_construct;
+$$;
+
+CREATE OR REPLACE FUNCTION t_wrong(p_session UUID, p_construct TEXT,
+                                   p_passage TEXT DEFAULT 'FULL') RETURNS CHAR(1)
+LANGUAGE sql AS $$
+  SELECT chr(65 + (ascii(t_right(p_session, p_construct, p_passage)) - 65 + 1) % 4)::CHAR(1);
+$$;
+
 \echo '════════ E. 作答：計分在伺服器端 ════════'
 
 INSERT INTO reading_sessions (id, student_id, passage_id)
@@ -235,18 +259,18 @@ VALUES ('aaaaaaaa-0000-0000-0000-000000000001', :stu, 'FULL');
 SELECT t_assert(
   (reading_submit_answer('aaaaaaaa-0000-0000-0000-000000000001',
      (SELECT id FROM reading_questions WHERE passage_id='FULL' AND construct='SM'),
-     'B') ->> 'is_correct')::boolean = true,
-  'E1 答對回 true');
+     t_right('aaaaaaaa-0000-0000-0000-000000000001', 'SM')) ->> 'is_correct')::boolean = true,
+  'E1 答對回 true（送的是正解【顯示】的位置，不是題庫的原始標籤）');
 SELECT t_assert(
   (reading_submit_answer('aaaaaaaa-0000-0000-0000-000000000001',
      (SELECT id FROM reading_questions WHERE passage_id='FULL' AND construct='MI'),
-     'A') ->> 'is_correct')::boolean = false,
+     t_wrong('aaaaaaaa-0000-0000-0000-000000000001', 'MI')) ->> 'is_correct')::boolean = false,
   'E2 答錯回 false');
 SELECT t_assert(
   (reading_submit_answer('aaaaaaaa-0000-0000-0000-000000000001',
      (SELECT id FROM reading_questions WHERE passage_id='FULL' AND construct='MI'),
-     'A') ->> 'correct_answer') = 'B',
-  'E3 作答【之後】才拿得到正解');
+     t_wrong('aaaaaaaa-0000-0000-0000-000000000001', 'MI')) ->> 'correct_answer') = t_right('aaaaaaaa-0000-0000-0000-000000000001', 'MI'),
+  'E3 作答【之後】才拿得到正解，而且是顯示位置');
 SELECT t_assert(
   (SELECT count(*)::int FROM reading_attempts
     WHERE session_id='aaaaaaaa-0000-0000-0000-000000000001') = 2,
@@ -256,7 +280,7 @@ SELECT t_assert(
 SELECT t_assert(
   (reading_submit_answer('aaaaaaaa-0000-0000-0000-000000000001',
      (SELECT id FROM reading_questions WHERE passage_id='FULL' AND construct='MI'),
-     'B') ->> 'is_correct')::boolean = false,
+     t_right('aaaaaaaa-0000-0000-0000-000000000001', 'MI')) ->> 'is_correct')::boolean = false,
   'E5 重送同一題：即使改送正解，仍然回傳第一次的結果');
 SELECT t_assert(
   (SELECT count(*)::int FROM reading_attempts
@@ -325,7 +349,7 @@ SELECT t_assert(
     WHERE n.nspname='public' AND p.proname IN ('reading_get_passage','reading_submit_answer')),
   'G1 兩支學生端 RPC 都是 SECURITY DEFINER + SET search_path = ''''');
 SELECT t_assert(
-  NOT has_function_privilege('anon','reading_get_passage(text)','EXECUTE')
+  NOT has_function_privilege('anon','reading_get_passage(text,uuid)','EXECUTE')
   AND NOT has_function_privilege('anon',
     'reading_submit_answer(uuid,uuid,character,integer,integer,character)','EXECUTE'),
   'G2 anon 兩支都叫不動');
@@ -377,16 +401,32 @@ SELECT t_expect_error($$SELECT reading_start_session('PARTIAL')$$,
   'H4 沒上架的文章開不了練習（訊息與「不存在」相同，不可被用來探測）',
   '找不到這篇文章');
 
+-- 🛑 算位置要【退出 authenticated】：換算函式沒有發給 authenticated，
+--    學生拿不到對照表——那正是我們要的。測試自己也不例外。
+RESET ROLE;
+CREATE TEMP TABLE h_pos AS
+SELECT t_right((SELECT (j ->> 'session_id')::uuid FROM h_start), 'SM') AS p;
+GRANT SELECT ON h_pos TO authenticated;
+SET ROLE authenticated;
+
 -- 取題 → 作答 → 結算，全部以學生身分
 SELECT t_assert((reading_get_passage('FULL') -> 'questions') != '[]'::jsonb,
   'H5 取得題目');
 SELECT t_assert((reading_get_passage('FULL'))::text NOT LIKE '%correct_answer%',
   '🛑 H5 取題回傳不含正解');
+SELECT t_assert(
+  (reading_get_passage('FULL', (SELECT (j ->> 'session_id')::uuid FROM h_start)))::text
+    NOT LIKE '%correct_answer%',
+  '🛑 H5 帶 session 的取題也不含正解');
+SELECT t_assert(
+  (reading_get_passage('FULL', (SELECT (j ->> 'session_id')::uuid FROM h_start)))::text
+    NOT LIKE '%permutation%',
+  '🛑 H5 而且【不含排列】——送出對照表就能把位置映射回原始標籤');
 
 SELECT t_assert(
   (reading_submit_answer((SELECT (j ->> 'session_id')::uuid FROM h_start),
      (SELECT id FROM reading_questions WHERE passage_id='FULL' AND construct='SM'),
-     'B') ->> 'is_correct')::boolean,
+     (SELECT p FROM h_pos)) ->> 'is_correct')::boolean,
   'H6 學生身分作答，伺服器判定正確');
 
 CREATE TEMP TABLE h_fin AS

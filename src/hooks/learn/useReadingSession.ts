@@ -66,8 +66,13 @@ export function useReadingSession(passageId: string | undefined) {
     }
     const start = startData as unknown as ReadingSessionStart;
 
+    // 🛑 session_id 要帶。選項的排列由 (session_id, question_id) 決定——
+    //    不帶的話拿到的是題庫原本的順序，而那個順序裡正解有 47.2% 在 B。
     const { data: passageData, error: passageError } =
-      await supabase.rpc("reading_get_passage", { p_passage_id: passageId });
+      await supabase.rpc("reading_get_passage", {
+        p_passage_id: passageId,
+        p_session_id: start.session_id,
+      });
     if (passageError) {
       setState((s) => ({ ...s, loading: false, error: passageError.message }));
       return;
