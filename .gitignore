@@ -35,3 +35,11 @@ dist-ssr
 # 真實 AI 稽核報告：含作文內容與模型輸出，逐次產生，不進版控
 docs/learn/writing-audit/
 .preflight/
+
+# ── Six-Way Reading 題庫 ────────────────────────────
+# 🛑 題庫內容【絕對不進 Git】：文章全文、正解、解說、以及任何
+#    由它們產生的 INSERT SQL。repo 只放 schema / parser / validator / 測試。
+#    誤 commit 一次就等於把答案公開，而 git 歷史刪不乾淨。
+generated/
+*.reading-source.xlsx
+supabase/migrations/*_reading_import_data*.sql

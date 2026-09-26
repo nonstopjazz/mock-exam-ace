@@ -1,0 +1,211 @@
+/**
+ * Six-Way Reading parser 的自我檢查（不需要檔案、不需要資料庫）
+ *
+ *   npm run verify:reading-parser
+ *
+ * 🛑 P1 是這裡最重要的一條：construct 必須【從欄位名推導】。
+ *    2026-09-26 我硬編碼猜 inference_conclusion 的前綴是 ic（實際是 co），
+ *    查到 0 筆就錯誤地宣告那個 construct 整組不存在，還用一個循環的
+ *    算式「佐證」它。這條斷言讓同樣的錯誤下次會被測試擋下，而不是
+ *    變成一份寫得很有信心的錯誤報告。
+ *
+ * 🛑 S2：空的 emphasis 必須是 null，不是 0。
+ *    來源真的有空值，而 0 的意思是「完全不強調」——跟「沒有資訊」
+ *    是兩回事，混淆會讓 micro-skill 的統計悄悄偏移。
+ *
+ * 🛑 C1：內文來源必須依 final → revised → writer 挑，且跳過
+ *    「值等於欄位名稱」的未解析參照。寫死只讀 writer 會在管線
+ *    修好之後仍然用舊稿。
+ */
+
+import {
+  detectConstructs, isPlaceholder, parseOptions, parseSkills,
+  parseVocab, parseParagraphMap, parseFameRank, pickContent, parseRow,
+} from "../src/lib/reading/parseSourceRow";
+
+let failures = 0;
+const check = (cond: boolean, label: string): void => {
+  if (cond) console.log(`PASS  ${label}`);
+  else { console.error(`FAIL  ${label}`); failures += 1; }
+};
+
+const SIX = ["sm", "mi", "sd", "co", "cd", "vc"];
+const headersFor = (prefixes: string[]): string[] => [
+  "topic_id", "topic_title", "difficulty_target",
+  "passage_final_title", "passage_final_text",
+  "passage_writer_title", "passage_writer_text", "passage_revised_text",
+  "passage_writer_paragraph_map", "passage_writer_vocab_json",
+  ...prefixes.flatMap((p) => [
+    `${p}_final_question`, `${p}_final_options_json`,
+    `${p}_final_answer`, `${p}_final_explanation`, `${p}_micro_skill_profile_json`,
+  ]),
+];
+
+// ── P. construct 推導 ──────────────────────────────────
+{
+  const d = detectConstructs(headersFor(SIX));
+  check(d.found.length === 6, `P1 六個 construct 全部從欄位名推導出來（${d.found.length}）`);
+  check(d.found.map((f) => f.construct).sort().join() === "CD,CO,MI,SD,SM,VC",
+    "P1 推導出的短碼正確");
+  check(d.missingConstructs.length === 0, "P1 沒有回報缺少");
+
+  // 🛑 少一個就要講出來，不可以靜悄悄
+  const partial = detectConstructs(headersFor(["sm", "mi", "sd", "cd", "vc"]));
+  check(partial.missingConstructs.join() === "CO", "P2 少了 co 時明確回報缺 CO");
+  check(partial.found.length === 5, "P2 其餘五個仍然找得到");
+
+  // 認不得的前綴要被列出來，不能被當成沒看到
+  const odd = detectConstructs(headersFor([...SIX, "zz"]));
+  check(odd.unknownPrefixes.join() === "zz", "P3 認不得的前綴被列出來，不會被吞掉");
+  check(odd.found.length === 6, "P3 而且不影響認得的那六個");
+
+  // 大小寫不該讓推導失敗
+  const upper = detectConstructs(["SM_final_question", "CO_final_question"]);
+  check(upper.found.length === 2, "P4 前綴大小寫不影響推導");
+}
+
+// ── C. 內文來源挑選 ────────────────────────────────────
+{
+  const hs = headersFor(SIX);
+  const base: Record<string, unknown> = {
+    topic_id: "KR0001", topic_title: "備援標題",
+    passage_writer_title: "Writer 標題",
+    passage_writer_text: "Writer 內文夠長可以當內容。",
+    passage_revised_text: "Revised 內文夠長可以當內容。",
+  };
+
+  // final 是未解析的參照 → 跳過，用 revised
+  const a = pickContent({ ...base, passage_final_title: "passage_writer_title",
+                          passage_final_text: "passage_revised_text" }, new Set(hs));
+  check(a.source === "REVISED", `C1 final 是欄位參照時退到 REVISED（實際 ${a.source}）`);
+  check(a.text === "Revised 內文夠長可以當內容。", "C1 取到的是 revised 的內容");
+  check(a.title === "Writer 標題", "C1 標題壞掉時退回別的來源，不讓整篇降級");
+
+  // final 正常 → 用 final
+  const b = pickContent({ ...base, passage_final_title: "Final 標題",
+                          passage_final_text: "Final 內文。" }, new Set(hs));
+  check(b.source === "FINAL" && b.text === "Final 內文。",
+    "C2 final 正常時就用 final（沒有寫死只讀 writer）");
+
+  // final 與 revised 都不行 → writer
+  const c = pickContent({ ...base, passage_final_text: "passage_final_text",
+                          passage_revised_text: null }, new Set(hs));
+  check(c.source === "WRITER", `C3 final 壞、revised 空 → WRITER（實際 ${c.source}）`);
+
+  // 三個都不行
+  const d = pickContent({ topic_id: "X" }, new Set(hs));
+  check(d.source === null && d.text === null, "C4 三個來源都沒有 → 回 null，不亂編");
+
+  check(isPlaceholder("passage_final_text", new Set(hs)), "C5 值等於欄位名 → 判為參照");
+  check(!isPlaceholder("Every year the industry…", new Set(hs)), "C5 正常內文不會被誤判");
+}
+
+// ── O. 選項 ────────────────────────────────────────────
+{
+  const ok = parseOptions("A: 第一個 | B: 第二個 | C: 第三個 | D: 第四個");
+  check(ok.length === 4 && ok[2].label === "C" && ok[2].text === "第三個", "O1 四個選項解析正確");
+
+  // 🛑 來源真的有「結構在、文字空」的列（KR0006 等三篇）
+  const empty = parseOptions("A:  | B:  | C:  | D: ");
+  check(empty.length === 0, `O2 選項文字全空 → 0 個，不是 4 個空字串（實際 ${empty.length}）`);
+
+  const partial = parseOptions("A: 有 | B:  | C: 有 | D: 有");
+  check(partial.length === 3, "O3 只有部分空白時，空的那個被丟掉");
+
+  // 選項文字裡含冒號不該把它切壞
+  const colon = parseOptions("A: 他說：走吧 | B: b | C: c | D: d");
+  check(colon[0].text === "他說：走吧", "O4 選項內文含全形冒號不影響切割");
+}
+
+// ── S. micro-skill ─────────────────────────────────────
+{
+  const s = parseSkills("topic_identification: 90 | scope_control: 80 | gist_recognition: 75");
+  check(s.length === 3 && s[0].emphasis === 90, "S1 三個 skill 與分數解析正確");
+
+  const withEmpty = parseSkills("rhetorical_function:  | example_function: 90");
+  check(withEmpty[0].emphasis === null, "🛑 S2 空的 emphasis 是 null");
+  check(withEmpty[0].emphasis !== 0, "🛑 S2 而且不是 0（沒有資訊 ≠ 完全不強調）");
+  check(withEmpty[1].emphasis === 90, "S2 同一列的其他 skill 不受影響");
+
+  // 來源有分隔符不一致的情形："context_clue_use: 90| word_sense…"
+  const sloppy = parseSkills("context_clue_use: 90| word_sense_disambiguation: 85");
+  check(sloppy.length === 2, "S3 分隔符前後缺空白仍然解析得出來");
+
+  check(parseSkills("bad: 150")[0].emphasis === null, "S4 超出 0–100 的分數視為無效 → null");
+  check(parseSkills(null).length === 0, "S5 空值回空陣列");
+}
+
+// ── V. 詞彙三層 ────────────────────────────────────────
+{
+  const v = parseVocab(
+    "Candidate: settled = firmly decided (P1); neutral = not favoring (P4) " +
+    "|| Academic: precision; evidence || Knowledge: longitude");
+  check(v.filter((x) => x.tier === "CANDIDATE").length === 2, "V1 Candidate 兩個");
+  check(v.filter((x) => x.tier === "ACADEMIC").length === 2, "V1 Academic 兩個");
+  check(v.filter((x) => x.tier === "KNOWLEDGE").length === 1, "V1 Knowledge 一個");
+
+  const settled = v.find((x) => x.term === "settled")!;
+  check(settled.definition === "firmly decided", "V2 Candidate 的定義有解析出來");
+  check(settled.paragraphNo === 1, "V2 段落錨點 (P1) 解析成 1");
+
+  const acad = v.find((x) => x.tier === "ACADEMIC")!;
+  check(acad.definition === null && acad.paragraphNo === null,
+    "V3 Academic 沒有定義與段落，保持 null");
+
+  const dup = parseVocab("Candidate: a = x (P1); a = y (P2)");
+  check(dup.length === 1, "V4 同層同詞只留一次（資料庫有 UNIQUE）");
+}
+
+// ── M. 段落地圖與 fame ─────────────────────────────────
+{
+  const m = parseParagraphMap("P1: 開場 | P2: 發展 | P3: 轉折");
+  check(m.length === 3 && m[1].paragraphNo === 2 && m[1].description === "發展",
+    "M1 段落地圖解析正確");
+  check(parseParagraphMap("沒有段落標記").length === 0, "M2 格式不符回空陣列");
+  check(parseFameRank("3 = Hidden Gem") === 3, "M3 fame_level 的序數解析出來");
+  check(parseFameRank("Hidden Gem") === null, "M3 沒有序數時回 null");
+}
+
+// ── R. 整列 ────────────────────────────────────────────
+{
+  const hs = headersFor(SIX);
+  const row: Record<string, unknown> = {
+    topic_id: "KR9999", difficulty_target: "B2", content_family: "science",
+    fame_level: "2 = Semi-familiar",
+    passage_final_title: "passage_writer_title",   // 壞的
+    passage_final_text: "passage_revised_text",    // 壞的
+    passage_writer_title: "標題", passage_revised_text: "內文。",
+    passage_writer_paragraph_map: "P1: 開場",
+    passage_writer_vocab_json: "Candidate: a = x (P1)",
+  };
+  for (const p of SIX) {
+    row[`${p}_final_question`] = "Q?";
+    row[`${p}_final_options_json`] = "A: a | B: b | C: c | D: d";
+    row[`${p}_final_answer`] = "B";
+    row[`${p}_final_explanation`] = "因為 B。";
+    row[`${p}_micro_skill_profile_json`] = "s1: 90 | s2: ";
+  }
+  const p1 = parseRow(row, hs);
+  check(p1.publishReady, "R1 六題齊全且完整 → publishReady");
+  check(p1.contentSource === "REVISED", "R1 內文來源記錄為 REVISED");
+  check(p1.cefrLevel === "B2" && p1.fameRank === 2, "R1 CEFR 與 fame 序數正確");
+  check(p1.questions.length === 6 && p1.questions[0].displayOrder === 1,
+    "R1 六題，display_order 照 Six Ways 順序");
+
+  // 一題缺解說 → 不可上架，但其他欄位照樣解析得出來
+  const bad = { ...row, vc_final_explanation: null };
+  const p2 = parseRow(bad, hs);
+  check(!p2.publishReady, "🛑 R2 一題缺解說就不可上架");
+  check(p2.passageText === "內文。", "R2 但內文照樣解析得出來（半成品要能入庫）");
+  check(p2.questions.find((q) => q.construct === "VC")!.problems.includes("缺解說"),
+    "R2 而且說得出是哪一題、缺什麼");
+
+  // 正解對不到選項
+  const p3 = parseRow({ ...row, sm_final_answer: "D", sm_final_options_json: "A: a | B: b" }, hs);
+  const smq = p3.questions.find((q) => q.construct === "SM")!;
+  check(smq.problems.some((x) => x.includes("沒有對應")), "R3 正解沒有對應選項會被指出來");
+}
+
+console.log("");
+if (failures > 0) { console.error(`${failures} 項未通過`); process.exit(1); }
+console.log("全部通過");
