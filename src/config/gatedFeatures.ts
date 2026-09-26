@@ -16,3 +16,12 @@ export type GatedFeature = (typeof GATED_FEATURES)[number]["feature"];
 export const FEATURE_LABEL: Record<string, string> = Object.fromEntries(
   GATED_FEATURES.map((f) => [f.feature, f.label]),
 );
+
+/**
+ * 給元件用的代號常數。
+ *
+ * 🛑 型別是 GatedFeature，所以哪天 GATED_FEATURES 裡少了 "reading"，
+ *    這一行就編不過——而不是安靜地變成一個永遠回 false 的閘門。
+ */
+export const FEATURE_SPEAKING: GatedFeature = "speaking";
+export const FEATURE_READING: GatedFeature = "reading";
