@@ -7,9 +7,11 @@
  *    只會讓畫面很有信心地講一句沒有根據的話。
  */
 import {
-  MIN_FOR_VERDICT, accuracyOf, measuredSkills, ungradedTotal,
-  unmeasuredSkills, weakestConstruct, type ConstructStat, type SkillStat,
+  MIN_FOR_VERDICT, accuracyOf, measuredSkills, rankedConstructs, strongestConstruct,
+  strongestSkills, ungradedTotal, unmeasuredSkills, weakestConstruct, weakestSkills,
+  type ConstructStat, type SkillStat,
 } from "../src/lib/reading/statsShaping";
+import { knownSkillCodes, skillLabel } from "../src/lib/reading/skillLabels";
 import type { Construct } from "../src/lib/reading/constructs";
 
 let failures = 0;
@@ -79,6 +81,57 @@ check(weakestConstruct([]) === null, "B6 沒有資料時回 null");
 
   check(ungradedTotal(skills) === 14,
     "🛑 C4 沒有標權重的題數加總得出來——那是「沒被算進來」，不是「答錯了」");
+}
+
+// ── 最強／最弱 ──────────────────────────────────────────────────────
+{
+  const stats = [c("SM", 8, 7), c("MI", 8, 5), c("CO", 8, 3)];
+  check(strongestConstruct(stats)?.construct === "SM", "D1 挑出最穩定的");
+  check(weakestConstruct(stats)?.construct === "CO", "D1 最弱的還是 CO");
+  check(rankedConstructs(stats).map((s) => s.construct).join(",") === "CO,MI,SM",
+    "D1 排序由弱到強");
+}
+{
+  // 只有一個能力達門檻 → 沒有比較的對象
+  const stats = [c("SM", 8, 7), c("MI", 2, 1)];
+  check(weakestConstruct(stats)?.construct === "SM", "D2 唯一達門檻的是最弱");
+  check(strongestConstruct(stats) === null,
+    "🛑 D2 只有一個達門檻時沒有「最穩定」——同一個能力不能同時是強項與弱項");
+}
+check(strongestConstruct([]) === null, "D3 沒資料時回 null");
+
+// ── 細項的 Top N ────────────────────────────────────────────────────
+{
+  const s = (code: string, acc: number, graded = 8): SkillStat =>
+    ({ skill_code: code, graded, ungraded: 0, accuracy: acc, enough: true });
+  const skills = [s("a", 0.2), s("b", 0.3), s("c", 0.4), s("d", 0.9), s("e", 0.95)];
+
+  check(weakestSkills(skills, 3).map((x) => x.skill_code).join(",") === "a,b,c",
+    "E1 最需要改善的前三名");
+  check(strongestSkills(skills, 2, 3).map((x) => x.skill_code).join(",") === "e,d",
+    "E2 表現良好的前兩名，由高到低");
+  check(!strongestSkills(skills, 3, 3).some((x) => ["a","b","c"].includes(x.skill_code)),
+    "🛑 E3 已經列進「需要改善」的不會又出現在「表現良好」");
+
+  // 只有三個有量到 → 全部都是「需要改善」，良好那區就該是空的
+  const few = [s("a", 0.2), s("b", 0.3), s("c", 0.4)];
+  check(strongestSkills(few, 3, 3).length === 0,
+    "🛑 E4 總共只有三個時，良好那區是空的，而不是把同樣三個再列一次");
+}
+
+// ── 代號的中文對照 ──────────────────────────────────────────────────
+{
+  const w = skillLabel("word_sense_disambiguation");
+  check(w.label === "字義判斷" && !w.isFallback, "F1 認得的代號有中文名");
+  check(w.code === "word_sense_disambiguation", "F1 原始代號保留著（資料庫不動）");
+
+  const unknown = skillLabel("some_new_skill_2027");
+  check(unknown.isFallback, "🛑 F2 認不得的代號標成 fallback，畫面才知道要降級處理");
+  check(unknown.label === "Some New Skill 2027",
+    "🛑 F2 而且退回可讀的寫法，不是把 some_new_skill_2027 原樣當標題");
+
+  check(knownSkillCodes().length === 18,
+    "F3 對照表涵蓋題庫裡全部 18 個代號");
 }
 
 console.log("");

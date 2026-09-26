@@ -77,3 +77,41 @@ export const unmeasuredSkills = (skills: SkillStat[]): SkillStat[] =>
  */
 export const ungradedTotal = (skills: SkillStat[]): number =>
   skills.reduce((n, s) => n + s.ungraded, 0);
+
+/**
+ * 有資格下結論的能力，由弱到強。
+ *
+ * 🛑 只有一個能力達到門檻時，「最弱」與「最強」會是同一個——
+ *    那時畫面只該講一件事。把同一個能力同時標成強項與弱項，
+ *    比什麼都不講更糟。呼叫端用長度判斷。
+ */
+export function rankedConstructs(stats: ConstructStat[]): ConstructStat[] {
+  return stats
+    .filter((s) => s.answered >= MIN_FOR_VERDICT)
+    .sort((a, b) => accuracyOf(a)! - accuracyOf(b)! || b.answered - a.answered);
+}
+
+/** 最穩定的能力。不足兩個有資格的能力時回 null——沒有比較的對象 */
+export function strongestConstruct(stats: ConstructStat[]): ConstructStat | null {
+  const ranked = rankedConstructs(stats);
+  return ranked.length >= 2 ? ranked[ranked.length - 1] : null;
+}
+
+/** 最需要改善的前 n 個細項能力 */
+export const weakestSkills = (skills: SkillStat[], n: number): SkillStat[] =>
+  measuredSkills(skills).slice(0, n);
+
+/**
+ * 表現良好的前 n 個細項能力。
+ *
+ * 🛑 會排除已經被列進「最需要改善」的那幾個。同一個能力同時出現在
+ *    兩邊，學生會以為畫面壞了——而技術上那只是「總共才 3 個」。
+ */
+export function strongestSkills(skills: SkillStat[], n: number, excludeTop: number): SkillStat[] {
+  const measured = measuredSkills(skills);
+  const excluded = new Set(measured.slice(0, excludeTop).map((s) => s.skill_code));
+  return measured
+    .filter((s) => !excluded.has(s.skill_code))
+    .slice(-n)
+    .reverse();
+}
