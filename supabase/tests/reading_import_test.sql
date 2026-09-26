@@ -141,6 +141,28 @@ SELECT t_assert(NOT (reading_publish_readiness('P2') ->> 'ready')::boolean,
 SELECT t_expect_error($$UPDATE reading_passages SET status='PUBLISHED' WHERE passage_id='P2'$$,
   'I7 而且上不了架');
 
+-- 🛑 0 題 = blocked，不進資料庫。
+--    產品規則：0 題 blocked／1–5 題 DRAFT／6 題可上架。
+--    parser 那一側已經擋掉了，但 RPC【不信任前端】——瀏覽器 console 裡
+--    一行 supabase.rpc() 就能送一份 0 題的 payload 進來。
+CREATE TEMP TABLE rb AS
+SELECT reading_import_batch(
+  jsonb_build_array(jsonb_set(t_payload('P3'), '{questions}', '[]'::jsonb)),
+  'file.xlsx') AS j;
+
+SELECT t_assert((SELECT (j -> 'results' -> 0 ->> 'status') FROM rb) = 'blocked',
+  '🛑 I7b 0 題的文章回 blocked');
+SELECT t_assert((SELECT count(*)::int FROM reading_passages WHERE passage_id='P3') = 0,
+  '🛑 I7b 而且【一列都沒有寫進去】——不是寫進去再標記');
+SELECT t_assert((SELECT count(*)::int FROM reading_passage_paragraphs WHERE passage_id='P3') = 0
+            AND (SELECT count(*)::int FROM reading_passage_vocab WHERE passage_id='P3') = 0,
+  'I7b 段落與詞彙也沒有殘留');
+SELECT t_assert((SELECT (j -> 'chunk' ->> 'blocked')::int FROM rb) = 1
+            AND (SELECT (j -> 'chunk' ->> 'failed')::int FROM rb) = 0,
+  '🛑 I7c blocked 自己數一欄，不會被混進 failed（缺料 ≠ 匯入壞掉）');
+SELECT t_assert((SELECT (j -> 'batch' ->> 'blocked')::int FROM rb) = 1,
+  'I7c 批次的累計數字也有 blocked');
+
 
 \echo ''
 \echo '════════ III. 冪等與衝突 ════════'

@@ -68,7 +68,23 @@ export interface ParsedPassage {
   problems: string[];
   /** 六個 construct 都完整 = 可以上架 */
   publishReady: boolean;
+  /**
+   * 這一篇會被怎麼處理。三態是【產品規則】，不是解析細節：
+   *
+   *   BLOCKED       沒有有效內文／標題，或一題都沒有 → 不進資料庫
+   *   DRAFT         1–5 題 → 進資料庫，但學生看不到
+   *   PUBLISH_READY 六題完整 → 可以上架
+   *
+   * 🛑 「一題都沒有」指的是【可用的題目】數，不是來源欄位有沒有值。
+   *    一篇六個 construct 欄位都有、但每一題都缺正解的文章，
+   *    usableQuestions 是 0，那就是 BLOCKED。
+   */
+  importStatus: ImportStatus;
+  /** problems 為空的題目數，也就是真的會被寫進資料庫的題數 */
+  usableQuestions: number;
 }
+
+export type ImportStatus = "BLOCKED" | "DRAFT" | "PUBLISH_READY";
 
 const str = (v: unknown): string | null => {
   if (v === null || v === undefined) return null;
@@ -287,6 +303,27 @@ export function parseVocab(raw: unknown): ParsedVocab[] {
   return out;
 }
 
+/**
+ * 詞彙的來源欄位，與內文用同一套 fallback 精神：final → writer。
+ *
+ * 🛑 一樣要擋 placeholder。`passage_final_vocab_json` 跟
+ *    `passage_final_text` 出自同一支管線，壞法可以預期是一樣的。
+ */
+export const VOCAB_COLUMNS = ["passage_final_vocab_json", "passage_writer_vocab_json"];
+
+export function pickVocab(
+  row: Record<string, unknown>,
+  headers: Set<string>,
+): { source: string | null; vocab: ParsedVocab[] } {
+  for (const key of VOCAB_COLUMNS) {
+    const raw = str(row[key]);
+    if (raw === null || isPlaceholder(raw, headers)) continue;
+    const vocab = parseVocab(raw);
+    if (vocab.length > 0) return { source: key, vocab };
+  }
+  return { source: null, vocab: [] };
+}
+
 /** 「3 = Hidden Gem」→ 3 */
 export function parseFameRank(raw: unknown): number | null {
   const s = str(raw);
@@ -377,10 +414,18 @@ export function parseRow(
   }
 
   const usable = questions.filter((q) => q.problems.length === 0);
-  const publishReady =
-    content.text !== null &&
-    content.title !== null &&
-    usable.length === CONSTRUCTS.length;
+  const importable = content.text !== null && content.title !== null;
+  const publishReady = importable && usable.length === CONSTRUCTS.length;
+
+  // 🛑 三態在這裡算一次，之後所有地方（dry-run、preview、canonical payload）
+  //    都讀這一個值。算兩次就會有兩套規則，而它們遲早會不一致。
+  const importStatus: ImportStatus =
+    !importable || usable.length === 0 ? "BLOCKED"
+    : publishReady ? "PUBLISH_READY"
+    : "DRAFT";
+  if (importable && usable.length === 0) {
+    problems.push("一題都沒有可用的題目——不匯入");
+  }
 
   return {
     passageId: passageId ?? "",
@@ -403,9 +448,11 @@ export function parseRow(
     sourcePackageId:    str(row["package_id"]),
     sourceBatchId:      str(row["batch_id"]),
     paragraphs: parseParagraphMap(row["passage_writer_paragraph_map"]),
-    vocab:      parseVocab(row["passage_writer_vocab_json"]),
+    vocab:      pickVocab(row, headerSet).vocab,
     questions,
     problems,
     publishReady,
+    importStatus,
+    usableQuestions: usable.length,
   };
 }

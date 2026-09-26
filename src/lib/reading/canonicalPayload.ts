@@ -77,6 +77,8 @@ export const CANONICAL_SCHEMA_VERSION = 1;
 /**
  * 把 parser 的結果轉成 canonical payload。
  *
+ * 回傳 null = 這一篇 BLOCKED（沒有有效內文／標題，或沒有任何可用題目）。
+ *
  * 🛑 只轉【內容完整】的題目。有問題的那幾題直接不放進 payload ——
  *    半成品的文章仍然匯得進去（DRAFT 允許不完整），但不完整的
  *    【題目】不該進資料庫：一道沒有選項或沒有答案的題目，
@@ -84,10 +86,12 @@ export const CANONICAL_SCHEMA_VERSION = 1;
  *
  *    哪幾題被排除，preview 畫面會從 ParsedPassage.questions[].problems 講清楚。
  *
- * 回傳 null 表示這一篇連 DRAFT 都進不去（沒有內文或標題）。
  */
 export function toCanonicalPayload(p: ParsedPassage): CanonicalImportItem | null {
   if (!p.passageId || !p.title || !p.passageText || !p.contentSource) return null;
+  // 🛑 0 題 = BLOCKED，不送進資料庫。parser 已經算好三態，這裡【讀】它，
+  //    不要在這裡重算一次條件——兩份規則遲早會分岔。
+  if (p.importStatus === "BLOCKED") return null;
 
   const questions: CanonicalQuestion[] = [];
   for (const q of p.questions) {

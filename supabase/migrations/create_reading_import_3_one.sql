@@ -14,6 +14,12 @@
 --    能被繞過的驗證不是驗證，是提示——瀏覽器的 console 裡
 --    一行 supabase.rpc() 就繞過去了。
 --
+-- 回傳的 status：
+--   imported  寫進去了（1–5 題會附上缺哪幾個 construct）
+--   skipped   已經有了，而且內容完全相同
+--   conflict  已經有了，但內容不同——不覆蓋
+--   blocked   0 題，不匯入
+--
 -- 🛑 衝突規則：不存在→匯入、內容相同→略過、內容不同→拒絕。
 --    【任何情況都不自動覆蓋】，即使那一篇還沒有人作答。
 --    要改內容應該另外設計明確的 replace / version 流程，
@@ -173,6 +179,19 @@ BEGIN
     END IF;
   END LOOP;
 
+  -- ── 0 題的文章不進資料庫 ────────────────────────────
+  -- 🛑 產品規則：0 題 = blocked、1–5 題 = DRAFT、6 題 = 可上架。
+  --    一篇沒有任何題目的文章在閱讀訓練裡沒有任何用途——學生打不開，
+  --    分析也算不到它，留在資料庫裡只會讓 passage 總數看起來是對的。
+  --    ⚠️ 這裡【回傳】而不是 RAISE：blocked 是預期中的結果，不是錯誤，
+  --       批次那一層不需要靠 EXCEPTION 才能把它跟真正的失敗分開。
+  IF coalesce(array_length(v_constructs, 1), 0) = 0 THEN
+    RETURN jsonb_build_object(
+      'passage_id', v_pid, 'status', 'blocked',
+      'reason', '一題都沒有——這篇需要回去重新產製，不匯入',
+      'publish_ready', false);
+  END IF;
+
   -- ── 寫入。到這裡為止全部驗過了 ──────────────────────
   -- 🛑 status 永遠寫 DRAFT。上架是另一個動作，由 trigger 把關六題完整。
   INSERT INTO public.reading_passages (
@@ -231,13 +250,10 @@ BEGIN
     ON CONFLICT (passage_id, tier, term) DO NOTHING;
   END LOOP;
 
-  -- 🛑 0 題的文章【照樣匯入】：後台看得見這個缺口，總比整篇消失好。
-  --    但訊息不可以把它講得像一般匯入——那一列永遠沒有用，
-  --    需要回去重新產製。array_length 對空陣列回 NULL，要自己處理。
+  -- 到這裡 v_constructs 至少有一個元素——0 題在上面就被擋掉了。
   RETURN jsonb_build_object(
     'passage_id', v_pid, 'status', 'imported',
-    'reason', CASE coalesce(array_length(v_constructs, 1), 0)
-                WHEN 0 THEN '⚠️ 匯入了，但一題都沒有——這篇需要重新產製'
+    'reason', CASE array_length(v_constructs, 1)
                 WHEN 6 THEN '6 題，完整'
                 ELSE format('⚠️ 只有 %s 題，缺 %s',
                             array_length(v_constructs, 1),

@@ -21,6 +21,11 @@ import {
   skillsUnparseable, unusedColumns,
   type ParsedPassage,
 } from "../src/lib/reading/parseSourceRow";
+import {
+  auditColumns, brokenColumns,
+  type ColumnAudit, type ColumnCategory, type ColumnFate,
+} from "../src/lib/reading/columnClassification";
+import { toCanonicalPayload } from "../src/lib/reading/canonicalPayload";
 
 const file = process.argv[2];
 if (!file) {
@@ -79,17 +84,115 @@ const withId = rows.filter((r) => {
 });
 const parsed: ParsedPassage[] = withId.map((r) => parseRow(r, headers));
 
+// ── 全欄位盤點 ──────────────────────────────────────
+// 🛑 分兩層看，不要混在一起：
+//    結構分類只看欄位【名稱】（靜態、可預期）；
+//    健康狀態看欄位【值】（只有拿到這一批資料才知道）。
+//    `passage_final_text` 是 CORE 欄位【而且】整欄壞掉——
+//    這兩件事同時為真，混在一起講就會失去其中一件。
+rule("A. 全欄位分類");
+const audits = auditColumns(headers, withId, det.found.map((f) => f.prefix));
+const CAT_ZH: Record<ColumnCategory, string> = {
+  CORE: "1 Core content", ENRICHMENT: "2 High-value enrichment",
+  METADATA: "3 Useful metadata", PROVENANCE: "4 Provenance",
+  PIPELINE: "5 Pipeline-only", UNKNOWN: "⚠️ 分類表不認得",
+};
+const FATE_ZH: Record<ColumnFate, string> = {
+  CANONICAL: "進 payload", DERIVED: "解析後使用",
+  IGNORED: "安全忽略", DEFERRED: "有價值，schema 未承接",
+};
+for (const cat of Object.keys(CAT_ZH) as ColumnCategory[]) {
+  const group = audits.filter((a) => a.category === cat);
+  if (group.length === 0) continue;
+  line(`${CAT_ZH[cat]}  共 ${group.length} 欄`);
+  // PIPELINE 有 96 欄，逐欄列出只會把真正要看的東西淹掉。
+  const show = cat === "PIPELINE" ? group.filter((a) => a.nonEmpty > 0) : group;
+  for (const a of show) {
+    const mark = a.health === "PLACEHOLDER" ? "🛑" : a.health === "PARTIAL" ? "⚠️"
+               : a.health === "EMPTY" ? "·" : "✅";
+    line(`  ${mark} ${a.column.padEnd(30)} ${String(a.nonEmpty).padStart(4)}/${a.total}  ${FATE_ZH[a.fate]}`);
+  }
+  if (show.length < group.length) {
+    line(`     …另外 ${group.length - show.length} 欄整欄空白（管線只匯出最終結果，這是正常的）`);
+  }
+  line();
+}
+
+const byFate = (f: ColumnFate) => audits.filter((a) => a.fate === f);
+rule("B. 保留進 canonical payload 的欄位");
+for (const a of byFate("CANONICAL")) {
+  line(`  ${a.health === "PLACEHOLDER" ? "🛑" : a.nonEmpty === 0 ? "·" : "  "} ${a.column.padEnd(30)} ${a.note}`);
+}
+line(`共 ${byFate("CANONICAL").length} 欄（🛑 = 這一批壞掉，· = 這一批整欄空白）`);
+
+rule("C. 可以安全忽略的欄位");
+line(`共 ${byFate("IGNORED").length} 欄`);
+for (const a of byFate("IGNORED").filter((x) => x.nonEmpty > 0)) {
+  line(`  ${a.column.padEnd(30)} ${String(a.nonEmpty).padStart(4)}/${a.total}  ${a.note}`);
+}
+line(`  （其餘 ${byFate("IGNORED").filter((x) => x.nonEmpty === 0).length} 欄在這一批整欄空白）`);
+
+rule("D. 有價值，但目前 schema 沒有承接的欄位");
+for (const a of byFate("DEFERRED")) {
+  line(`  ${a.column.padEnd(30)} ${String(a.nonEmpty).padStart(4)}/${a.total}  ${a.note}`);
+}
+
+rule("E. 壞掉／不可信的欄位");
+const broken = brokenColumns(audits);
+if (broken.length === 0) line("✅ 應該有內容的欄位全部正常");
+for (const a of broken) {
+  const why = a.health === "PLACEHOLDER"
+      ? `🛑 整欄都是未解析的欄位參照（值 = 另一個欄位名稱），${a.placeholder}/${a.nonEmpty} 列`
+    : a.health === "PARTIAL"
+      ? `⚠️ 有 ${a.placeholder}/${a.nonEmpty} 列的值等於欄位名稱`
+      : `· 這份檔案裡整欄空白`;
+  line(`  ${a.column.padEnd(30)} ${why}`);
+}
+
+const unknown = audits.filter((a) => a.category === "UNKNOWN");
+if (unknown.length > 0) {
+  line();
+  line(`⚠️ 分類表不認得 ${unknown.length} 欄——來源格式可能改了，請補進 columnClassification.ts：`);
+  for (const a of unknown) line(`   ${a.column}`);
+}
+
 // 重複的 passage_id
 const idCount = new Map<string, number>();
 for (const p of parsed) idCount.set(p.passageId, (idCount.get(p.passageId) ?? 0) + 1);
 const dupIds = [...idCount.entries()].filter(([, n]) => n > 1);
 
-rule("總量");
-line(`有 topic_id 的列        ${parsed.length}（${rows.length - parsed.length} 列空白）`);
-line(`可上架（六題全完整）     ${parsed.filter((p) => p.publishReady).length}`);
-line(`可入庫但不可上架         ${parsed.filter((p) => !p.publishReady && p.passageText).length}`);
-line(`連入庫都不行（無內文）   ${parsed.filter((p) => !p.passageText).length}`);
+// 🛑 一份管線匯出檔裡，「還沒輪到的題目」與「產出來但壞掉的文章」
+//    都會落在 BLOCKED。把它們算成同一個數字，報告就會把一個正常的
+//    產製佇列講成一批壞資料。先分層，再談品質。
+rule("來源列的分層");
+const noPassage = parsed.filter((p) => p.passageText === null);
+const withPassage = parsed.filter((p) => p.passageText !== null);
+line(`有 topic_id 的列            ${parsed.length}`);
+line(`  還沒產出文章（只有選題）  ${noPassage.length}  ← 不是壞資料，是管線還沒跑到`);
+line(`  已產出文章                ${withPassage.length}  ← 下面所有品質數字都以這個為分母`);
+
+rule("總量（產品規則：0 題 blocked ／ 1–5 題 DRAFT ／ 6 題可上架）");
+const nStatus = (st: ParsedPassage["importStatus"]) =>
+  withPassage.filter((p) => p.importStatus === st).length;
+line(`分母：已產出文章 ${withPassage.length} 篇`);
+line(`PUBLISH_READY  六題完整 ${nStatus("PUBLISH_READY")}`);
+line(`DRAFT          1–5 題   ${nStatus("DRAFT")}`);
+line(`BLOCKED        不匯入   ${nStatus("BLOCKED")}  ← 有文章但沒有任何可用題目`);
 line(`重複的 passage_id        ${dupIds.length}${dupIds.length ? "  " + dupIds.map(([id, n]) => `${id}×${n}`).join(", ") : ""}`);
+
+// 🛑 canonical payload 才是真正會送進資料庫的東西。
+//    在這裡實際跑一遍，報告的數字就不是「parser 認為會匯入幾篇」，
+//    而是「真的產得出 payload 的有幾篇」——兩者不一致代表我有 bug。
+const payloads = parsed.map(toCanonicalPayload);
+const built = payloads.filter((x) => x !== null).length;
+line();
+line(`實際產出 canonical payload  ${built} 篇`);
+line(built === nStatus("PUBLISH_READY") + nStatus("DRAFT")
+  ? "✅ 與 PUBLISH_READY + DRAFT 相符"
+  : `🛑 與三態不符（應為 ${nStatus("PUBLISH_READY") + nStatus("DRAFT")}）——parser 與 payload 的規則分岔了`);
+line(`payload 帶進去的題目總數    ${payloads.reduce((n, x) => n + (x?.questions.length ?? 0), 0)}`);
+line(`payload 帶進去的段落總數    ${payloads.reduce((n, x) => n + (x?.paragraphs.length ?? 0), 0)}`);
+line(`payload 帶進去的詞彙總數    ${payloads.reduce((n, x) => n + (x?.vocabulary.length ?? 0), 0)}`);
 
 // ── 內文來源 ────────────────────────────────────────
 rule("內文來源（final → revised → writer 取第一個有效的）");
@@ -132,10 +235,10 @@ for (const field of ["contentFamily", "subdomain"] as const) {
 }
 
 // ── 每個 construct 的完整度 ─────────────────────────
-rule("每個 Construct 的完整度");
+rule(`每個 Construct 的完整度（分母 ${withPassage.length} 篇已產出文章）`);
 line(`${"".padEnd(4)} ${"完整".padStart(5)} ${"缺題幹".padStart(6)} ${"選項不足".padStart(8)} ${"缺正解".padStart(6)} ${"正解無對應".padStart(10)} ${"缺解說".padStart(6)}`);
 for (const c of CONSTRUCTS) {
-  const qs = parsed.map((p) => p.questions.find((q) => q.construct === c)).filter(Boolean);
+  const qs = withPassage.map((p) => p.questions.find((q) => q.construct === c)).filter(Boolean);
   const count = (pred: (s: string) => boolean) =>
     qs.filter((q) => q!.problems.some(pred)).length;
   const ok = qs.filter((q) => q!.problems.length === 0).length;
@@ -151,7 +254,7 @@ for (const c of CONSTRUCTS) {
 rule("Micro-skill（v1 只存不分析）");
 const skillNames = new Map<string, number>();
 let skillTotal = 0, skillNull = 0;
-for (const p of parsed) for (const q of p.questions) for (const s of q.skills) {
+for (const p of withPassage) for (const q of p.questions) for (const s of q.skills) {
   skillTotal++;
   if (s.emphasis === null) skillNull++;
   skillNames.set(s.skillCode, (skillNames.get(s.skillCode) ?? 0) + 1);
@@ -175,17 +278,17 @@ if (drift > 0) {
 
 // ── 段落與詞彙 ──────────────────────────────────────
 rule("段落地圖與詞彙");
-line(`有段落地圖的文章  ${parsed.filter((p) => p.paragraphs.length > 0).length}／${parsed.length}`);
-line(`段落總數          ${parsed.reduce((n, p) => n + p.paragraphs.length, 0)}`);
-line(`有詞彙的文章      ${parsed.filter((p) => p.vocab.length > 0).length}／${parsed.length}`);
+line(`有段落地圖的文章  ${withPassage.filter((p) => p.paragraphs.length > 0).length}／${withPassage.length}`);
+line(`段落總數          ${withPassage.reduce((n, p) => n + p.paragraphs.length, 0)}`);
+line(`有詞彙的文章      ${withPassage.filter((p) => p.vocab.length > 0).length}／${withPassage.length}`);
 for (const t of ["CANDIDATE", "ACADEMIC", "KNOWLEDGE"] as const) {
-  line(`  ${t.padEnd(10)} ${parsed.reduce((n, p) => n + p.vocab.filter((v) => v.tier === t).length, 0)} 筆`);
+  line(`  ${t.padEnd(10)} ${withPassage.reduce((n, p) => n + p.vocab.filter((v) => v.tier === t).length, 0)} 筆`);
 }
 line(`🛑 lexical_items 自動比對：v1 不做（VC 題考的字只有少數出現在 CANDIDATE 清單裡）`);
 
 // ── 被擋下的文章 ────────────────────────────────────
-rule("被擋下的文章（不可上架）");
-const blocked = parsed.filter((p) => !p.publishReady);
+rule("不可上架的文章（只列已產出文章的那些）");
+const blocked = withPassage.filter((p) => !p.publishReady);
 if (blocked.length === 0) line("（無）");
 for (const p of blocked) {
   const bad = p.questions.filter((q) => q.problems.length > 0);
@@ -196,10 +299,11 @@ for (const p of blocked) {
   if (p.problems.length) parts.push(p.problems.join("、"));
   if (absent.length) parts.push(`完全沒有 ${absent.join("/")}`);
   if (bad.length) parts.push(`${bad.map((q) => q.construct).join("/")} → ${kinds.join("、")}`);
-  line(`${p.passageId.padEnd(10)} ${parts.join(" ; ")}`);
+  line(`${p.passageId.padEnd(10)} ${p.importStatus.padEnd(13)} ${parts.join(" ; ")}`);
 }
 
 rule("結論");
-line(`可上架 ${parsed.filter((p) => p.publishReady).length} 篇  ·  需修正 ${blocked.length} 篇`);
+line(`已產出文章 ${withPassage.length} 篇 → 可上架 ${nStatus("PUBLISH_READY")}  ·  DRAFT ${nStatus("DRAFT")}  ·  BLOCKED ${nStatus("BLOCKED")}`);
+line(`另有 ${noPassage.length} 列只有選題、還沒產出文章——那是管線的待辦，不是這次要修的資料`);
 line(`🛑 這支只做體檢，沒有產生任何 SQL，也沒有連線任何環境。`);
 line();

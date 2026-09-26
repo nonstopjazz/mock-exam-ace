@@ -25,6 +25,9 @@ import {
   missingColumns, unusedColumns,
 } from "../src/lib/reading/parseSourceRow";
 import { toCanonicalPayload } from "../src/lib/reading/canonicalPayload";
+import {
+  auditColumns, brokenColumns, classifyColumn,
+} from "../src/lib/reading/columnClassification";
 
 let failures = 0;
 const check = (cond: boolean, label: string): void => {
@@ -284,6 +287,108 @@ const headersFor = (prefixes: string[]): string[] => [
   // 連內文都沒有 → 連 DRAFT 都不行
   check(toCanonicalPayload(parseRow({ topic_id: "X" }, hs)) === null,
     "Y5 沒有內文時回 null，不送一份殘缺的 payload 給資料庫");
+}
+
+// ── 三態：BLOCKED / DRAFT / PUBLISH_READY ───────────────────────────
+// 🛑 產品規則寫成斷言。「0 題不匯入」如果只活在文件裡，
+//    下一次重構就會把它變回「匯入一篇沒有題目的文章」。
+{
+  const hs = headersFor(SIX);
+  const base: Record<string, unknown> = {
+    topic_id: "Z1", passage_writer_title: "標題", passage_revised_text: "內文夠長。",
+  };
+  const q = (pre: string) => ({
+    [`${pre}_final_question`]: "問題？",
+    [`${pre}_final_options_json`]: "A: a | B: b | C: c | D: d",
+    [`${pre}_final_answer`]: "A",
+    [`${pre}_final_explanation`]: "因為。",
+  });
+
+  const six = { ...base };
+  for (const pre of SIX) Object.assign(six, q(pre));
+  check(parseRow(six, hs).importStatus === "PUBLISH_READY", "Z1 六題完整 → PUBLISH_READY");
+  check(parseRow(six, hs).usableQuestions === 6, "Z1 usableQuestions = 6");
+
+  const three = { ...base };
+  for (const pre of SIX.slice(0, 3)) Object.assign(three, q(pre));
+  check(parseRow(three, hs).importStatus === "DRAFT", "Z2 1–5 題 → DRAFT");
+
+  // 有文章、六個欄位也都有值，但每一題都缺正解 → 可用題數 0
+  const noneUsable = { ...base };
+  for (const pre of SIX) {
+    Object.assign(noneUsable, q(pre));
+    delete (noneUsable as Record<string, unknown>)[`${pre}_final_answer`];
+  }
+  const nu = parseRow(noneUsable, hs);
+  check(nu.usableQuestions === 0, "Z3 六題都缺正解 → 可用題數 0");
+  check(nu.importStatus === "BLOCKED",
+    "🛑 Z3 有文章、六個 construct 欄位也都有值，但沒有一題可用 → BLOCKED");
+  check(toCanonicalPayload(nu) === null,
+    "🛑 Z4 BLOCKED 的文章產不出 payload —— 0 題的文章不進資料庫");
+
+  check(toCanonicalPayload(parseRow(three, hs)) !== null,
+    "Z5 DRAFT 仍然產得出 payload（1–5 題可入庫）");
+}
+
+// ── 詞彙的 fallback chain ───────────────────────────────────────────
+{
+  const hs = headersFor(SIX);
+  const base: Record<string, unknown> = {
+    topic_id: "V1", passage_writer_title: "標題", passage_revised_text: "內文夠長。",
+    passage_writer_vocab_json: "Candidate: alpha = 甲 (P1)",
+  };
+  check(parseRow(base, hs).vocab[0]?.term === "alpha", "V1 沒有 final 時用 writer 的詞彙");
+
+  const withFinal = { ...base, passage_final_vocab_json: "Candidate: beta = 乙 (P2)" };
+  check(parseRow(withFinal, hs).vocab[0]?.term === "beta",
+    "V2 有 final 詞彙時優先用 final");
+
+  // 🛑 final 欄位壞掉（值 = 欄位名）時必須退回 writer，而不是把欄位名當詞彙存進去
+  const broken = { ...base, passage_final_vocab_json: "passage_writer_vocab_json" };
+  check(parseRow(broken, hs).vocab[0]?.term === "alpha",
+    "🛑 V3 final 詞彙是未解析的欄位參照時退回 writer");
+}
+
+// ── 全欄位分類 ──────────────────────────────────────────────────────
+{
+  check(classifyColumn("passage_final_text", SIX).category === "CORE",
+    "K1 passage_final_text 的結構分類是 CORE（名稱決定分類）");
+  check(classifyColumn("sm_writer_option_a", SIX).category === "PIPELINE",
+    "K2 construct 的 writer 初稿欄位歸 PIPELINE");
+  check(classifyColumn("sm_final_answer", SIX).fate === "CANONICAL",
+    "K3 正解欄位進 payload（只寫進 reading_question_keys）");
+  check(classifyColumn("something_new_2027", SIX).category === "UNKNOWN",
+    "🛑 K4 認不得的欄位標成 UNKNOWN，不會被安靜吞掉");
+
+  const headers = ["topic_id", "passage_final_text", "passage_revised_text"];
+  const brokenRows = [
+    { topic_id: "A", passage_final_text: "passage_revised_text", passage_revised_text: "真的內文" },
+    { topic_id: "B", passage_final_text: "passage_revised_text", passage_revised_text: "真的內文" },
+  ];
+  const a1 = auditColumns(headers, brokenRows, SIX);
+  const finalText = a1.find((x) => x.column === "passage_final_text")!;
+  check(finalText.health === "PLACEHOLDER" && finalText.placeholder === 2,
+    "🛑 K5 值剛好等於另一個欄位名稱 → 判定為 PLACEHOLDER");
+  check(brokenColumns(a1).some((x) => x.column === "passage_final_text"),
+    "K6 壞欄位清單抓到它");
+
+  // 🛑 這一條是結構分類與健康狀態分兩層的全部意義：
+  //    管線修好、final 欄位變成真的內文那一天，它必須【自動】不再被當成壞欄位。
+  //    把「passage_final_text 是壞的」寫死成靜態分類，我們會繼續忽略一個
+  //    已經正確的欄位，而且沒有任何東西會提醒我們。
+  const healthyRows = [
+    { topic_id: "A", passage_final_text: "真正的最終內文", passage_revised_text: "舊稿" },
+  ];
+  const a2 = auditColumns(headers, healthyRows, SIX);
+  check(a2.find((x) => x.column === "passage_final_text")!.health === "OK",
+    "🛑 K7 同一個欄位，值正常時就是 OK —— 壞掉是資料的事實，不是命名的事實");
+  check(!brokenColumns(a2).some((x) => x.column === "passage_final_text"),
+    "K8 管線修好之後它自動離開壞欄位清單");
+
+  // 整欄空白的 PIPELINE 欄位不該出現在壞欄位清單裡（96 欄會把真正的問題淹掉）
+  const a3 = auditColumns(["topic_id", "sm_writer_answer"], [{ topic_id: "A", sm_writer_answer: "" }], SIX);
+  check(!brokenColumns(a3).some((x) => x.column === "sm_writer_answer"),
+    "K9 整欄空白的 PIPELINE 欄位不算壞掉（管線本來就只匯出最終結果）");
 }
 
 console.log("");

@@ -29,6 +29,10 @@ CREATE TABLE IF NOT EXISTS reading_import_batches (
   imported_count INTEGER NOT NULL DEFAULT 0 CHECK (imported_count >= 0),
   skipped_count  INTEGER NOT NULL DEFAULT 0 CHECK (skipped_count  >= 0),
   conflict_count INTEGER NOT NULL DEFAULT 0 CHECK (conflict_count >= 0),
+  -- 🛑 blocked 與 failed 分開數。blocked 是【資料本身沒有題目】（可預期、
+  --    要拿回去重新產製）；failed 是【這一篇丟了例外】（程式或格式問題）。
+  --    混在一起數，匯入報告就永遠分不出「題庫缺料」和「匯入壞了」。
+  blocked_count  INTEGER NOT NULL DEFAULT 0 CHECK (blocked_count  >= 0),
   failed_count   INTEGER NOT NULL DEFAULT 0 CHECK (failed_count   >= 0),
 
   status TEXT NOT NULL DEFAULT 'IN_PROGRESS'

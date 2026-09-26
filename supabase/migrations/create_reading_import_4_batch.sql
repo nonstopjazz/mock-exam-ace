@@ -44,6 +44,7 @@ DECLARE
   v_imported INT := 0;
   v_skipped  INT := 0;
   v_conflict INT := 0;
+  v_blocked  INT := 0;
   v_failed   INT := 0;
   v_total    INT := 0;
   v_pid      TEXT;
@@ -93,6 +94,7 @@ BEGIN
       WHEN 'imported' THEN v_imported := v_imported + 1;
       WHEN 'skipped'  THEN v_skipped  := v_skipped  + 1;
       WHEN 'conflict' THEN v_conflict := v_conflict + 1;
+      WHEN 'blocked'  THEN v_blocked  := v_blocked  + 1;
       ELSE                 v_failed   := v_failed   + 1;
     END CASE;
 
@@ -105,6 +107,7 @@ BEGIN
          imported_count = imported_count + v_imported,
          skipped_count  = skipped_count  + v_skipped,
          conflict_count = conflict_count + v_conflict,
+         blocked_count  = blocked_count  + v_blocked,
          failed_count   = failed_count   + v_failed,
          status       = CASE WHEN p_final THEN 'COMPLETED' ELSE status END,
          completed_at = CASE WHEN p_final THEN now() ELSE completed_at END
@@ -114,10 +117,11 @@ BEGIN
     'batch_id', v_batch,
     'chunk', jsonb_build_object(
       'total', v_total, 'imported', v_imported, 'skipped', v_skipped,
-      'conflict', v_conflict, 'failed', v_failed),
+      'conflict', v_conflict, 'blocked', v_blocked, 'failed', v_failed),
     'batch', (SELECT jsonb_build_object(
                 'total', b.total_count, 'imported', b.imported_count,
                 'skipped', b.skipped_count, 'conflict', b.conflict_count,
+                'blocked', b.blocked_count,
                 'failed', b.failed_count, 'status', b.status)
                 FROM public.reading_import_batches b WHERE b.id = v_batch),
     'results', v_results);
@@ -125,7 +129,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION reading_import_batch IS
-  '批次匯入 canonical payload。僅限管理員。一篇失敗只回滾那一篇（BEGIN…EXCEPTION 的 subtransaction），其餘繼續。回傳每篇的 imported/skipped/conflict/failed 與原因，🛑 不含正確答案。';
+  '批次匯入 canonical payload。僅限管理員。一篇失敗只回滾那一篇（BEGIN…EXCEPTION 的 subtransaction），其餘繼續。回傳每篇的 imported/skipped/conflict/blocked/failed 與原因，🛑 不含正確答案。';
 
 REVOKE ALL ON FUNCTION reading_import_batch(JSONB, TEXT, UUID, BOOLEAN) FROM PUBLIC, anon;
 -- 🛑 給 authenticated 是因為 admin 也是 authenticated；真正的把關是
