@@ -45,6 +45,24 @@ session 就能偽造 `passage_id`），但**沒有任何 RPC 會建立 session**
 
 ---
 
+## ⚠️ 已知的環境差異：lexical_items
+
+`gsat-staging` **還沒有 `lexical_items`**（Lexical Phase 1 只上了 production）。
+
+`reading_passage_vocab.lexical_item_id` 原本寫死外鍵指向它，會讓整支 migration 在
+staging 失敗 —— 而卡住的是一個 **v1 一律是 NULL 的預留欄位**。用不到的東西不該擋住
+用得到的東西，所以外鍵改成**有 `lexical_items` 才加**：
+
+| 環境 | 結果 |
+|---|---|
+| production（有 lexical_items） | 外鍵照常加上 |
+| gsat-staging（暫時沒有） | 欄位在、外鍵略過，migration 正常完成 |
+
+**取捨要講明白：兩邊 schema 有一個已知差異。** 等 lexical 上了 staging，
+跑 `create_reading_vocab_lexical_fk.sql`（冪等）補上，兩邊就一致。
+
+---
+
 ## Group A — Core data model
 
 | # | migration |

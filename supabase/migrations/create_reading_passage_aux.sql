@@ -62,10 +62,37 @@ CREATE TABLE IF NOT EXISTS reading_passage_vocab (
   --    是否出現在 CANDIDATE 清單裡，21 篇只有 8 篇命中。
   --    那個比率不足以自動連結，錯誤的連結會把學生的單字排程弄髒。
   --    之後要做，應該是後台人工確認，不是匯入時自動猜。
-  lexical_item_id UUID REFERENCES lexical_items(id) ON DELETE SET NULL,
+  --    🛑 外鍵【不寫在這裡】，改成下面有條件地加。理由見檔尾。
+  lexical_item_id UUID,
 
   UNIQUE (passage_id, tier, term)
 );
+
+-- ── lexical_items 外鍵：有才加 ──────────────────────
+-- 🛑 為什麼不直接寫進 CREATE TABLE：
+--    2026-09-26 發現 gsat-staging 還沒有 lexical_items（Lexical Phase 1
+--    只上了 production）。寫死外鍵會讓整支 migration 在 staging 失敗，
+--    而卡住的是一個 v1【一律是 NULL】的預留欄位——用不到的東西
+--    不該擋住用得到的東西。
+--
+--    這裡的取捨要講明白：production 會有這條外鍵，staging 暫時沒有，
+--    兩邊 schema 有一個已知的差異。等 lexical 上了 staging，
+--    跑 create_reading_vocab_lexical_fk.sql 補上，兩邊就一致了。
+--    這支本身是冪等的——已經有外鍵就跳過。
+DO $$
+BEGIN
+  IF to_regclass('public.lexical_items') IS NULL THEN
+    RAISE NOTICE '⏭️  lexical_items 不存在，略過外鍵。之後跑 create_reading_vocab_lexical_fk.sql 補上。';
+  ELSIF EXISTS (SELECT 1 FROM pg_constraint
+                 WHERE conname = 'reading_passage_vocab_lexical_item_id_fkey') THEN
+    RAISE NOTICE '外鍵已經存在，略過。';
+  ELSE
+    ALTER TABLE reading_passage_vocab
+      ADD CONSTRAINT reading_passage_vocab_lexical_item_id_fkey
+      FOREIGN KEY (lexical_item_id) REFERENCES lexical_items(id) ON DELETE SET NULL;
+    RAISE NOTICE '✅ 已加上 lexical_items 外鍵。';
+  END IF;
+END $$;
 
 COMMENT ON TABLE reading_passage_vocab IS
   '文章的三層詞彙。lexical_item_id 是為將來預留的，v1 不做自動比對——VC 題考的字只有 8/21 出現在 CANDIDATE 清單裡，自動連會連錯。';
@@ -119,10 +146,15 @@ CREATE POLICY reading_vocab_service_all ON reading_passage_vocab
 
 -- ── 驗證（唯讀）───────────────────────────────────────
 SELECT c.relname,
-       c.relrowsecurity AS "RLS 開啟",
+       c.relrowsecurity                                      AS "RLS 開啟",
        has_table_privilege('anon',          c.oid, 'SELECT') AS "anon可讀",
-       has_table_privilege('authenticated', c.oid, 'SELECT') AS "登入者可讀"
+       has_table_privilege('authenticated', c.oid, 'SELECT') AS "登入者可讀",
+       CASE WHEN c.relname <> 'reading_passage_vocab' THEN '—'
+            WHEN EXISTS (SELECT 1 FROM pg_constraint
+                          WHERE conname = 'reading_passage_vocab_lexical_item_id_fkey')
+            THEN '已加上'
+            ELSE '略過（staging 還沒有 lexical_items）' END AS "lexical外鍵"
   FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
- WHERE n.nspname='public'
-   AND c.relname IN ('reading_passage_paragraphs','reading_passage_vocab')
+ WHERE n.nspname = 'public'
+   AND c.relname IN ('reading_passage_paragraphs', 'reading_passage_vocab')
  ORDER BY c.relname;
