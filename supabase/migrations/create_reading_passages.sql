@@ -7,6 +7,40 @@
 -- create_reading_sessions.sql，答案在 create_reading_questions.sql
 -- 的獨立表。
 --
+-- ═══════════════════════════════════════════════════════════
+-- 🛑 模組邊界：Six-Way Reading 與模考系統【完全分離】
+-- ═══════════════════════════════════════════════════════════
+--
+-- 這是產品決策，不是實作細節。閱讀專項訓練與模考是兩個不同的
+-- 產品流程，共用的只有基礎設施。
+--
+-- 【不可以】把 reading 接到：
+--     exams / question_groups / group_questions
+--     exam_attempts / exam_statistics
+--     模考的作答流程、計分、結果分析
+--     src/types/exam.ts、src/store/examStore.ts、src/hooks/useExam.ts
+--     src/data/mock-exam*.ts、src/pages/Exam*.tsx
+--
+-- 【可以】共用：
+--     auth（auth.uid()、is_admin()）
+--     admin shell 與 UI 元件
+--     Supabase client
+--     design system
+--     一般性的 hooks / utilities
+--
+-- 為什麼要寫在這裡：question_groups 的 groupType 有 'reading'，
+-- 結構上看起來很像（文章 + 選擇題 + 解說），所以【很容易】有人
+-- 日後為了「不要重複」而把兩邊接起來。那會把一個產品的改動
+-- 變成兩個產品的風險。
+--
+-- 順帶一提，那條路今天也走不通：question_groups 在 repo 裡
+-- 沒有 DDL（production 有、版控沒有），而且模考的學生端流程
+-- 根本不讀資料庫——它讀 src/data/mock-exam.ts 的靜態資料，
+-- 作答存在 zustand 的 localStorage 裡。
+--
+-- 詳見 docs/reading/module-boundary.md
+-- ═══════════════════════════════════════════════════════════
+--
 -- 🛑 passage_id 是【外部識別碼】（KR0001），不是 UUID。
 --    它是題庫管線那邊的主鍵，也是冪等匯入唯一可靠的錨點。
 --    用 UUID 當 PK 會讓「同一篇」變成要另外比對的事。
@@ -71,7 +105,7 @@ CREATE TABLE IF NOT EXISTS reading_passages (
 );
 
 COMMENT ON TABLE reading_passages IS
-  'Six-Way Reading 的文章。passage_id 是題庫管線的外部識別碼，也是冪等匯入的錨點。';
+  'Six-Way Reading 的文章。passage_id 是題庫管線的外部識別碼，也是冪等匯入的錨點。🛑 這個模組與模考系統（exams / question_groups / exam_attempts）刻意完全分離，不可以互相引用——見 docs/reading/module-boundary.md。';
 COMMENT ON COLUMN reading_passages.content_source IS
   '內文實際取自 final / revised / writer 哪一欄。來源檔的 final 欄位曾整批壞掉（值是欄位名稱），所以這個來源必須留下紀錄。';
 COMMENT ON COLUMN reading_passages.status IS
