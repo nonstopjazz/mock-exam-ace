@@ -28,6 +28,8 @@ import { toCanonicalPayload } from "../src/lib/reading/canonicalPayload";
 import {
   auditColumns, brokenColumns, classifyColumn,
 } from "../src/lib/reading/columnClassification";
+import { analyzeSource } from "../src/lib/reading/importAnalysis";
+import { runImport, type RpcArgs } from "../src/lib/reading/runImport";
 
 let failures = 0;
 const check = (cond: boolean, label: string): void => {
@@ -391,6 +393,162 @@ const headersFor = (prefixes: string[]): string[] => [
     "K9 整欄空白的 PIPELINE 欄位不算壞掉（管線本來就只匯出最終結果）");
 }
 
-console.log("");
-if (failures > 0) { console.error(`${failures} 項未通過`); process.exit(1); }
-console.log("全部通過");
+// ── 共用分析：畫面與 dry-run 必須是同一次計算 ──────────────────────
+{
+  const hs = headersFor(SIX);
+  const q = (pre: string) => ({
+    [`${pre}_final_question`]: "問題？",
+    [`${pre}_final_options_json`]: "A: a | B: b | C: c | D: d",
+    [`${pre}_final_answer`]: "A",
+    [`${pre}_final_explanation`]: "因為。",
+    [`${pre}_micro_skill_profile_json`]: "alpha: 90 | beta: ",
+  });
+  const full: Record<string, unknown> = {
+    topic_id: "N1", passage_writer_title: "標題", passage_revised_text: "內文夠長。",
+    difficulty_target: "B2",
+    passage_writer_paragraph_map: "P1: 開場 | P2: 發展",
+    passage_writer_vocab_json: "Candidate: alpha = 甲 (P1) || Academic: beta",
+  };
+  for (const pre of SIX) Object.assign(full, q(pre));
+
+  const three: Record<string, unknown> = {
+    topic_id: "N2", passage_writer_title: "標題", passage_revised_text: "內文夠長。",
+  };
+  for (const pre of SIX.slice(0, 3)) Object.assign(three, q(pre));
+
+  // 有文章、六個欄位都有值，但每題都缺正解 → 可用題數 0 → BLOCKED
+  const none: Record<string, unknown> = {
+    topic_id: "N3", passage_writer_title: "標題", passage_revised_text: "內文夠長。",
+  };
+  for (const pre of SIX) {
+    Object.assign(none, q(pre));
+    delete none[`${pre}_final_answer`];
+  }
+  // 只有選題，管線還沒產出文章
+  const topicOnly = { topic_id: "N4", topic_title: "只有選題" };
+
+  const a = analyzeSource([full, three, none, topicOnly], hs);
+
+  check(a.withId === 4 && a.withPassage === 3 && a.noPassage === 1,
+    "🛑 N1 分層：還沒產出文章的列不算進品質分母");
+  check(a.publishReady === 1 && a.draft === 1 && a.blocked === 1,
+    "N1 三態各一篇");
+  check(a.payloads.length === 2, "N2 只有 PUBLISH_READY + DRAFT 產出 payload");
+  check(a.payloadMatchesStatus,
+    "🛑 N2 payload 數與三態相符——不相符代表 parser 與 payload 的規則分岔了");
+  check(a.payloadQuestions === 9, "N2 payload 題數 6 + 3");
+  check(a.payloadSkills === 18,   // 6 題×2 + 3 題×2
+    "🛑 N3 payload 的 micro-skill 只數會進資料庫的那些（BLOCKED 那篇不算）");
+  check(a.skillRows > a.payloadSkills,
+    "🛑 N3 來源檔的 skill 總數【大於】會進資料庫的數 —— 兩個數字意義不同，不可混用");
+  check(a.paragraphRows === 2 && a.payloadParagraphs === 2, "N4 段落數");
+  check(a.problems.length === 2 && a.problems[0].passageId === "N2",
+    "N5 有問題的文章依 passage_id 排序");
+  check(a.problems.some((p) => p.importStatus === "BLOCKED" && p.usableQuestions === 0),
+    "N5 BLOCKED 那篇標明可用題數 0");
+
+  const dup = analyzeSource([full, { ...full }], hs);
+  check(dup.duplicateIds.length === 1 && dup.duplicateIds[0].count === 2,
+    "N6 重複的 passage_id 抓得到");
+}
+
+// ── 分批匯入 ────────────────────────────────────────────────────────
+// 🛑 這一段用假的 caller 跑完整條流程。真正容易錯的不是 SQL，
+//    是「批次有沒有接續」「p_final 有沒有放對」「出錯有沒有停」。
+const asyncChecks = async (): Promise<void> => {
+  const item = (id: string) => ({
+    passage: { passage_id: id },
+    questions: [], paragraphs: [], vocabulary: [],
+  }) as unknown as Parameters<typeof runImport>[0][number];
+
+  const items = Array.from({ length: 45 }, (_, i) => item(`P${i}`));
+
+  {
+    const calls: RpcArgs[] = [];
+    const out = await runImport(items, "f.xlsx", {
+      chunkSize: 20,
+      call: async (args) => {
+        calls.push(args);
+        return {
+          data: {
+            batch_id: "BATCH-1",
+            chunk: { imported: args.p_passages.length, skipped: 0, conflict: 0, blocked: 0, failed: 0 },
+            batch: { status: args.p_final ? "COMPLETED" : "IN_PROGRESS" },
+            results: [],
+          },
+          error: null,
+        };
+      },
+    });
+    check(calls.length === 3 && calls[0].p_passages.length === 20
+      && calls[2].p_passages.length === 5, "R1 45 篇切成 20 / 20 / 5");
+    check(calls[0].p_batch_id === null, "R2 第一批不帶 batch_id（建立新批次）");
+    check(calls[1].p_batch_id === "BATCH-1" && calls[2].p_batch_id === "BATCH-1",
+      "🛑 R2 後面每一批都接續同一個批次 —— 漏掉的話帳本會分岔");
+    check(calls[0].p_final === false && calls[1].p_final === false && calls[2].p_final === true,
+      "🛑 R3 只有最後一批 p_final = true（提早收尾後面會找不到批次）");
+    check(out.ok && out.totals.imported === 45, "R4 總數累加正確");
+    check(out.chunks.length === 3 && out.chunks[2].batchStatus === "COMPLETED",
+      "R4 最後一批回報 COMPLETED");
+  }
+
+  {
+    // 🛑 rpc 不 throw，只 resolve 一個帶 error 的物件。
+    let n = 0;
+    const out = await runImport(items, "f.xlsx", {
+      chunkSize: 20,
+      call: async (args) => {
+        n += 1;
+        if (n === 2) return { data: null, error: { message: "權限不足" } };
+        return {
+          data: {
+            batch_id: "BATCH-1",
+            chunk: { imported: args.p_passages.length, skipped: 0, conflict: 0, blocked: 0, failed: 0 },
+            batch: { status: "IN_PROGRESS" }, results: [],
+          },
+          error: null,
+        };
+      },
+    });
+    check(!out.ok, "🛑 R5 中途失敗時 ok = false，不會回報成功");
+    check(n === 2, "🛑 R5 而且【停下來】，沒有繼續送後面幾批");
+    check(out.stoppedAtChunk === 2 && out.errorMessage === "權限不足",
+      "R5 講明停在第幾批、為什麼");
+    check(out.totals.imported === 20, "R5 已經成功的那一批照實回報");
+  }
+
+  {
+    // 沒有 error，但回傳形狀不對 —— 必須當成失敗，不是 0 筆成功
+    const out = await runImport([item("A")], "f.xlsx", {
+      chunkSize: 20,
+      call: async () => ({ data: null, error: null }),
+    });
+    check(!out.ok && out.totals.imported === 0,
+      "🛑 R6 沒有 error 但回傳格式不對 → 當成失敗，不是「0 筆成功」");
+  }
+
+  {
+    // 第一批就沒回 batch_id → 無法接續，必須停
+    const out = await runImport(items, "f.xlsx", {
+      chunkSize: 20,
+      call: async () => ({
+        data: { chunk: { imported: 20 }, batch: {}, results: [] }, error: null,
+      }),
+    });
+    check(!out.ok && out.stoppedAtChunk === 1,
+      "🛑 R7 第一批沒回 batch_id 就停 —— 硬送下去會變成好幾個批次");
+  }
+
+  {
+    const out = await runImport([], "f.xlsx", { chunkSize: 20, call: async () => {
+      throw new Error("不該被呼叫");
+    } });
+    check(out.ok && out.chunks.length === 0, "R8 沒有 payload 時不呼叫 RPC");
+  }
+};
+
+void asyncChecks().then(() => {
+  console.log("");
+  if (failures > 0) { console.error(`${failures} 項未通過`); process.exit(1); }
+  console.log("全部通過");
+});

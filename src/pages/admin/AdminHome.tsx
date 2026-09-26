@@ -16,6 +16,7 @@ import {
   PenLine,
   Mic,
   Sparkles,
+  BookOpen,
 } from 'lucide-react';
 import { PRODUCT_CONFIG } from '@/config/product';
 import { useWritingPendingCount } from '@/hooks/learn/useWritingPendingCount';
@@ -124,6 +125,13 @@ export default function AdminHome() {
       description: '撰寫、編輯部落格文章，管理 SEO 設定',
       icon: <FileText className="h-6 w-6" />,
       href: '/admin/blog',
+    },
+    {
+      title: '閱讀題庫匯入',
+      description: '上傳 Six-Way Reading 題庫，檢查之後再匯入',
+      icon: <BookOpen className="h-6 w-6" />,
+      href: '/admin/reading/import',
+      badge: '新功能',
     },
     {
       title: '模擬考管理',
