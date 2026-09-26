@@ -127,6 +127,13 @@ export default function AdminHome() {
       href: '/admin/blog',
     },
     {
+      title: '閱讀題庫上架',
+      description: '決定哪些文章學生練得到',
+      icon: <BookOpen className="h-6 w-6" />,
+      href: '/admin/reading',
+      badge: '新功能',
+    },
+    {
       title: '閱讀題庫匯入',
       description: '上傳 Six-Way Reading 題庫，檢查之後再匯入',
       icon: <BookOpen className="h-6 w-6" />,

@@ -10,14 +10,17 @@ import { AlertCircle, ArrowLeft, Loader2, Search, Settings2, Users, X } from "lu
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useFeatureAccess } from "@/hooks/learn/useFeatureAccess";
-import { FEATURE } from "@/config/speaking";
+import { FEATURE_LABEL, GATED_FEATURES } from "@/config/gatedFeatures";
 import type { StudentSearchResult } from "@/lib/learn/tasks";
 
 /**
  * 功能開放對象（管理端）
  *
- * 目前只有「口說練習」一個功能，但這一頁與 learn_feature_access 都是通用的：
- * 下一個要分批開放的功能只要多一個 feature 代號，不必再做一頁。
+ * 這一頁與 learn_feature_access 都是通用的：要分批開放的功能只要在
+ * src/config/gatedFeatures.ts 多一個代號，不必再做一頁。
+ *
+ * 🛑 每個功能的開放對象【各自獨立】。開放閱讀不會連帶開放口說——
+ *    上面的切換只是換一份清單，不是換一個檢視角度。
  *
  * 【預設是關的】。沒有在這裡勾選任何班級或學生，就沒有人看得到那個功能——
  * 包括已經寫好、已經部署的頁面。這是產品決策，不是還沒做完。
@@ -26,7 +29,8 @@ import type { StudentSearchResult } from "@/lib/learn/tasks";
  * 會重疊，所以逐一相加是錯的。那個數字由資料庫去重後算出來，前端不自己算。
  */
 export default function FeatureAccessAdmin() {
-  const { access, loading, error, saving, refetch, setAccessFor } = useFeatureAccess(FEATURE);
+  const [feature, setFeature] = useState<string>(GATED_FEATURES[0].feature);
+  const { access, loading, error, saving, refetch, setAccessFor } = useFeatureAccess(feature);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<StudentSearchResult[]>([]);
@@ -88,9 +92,24 @@ export default function FeatureAccessAdmin() {
           <div className="min-w-0">
             <h1 className="text-2xl md:text-4xl font-bold text-foreground truncate">功能開放對象</h1>
             <p className="text-sm md:text-base text-muted-foreground hidden sm:block">
-              口說練習：決定哪些班級、哪些學生看得到
+              {FEATURE_LABEL[feature]}：決定哪些班級、哪些學生看得到
             </p>
           </div>
+        </div>
+
+        {/* 🛑 切換功能。每個功能的開放對象是分開的，切換等於換一份清單。 */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          {GATED_FEATURES.map((f) => (
+            <Button
+              key={f.feature}
+              variant={feature === f.feature ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFeature(f.feature)}
+              disabled={loading}
+            >
+              {f.label}
+            </Button>
+          ))}
         </div>
 
         {loading ? (
@@ -115,7 +134,9 @@ export default function FeatureAccessAdmin() {
             <Card className="mb-8 p-6 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="h-5 w-5 text-primary shrink-0" />
-                <span className="font-semibold text-foreground">目前看得到口說練習的人</span>
+                <span className="font-semibold text-foreground">
+                  目前看得到{FEATURE_LABEL[feature]}的人
+                </span>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-foreground">{access?.reach ?? 0}</span>
