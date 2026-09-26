@@ -20,9 +20,21 @@ DELETE FROM reading_passages WHERE passage_id LIKE 'ZZ-VERIFY-%';
 
 CREATE TEMP TABLE zz_b(seq int, 檢查 text, 期望 text, 實際 text);
 
+-- ── 想自己指定要用哪兩個帳號？改這兩行 ──────────────
+-- 🛑 production 的使用者是真的學生。不指定的話，腳本會自動挑最早的兩位
+--    【is_admin() 回 false】的帳號——管理員本人會被排除，所以挑到的一定是別人。
+--    把 uuid 填進去就會改用你指定的那兩位；留 NULL 就是自動挑。
+--    無論哪一種，腳本都會先確認那兩位的 is_admin() 是 false。
+CREATE TEMP TABLE zz_b_who(stu1 UUID, stu2 UUID);
+INSERT INTO zz_b_who VALUES (
+  NULL,   -- ← 第一位學生的 uuid（留 NULL = 自動挑）
+  NULL    -- ← 第二位學生的 uuid（留 NULL = 自動挑）
+);
+
 DO $$
 DECLARE
   v_stu1 UUID; v_stu2 UUID; v_admin UUID; v_row RECORD;
+  v_forced1 UUID; v_forced2 UUID;
   v_sess UUID; v_sess2 UUID; v_q UUID; v_r JSONB; v_n INT;
   v_c CONSTANT TEXT[] := ARRAY['SM','MI','SD','CO','CD','VC'];
   i INT;
@@ -35,7 +47,32 @@ BEGIN
   --
   --    正確做法：切換成那個身分，【問 is_admin() 本人】。
   --    這樣同一份腳本在任何環境都對，也不必維護一份 email 清單。
+  SELECT stu1, stu2 INTO v_forced1, v_forced2 FROM zz_b_who;
+
+  IF v_forced1 IS NOT NULL AND v_forced2 IS NOT NULL THEN
+    -- 指定的帳號也要通過檢查：管理員讀得到草稿，拿他當學生會讓 B3 假通過。
+    FOR v_row IN SELECT unnest(ARRAY[v_forced1, v_forced2]) AS id LOOP
+      PERFORM set_config('request.jwt.claims', json_build_object('sub', v_row.id)::text, true);
+      IF coalesce(public.is_admin(), false) THEN
+        INSERT INTO zz_b VALUES (0, '🛑 前置：你指定的帳號是管理員',
+          'is_admin() 要是 false', v_row.id::text || ' 的 is_admin() 是 true');
+        PERFORM set_config('request.jwt.claims', '', true);
+        RETURN;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = v_row.id) THEN
+        INSERT INTO zz_b VALUES (0, '🛑 前置：你指定的帳號不存在',
+          '存在', v_row.id::text);
+        PERFORM set_config('request.jwt.claims', '', true);
+        RETURN;
+      END IF;
+    END LOOP;
+    v_stu1 := v_forced1;
+    v_stu2 := v_forced2;
+    PERFORM set_config('request.jwt.claims', '', true);
+  END IF;
+
   FOR v_row IN SELECT id FROM auth.users ORDER BY created_at LIMIT 1000 LOOP
+    EXIT WHEN v_stu1 IS NOT NULL AND v_stu2 IS NOT NULL;
     PERFORM set_config('request.jwt.claims', json_build_object('sub', v_row.id)::text, true);
     IF coalesce(public.is_admin(), false) THEN
       IF v_admin IS NULL THEN v_admin := v_row.id; END IF;

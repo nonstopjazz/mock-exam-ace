@@ -216,12 +216,15 @@ staging 已經答過了——而是 **production 跟 staging 有什麼不一樣*
 2. Group A 四支 → `A-verify.sql`
 3. Group B 六支 → `B-verify.sql`
 4. Group C 四支 → `C-verify.sql`
-5. `import-01` … `import-15` → `D-verify.sql`
-6. **最後才 merge PR #141**
+5. **merge PR #141**，等 Vercel 部署完成
+6. 用 `/admin/reading/import` 匯入 296 篇 → `D-verify.sql`
 
-🛑 **第 6 步一定在最後。** 前端會呼叫 `reading_import_batch` 等 RPC，
+🛑 **merge 不可以排在第 4 步之前。** 前端會呼叫 `reading_import_batch` 等 RPC，
 那些函式要到第 4 步才存在。先 merge 的話，管理員點進那一頁會看到 RPC not found。
 反過來則完全安全：migration 先上，那些函式就只是沒有人呼叫而已。
+
+🛑 **也不可以排在第 6 步之後**——第 6 步用的就是那一頁。
+production 走網頁匯入，不需要 `import-01..15` 那 15 個檔案（那是 staging 沒有 UI 時的權宜之計）。
 
 ## B-verify 在 production 的一個提醒
 
@@ -229,6 +232,10 @@ staging 已經答過了——而是 **production 跟 staging 有什麼不一樣*
 腳本會用他們的身分建一個 `ZZ-VERIFY-` 的練習與作答紀錄，結束時 CASCADE 全部刪掉
 （staging 實測 `殘留fixture = 0`）。那幾列存在的時間是幾秒鐘，也不會出現在任何學生畫面上
 （那篇文章不是 PUBLISHED，而且馬上就被刪了）。
+
+**要自己指定用哪兩個帳號**：B-verify 開頭有兩行可以填 uuid，留 `NULL` 就是自動挑。
+無論自動或指定，腳本都會先確認那兩位的 `is_admin()` 是 `false`——
+拿管理員當學生會讓「草稿對學生不可見」那一條假通過，所以指定成管理員會被直接擋下。
 
 不想在 production 碰真實使用者的話可以跳過 B-verify——代價是
 「學生路徑」這一層在 production 沒有實測過，只有 A-verify 的權限檢查與 staging 的結果背書。
