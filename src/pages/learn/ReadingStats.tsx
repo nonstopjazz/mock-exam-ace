@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
@@ -13,7 +14,9 @@ import {
 } from "@/lib/reading/statsShaping";
 import { useReadingStats } from "@/hooks/learn/useReadingStats";
 import { ConstructCard, type ConstructTone } from "@/components/learn/reading/ConstructCard";
-import { SkillDiagnosis } from "@/components/learn/reading/SkillDiagnosis";
+import { ConstructDetailPanel } from "@/components/learn/reading/ConstructDetailPanel";
+import { DiagnosisSummary } from "@/components/learn/reading/DiagnosisSummary";
+import { SKILLS_BY_CONSTRUCT } from "@/lib/reading/skillLabels";
 
 /**
  * 我的閱讀能力 —— 學習診斷。
@@ -42,6 +45,16 @@ const ADVICE: Record<Construct, string> = {
 
 export default function ReadingStats() {
   const { stats, loading, error, reload } = useReadingStats();
+
+  // 🛑 一次只開一個 construct。六組同時攤開就退回成一張長列表。
+  const [openConstruct, setOpenConstruct] = useState<Construct | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // 手機上六張卡疊成三列，面板在整個格子下方——不捲過去的話，
+  // 點了第一張卡的人會以為沒反應。
+  useEffect(() => {
+    if (openConstruct) panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [openConstruct]);
 
   const header = (
     <div className="mb-8 flex items-start justify-between gap-3">
@@ -196,14 +209,37 @@ export default function ReadingStats() {
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {ordered.map((c) => (
-          <ConstructCard key={c.construct} stat={c} tone={toneOf(c.construct)} />
+          <ConstructCard
+            key={c.construct}
+            stat={c}
+            tone={toneOf(c.construct)}
+            expanded={openConstruct === c.construct}
+            skillCount={SKILLS_BY_CONSTRUCT[c.construct].length}
+            onToggle={() =>
+              setOpenConstruct((cur) => (cur === c.construct ? null : c.construct))}
+          />
         ))}
+      </div>
+
+      {/* 子能力面板。六張卡共用同一個位置，點 MI 就換成 MI 的三項。 */}
+      <div ref={panelRef}>
+        {openConstruct && (
+          <ConstructDetailPanel
+            stat={byConstruct.get(openConstruct) ?? {
+              construct: openConstruct, answered: 0, correct: 0,
+              median_ms: null, changed: 0, changed_away_from_correct: 0,
+            }}
+            skills={stats.by_skill}
+            tone={toneOf(openConstruct)}
+            onClose={() => setOpenConstruct(null)}
+          />
+        )}
       </div>
     </section>
 
-    {/* ── 細項診斷 ────────────────────────────────────── */}
+    {/* ── 診斷摘要 ────────────────────────────────────── */}
     <section className="mb-10">
-      <SkillDiagnosis
+      <DiagnosisSummary
         skills={stats.by_skill}
         minQuestions={stats.overall.min_questions_for_skill}
       />

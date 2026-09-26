@@ -7,11 +7,14 @@
  *    只會讓畫面很有信心地講一句沒有根據的話。
  */
 import {
-  MIN_FOR_VERDICT, accuracyOf, measuredSkills, rankedConstructs, strongestConstruct,
-  strongestSkills, ungradedTotal, unmeasuredSkills, weakestConstruct, weakestSkills,
+  MIN_FOR_VERDICT, accuracyOf, constructSkillRows, measuredSkills, rankedConstructs,
+  strongestConstruct, strongestSkills, ungradedTotal, unmappedSkillCount,
+  weakestConstruct, weakestSkills,
   type ConstructStat, type SkillStat,
 } from "../src/lib/reading/statsShaping";
-import { knownSkillCodes, skillLabel } from "../src/lib/reading/skillLabels";
+import {
+  SKILLS_BY_CONSTRUCT, knownSkillCodes, skillLabel,
+} from "../src/lib/reading/skillLabels";
 import type { Construct } from "../src/lib/reading/constructs";
 
 let failures = 0;
@@ -61,26 +64,59 @@ check(weakestConstruct([]) === null, "B6 沒有資料時回 null");
              accuracy: number | null, enough: boolean): SkillStat =>
     ({ skill_code: code, graded, ungraded, accuracy, enough });
 
+  // 🛑 用【真的代號】。measuredSkills 現在會把分類表認不得的擋掉，
+  //    拿 alpha/beta 當代號會讓整段測試測到空陣列還以為通過。
   const skills = [
-    s("alpha", 10, 0, 0.9, true),
-    s("beta", 8, 2, 0.4, true),
-    s("gamma", 1, 5, 0.0, false),
-    s("delta", 0, 7, null, false),
+    s("topic_identification", 10, 0, 0.9, true),
+    s("logical_inference", 8, 2, 0.4, true),
+    s("implicit_meaning", 1, 5, 0.0, false),
+    s("semantic_fit", 0, 7, null, false),
   ];
 
   const m = measuredSkills(skills);
-  check(m.length === 2 && m[0].skill_code === "beta",
+  check(m.length === 2 && m[0].skill_code === "logical_inference",
     "C1 有量到的依正確率由低到高——最需要練的排前面");
-  check(!m.some((x) => x.skill_code === "gamma"),
+  check(!m.some((x) => x.skill_code === "implicit_meaning"),
     "🛑 C2 題數不夠的【不列入】有量到的——0% 只是樣本太小");
-
-  const u = unmeasuredSkills(skills);
-  check(u.length === 2, "C3 量不出來的另外列出來，不是丟掉");
-  check(u[0].skill_code === "delta" && u[0].accuracy === null,
-    "🛑 C3 連一題有權重的都沒有時，accuracy 是 null，不是 0");
 
   check(ungradedTotal(skills) === 14,
     "🛑 C4 沒有標權重的題數加總得出來——那是「沒被算進來」，不是「答錯了」");
+
+  const withJunk = [...skills, s("some_new_skill_2027", 9, 0, 0.9, true)];
+  check(!measuredSkills(withJunk).some((x) => x.skill_code === "some_new_skill_2027"),
+    "🛑 C5 分類表認不得的代號不參與排名——排進來就得顯示，顯示就會印出 snake_case");
+  check(unmappedSkillCount(withJunk) === 1 && unmappedSkillCount(skills) === 0,
+    "C6 沒分類的項目數得出來，畫面才能說「有幾項沒列入」");
+}
+
+// ── construct → 三個子能力 ──────────────────────────────────────────
+{
+  const s = (code: string, graded: number, ungraded: number,
+             accuracy: number | null, enough: boolean): SkillStat =>
+    ({ skill_code: code, graded, ungraded, accuracy, enough });
+
+  const rows = constructSkillRows([
+    s("logical_inference", 11, 2, 0.545, true),
+    s("implicit_meaning", 1, 3, 0.0, false),
+  ], "CO");
+
+  check(rows.length === 3,
+    "🛑 G1 三個子能力【全部】回傳，沒練到的也在——少一列等於改了資料模型");
+  check(rows.every((r) => !/_/.test(r.label)),
+    "🛑 G2 每一列都有中文名稱，畫面拿不到 snake_case 可以顯示");
+
+  const inference = rows.find((r) => r.code === "logical_inference")!;
+  check(inference.state === "measured" && inference.pct === 55,
+    "G3 題數夠的給百分比");
+  const implicit = rows.find((r) => r.code === "implicit_meaning")!;
+  check(implicit.state === "insufficient" && implicit.graded === 1,
+    "🛑 G4 題數不夠的是「資料不足・1 題」，不是 0%——1 題的 0% 是雜訊");
+  check(rows.find((r) => r.code === "evidence_integration")!.state === "none",
+    "G5 完全沒練到的是「尚無足夠資料」");
+
+  check(SKILLS_BY_CONSTRUCT.CO.length === 3 &&
+        Object.values(SKILLS_BY_CONSTRUCT).every((v) => v.length === 3),
+    "G6 六個 construct 各有三個子能力");
 }
 
 // ── 最強／最弱 ──────────────────────────────────────────────────────
@@ -104,34 +140,41 @@ check(strongestConstruct([]) === null, "D3 沒資料時回 null");
 {
   const s = (code: string, acc: number, graded = 8): SkillStat =>
     ({ skill_code: code, graded, ungraded: 0, accuracy: acc, enough: true });
-  const skills = [s("a", 0.2), s("b", 0.3), s("c", 0.4), s("d", 0.9), s("e", 0.95)];
+  // 🛑 同樣要用真的代號。假代號會被分類表擋掉，整段就變成在測空陣列——
+  //    2026-09-26 我第一版就是這樣「通過」的。
+  const [a, b, c, d, e] = [
+    "word_sense_disambiguation", "rhetorical_function", "global_synthesis",
+    "topic_identification", "evidence_integration",
+  ];
+  const skills = [s(a, 0.2), s(b, 0.3), s(c, 0.4), s(d, 0.9), s(e, 0.95)];
 
-  check(weakestSkills(skills, 3).map((x) => x.skill_code).join(",") === "a,b,c",
+  check(weakestSkills(skills, 3).map((x) => x.skill_code).join(",") === `${a},${b},${c}`,
     "E1 最需要改善的前三名");
-  check(strongestSkills(skills, 2, 3).map((x) => x.skill_code).join(",") === "e,d",
+  check(strongestSkills(skills, 2, 3).map((x) => x.skill_code).join(",") === `${e},${d}`,
     "E2 表現良好的前兩名，由高到低");
-  check(!strongestSkills(skills, 3, 3).some((x) => ["a","b","c"].includes(x.skill_code)),
+  check(!strongestSkills(skills, 3, 3).some((x) => [a, b, c].includes(x.skill_code)),
     "🛑 E3 已經列進「需要改善」的不會又出現在「表現良好」");
+  check(strongestSkills(skills, 3, 3).length > 0,
+    "🛑 E3 而且良好那區【真的有東西】——空陣列也會讓上一條通過");
 
   // 只有三個有量到 → 全部都是「需要改善」，良好那區就該是空的
-  const few = [s("a", 0.2), s("b", 0.3), s("c", 0.4)];
+  const few = [s(a, 0.2), s(b, 0.3), s(c, 0.4)];
   check(strongestSkills(few, 3, 3).length === 0,
     "🛑 E4 總共只有三個時，良好那區是空的，而不是把同樣三個再列一次");
 }
 
 // ── 代號的中文對照 ──────────────────────────────────────────────────
 {
-  const w = skillLabel("word_sense_disambiguation");
-  check(w.label === "字義判斷" && !w.isFallback, "F1 認得的代號有中文名");
-  check(w.code === "word_sense_disambiguation", "F1 原始代號保留著（資料庫不動）");
+  check(skillLabel("word_sense_disambiguation") === "字義判斷", "F1 認得的代號有中文名");
 
-  const unknown = skillLabel("some_new_skill_2027");
-  check(unknown.isFallback, "🛑 F2 認不得的代號標成 fallback，畫面才知道要降級處理");
-  check(unknown.label === "Some New Skill 2027",
-    "🛑 F2 而且退回可讀的寫法，不是把 some_new_skill_2027 原樣當標題");
+  check(skillLabel("some_new_skill_2027") === null,
+    "🛑 F2 認不得的代號回 null——沒有「把代號當退路印出來」這個選項");
+
+  check(knownSkillCodes().every((c) => !/[A-Z]/.test(skillLabel(c)!)),
+    "🛑 F3 每個代號都對應到中文，沒有一個會把英文送到學生眼前");
 
   check(knownSkillCodes().length === 18,
-    "F3 對照表涵蓋題庫裡全部 18 個代號");
+    "F4 對照表涵蓋題庫裡全部 18 個代號");
 }
 
 console.log("");

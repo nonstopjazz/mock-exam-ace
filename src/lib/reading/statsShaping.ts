@@ -1,4 +1,5 @@
 import type { Construct } from "./constructs";
+import { SKILLS_BY_CONSTRUCT, skillLabel } from "./skillLabels";
 
 /**
  * 統計的呈現規則。
@@ -56,17 +57,19 @@ export function weakestConstruct(stats: ConstructStat[]): ConstructStat | null {
   return accuracyOf(worst)! >= 1 ? null : worst;
 }
 
-/** 有量到的 skill（依正確率由低到高——最需要練的排前面） */
+/**
+ * 有量到的 skill（依正確率由低到高——最需要練的排前面）。
+ *
+ * 🛑 兩道過濾都是必要的：
+ *    `enough` —— 題數不夠的不參與任何排名。練 1 題答對就標成 100%、
+ *    排進「表現穩定」，是把雜訊當成結論。
+ *    `skillLabel` —— 對照表認不得的代號直接出局。排進來就得顯示，
+ *    顯示就會把 snake_case 印到學生臉上。寧可少一項，不要多一個代號。
+ */
 export const measuredSkills = (skills: SkillStat[]): SkillStat[] =>
   skills
-    .filter((s) => s.enough && s.accuracy !== null)
+    .filter((s) => s.enough && s.accuracy !== null && skillLabel(s.skill_code) !== null)
     .sort((a, b) => a.accuracy! - b.accuracy! || b.graded - a.graded);
-
-/** 還量不出來的 skill。🛑 要列出來，不是藏起來——學生才知道不是漏掉了 */
-export const unmeasuredSkills = (skills: SkillStat[]): SkillStat[] =>
-  skills
-    .filter((s) => !s.enough || s.accuracy === null)
-    .sort((a, b) => b.graded + b.ungraded - (a.graded + a.ungraded));
 
 /**
  * 有幾題「有標這個能力，但沒有標權重」。
@@ -115,3 +118,45 @@ export function strongestSkills(skills: SkillStat[], n: number, excludeTop: numb
     .slice(-n)
     .reverse();
 }
+
+/**
+ * 一個 construct 底下的子能力，一定回傳分類表裡的全部三項。
+ *
+ * 🛑 沒練到的【也要出現】，顯示成「尚無足夠資料」。把它整列拿掉，
+ *    學生會以為這個能力只有兩個子能力——那是在改資料模型，不是在排版。
+ *
+ * 🛑 三種狀態要分開：量得出來 / 題數不夠 / 還沒練到。
+ *    題數不夠時不給百分比：1 題答對顯示 100%，比不顯示更糟。
+ */
+export type SkillRow =
+  | { code: string; label: string; state: "measured"; pct: number; graded: number }
+  | { code: string; label: string; state: "insufficient"; graded: number }
+  | { code: string; label: string; state: "none" };
+
+export function constructSkillRows(skills: SkillStat[], construct: Construct): SkillRow[] {
+  const byCode = new Map(skills.map((s) => [s.skill_code, s]));
+
+  return SKILLS_BY_CONSTRUCT[construct].map((code) => {
+    // 分類表認得才會走到這裡，所以 label 一定有值。
+    const label = skillLabel(code)!;
+    const s = byCode.get(code);
+
+    if (!s || s.graded === 0) return { code, label, state: "none" as const };
+    if (!s.enough || s.accuracy === null) {
+      return { code, label, state: "insufficient" as const, graded: s.graded };
+    }
+    return {
+      code, label, state: "measured" as const,
+      pct: Math.round(s.accuracy * 100), graded: s.graded,
+    };
+  });
+}
+
+/**
+ * 分類表認不得的代號有幾個。
+ *
+ * 🛑 這些項目在畫面上是【完全不出現】的，所以要有一個地方說「有幾個沒排進來」。
+ *    不講的話，題庫新增了一個 skill 而前端沒跟上時，沒有人會發現。
+ */
+export const unmappedSkillCount = (skills: SkillStat[]): number =>
+  skills.filter((s) => skillLabel(s.skill_code) === null).length;
