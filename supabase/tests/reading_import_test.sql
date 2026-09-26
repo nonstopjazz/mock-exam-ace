@@ -24,13 +24,20 @@ BEGIN
   ELSE RAISE EXCEPTION 'FAIL  %', label; END IF;
 END $$;
 
-CREATE OR REPLACE FUNCTION t_expect_error(stmt TEXT, label TEXT) RETURNS VOID
+-- 🛑 p_expect：期望的錯誤訊息片段。不給的話任何錯誤都算通過，
+--    而「擋下了」與「擋下的是對的理由」是兩件事。授權類一律要帶。
+CREATE OR REPLACE FUNCTION t_expect_error(stmt TEXT, label TEXT,
+                                          p_expect TEXT DEFAULT NULL) RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
   EXECUTE stmt;
   RAISE EXCEPTION 'FAIL  % （預期要失敗，但成功了）', label;
 EXCEPTION WHEN OTHERS THEN
   IF SQLERRM LIKE 'FAIL %' THEN RAISE; END IF;
+  IF p_expect IS NOT NULL AND position(p_expect IN SQLERRM) = 0 THEN
+    RAISE EXCEPTION 'FAIL  % （擋下了，但理由不對：預期含「%」，實際是「%」）',
+      label, p_expect, left(SQLERRM, 80);
+  END IF;
   RAISE NOTICE 'PASS  % （擋下：%）', label, left(SQLERRM, 46);
 END $$;
 
@@ -83,12 +90,12 @@ SELECT set_config('app.uid', '55555555-0000-0000-0000-000000000005', false) IS N
 SELECT set_config('app.is_admin', 'false', false) IS NOT NULL;
 SELECT t_expect_error(
   $$SELECT reading_import_batch(jsonb_build_array(t_payload('X1')), 'f.xlsx')$$,
-  'I1 非管理員被拒');
+  'I1 非管理員被拒', '僅限管理員');
 
 SELECT set_config('app.uid', '', false) IS NOT NULL;
 SELECT t_expect_error(
   $$SELECT reading_import_batch(jsonb_build_array(t_payload('X1')), 'f.xlsx')$$,
-  'I2 未登入被拒');
+  'I2 未登入被拒', '請先登入');
 
 -- 🛑 內部函式不可以被直接叫用
 SELECT set_config('app.uid', '55555555-0000-0000-0000-000000000005', false) IS NOT NULL;
@@ -305,7 +312,7 @@ SELECT set_config('app.is_admin', 'true', false) IS NOT NULL;
 SELECT t_expect_error(
   format($$SELECT reading_import_batch(jsonb_build_array(t_payload('B3')), 'x.xlsx', %L)$$,
          (SELECT id FROM b)),
-  'I25 別人的批次接續不了');
+  'I25 別人的批次接續不了', '不屬於你');
 
 
 \echo ''

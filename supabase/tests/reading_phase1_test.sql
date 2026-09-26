@@ -26,13 +26,23 @@ BEGIN
   ELSE RAISE EXCEPTION 'FAIL  %', label; END IF;
 END $$;
 
-CREATE OR REPLACE FUNCTION t_expect_error(stmt TEXT, label TEXT) RETURNS VOID
+-- 🛑 p_expect：期望的錯誤訊息片段。
+--    不給的話任何錯誤都算通過——而「擋下了」與「擋下的是對的理由」
+--    是兩件事。H12 第一次就是因為 uuid 轉型失敗而「通過」的：
+--    授權檢查根本沒被執行到，測試卻是綠的。
+--    授權類的斷言一律要帶 p_expect。
+CREATE OR REPLACE FUNCTION t_expect_error(stmt TEXT, label TEXT,
+                                          p_expect TEXT DEFAULT NULL) RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
   EXECUTE stmt;
   RAISE EXCEPTION 'FAIL  % （預期要失敗，但成功了）', label;
 EXCEPTION WHEN OTHERS THEN
   IF SQLERRM LIKE 'FAIL %' THEN RAISE; END IF;
+  IF p_expect IS NOT NULL AND position(p_expect IN SQLERRM) = 0 THEN
+    RAISE EXCEPTION 'FAIL  % （擋下了，但理由不對：預期含「%」，實際是「%」）',
+      label, p_expect, left(SQLERRM, 80);
+  END IF;
   RAISE NOTICE 'PASS  % （擋下：%）', label, left(SQLERRM, 46);
 END $$;
 
@@ -46,6 +56,8 @@ END $$;
 \ir ../migrations/create_reading_publish_guard_2_trigger.sql
 \ir ../migrations/create_reading_student_rpc_1_fetch.sql
 \ir ../migrations/create_reading_student_rpc_2_submit.sql
+\ir ../migrations/create_reading_student_rpc_3_start.sql
+\ir ../migrations/create_reading_student_rpc_4_finish.sql
 
 -- ── 資料 ─────────────────────────────────────────────
 -- FULL   六題齊全 → 可以上架
@@ -322,6 +334,107 @@ SELECT t_assert(
      FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
     WHERE n.nspname='public' AND p.proname IN ('reading_get_passage','reading_submit_answer')),
   'G3 兩支都沒有 student 參數（對象只能是 auth.uid()）');
+
+\echo ''
+\echo '════════ H. 學生用【真實身分】走完整條路 ════════'
+-- 🛑 前面所有作答測試都是以 superuser 身分直接 INSERT session 的。
+--    那條路學生走不到——reading_sessions 對 authenticated 只有 SELECT。
+--    這一段【切換成 authenticated 角色】，只用 grant 出去的東西，
+--    證明真實路徑接得起來。一個只有測試走得通的路徑不是路徑。
+
+-- 專屬於這一段的學生：stu2 在 E7 已經有一個進行中的 session，會干擾 H2。
+INSERT INTO auth.users (id) VALUES ('33333333-3333-3333-3333-333333333333');
+SELECT set_config('app.uid', '33333333-3333-3333-3333-333333333333', false) IS NOT NULL;
+SELECT set_config('app.is_admin', 'false', false) IS NOT NULL;
+SET ROLE authenticated;
+
+-- 學生不能自己建 session（否則可以偽造 passage_id）
+SELECT t_expect_error(
+  $$INSERT INTO reading_sessions (student_id, passage_id)
+    VALUES (current_setting('app.uid')::uuid, 'FULL')$$,
+  '🛑 H1 學生【不能】自己 INSERT session', 'permission denied');
+
+CREATE TEMP TABLE h_start AS SELECT reading_start_session('FULL') AS j;
+SELECT t_assert((SELECT (j ->> 'session_id') IS NOT NULL FROM h_start),
+  '🛑 H2 學生用 RPC 拿得到 session_id —— 真實路徑走得通');
+SELECT t_assert(NOT (SELECT (j ->> 'resumed')::boolean FROM h_start),
+  'H2 第一次不是 resumed');
+
+-- 🛑 重新整理／開第二個分頁：必須回到同一個 session，不是開新的
+SELECT t_assert(
+  (reading_start_session('FULL') ->> 'session_id')::uuid
+    = (SELECT (j ->> 'session_id')::uuid FROM h_start),
+  '🛑 H3 再叫一次回到同一個 session（partial unique index，不是先查再寫）');
+SELECT t_assert((reading_start_session('FULL') ->> 'resumed')::boolean,
+  'H3 而且講明它是接續的');
+SELECT t_assert(
+  (SELECT count(*)::int FROM reading_sessions
+    WHERE student_id = current_setting('app.uid')::uuid AND passage_id='FULL') = 1,
+  'H3 資料庫裡只有一列 session');
+
+-- 沒上架的文章開不了
+SELECT t_expect_error($$SELECT reading_start_session('PARTIAL')$$,
+  'H4 沒上架的文章開不了練習（訊息與「不存在」相同，不可被用來探測）',
+  '找不到這篇文章');
+
+-- 取題 → 作答 → 結算，全部以學生身分
+SELECT t_assert((reading_get_passage('FULL') -> 'questions') != '[]'::jsonb,
+  'H5 取得題目');
+SELECT t_assert((reading_get_passage('FULL'))::text NOT LIKE '%correct_answer%',
+  '🛑 H5 取題回傳不含正解');
+
+SELECT t_assert(
+  (reading_submit_answer((SELECT (j ->> 'session_id')::uuid FROM h_start),
+     (SELECT id FROM reading_questions WHERE passage_id='FULL' AND construct='SM'),
+     'B') ->> 'is_correct')::boolean,
+  'H6 學生身分作答，伺服器判定正確');
+
+CREATE TEMP TABLE h_fin AS
+SELECT reading_finish_session((SELECT (j ->> 'session_id')::uuid FROM h_start)) AS j;
+SELECT t_assert((SELECT j ->> 'status' FROM h_fin) = 'SUBMITTED',
+  '🛑 H7 session 收得掉 —— 沒有這支，狀態永遠停在 IN_PROGRESS');
+SELECT t_assert((SELECT (j ->> 'answered')::int FROM h_fin) = 1
+            AND (SELECT (j ->> 'correct')::int FROM h_fin) = 1,
+  'H7 結算數字由伺服器統計');
+SELECT t_assert(
+  (SELECT count(*)::int FROM jsonb_array_elements((SELECT j -> 'by_construct' FROM h_fin))) = 6,
+  'H7 六個 construct 都在結算裡');
+SELECT t_assert(
+  (SELECT count(*)::int FROM jsonb_array_elements((SELECT j -> 'by_construct' FROM h_fin)) e
+    WHERE e ->> 'status' = 'SKIPPED') = 5,
+  '🛑 H8 沒作答的五題標成 SKIPPED，不是 WRONG —— 沒寫跟寫錯不是同一件事');
+
+-- 收掉之後不能再作答
+SELECT t_expect_error(
+  format($$SELECT reading_submit_answer(%L::uuid,
+            (SELECT id FROM reading_questions WHERE passage_id='FULL' AND construct='MI'),
+            'B')$$, (SELECT j ->> 'session_id' FROM h_start)),
+  'H9 收掉之後不能再作答', '已經結束');
+
+-- 🛑 別人的 session 碰不到
+SELECT t_assert(
+  (SELECT count(*)::int FROM reading_sessions WHERE student_id <> current_setting('app.uid')::uuid) = 0,
+  '🛑 H10 RLS：學生看不到別人的 session');
+SELECT t_expect_error($$SELECT correct_answer FROM reading_question_keys LIMIT 1$$,
+  '🛑 H11 學生直接查答案表仍然被擋（權限層，不是靠 RPC 的形狀）', 'permission denied');
+
+RESET ROLE;
+
+-- 換一位學生，用第一位的 session_id 作答 → 必須被擋
+SELECT set_config('app.uid', '22222222-2222-2222-2222-222222222222', false) IS NOT NULL;
+SET ROLE authenticated;
+SELECT t_expect_error(
+  format($$SELECT reading_submit_answer(%L::uuid,
+            (SELECT id FROM reading_questions WHERE passage_id='FULL' AND construct='SD'),
+            'B')$$, (SELECT j ->> 'session_id' FROM h_start)),
+  '🛑 H12 拿別人的 session_id 作答被擋（SECURITY DEFINER 繞過 RLS，所以函式自己擋）',
+  '找不到這次練習');
+SELECT t_expect_error(
+  format($$SELECT reading_finish_session(%L::uuid)$$,
+         (SELECT j ->> 'session_id' FROM h_start)),
+  'H12 也結算不了別人的 session', '找不到這次練習');
+RESET ROLE;
+
 
 \echo ''
 \echo '全部通過。'
