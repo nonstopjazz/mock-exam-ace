@@ -24,7 +24,14 @@ CREATE TEMP TABLE zz_b(seq int, 檢查 text, 期望 text, 實際 text);
 -- 🛑 production 的使用者是真的學生。不指定的話，腳本會自動挑最早的兩位
 --    【is_admin() 回 false】的帳號——管理員本人會被排除，所以挑到的一定是別人。
 --    把 uuid 填進去就會改用你指定的那兩位；留 NULL 就是自動挑。
---    無論哪一種，腳本都會先確認那兩位的 is_admin() 是 false。
+--    腳本會先確認指定的帳號 is_admin() 是 false——管理員讀得到草稿，
+--    拿他當學生會讓「草稿對學生不可見」那條假通過。
+--
+-- 🛑 只想動一個帳號？【只填第一個，第二個留 NULL】。
+--    第二個身分會改用【管理員本人】去試著碰第一位的 session。
+--    那是更強的測試：reading_submit_answer 沒有 admin 後門，
+--    它嚴格比對 student_id = auth.uid()，所以管理員也必須被擋。
+--    這樣就不會動到任何其他人的帳號。
 CREATE TEMP TABLE zz_b_who(stu1 UUID, stu2 UUID);
 INSERT INTO zz_b_who VALUES (
   NULL,   -- ← 第一位學生的 uuid（留 NULL = 自動挑）
@@ -34,7 +41,7 @@ INSERT INTO zz_b_who VALUES (
 DO $$
 DECLARE
   v_stu1 UUID; v_stu2 UUID; v_admin UUID; v_row RECORD;
-  v_forced1 UUID; v_forced2 UUID;
+  v_forced1 UUID; v_forced2 UUID; v_second_is_admin BOOLEAN := false;
   v_sess UUID; v_sess2 UUID; v_q UUID; v_r JSONB; v_n INT;
   v_c CONSTANT TEXT[] := ARRAY['SM','MI','SD','CO','CD','VC'];
   i INT;
@@ -49,11 +56,26 @@ BEGIN
   --    這樣同一份腳本在任何環境都對，也不必維護一份 email 清單。
   SELECT stu1, stu2 INTO v_forced1, v_forced2 FROM zz_b_who;
 
+  -- 只指定第一位 → 第二個身分用管理員（見檔頭說明）
+  IF v_forced1 IS NOT NULL AND v_forced2 IS NULL THEN
+    FOR v_row IN SELECT id FROM auth.users ORDER BY created_at LIMIT 1000 LOOP
+      PERFORM set_config('request.jwt.claims', json_build_object('sub', v_row.id)::text, true);
+      IF coalesce(public.is_admin(), false) THEN v_forced2 := v_row.id; EXIT; END IF;
+    END LOOP;
+    PERFORM set_config('request.jwt.claims', '', true);
+    v_second_is_admin := true;
+    IF v_forced2 IS NULL THEN
+      INSERT INTO zz_b VALUES (0, '🛑 前置：只指定一個帳號時需要管理員當第二個身分',
+        '找得到管理員', '找不到');
+      RETURN;
+    END IF;
+  END IF;
+
   IF v_forced1 IS NOT NULL AND v_forced2 IS NOT NULL THEN
     -- 指定的帳號也要通過檢查：管理員讀得到草稿，拿他當學生會讓 B3 假通過。
     FOR v_row IN SELECT unnest(ARRAY[v_forced1, v_forced2]) AS id LOOP
       PERFORM set_config('request.jwt.claims', json_build_object('sub', v_row.id)::text, true);
-      IF coalesce(public.is_admin(), false) THEN
+      IF coalesce(public.is_admin(), false) AND NOT (v_second_is_admin AND v_row.id = v_forced2) THEN
         INSERT INTO zz_b VALUES (0, '🛑 前置：你指定的帳號是管理員',
           'is_admin() 要是 false', v_row.id::text || ' 的 is_admin() 是 true');
         PERFORM set_config('request.jwt.claims', '', true);
@@ -184,7 +206,10 @@ BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_stu2)::text, true);
   BEGIN
     PERFORM reading_submit_answer(v_sess, v_q, 'B');
-    INSERT INTO zz_b VALUES (17, '🛑 B7 拿別人的 session_id 作答', '被擋下', '🛑 竟然成功了');
+    INSERT INTO zz_b VALUES (17,
+      CASE WHEN v_second_is_admin
+           THEN '🛑 B7 連【管理員】拿學生的 session 作答都被擋（沒有 admin 後門）'
+           ELSE '🛑 B7 拿別人的 session_id 作答' END, '被擋下', '🛑 竟然成功了');
   EXCEPTION WHEN OTHERS THEN
     INSERT INTO zz_b VALUES (17, '🛑 B7 拿別人的 session_id 作答', '被擋下',
       CASE WHEN SQLERRM LIKE '%找不到這次練習%' THEN '被擋下'
@@ -192,16 +217,20 @@ BEGIN
   END;
   BEGIN
     PERFORM reading_finish_session(v_sess);
-    INSERT INTO zz_b VALUES (18, '🛑 B7 結算別人的 session', '被擋下', '🛑 竟然成功了');
+    INSERT INTO zz_b VALUES (18, CASE WHEN v_second_is_admin THEN '🛑 B7 管理員也結算不了學生的 session'
+           ELSE '🛑 B7 結算別人的 session' END, '被擋下', '🛑 竟然成功了');
   EXCEPTION WHEN OTHERS THEN
-    INSERT INTO zz_b VALUES (18, '🛑 B7 結算別人的 session', '被擋下',
+    INSERT INTO zz_b VALUES (18, CASE WHEN v_second_is_admin THEN '🛑 B7 管理員也結算不了學生的 session'
+           ELSE '🛑 B7 結算別人的 session' END, '被擋下',
       CASE WHEN SQLERRM LIKE '%找不到這次練習%' THEN '被擋下'
            ELSE '🛑 理由不對：' || left(SQLERRM,40) END);
   END;
 
   -- 學生 2 開自己的 session：兩人互不影響
   v_sess2 := (reading_start_session('ZZ-VERIFY-FULL') ->> 'session_id')::uuid;
-  INSERT INTO zz_b VALUES (19, 'B7 第二位學生開得了自己的 session', '不同的 session',
+  INSERT INTO zz_b VALUES (19,
+    CASE WHEN v_second_is_admin THEN 'B7 管理員開得了自己的 session（與學生的是兩個）'
+         ELSE 'B7 第二位學生開得了自己的 session' END, '不同的 session',
     CASE WHEN v_sess2 IS NOT NULL AND v_sess2 <> v_sess THEN '不同的 session'
          ELSE '🛑 拿到同一個或沒拿到' END);
 
