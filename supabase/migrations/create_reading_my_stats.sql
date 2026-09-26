@@ -1,7 +1,10 @@
 -- =====================================================
 -- 學生自己的閱讀練習統計
 --
--- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+-- 🟢 只要在 production 執行一次。
+--    這支是【新建的唯讀函式】：不建表、不改資料、不動權限以外的東西，
+--    回滾是一行 DROP。而且 staging 沒有真實的作答資料，
+--    在那裡跑出來的統計證明不了什麼。
 --
 -- ⚠️ 先執行 create_reading_sessions.sql 與 create_reading_questions.sql。
 --
