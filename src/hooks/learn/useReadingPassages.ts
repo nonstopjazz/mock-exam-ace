@@ -12,9 +12,12 @@ import type { ReadingPassageListItem } from "@/lib/reading/studentTypes";
  * 🛑 【不選 passage_text】。清單不需要全文，而一次抓 296 篇的內文
  *    是好幾 MB。少選一個欄位比之後做分頁有用得多。
  *
- * 🛑 只留 PUBLISHED。RLS 對學生已經只回 PUBLISHED，但對 admin 回全部——
+ * 🛑 預設只留 PUBLISHED。RLS 對學生已經只回 PUBLISHED，但對 admin 回全部——
  *    而 admin 同時也是學生。DRAFT 的文章只有 1–5 題，放進「開始練習」
- *    就會讓那一篇拿不出六題。學生端要看見學生的世界，草稿在 /admin 看。
+ *    就會讓那一篇拿不出六題。學生端要看見學生的世界。
+ *
+ *    管理端的瀏覽頁要看得到草稿，所以用 includeUnpublished 明講——
+ *    預設值站在學生那邊，想看全部的人要自己說。
  */
 
 export interface PassageWithProgress extends ReadingPassageListItem {
@@ -22,9 +25,15 @@ export interface PassageWithProgress extends ReadingPassageListItem {
   sessionStatus: "IN_PROGRESS" | "SUBMITTED" | null;
   /** 只有 IN_PROGRESS 時有意義：用來挑「最後做到一半的那一篇」 */
   startedAt: string | null;
+  status: string;
 }
 
-export function useReadingPassages() {
+export interface ReadingPassagesOptions {
+  /** true 才會回 DRAFT／BLOCKED。只有管理端該傳 */
+  includeUnpublished?: boolean;
+}
+
+export function useReadingPassages({ includeUnpublished = false }: ReadingPassagesOptions = {}) {
   const [items, setItems] = useState<PassageWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +42,13 @@ export function useReadingPassages() {
     setLoading(true);
     setError(null);
 
-    const { data: passages, error: passageError } = await supabase
+    const query = supabase
       .from("reading_passages")
       .select("passage_id, title, cefr_level, content_family, subdomain, status")
-      .eq("status", "PUBLISHED")
       .order("passage_id");
+    if (!includeUnpublished) query.eq("status", "PUBLISHED");
+
+    const { data: passages, error: passageError } = await query;
 
     if (passageError) {
       setError(passageError.message);
@@ -74,7 +85,7 @@ export function useReadingPassages() {
     }
 
     setItems(
-      ((passages ?? []) as ReadingPassageListItem[]).map((p) => {
+      ((passages ?? []) as (ReadingPassageListItem & { status: string })[]).map((p) => {
         const progress = byPassage.get(p.passage_id);
         return {
           ...p,
@@ -84,7 +95,7 @@ export function useReadingPassages() {
       }),
     );
     setLoading(false);
-  }, []);
+  }, [includeUnpublished]);
 
   useEffect(() => { void load(); }, [load]);
 

@@ -38,7 +38,8 @@ import FeatureAccessAdmin from "./pages/admin/FeatureAccessAdmin";
 import ReadingImport from "./pages/admin/ReadingImport";
 import ReadingPublish from "./pages/admin/ReadingPublish";
 import ReadingHome from "./pages/learn/ReadingHome";
-import ReadingArticles from "./pages/learn/ReadingArticles";
+import ReadingArticles from "./pages/admin/ReadingArticles";
+
 import ReadingPractice from "./pages/learn/ReadingPractice";
 import ReadingStats from "./pages/learn/ReadingStats";
 import Home from "./pages/Home";
@@ -180,9 +181,8 @@ const App = () => (
                  reading_start_session 裡，它們各自再檢查一次
                  learn_feature_enabled('reading')——藏起來的頁面仍然打得到 RPC。 */}
           <Route path="/learn/student/reading" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><ReadingHome /></ProtectedRoute></StudentFeatureGate>} />
-          {/* 🛑 靜態路段（articles / stats）要排在 :passageId 前面。React Router v6
+          {/* 🛑 靜態路段（stats）要排在 :passageId 前面。React Router v6
                  本身就把靜態排在動態之前，但寫在前面才讀得出意圖。 */}
-          <Route path="/learn/student/reading/articles" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><ReadingArticles /></ProtectedRoute></StudentFeatureGate>} />
           <Route path="/learn/student/reading/stats" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><ReadingStats /></ProtectedRoute></StudentFeatureGate>} />
           <Route path="/learn/student/reading/:passageId" element={<StudentFeatureGate feature="reading" title="閱讀練習" description="閱讀練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><ReadingPractice /></ProtectedRoute></StudentFeatureGate>} />
           <Route path="/learn/student/speaking" element={<StudentFeatureGate feature="speaking" title="口說練習" description="口說練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><StudentSpeaking /></ProtectedRoute></StudentFeatureGate>} />
@@ -253,6 +253,12 @@ const App = () => (
           <Route path="/admin/reading" element={
             <RequireAdmin>
               <ReadingPublish />
+            </RequireAdmin>
+          } />
+          {/* 全部文章：管理員抽查題庫用，學生不進這一頁 */}
+          <Route path="/admin/reading/articles" element={
+            <RequireAdmin>
+              <ReadingArticles />
             </RequireAdmin>
           } />
           <Route path="/admin/reading/import" element={

@@ -15,13 +15,14 @@ import {
 import { useReadingPassages, type PassageWithProgress } from "@/hooks/learn/useReadingPassages";
 
 /**
- * 全部文章的列表。
+ * 全部文章的列表。【管理員限定】。
  *
- * 🛑 這是【次要】頁面。一般流程是首頁按「開始練習」，不經過這裡——
- *    每篇文章都考同樣六個 construct，挑哪一篇不影響練到什麼。
- *    這頁是給想重練某一篇、或想找特定主題的人用的。
+ * 🛑 學生不進這一頁。每篇文章都考同樣六個 construct，挑哪一篇不影響
+ *    練到什麼——所以學生端只有「開始練習」，沒有挑選這件事。
+ *    這頁是給管理員抽查特定文章用的：找題目、確認內容、點進去自己跑一遍。
  *
- * 🛑 清單是空的通常不是壞掉，而是題庫還沒上架。空狀態要講清楚是哪一種。
+ * 🛑 會列出 DRAFT／BLOCKED。管理員看的是題庫的全貌，不是學生的世界——
+ *    所以每一列都要標出狀態，否則會拿一篇學生根本看不到的文章下判斷。
  */
 
 type StatusFilter = "ALL" | "NEW" | "IN_PROGRESS" | "DONE";
@@ -42,7 +43,7 @@ const matchesStatus = (p: PassageWithProgress, f: StatusFilter) =>
   : p.sessionStatus === "IN_PROGRESS";
 
 export default function ReadingArticles() {
-  const { items, loading, error, reload } = useReadingPassages();
+  const { items, loading, error, reload } = useReadingPassages({ includeUnpublished: true });
   const [query, setQuery] = useState("");
   const [family, setFamily] = useState<string>(ANY);
   const [cefr, setCefr] = useState<string>(ANY);
@@ -73,7 +74,6 @@ export default function ReadingArticles() {
     });
   }, [items, query, family, cefr, status]);
 
-  const doneCount = items.filter((p) => p.sessionStatus === "SUBMITTED").length;
   const filtering = query.trim() !== "" || family !== ANY || cefr !== ANY || status !== "ALL";
 
   const clearAll = () => {
@@ -84,9 +84,9 @@ export default function ReadingArticles() {
     <Layout>
       <div className="container mx-auto px-4 py-8">
         <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2 gap-1">
-          <Link to="/learn/student/reading">
+          <Link to="/admin/reading">
             <ArrowLeft className="h-4 w-4" />
-            閱讀練習
+            閱讀題庫上架
           </Link>
         </Button>
 
@@ -100,13 +100,13 @@ export default function ReadingArticles() {
                 全部文章
               </h1>
               <p className="text-sm md:text-base text-muted-foreground hidden sm:block">
-                想重練某一篇、或找特定主題時用
+                抽查題庫內容。點任何一篇可以自己跑一遍
               </p>
             </div>
           </div>
           {items.length > 0 && (
             <span className="text-sm text-muted-foreground shrink-0 tabular-nums">
-              練過 {doneCount} / {items.length}
+              共 {items.length} 篇
             </span>
           )}
         </div>
@@ -132,8 +132,8 @@ export default function ReadingArticles() {
           <Card className="p-12">
             <div className="text-center text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-4" />
-              <p className="text-foreground font-medium">目前沒有可以練的文章</p>
-              <p className="text-sm mt-2">題庫還沒有上架，過一陣子再回來看看</p>
+              <p className="text-foreground font-medium">題庫是空的</p>
+              <p className="text-sm mt-2">還沒有匯入任何文章</p>
             </div>
           </Card>
         ) : (
@@ -226,6 +226,16 @@ export default function ReadingArticles() {
                           )}
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
+                          {/* 🛑 沒上架的一定要標出來。學生看不到這一篇，
+                              而這頁的人很容易忘記自己看的是管理員視角。 */}
+                          {p.status !== "PUBLISHED" && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs border-warning/40 bg-warning/10 text-foreground"
+                            >
+                              未上架
+                            </Badge>
+                          )}
                           {p.cefr_level && (
                             <Badge variant="secondary" className="text-xs">{p.cefr_level}</Badge>
                           )}

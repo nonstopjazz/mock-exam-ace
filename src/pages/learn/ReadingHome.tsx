@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  AlertCircle, ArrowRight, BarChart3, BookOpen, CheckCircle2, Library, Loader2, PlayCircle,
+  AlertCircle, ArrowRight, BarChart3, BookOpen, CheckCircle2, Loader2, PlayCircle,
 } from "lucide-react";
 import { useReadingPassages } from "@/hooks/learn/useReadingPassages";
 import { pickNext, progressOf } from "@/lib/reading/nextPassage";
@@ -96,7 +96,7 @@ export default function ReadingHome() {
         <CheckCircle2 className="h-12 w-12 text-success mx-auto mb-4" />
         <h2 className="text-xl font-bold text-foreground">{total} 篇全部練完了</h2>
         <p className="text-sm text-muted-foreground mt-2">
-          去看看這些練習累積出什麼，或回列表重練任何一篇
+          去看看這些練習累積出什麼
         </p>
         <Button asChild size="lg" className="mt-6 gap-2">
           <Link to="/learn/student/reading/stats">
@@ -152,20 +152,14 @@ export default function ReadingHome() {
       </div>
     </Card>
 
-    {/* ── 次要入口：不與主 CTA 競爭 ───────────────────── */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <Button variant="outline" asChild className="justify-start gap-2 h-auto py-3">
-        <Link to="/learn/student/reading/stats">
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          我的閱讀統計
-        </Link>
-      </Button>
-      <Button variant="outline" asChild className="justify-start gap-2 h-auto py-3">
-        <Link to="/learn/student/reading/articles">
-          <Library className="h-4 w-4 text-muted-foreground" />
-          瀏覽全部文章
-        </Link>
-      </Button>
-    </div>
+    {/* ── 次要入口：不與主 CTA 競爭 ─────────────────────
+        🛑 這裡【只有統計】。文章列表是管理員的工具，不給學生——
+           每篇都考同樣六個 construct，挑文章對他的練習沒有意義。 */}
+    <Button variant="outline" asChild className="w-full justify-start gap-2 h-auto py-3">
+      <Link to="/learn/student/reading/stats">
+        <BarChart3 className="h-4 w-4 text-muted-foreground" />
+        我的閱讀統計
+      </Link>
+    </Button>
   </>);
 }
