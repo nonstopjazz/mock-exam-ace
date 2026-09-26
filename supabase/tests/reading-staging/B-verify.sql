@@ -22,22 +22,32 @@ CREATE TEMP TABLE zz_b(seq int, 檢查 text, 期望 text, 實際 text);
 
 DO $$
 DECLARE
-  v_stu1 UUID; v_stu2 UUID;
+  v_stu1 UUID; v_stu2 UUID; v_admin UUID; v_row RECORD;
   v_sess UUID; v_sess2 UUID; v_q UUID; v_r JSONB; v_n INT;
   v_c CONSTANT TEXT[] := ARRAY['SM','MI','SD','CO','CD','VC'];
   i INT;
   v_msg TEXT;
 BEGIN
-  -- 需要兩位【非管理員】的真實使用者。is_admin() 是用 email 判的，
-  -- 拿到管理員會讓「沒上架就看不到」那幾條測不出來。
-  SELECT id INTO v_stu1 FROM auth.users
-   WHERE email IS DISTINCT FROM 'nonstopjazz@gmail.com' ORDER BY created_at LIMIT 1;
-  SELECT id INTO v_stu2 FROM auth.users
-   WHERE email IS DISTINCT FROM 'nonstopjazz@gmail.com' AND id <> v_stu1
-   ORDER BY created_at LIMIT 1;
+  -- 🛑 【不要猜】誰是管理員。is_admin() 的判準是各環境自己的事——
+  --    production 用某個 email，gsat-staging 用另一個。我原本在腳本裡
+  --    寫死 production 的 email，於是 staging 的管理員被當成「學生」，
+  --    B3（草稿對學生不可見）就紅了——腳本錯，不是 schema 錯。
+  --
+  --    正確做法：切換成那個身分，【問 is_admin() 本人】。
+  --    這樣同一份腳本在任何環境都對，也不必維護一份 email 清單。
+  FOR v_row IN SELECT id FROM auth.users ORDER BY created_at LIMIT 200 LOOP
+    PERFORM set_config('request.jwt.claims', json_build_object('sub', v_row.id)::text, true);
+    IF coalesce(public.is_admin(), false) THEN
+      IF v_admin IS NULL THEN v_admin := v_row.id; END IF;
+    ELSIF v_stu1 IS NULL THEN v_stu1 := v_row.id;
+    ELSIF v_stu2 IS NULL THEN v_stu2 := v_row.id;
+    END IF;
+    EXIT WHEN v_stu1 IS NOT NULL AND v_stu2 IS NOT NULL AND v_admin IS NOT NULL;
+  END LOOP;
+  PERFORM set_config('request.jwt.claims', '', true);
 
   IF v_stu1 IS NULL OR v_stu2 IS NULL THEN
-    INSERT INTO zz_b VALUES (0, '🛑 前置：需要兩位非管理員使用者',
+    INSERT INTO zz_b VALUES (0, '🛑 前置：需要兩位【非管理員】使用者',
       '兩位', coalesce(v_stu1::text,'無') || ' / ' || coalesce(v_stu2::text,'無'));
     RETURN;
   END IF;

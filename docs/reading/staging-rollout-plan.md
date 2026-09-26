@@ -112,7 +112,8 @@ fixture 的 `passage_id` 一律以 `ZZ-VERIFY-` 開頭，腳本頭尾都會刪�
 > 這份**不**證明「grant 擋得住真實學生」——那一層由 A-verify 的 A3／A4，
 > 以及本機 `reading_phase1_test.sql` 的 H 段（整條路以 `authenticated` 角色跑）負責。
 
-需要 staging 有**兩位非管理員**使用者。找不到腳本會直接回報，不會假裝通過。
+需要**兩位 `is_admin()` 回 false 的**使用者。一樣是問出來的，不是靠 email 猜的。
+找不到腳本會直接回報，不會假裝通過。
 
 ---
 
@@ -134,7 +135,8 @@ fixture 的 `passage_id` 一律以 `ZZ-VERIFY-` 開頭，腳本頭尾都會刪�
 五篇裡兩篇壞不拖垮另外三篇（而且三篇**真的在資料庫裡**、壞的**一列都沒殘留**） ·
 回傳不含正解與解說 · 批次紀錄表沒有任何存內容或答案的欄位
 
-需要 staging 有 `nonstopjazz@gmail.com` 這個帳號（`is_admin()` 是用 email 判的）。
+腳本**不猜誰是管理員** —— 它逐一切換身分去問 `is_admin()` 本人。
+各環境的管理員判準不同（production 與 gsat-staging 用不同 email），寫死會出錯。
 
 ---
 

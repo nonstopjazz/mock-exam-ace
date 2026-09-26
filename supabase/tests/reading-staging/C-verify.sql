@@ -7,8 +7,8 @@
 -- 執行時機：跑完這四支之後
 --   create_reading_import_1_batches / _2_hash / _3_one / _4_batch
 --
--- 🛑 需要管理員身分。is_admin() 是用 email 判的，所以腳本會去 auth.users
---    找 nonstopjazz@gmail.com。找不到就直接回報，不會假裝通過。
+-- 🛑 需要管理員身分。腳本【不猜】誰是管理員——它逐一切換身分去問 is_admin()，
+--    所以 production 與 staging 用不同 email 判定也沒關係。找不到就直接回報。
 --
 -- 判讀：最後一張表的「結果」欄【全部】要是 ✅。
 -- =====================================================
@@ -44,20 +44,34 @@ $$;
 
 DO $$
 DECLARE
-  v_admin UUID; v_other UUID; v_r JSONB; v_msg TEXT;
+  v_admin UUID; v_stu1 UUID; v_stu2 UUID; v_row RECORD; v_r JSONB; v_msg TEXT;
 BEGIN
-  SELECT id INTO v_admin FROM auth.users WHERE email = 'nonstopjazz@gmail.com';
-  SELECT id INTO v_other FROM auth.users
-   WHERE email IS DISTINCT FROM 'nonstopjazz@gmail.com' ORDER BY created_at LIMIT 1;
+  -- 🛑 【不要猜】誰是管理員。is_admin() 的判準是各環境自己的事——
+  --    production 用某個 email，gsat-staging 用另一個。我原本在腳本裡
+  --    寫死 production 的 email，於是 staging 的管理員被當成「學生」，
+  --    B3（草稿對學生不可見）就紅了——腳本錯，不是 schema 錯。
+  --
+  --    正確做法：切換成那個身分，【問 is_admin() 本人】。
+  --    這樣同一份腳本在任何環境都對，也不必維護一份 email 清單。
+  FOR v_row IN SELECT id FROM auth.users ORDER BY created_at LIMIT 200 LOOP
+    PERFORM set_config('request.jwt.claims', json_build_object('sub', v_row.id)::text, true);
+    IF coalesce(public.is_admin(), false) THEN
+      IF v_admin IS NULL THEN v_admin := v_row.id; END IF;
+    ELSIF v_stu1 IS NULL THEN v_stu1 := v_row.id;
+    ELSIF v_stu2 IS NULL THEN v_stu2 := v_row.id;
+    END IF;
+    EXIT WHEN v_stu1 IS NOT NULL AND v_stu2 IS NOT NULL AND v_admin IS NOT NULL;
+  END LOOP;
+  PERFORM set_config('request.jwt.claims', '', true);
 
   IF v_admin IS NULL THEN
-    INSERT INTO zz_c VALUES (0, '🛑 前置：找不到管理員帳號', '存在', '不存在');
+    INSERT INTO zz_c VALUES (0, '🛑 前置：找不到管理員帳號（is_admin() 對誰都回 false）', '存在', '不存在');
     RETURN;
   END IF;
 
   -- ── C1 非管理員叫不動 ───────────────────────────────
-  IF v_other IS NOT NULL THEN
-    PERFORM set_config('request.jwt.claims', json_build_object('sub', v_other)::text, true);
+  IF v_stu1 IS NOT NULL THEN
+    PERFORM set_config('request.jwt.claims', json_build_object('sub', v_stu1)::text, true);
     BEGIN
       PERFORM reading_import_batch(jsonb_build_array(pg_temp.zz_payload('ZZ-VERIFY-X')), 'ZZ-VERIFY.xlsx');
       INSERT INTO zz_c VALUES (1, '🛑 C1 非管理員被拒', '被擋下', '🛑 竟然成功了');
