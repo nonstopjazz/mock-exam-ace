@@ -26,7 +26,8 @@
     "verify:my-errors": "node tests/preview/validate-my-errors.mjs",
     "reading:dry-run": "tsx scripts/reading-dry-run.ts",
     "verify:reading-parser": "tsx scripts/verify-reading-parser.ts",
-    "reading:emit-sql": "tsx scripts/reading-emit-import-sql.ts"
+    "reading:emit-sql": "tsx scripts/reading-emit-import-sql.ts",
+    "verify:reading-answer-state": "tsx scripts/verify-reading-answer-state.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.17.1",

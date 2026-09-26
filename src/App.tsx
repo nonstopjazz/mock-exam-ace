@@ -36,6 +36,8 @@ import SpeakingPrompts from "./pages/admin/SpeakingPrompts";
 import SpeakingGrading from "./pages/admin/SpeakingGrading";
 import FeatureAccessAdmin from "./pages/admin/FeatureAccessAdmin";
 import ReadingImport from "./pages/admin/ReadingImport";
+import StudentReading from "./pages/learn/StudentReading";
+import ReadingPractice from "./pages/learn/ReadingPractice";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -170,6 +172,10 @@ const App = () => (
           <Route path="/learn/student/writing/:essayId" element={<FeatureGate featureId="writing_submission" title="作文提交" description="作文功能暫時關閉，稍後會再開放。"><ProtectedRoute><EssayDetail /></ProtectedRoute></FeatureGate>} />
           {/* 口說練習：預設不對任何人開放，由 /admin/feature-access 決定看得到的人。
               這道閘只管畫面——每一支 speaking_* RPC 都會自己再檢查一次。 */}
+          {/* 閱讀練習。目前沒有 StudentFeatureGate——題庫全部是草稿，
+              「還沒上架」本身就是閘。上架之前要決定要不要加開放控制。 */}
+          <Route path="/learn/student/reading" element={<ProtectedRoute><StudentReading /></ProtectedRoute>} />
+          <Route path="/learn/student/reading/:passageId" element={<ProtectedRoute><ReadingPractice /></ProtectedRoute>} />
           <Route path="/learn/student/speaking" element={<StudentFeatureGate feature="speaking" title="口說練習" description="口說練習還沒有對你開放，請聯絡老師。"><ProtectedRoute><StudentSpeaking /></ProtectedRoute></StudentFeatureGate>} />
 
           {/* Phase 2: Exam routes (gated by backend phase) */}
