@@ -84,6 +84,66 @@ const num = (v: unknown, lo: number, hi: number): number | null => {
 };
 
 /**
+ * schema 會用到的非 construct 欄位，以及少了它會怎樣。
+ *
+ * 🛑 少一欄不會讓解析失敗——`str(undefined)` 回 null，那一欄就是空的。
+ *    那個行為是對的（不同批次帶的欄位不一樣），但它【很安靜】。
+ *    2026-09-26 的 296 篇檔案只有 36 欄，是 183 欄那份的子集，
+ *    少掉的 12 個欄位全部靜默變成 null——包含整個段落地圖與詞彙。
+ *
+ *    所以報告必須分得出「檔案沒有這一欄」與「有這一欄但值是空的」。
+ *    前者是格式差異，要知道；後者是資料缺漏，要修。
+ */
+export const EXPECTED_COLUMNS: { column: string; effect: string }[] = [
+  { column: "topic_id",                     effect: "🛑 沒有就完全無法匯入" },
+  { column: "difficulty_target",            effect: "cefr_level 為空" },
+  { column: "content_family",               effect: "content_family 為空" },
+  { column: "subdomain",                    effect: "subdomain 為空" },
+  { column: "narrative_archetype",          effect: "narrative_archetype 為空" },
+  { column: "geography",                    effect: "geography 為空" },
+  { column: "time_period",                  effect: "time_period 為空" },
+  { column: "fame_level",                   effect: "fame_level / fame_rank 為空" },
+  { column: "passage_quality_score",        effect: "quality_score 為空" },
+  { column: "passage_readability_score",    effect: "readability_score 為空" },
+  { column: "passage_sixway_score",         effect: "sixway_score 為空" },
+  { column: "topic_quality_score",          effect: "topic_quality_score 為空" },
+  { column: "passage_factual_risk",         effect: "factual_risk 為空" },
+  { column: "package_id",                   effect: "source_package_id 為空" },
+  { column: "batch_id",                     effect: "source_batch_id 為空" },
+  { column: "passage_writer_paragraph_map", effect: "⚠️ reading_passage_paragraphs 整批沒有資料" },
+  { column: "passage_writer_vocab_json",    effect: "⚠️ reading_passage_vocab 整批沒有資料" },
+];
+
+/** 內文與標題的來源欄位。至少要有一組，否則整篇匯不進來。 */
+export const CONTENT_COLUMNS = [
+  "passage_final_title", "passage_final_text",
+  "passage_writer_title", "passage_revised_text", "passage_writer_text",
+  "topic_title",
+];
+
+/** 這份檔案缺了哪些 schema 會用到的欄位 */
+export function missingColumns(headers: string[]): { column: string; effect: string }[] {
+  const have = new Set(headers);
+  return EXPECTED_COLUMNS.filter((c) => !have.has(c.column));
+}
+
+/** 這份檔案有、但我們完全不看的欄位。數量異常時代表格式可能換了。 */
+export function unusedColumns(headers: string[]): string[] {
+  const known = new Set<string>([
+    ...EXPECTED_COLUMNS.map((c) => c.column),
+    ...CONTENT_COLUMNS,
+  ]);
+  const constructSuffixes = [
+    "_final_question", "_final_options_json", "_final_answer",
+    "_final_explanation", "_micro_skill_profile_json",
+  ];
+  return headers.filter((h) => {
+    if (known.has(h)) return false;
+    return !constructSuffixes.some((suf) => h.endsWith(suf));
+  });
+}
+
+/**
  * 從實際欄位名推導出有哪些 construct 前綴。
  *
  * 🛑 【不可以】回傳硬編碼的六個。這支的全部意義就是「相信資料，不相信記憶」。
@@ -152,12 +212,28 @@ export function parseSkills(raw: unknown): ParsedSkill[] {
   if (s === null) return [];
   const out: ParsedSkill[] = [];
   for (const part of s.split(/\s*\|\s*/)) {
-    const m = /^\s*([A-Za-z_]+)\s*[:：]\s*(.*)$/.exec(part);
+    // 🛑 代號要接受數字。原本寫成 [A-Za-z_]+，於是 `skill_2` 這種代號
+    //    會【靜默被丟掉】——目前那 18 個代號剛好都沒有數字，所以看不出來，
+    //    但下一批只要出現一個就會無聲少一筆。
+    const m = /^\s*([A-Za-z0-9_]+)\s*[:：]\s*(.*)$/.exec(part);
     if (!m) continue;
     out.push({ skillCode: m[1], emphasis: num(m[2], 0, 100) });
   }
   return out;
 }
+
+/**
+ * 這個 micro-skill 儲存格有內容，卻一個 skill 都解析不出來嗎？
+ *
+ * 🛑 這是格式漂移的偵測器。解析不出來時 parseSkills 回空陣列，
+ *    跟「本來就沒有 skill」長得一模一樣——兩者在報告裡必須分得開，
+ *    否則換了分隔符號的那一天，整批 micro-skill 會安靜地消失。
+ */
+export function skillsUnparseable(raw: unknown): boolean {
+  const s = str(raw);
+  return s !== null && parseSkills(raw).length === 0;
+}
+
 
 /** "P1: 開場 | P2: 發展 | P3: 轉折" → 段落地圖 */
 export function parseParagraphMap(raw: unknown): ParsedParagraph[] {

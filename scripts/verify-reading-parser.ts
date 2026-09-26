@@ -19,9 +19,12 @@
  */
 
 import {
+  skillsUnparseable,
   detectConstructs, isPlaceholder, parseOptions, parseSkills,
   parseVocab, parseParagraphMap, parseFameRank, pickContent, parseRow,
+  missingColumns, unusedColumns,
 } from "../src/lib/reading/parseSourceRow";
+import { toCanonicalPayload } from "../src/lib/reading/canonicalPayload";
 
 let failures = 0;
 const check = (cond: boolean, label: string): void => {
@@ -132,7 +135,15 @@ const headersFor = (prefixes: string[]): string[] => [
   check(sloppy.length === 2, "S3 分隔符前後缺空白仍然解析得出來");
 
   check(parseSkills("bad: 150")[0].emphasis === null, "S4 超出 0–100 的分數視為無效 → null");
+  // 🛑 代號含數字不可以被靜默丟掉
+  check(parseSkills("skill_2: 80 | s3x: 70").length === 2,
+    "🛑 S4b 代號含數字照樣解析得出來（原本的 regex 會把它們默默丟掉）");
   check(parseSkills(null).length === 0, "S5 空值回空陣列");
+  // 🛑 「沒有 skill」與「解析不出來」必須分得開
+  check(!skillsUnparseable(null), "S6 空值不算解析失敗");
+  check(skillsUnparseable("topic_identification=90;scope_control=80"),
+    "🛑 S6 有內容卻解析出 0 個 → 標記為格式漂移，不當成「本來就沒有」");
+  check(!skillsUnparseable("topic_identification: 90"), "S6 正常格式不會誤報");
 }
 
 // ── V. 詞彙三層 ────────────────────────────────────────
@@ -183,7 +194,7 @@ const headersFor = (prefixes: string[]): string[] => [
     row[`${p}_final_options_json`] = "A: a | B: b | C: c | D: d";
     row[`${p}_final_answer`] = "B";
     row[`${p}_final_explanation`] = "因為 B。";
-    row[`${p}_micro_skill_profile_json`] = "s1: 90 | s2: ";
+    row[`${p}_micro_skill_profile_json`] = "topic_identification: 90 | scope_control: ";
   }
   const p1 = parseRow(row, hs);
   check(p1.publishReady, "R1 六題齊全且完整 → publishReady");
@@ -204,6 +215,75 @@ const headersFor = (prefixes: string[]): string[] => [
   const p3 = parseRow({ ...row, sm_final_answer: "D", sm_final_options_json: "A: a | B: b" }, hs);
   const smq = p3.questions.find((q) => q.construct === "SM")!;
   check(smq.problems.some((x) => x.includes("沒有對應")), "R3 正解沒有對應選項會被指出來");
+}
+
+// ── X. 欄位相容性 ──────────────────────────────────────
+{
+  // 不用 headersFor()：它本身就帶著一部分欄位，拿它當「齊全」的基準
+  // 會讓這組測試在驗自己的輔助函式，而不是驗 missingColumns。
+  const ALL = [
+    "topic_id", "difficulty_target", "content_family", "subdomain",
+    "narrative_archetype", "geography", "time_period", "fame_level",
+    "passage_quality_score", "passage_readability_score", "passage_sixway_score",
+    "topic_quality_score", "passage_factual_risk", "package_id", "batch_id",
+    "passage_writer_paragraph_map", "passage_writer_vocab_json",
+  ];
+  check(missingColumns(ALL).length === 0, "X1 欄位齊全時沒有回報缺少");
+
+  // 2026-09-26 的 296 篇檔案就是這種子集：只有 topic_id / 難度 / 兩個分類 / 內文
+  const subset = ["topic_id", "difficulty_target", "content_family", "subdomain",
+                  "passage_writer_title", "passage_revised_text"];
+  const miss = missingColumns(subset).map((m) => m.column);
+  check(miss.includes("passage_writer_paragraph_map") && miss.includes("fame_level"),
+    "🛑 X2 少掉的欄位被列出來（否則它們會靜默變成 null）");
+  check(miss.includes("passage_writer_vocab_json"), "X2 詞彙欄位缺少也會講");
+
+  check(unusedColumns([...subset, "some_new_column"]).includes("some_new_column"),
+    "X3 認不得的新欄位被列出來");
+  check(!unusedColumns(headersFor(SIX)).includes("sm_final_question"),
+    "X3 construct 欄位不會被誤報為沒用到");
+}
+
+// ── Y. canonical payload ───────────────────────────────
+{
+  const hs = headersFor(SIX);
+  const row: Record<string, unknown> = {
+    topic_id: "KR8888", difficulty_target: "B2", content_family: "science",
+    passage_writer_title: "標題", passage_revised_text: "內文夠長。",
+    passage_writer_paragraph_map: "P1: 開場",
+    passage_writer_vocab_json: "Candidate: a = x (P1)",
+  };
+  for (const p of SIX) {
+    row[`${p}_final_question`] = "Q?";
+    row[`${p}_final_options_json`] = "A: a | B: b | C: c | D: d";
+    row[`${p}_final_answer`] = "B";
+    row[`${p}_final_explanation`] = "因為 B。";
+    row[`${p}_micro_skill_profile_json`] = "topic_identification: 90 | scope_control: ";
+  }
+
+  const ok = toCanonicalPayload(parseRow(row, hs))!;
+  check(ok.questions.length === 6, "Y1 六題都進 payload");
+  check(ok.questions[0].construct === "SM" && ok.questions[0].display_order === 1,
+    "Y1 依 Six Ways 順序排好");
+  check(ok.questions[0].options.A === "a" && ok.questions[0].options.D === "d",
+    "Y1 選項轉成 A/B/C/D 物件（不是陣列——字母與位置不該是兩件要對齊的事）");
+  check(ok.questions[0].skills.length === 2, "Y2 兩個 skill 都在");
+  check(ok.questions[0].skills[1].emphasis === null,
+    "🛑 Y2 emphasis 的 null 帶到 payload，沒有變成 0");
+  check(ok.paragraphs.length === 1 && ok.vocabulary.length === 1, "Y2 段落與詞彙也帶過去");
+  check(!("problems" in (ok as unknown as Record<string, unknown>)),
+    "🛑 Y3 payload 不含 problems / publishReady —— 診斷是給畫面看的，不送進資料庫");
+
+  // 🛑 壞掉的題目不進 payload，但文章照樣匯得進去
+  const partial = { ...row, sm_final_options_json: "A:  | B:  | C:  | D: " };
+  const p2 = toCanonicalPayload(parseRow(partial, hs))!;
+  check(p2.questions.length === 5, "🛑 Y4 選項空白的那一題被排除（5 題）");
+  check(!p2.questions.some((q) => q.construct === "SM"), "Y4 被排除的正是 SM");
+  check(p2.passage.passage_text === "內文夠長。", "Y4 文章本身照樣進得去（DRAFT 允許不完整）");
+
+  // 連內文都沒有 → 連 DRAFT 都不行
+  check(toCanonicalPayload(parseRow({ topic_id: "X" }, hs)) === null,
+    "Y5 沒有內文時回 null，不送一份殘缺的 payload 給資料庫");
 }
 
 console.log("");

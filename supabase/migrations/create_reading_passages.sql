@@ -99,6 +99,14 @@ CREATE TABLE IF NOT EXISTS reading_passages (
   source_package_id TEXT,
   source_batch_id   TEXT,
 
+  -- 🛑 canonical payload 的雜湊，冪等匯入靠它。
+  --    重新匯入同一個 passage_id 時：雜湊相同 → skipped，不同 → conflict。
+  --    用雜湊而不是逐欄比對，是因為「內容」橫跨五張表
+  --    （文章、六題、選項、skill、段落、詞彙），逐欄比對會漏掉
+  --    新增的欄位——而漏掉的那一欄正好是被改動的那一欄時，
+  --    系統會回報「相同」然後靜默略過一筆真的有變更的資料。
+  content_hash TEXT,
+
   imported_by UUID REFERENCES auth.users(id),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()

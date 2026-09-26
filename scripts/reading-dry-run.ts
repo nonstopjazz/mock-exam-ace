@@ -16,7 +16,11 @@
 import { readFileSync } from "node:fs";
 import * as XLSX from "xlsx";
 import { CONSTRUCTS, CONSTRUCT_LABEL_ZH } from "../src/lib/reading/constructs";
-import { detectConstructs, isPlaceholder, parseRow, type ParsedPassage } from "../src/lib/reading/parseSourceRow";
+import {
+  detectConstructs, isPlaceholder, missingColumns, parseRow,
+  skillsUnparseable, unusedColumns,
+  type ParsedPassage,
+} from "../src/lib/reading/parseSourceRow";
 
 const file = process.argv[2];
 if (!file) {
@@ -49,6 +53,24 @@ line(`找到      ${det.found.map((f) => `${f.prefix}→${f.construct}`).join(" 
 if (det.unknownPrefixes.length) line(`⚠️ 不認得  ${det.unknownPrefixes.join(", ")}`);
 if (det.missingConstructs.length) line(`⚠️ 缺少    ${det.missingConstructs.join(", ")}`);
 else line(`✅ 六個 construct 全部存在`);
+
+// ── 欄位相容性 ──────────────────────────────────────
+// 🛑 少一欄不會讓解析失敗，它會靜默變成 null。所以要分得出
+//    「檔案沒有這一欄」與「有但值是空的」——前者是格式差異，後者是資料缺漏。
+rule("欄位相容性");
+const missing = missingColumns(headers);
+const unused = unusedColumns(headers);
+if (missing.length === 0) line("✅ schema 會用到的欄位全部都在");
+else {
+  line(`⚠️ 缺少 ${missing.length} 個 schema 會用到的欄位（會靜默變成 null）：`);
+  for (const m of missing) line(`   ${m.column.padEnd(30)} ${m.effect}`);
+}
+if (unused.length > 0) {
+  line();
+  line(`ℹ️ 這份檔案有、但匯入不使用的欄位 ${unused.length} 個`);
+  if (unused.length <= 12) for (const u of unused) line(`   ${u}`);
+  else line(`   （前 12 個）${unused.slice(0, 12).join(", ")} …`);
+}
 
 // ── 解析 ────────────────────────────────────────────
 const withId = rows.filter((r) => {
@@ -89,6 +111,26 @@ const cefr = new Map<string, number>();
 for (const p of parsed) cefr.set(p.cefrLevel ?? "（無效或空白）", (cefr.get(p.cefrLevel ?? "（無效或空白）") ?? 0) + 1);
 for (const [k, v] of [...cefr].sort()) line(`${k.padEnd(14)} ${v}`);
 
+// ── 分類值 ──────────────────────────────────────────
+// 🛑 這兩欄沒有 CHECK 約束（新批次會帶新值，鎖白名單會大量誤殺），
+//    代價是【打錯字的分類值不會被擋下】。所以這裡把值列出來，
+//    讓人用眼睛看一遍——「Plants & Fungi」與「Plants and Fungi」
+//    在資料庫裡是兩個不同的分類，但在畫面上看起來幾乎一樣。
+rule("分類值（沒有白名單，請目視檢查有無錯字或重複）");
+for (const field of ["contentFamily", "subdomain"] as const) {
+  const c = new Map<string, number>();
+  for (const p of parsed) {
+    const v = p[field] ?? "（空白）";
+    c.set(v, (c.get(v) ?? 0) + 1);
+  }
+  const sorted = [...c].sort((a, b) => b[1] - a[1]);
+  line(`${field}：${sorted.length} 種`);
+  const show = field === "subdomain" ? sorted.slice(0, 8) : sorted;
+  for (const [v, n] of show) line(`   ${String(n).padStart(4)}  ${v}`);
+  if (show.length < sorted.length) line(`   …另外 ${sorted.length - show.length} 種`);
+  line();
+}
+
 // ── 每個 construct 的完整度 ─────────────────────────
 rule("每個 Construct 的完整度");
 line(`${"".padEnd(4)} ${"完整".padStart(5)} ${"缺題幹".padStart(6)} ${"選項不足".padStart(8)} ${"缺正解".padStart(6)} ${"正解無對應".padStart(10)} ${"缺解說".padStart(6)}`);
@@ -117,6 +159,20 @@ for (const p of parsed) for (const q of p.questions) for (const s of q.skills) {
 line(`skill 種類 ${skillNames.size}  總筆數 ${skillTotal}  emphasis 為空 ${skillNull}（${((skillNull / Math.max(skillTotal, 1)) * 100).toFixed(1)}%）`);
 line(`🛑 空值存成 NULL，不是 0。NULL = 沒有這個資訊。`);
 
+// 🛑 格式漂移偵測：儲存格有內容、卻一個 skill 都解析不出來。
+//    那跟「本來就沒有 skill」在結果上長得一樣，所以要單獨數。
+let drift = 0;
+for (const r of withId) {
+  for (const { prefix } of det.found) {
+    if (skillsUnparseable(r[`${prefix}_micro_skill_profile_json`])) drift++;
+  }
+}
+if (drift > 0) {
+  line(`⚠️ 有內容卻解析出 0 個 skill 的儲存格：${drift} 個 —— 格式可能換了，請看一筆原始值`);
+} else {
+  line(`✅ 沒有「有內容卻解析不出來」的儲存格`);
+}
+
 // ── 段落與詞彙 ──────────────────────────────────────
 rule("段落地圖與詞彙");
 line(`有段落地圖的文章  ${parsed.filter((p) => p.paragraphs.length > 0).length}／${parsed.length}`);
@@ -132,13 +188,15 @@ rule("被擋下的文章（不可上架）");
 const blocked = parsed.filter((p) => !p.publishReady);
 if (blocked.length === 0) line("（無）");
 for (const p of blocked) {
-  const reasons: string[] = [...p.problems];
-  for (const q of p.questions) {
-    if (q.problems.length) reasons.push(`${q.construct}: ${q.problems.join("、")}`);
-  }
-  const missing = CONSTRUCTS.filter((c) => !p.questions.some((q) => q.construct === c));
-  if (missing.length) reasons.push(`完全沒有 ${missing.join("/")}`);
-  line(`${p.passageId.padEnd(10)} ${reasons.join(" ; ")}`);
+  const bad = p.questions.filter((q) => q.problems.length > 0);
+  const absent = CONSTRUCTS.filter((c) => !p.questions.some((q) => q.construct === c));
+  // 多數情況是「同一個原因壞在好幾個 construct」，逐題展開會刷滿畫面。
+  const kinds = [...new Set(bad.flatMap((q) => q.problems))];
+  const parts: string[] = [];
+  if (p.problems.length) parts.push(p.problems.join("、"));
+  if (absent.length) parts.push(`完全沒有 ${absent.join("/")}`);
+  if (bad.length) parts.push(`${bad.map((q) => q.construct).join("/")} → ${kinds.join("、")}`);
+  line(`${p.passageId.padEnd(10)} ${parts.join(" ; ")}`);
 }
 
 rule("結論");
