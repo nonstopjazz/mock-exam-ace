@@ -211,7 +211,10 @@ BEGIN
            THEN '🛑 B7 連【管理員】拿學生的 session 作答都被擋（沒有 admin 後門）'
            ELSE '🛑 B7 拿別人的 session_id 作答' END, '被擋下', '🛑 竟然成功了');
   EXCEPTION WHEN OTHERS THEN
-    INSERT INTO zz_b VALUES (17, '🛑 B7 拿別人的 session_id 作答', '被擋下',
+    INSERT INTO zz_b VALUES (17,
+      CASE WHEN v_second_is_admin
+           THEN '🛑 B7 連【管理員】拿學生的 session 作答都被擋（沒有 admin 後門）'
+           ELSE '🛑 B7 拿別人的 session_id 作答' END, '被擋下',
       CASE WHEN SQLERRM LIKE '%找不到這次練習%' THEN '被擋下'
            ELSE '🛑 理由不對：' || left(SQLERRM,40) END);
   END;
