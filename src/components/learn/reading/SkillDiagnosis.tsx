@@ -1,7 +1,9 @@
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+} from "@/components/ui/accordion";
+import { ListTree } from "lucide-react";
 import { skillLabel } from "@/lib/reading/skillLabels";
 import {
   measuredSkills, strongestSkills, ungradedTotal, unmeasuredSkills, weakestSkills,
@@ -14,8 +16,16 @@ const STRONG_N = 3;
 /**
  * 細項能力的診斷。
  *
+ * 【漸進揭露 —— 與作文分析同一套】
+ *   上層只給可行動的摘要（最需改善 3 個、表現良好 3 個），
+ *   完整列表放進預設收合的 Accordion，學生自己點開才展開。
+ *   作文分析的原則照搬：收起來，但一個節點都不刪。
+ *
  * 🛑 預設【不攤開全部】。十幾條長條會把這一頁變成報表，而學生真正需要的
- *    是「先練哪三個」。其餘的收起來，想看的人再展開。
+ *    是「先練哪三個」。
+ *
+ * 🛑 視覺層級要低於六大能力。六大能力是穩定的能力版圖（2×3 cards），
+ *    細項是往下挖的診斷——細項用細長條、不用環、不做成卡片牆。
  *
  * 🛑 中文是標題，英文代號是次要文字。代號是資料庫的身分，
  *    不是給人讀的名字——把它當標題等於把資料庫欄位秀給學生看。
@@ -24,8 +34,6 @@ export function SkillDiagnosis({ skills, minQuestions }: {
   skills: SkillStat[];
   minQuestions: number;
 }) {
-  const [open, setOpen] = useState(false);
-
   const weak = weakestSkills(skills, WEAK_N);
   const strong = strongestSkills(skills, STRONG_N, WEAK_N);
   const all = measuredSkills(skills);
@@ -34,8 +42,11 @@ export function SkillDiagnosis({ skills, minQuestions }: {
 
   if (all.length === 0 && unmeasured.length === 0) return null;
 
+  const fullCount = all.length + unmeasured.length;
+  const hasMore = all.length > weak.length + strong.length || unmeasured.length > 0;
+
   return (
-    <Card className="p-6 shadow-sm border-border/60">
+    <Card className="p-5 md:p-6 shadow-sm border-border/60">
       <div className="mb-5">
         <h2 className="font-semibold text-foreground">細項診斷</h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -68,25 +79,32 @@ export function SkillDiagnosis({ skills, minQuestions }: {
             </section>
           )}
 
-          {(all.length > weak.length + strong.length || unmeasured.length > 0) && (
-            <div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-1 -ml-2 text-muted-foreground"
-                onClick={() => setOpen((v) => !v)}
-                aria-expanded={open}
-              >
-                {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                {open ? "收起" : `查看全部細項能力（${all.length + unmeasured.length}）`}
-              </Button>
-
-              {open && (
-                <div className="mt-4 space-y-2">
-                  {all.map((s) => <SkillRow key={s.skill_code} skill={s} tone="neutral" />)}
+          {/* ── 完整細項能力：漸進揭露，預設收合 ───────────── */}
+          {hasMore && (
+            <Accordion type="single" collapsible>
+              <AccordionItem value="all-skills" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                  <span className="flex items-center gap-2 text-left">
+                    <ListTree className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="font-medium text-foreground">完整細項能力</span>
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-normal text-muted-foreground"
+                    >
+                      {fullCount} 項
+                    </Badge>
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    上面是重點，這裡是全部細項能力的正確率。
+                  </p>
+                  <div className="space-y-2">
+                    {all.map((s) => <SkillRow key={s.skill_code} skill={s} tone="neutral" />)}
+                  </div>
 
                   {unmeasured.length > 0 && (
-                    <div className="pt-4">
+                    <div className="pt-5">
                       <h3 className="text-sm font-medium text-foreground mb-1">資料尚少</h3>
                       <p className="text-xs text-muted-foreground mb-3">
                         練到的題數還不夠，不給正確率比給一個不準的數字好
@@ -106,14 +124,15 @@ export function SkillDiagnosis({ skills, minQuestions }: {
                       </div>
                     </div>
                   )}
-                </div>
-              )}
-            </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           )}
         </div>
       )}
 
-      {/* 🛑 沒有標權重的題數要講出來，而且要講清楚那不是「你答錯」 */}
+      {/* 🛑 沒有標權重的題數要講出來，而且要講清楚那不是「你答錯」。
+          這句同時限定上面看得到的百分比，所以不收進 Accordion 裡。 */}
       {ungraded > 0 && (
         <p className="text-xs text-muted-foreground mt-6 pt-4 border-t border-border/60">
           另有 {ungraded} 筆題目標了細項能力但沒有標權重，沒有算進上面的百分比
