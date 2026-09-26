@@ -77,14 +77,14 @@ BEGIN
   --    而匯入 RPC 第一行就擋未登入。所以這裡要先借用管理員的身分。
   --    【不猜】誰是管理員——逐一切換身分去問 is_admin() 本人，
   --    各環境的判準不同（production 與 staging 用不同 email）。
-  FOR v_row IN SELECT id FROM auth.users ORDER BY created_at LIMIT 200 LOOP
+  FOR v_row IN SELECT id FROM auth.users ORDER BY created_at LIMIT 1000 LOOP
     PERFORM set_config('request.jwt.claims', json_build_object('sub', v_row.id)::text, true);
     IF coalesce(public.is_admin(), false) THEN v_admin := v_row.id; EXIT; END IF;
   END LOOP;
 
   IF v_admin IS NULL THEN
     PERFORM set_config('request.jwt.claims', '', true);
-    RAISE EXCEPTION '找不到管理員帳號（is_admin() 對前 200 位使用者都回 false）';
+    RAISE EXCEPTION '找不到管理員帳號（掃了最早的 1000 位使用者，is_admin() 都回 false）';
   END IF;
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin)::text, true);
 

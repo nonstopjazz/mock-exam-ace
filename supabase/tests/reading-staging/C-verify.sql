@@ -53,7 +53,7 @@ BEGIN
   --
   --    正確做法：切換成那個身分，【問 is_admin() 本人】。
   --    這樣同一份腳本在任何環境都對，也不必維護一份 email 清單。
-  FOR v_row IN SELECT id FROM auth.users ORDER BY created_at LIMIT 200 LOOP
+  FOR v_row IN SELECT id FROM auth.users ORDER BY created_at LIMIT 1000 LOOP
     PERFORM set_config('request.jwt.claims', json_build_object('sub', v_row.id)::text, true);
     IF coalesce(public.is_admin(), false) THEN
       IF v_admin IS NULL THEN v_admin := v_row.id; END IF;

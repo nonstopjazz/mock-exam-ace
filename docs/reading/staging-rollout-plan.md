@@ -187,3 +187,53 @@ D4 通過之後**先停下來回報**。之後才是 `/admin/reading/import` 的
 production rollout 再往後。
 
 匯入之後所有文章都是 `DRAFT`——**上架是另一個動作**，這份計畫不包含它。
+
+
+---
+
+# Production rollout
+
+🛑 **先跑 `PROD-0-preflight.sql`（🟢 唯讀）。** 它問的不是「這些東西對不對」——
+staging 已經答過了——而是 **production 跟 staging 有什麼不一樣**。
+
+## staging 沒有測到的三件事
+
+| | 為什麼 staging 測不到 | 怎麼處理 |
+|---|---|---|
+| **lexical_items 外鍵** | staging 沒有那張表，所以走的是「略過」那一條分支。production 有，會走另一條 | 已在本機用 production 的形狀跑過：`✅ 已加上 lexical_items 外鍵`，之後 A-verify 51 項、C-verify 27 項仍然全過 |
+| **管理員掃描範圍** | staging 只有 3 位使用者。腳本是「逐一切換身分問 is_admin()」，掃最早的 N 位 | 上限從 200 提高到 1000；preflight 會先確認管理員在範圍內，也會回報使用者總數 |
+| **既有物件撞名** | staging 當時是空的 | preflight 檢查那 18 個名字現在都不存在 |
+
+## 這批變更的性質
+
+**純加法。** 9 張新表、9 支新函式、1 個 trigger，全部 `reading_` 開頭。
+**沒有任何 ALTER 或 DROP 動到既有物件**，模考、寫作、單字系統一行都沒碰。
+唯一碰到既有物件的地方是讀 `lexical_items` 來建外鍵——讀，不是改。
+
+## 順序（不可以顛倒）
+
+1. `PROD-0-preflight.sql` 🟢 全部 ✅ 才往下
+2. Group A 四支 → `A-verify.sql`
+3. Group B 六支 → `B-verify.sql`
+4. Group C 四支 → `C-verify.sql`
+5. `import-01` … `import-15` → `D-verify.sql`
+6. **最後才 merge PR #141**
+
+🛑 **第 6 步一定在最後。** 前端會呼叫 `reading_import_batch` 等 RPC，
+那些函式要到第 4 步才存在。先 merge 的話，管理員點進那一頁會看到 RPC not found。
+反過來則完全安全：migration 先上，那些函式就只是沒有人呼叫而已。
+
+## B-verify 在 production 的一個提醒
+
+它需要兩位非管理員使用者，而 production 的使用者是**真的學生**。
+腳本會用他們的身分建一個 `ZZ-VERIFY-` 的練習與作答紀錄，結束時 CASCADE 全部刪掉
+（staging 實測 `殘留fixture = 0`）。那幾列存在的時間是幾秒鐘，也不會出現在任何學生畫面上
+（那篇文章不是 PUBLISHED，而且馬上就被刪了）。
+
+不想在 production 碰真實使用者的話可以跳過 B-verify——代價是
+「學生路徑」這一層在 production 沒有實測過，只有 A-verify 的權限檢查與 staging 的結果背書。
+
+## 上完之後學生會看到什麼
+
+**什麼都看不到。** 296 篇全部是 `DRAFT`，學生端 RPC 只回 `PUBLISHED`。
+上架是另一個動作，不在這次範圍內。
