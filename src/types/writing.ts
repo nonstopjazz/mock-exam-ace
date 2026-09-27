@@ -65,6 +65,22 @@ export type EssayAnalysisStatus =
  * 欄位一律用 snake_case，因為這是 RPC 原封不動的輸出；前端不再改名，
  * 免得「同一個東西在兩個地方叫不同名字」。
  */
+/**
+ * 20 分制總分。由伺服器從 Axis 1（W1–W5）推導，前端只負責顯示。
+ *
+ * 🛑 measured / total 一定要一起用。UNMEASURED 的類別被排除在分母外，
+ *    所以 17 / 20 有可能只評了五項中的四項——不講分母就是在說謊。
+ */
+export interface EssayScore {
+  /** 0–20。實際下限是 10：四個狀態裡沒有任何一個代表「完全不行」 */
+  score: number;
+  /** 有量到、真的參與計分的類別數 */
+  measured: number;
+  /** 分析涵蓋的類別總數（目前是 5） */
+  total: number;
+  categories: { code: string; points: number }[];
+}
+
 export interface EssayCard {
   essay_id: string;
   title: string;
@@ -81,5 +97,7 @@ export interface EssayCard {
   /** 只有 report_ready 才有值 */
   overall_level: OverallLevel | null;
   overall_headline: string | null;
+  /** 只有 report_ready 才有值；全部類別都沒量到時也是 null */
+  score: EssayScore | null;
   has_teacher_feedback: boolean;
 }
