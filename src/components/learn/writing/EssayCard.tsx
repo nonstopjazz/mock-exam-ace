@@ -124,16 +124,26 @@ function ScoreMark({ score }: { score: EssayScore | null }) {
         aria-label={`總分 ${score.score} 分，滿分 20 分${
           partial ? `，五個面向中評了 ${score.measured} 項` : ""
         }`}
-        /* 微微歪一點、往外挪一點——像順手寫上去的，不是排版排出來的。
+        /* 微微歪一點——像順手寫上去的，不是排版排出來的。
            位移刻意很小：Card 是 overflow-hidden，挪太多會被裁掉。 */
-        className="font-display text-2xl font-bold text-destructive tabular-nums
-                   -rotate-[4deg] translate-x-0.5 -translate-y-0.5 select-none"
+        className="relative -rotate-[5deg] translate-x-0.5 -translate-y-0.5 select-none"
       >
-        {score.score}
-        <span className="text-base font-semibold"> / 20</span>
+        {/* 🛑 畫面上只有數字，滿分不寫出來。但 aria-label 裡要講——
+            螢幕報讀器唸出一個沒有量表的「17」，那是一個沒有意義的數字。 */}
+        <span className="font-hand text-[2.75rem] leading-none text-destructive tabular-nums">
+          {score.score}
+        </span>
+
+        {/* 兩道底線。老師寫完分數順手劃兩下——兩道【角度不一樣】，
+            一樣就會看起來像 <hr>，而不是手劃的。 */}
+        <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 -bottom-1">
+          <span className="block h-[3px] -rotate-1 rounded-full bg-destructive" />
+          <span className="mt-[3px] block h-[3px] w-[85%] rotate-[1.5deg] rounded-full bg-destructive/90" />
+        </span>
       </span>
+
       {partial ? (
-        <span className="mt-1.5 text-[11px] font-normal text-muted-foreground">
+        <span className="mt-3 text-[11px] font-normal text-muted-foreground">
           評了 {score.measured} / {score.total} 項
         </span>
       ) : null}
