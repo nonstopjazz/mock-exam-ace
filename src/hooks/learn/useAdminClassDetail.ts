@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type {
-  AdminClassDetail, Recurrence, DueType, TaskType, TeacherStatus, StudentSearchResult,
+  AdminClassDetail, AdminTask, Recurrence, DueType, TaskType, TeacherStatus,
+  StudentSearchResult,
 } from "@/lib/learn/tasks";
 
 export interface TaskDraft {
@@ -28,6 +29,7 @@ type Result = { ok: true; retained?: string[] } | { ok: false; error: string };
  */
 export function useAdminClassDetail(classId: string | undefined) {
   const [detail, setDetail] = useState<AdminClassDetail | null>(null);
+  const [archived, setArchived] = useState<AdminTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,15 +40,29 @@ export function useAdminClassDetail(classId: string | undefined) {
       return;
     }
     setError(null);
+    // 🛑 兩次往返，不是一次帶全部。班級頁預設只該看到進行中的任務——
+    //    把已封存的混進同一份資料，畫面就得到處寫 filter，而漏掉一處
+    //    就是「封存了還在眼前」。分開拿，兩邊的意義不會混。
     const { data, error: rpcError } = await supabase.rpc("learn_admin_class_detail", {
       p_class_id: classId,
     });
     if (rpcError) {
       setError(rpcError.message);
       setDetail(null);
-    } else {
-      setDetail(data as unknown as AdminClassDetail);
+      setArchived([]);
+      setLoading(false);
+      return;
     }
+    setDetail(data as unknown as AdminClassDetail);
+
+    const { data: withArchived } = await supabase.rpc("learn_admin_class_detail", {
+      p_class_id: classId,
+      p_include_archived: true,
+    });
+    setArchived(
+      ((withArchived as unknown as AdminClassDetail | null)?.tasks ?? [])
+        .filter((t) => t.status === "ARCHIVED"),
+    );
     setLoading(false);
   }, [classId]);
 
@@ -148,6 +164,11 @@ export function useAdminClassDetail(classId: string | undefined) {
     [run],
   );
 
+  const restoreTask = useCallback(
+    (taskId: string) => run("learn_admin_archive_task", { p_task_id: taskId, p_archived: false }),
+    [run],
+  );
+
   const checkTask = useCallback(
     (taskId: string, studentId: string, status: TeacherStatus | null, percent?: number, note?: string) =>
       run("learn_admin_check_task", {
@@ -167,10 +188,10 @@ export function useAdminClassDetail(classId: string | undefined) {
   );
 
   return {
-    detail, loading, error, reload: load,
+    detail, archived, loading, error, reload: load,
     rename, setNextClassDate,
     searchStudents, addMembers, removeMember,
-    saveTask, archiveTask, checkTask, checkTaskBulk,
+    saveTask, archiveTask, restoreTask, checkTask, checkTaskBulk,
   };
 }
 

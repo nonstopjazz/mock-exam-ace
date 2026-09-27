@@ -11,7 +11,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  ArrowLeft, CalendarDays, ClipboardList, Repeat, UserMinus, UserPlus, Users, Plus, Archive,
+  ArrowLeft, ArchiveRestore, CalendarDays, ChevronDown, ChevronUp, ClipboardList,
+  Repeat, UserMinus, UserPlus, Users, Plus, Archive,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminBreadcrumb, AdminPageHeader, type AdminCrumb } from "@/components/admin/AdminPageHeader";
@@ -19,7 +20,7 @@ import { useAdminClassDetail } from "@/hooks/learn/useAdminClassDetail";
 import { AddStudentsDialog } from "@/components/admin/classes/AddStudentsDialog";
 import { TaskEditorDialog } from "@/components/admin/classes/TaskEditorDialog";
 import {
-  TEACHER_STATUS_LABEL, formatDate,
+  TEACHER_STATUS_LABEL, formatDate, formatTimestampDate,
   type AdminTask, type TaskType, type TeacherStatus,
 } from "@/lib/learn/tasks";
 
@@ -89,6 +90,8 @@ const ClassDetail = () => {
   const [editorType, setEditorType] = useState<TaskType>("HOMEWORK");
   const [editing, setEditing] = useState<AdminTask | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  // 🛑 預設收起來。封存的意義就是不要再出現在眼前——展開是主動的動作。
+  const [showArchived, setShowArchived] = useState(false);
   const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
   const [dateDraft, setDateDraft] = useState<string | null>(null);
 
@@ -127,6 +130,7 @@ const ClassDetail = () => {
     );
   }
 
+  const archived = api.archived;
   const homework = detail.tasks.filter((t) => t.type === "HOMEWORK");
   const recurring = detail.tasks.filter((t) => t.type === "RECURRING");
   const editingDate = dateDraft !== null;
@@ -386,6 +390,58 @@ const ClassDetail = () => {
             <div className="space-y-4">{recurring.map(renderTaskCard)}</div>
           )}
         </section>
+
+        {/* 已封存 —— 沒有已封存的任務時整區不出現 */}
+        {archived.length > 0 && (
+          <section className="mb-8">
+            <Button
+              variant="ghost"
+              className="gap-2 -ml-2 text-muted-foreground"
+              onClick={() => setShowArchived((v) => !v)}
+              aria-expanded={showArchived}
+            >
+              <Archive className="h-4 w-4" />
+              已封存（{archived.length}）
+              {showArchived ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+
+            {showArchived && (
+              <div className="mt-3 space-y-3">
+                {archived.map((t) => (
+                  <Card key={t.task_id} className="p-5 border-border/60 bg-muted/20">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="font-medium text-foreground">{t.title}</h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {t.type === "HOMEWORK" ? "作業" : "常態練習"}
+                          {" · "}
+                          {/* 🛑 舊的已封存任務沒有時間可以考證，照實說不詳，
+                              不要拿 updated_at 之類的東西編一個出來 */}
+                          {t.archived_at ? `${formatTimestampDate(t.archived_at)} 封存` : "封存時間不詳"}
+                          {" · "}
+                          {t.assignees.length} 位學生的紀錄都還在
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0 gap-2"
+                        onClick={async () => {
+                          const r = await api.restoreTask(t.task_id);
+                          if (!r.ok) toast.error("還原失敗");
+                          else toast.success("已還原，學生又看得到了");
+                        }}
+                      >
+                        <ArchiveRestore className="h-4 w-4" />
+                        還原
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       <AddStudentsDialog
