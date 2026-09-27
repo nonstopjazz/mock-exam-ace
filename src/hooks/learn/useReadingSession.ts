@@ -54,6 +54,22 @@ export function useReadingSession(passageId: string | undefined) {
    */
   const anchorRef = useRef<number>(Date.now());
 
+  /**
+   * 🛑 【不要用 setState 的 updater 去讀 state】。
+   *
+   *    setState((s) => { sessionId = s.sessionId; ... }) 看起來會同步取到值，
+   *    但 React 只在更新佇列是空的時候才會立刻執行 updater（eager state）。
+   *    佇列裡有東西時它會延後執行——那時外面那個變數還是 null，
+   *    於是 `if (!sessionId) return;` 命中，而 finishing 已經被設成 true。
+   *    結果是按鈕永遠 disabled、spinner 永遠轉、沒有錯誤、沒有請求。
+   *    2026-09-27 的「看結果沒反應」就是這樣來的。
+   *
+   *    事件處理器要讀的本來就是「使用者按下去當下畫面上的那份 state」，
+   *    所以跟著 render 同步的 ref 才是對的來源。
+   */
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   const load = useCallback(async () => {
     if (!passageId) return;
     setState((s) => ({ ...s, loading: true, error: null }));
@@ -125,16 +141,11 @@ export function useReadingSession(passageId: string | undefined) {
   }, []);
 
   const submit = useCallback(async (questionId: string) => {
-    let draft: QuestionAnswerState | undefined;
-    let sessionId: string | null = null;
-    setState((s) => {
-      draft = s.drafts[questionId];
-      sessionId = s.sessionId;
-      return s.results[questionId] || !draft?.selected
-        ? s
-        : { ...s, submitting: questionId, error: null };
-    });
-    if (!draft?.selected || !sessionId) return;
+    const snapshot = stateRef.current;
+    const draft: QuestionAnswerState | undefined = snapshot.drafts[questionId];
+    const sessionId = snapshot.sessionId;
+    if (snapshot.results[questionId] || !draft?.selected || !sessionId) return;
+    setState((s) => ({ ...s, submitting: questionId, error: null }));
 
     const { data, error } = await supabase.rpc("reading_submit_answer", {
       p_session_id: sessionId,
@@ -167,9 +178,17 @@ export function useReadingSession(passageId: string | undefined) {
   }, []);
 
   const finish = useCallback(async () => {
-    let sessionId: string | null = null;
-    setState((s) => { sessionId = s.sessionId; return { ...s, finishing: true, error: null }; });
-    if (!sessionId) return;
+    const sessionId = stateRef.current.sessionId;
+    // 🛑 先確認拿得到 session，再進入 finishing。順序反過來的話，
+    //    任何一次提早 return 都會把按鈕永遠鎖在轉圈的狀態。
+    //
+    // 🛑 而且要【講出來】。安靜的 return 就是這個 bug 難查的原因：
+    //    畫面上什麼都沒有，console 也什麼都沒有。
+    if (!sessionId) {
+      setState((s) => ({ ...s, finishing: false, error: "找不到這次練習，請重新整理頁面" }));
+      return;
+    }
+    setState((s) => ({ ...s, finishing: true, error: null }));
     const { data, error } = await supabase.rpc("reading_finish_session", {
       p_session_id: sessionId,
     });
