@@ -79,7 +79,7 @@ export default {
         // 🛑 只給作文卡片那個紅筆分數用。這個站只有一套字型系統，
         //    這是唯一一個例外，而且是產品負責人指名要的手寫感。
         //    不要拿它排其他東西。
-        hand: ['Permanent Marker', 'Fredoka', 'cursive'],
+        hand: ['Sriracha', 'Fredoka', 'cursive'],
         sans: ['Inter', 'Noto Sans TC', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
