@@ -4,7 +4,8 @@
  * 用 tsx 直接跑：npx tsx scripts/verify-reading-next-passage.ts
  */
 import {
-  pickNext, progressOf, type PassageProgress,
+  pickNext, progressByPassage, progressOf,
+  type PassageProgress, type SessionRow,
 } from "../src/lib/reading/nextPassage";
 
 let failures = 0;
@@ -95,6 +96,57 @@ console.log("════════ 下一篇的挑選 ═══════�
   check(g.done === 1 && g.total === 3,
     "🛑 D1 做到一半【不算完成】——算進去等於告訴學生他練過了");
   check(progressOf([]).total === 0, "D2 空的不會除以零");
+}
+
+// ── E. session → 每篇的狀態 ─────────────────────────────────────────
+{
+  const sess = (id: string, passage: string,
+                status: SessionRow["status"], started: string): SessionRow =>
+    ({ id, passage_id: passage, status, started_at: started });
+
+  // 🛑 這一條是實際踩到的 bug：點進文章看一眼就會留下一筆 IN_PROGRESS，
+  //    而首頁對著一個從來沒作答過的人說「繼續上次練習」。
+  const opened = progressByPassage(
+    [sess("s1", "KR0001", "IN_PROGRESS", "2026-09-26T10:00:00Z")], new Set());
+  check(opened.size === 0,
+    "🛑 E1 一題都沒答的 IN_PROGRESS 不算進度——點進去看一眼不是做到一半");
+
+  const answered = progressByPassage(
+    [sess("s1", "KR0001", "IN_PROGRESS", "2026-09-26T10:00:00Z")], new Set(["s1"]));
+  check(answered.get("KR0001")?.status === "IN_PROGRESS",
+    "E2 答過至少一題就算做到一半");
+
+  // 交過之後重做：新開的 IN_PROGRESS 不能蓋掉「這篇練過了」
+  const redo = progressByPassage([
+    sess("s2", "KR0001", "IN_PROGRESS", "2026-09-26T12:00:00Z"),
+    sess("s1", "KR0001", "SUBMITTED",   "2026-09-25T10:00:00Z"),
+  ], new Set(["s1", "s2"]));
+  check(redo.get("KR0001")?.status === "SUBMITTED",
+    "🛑 E3 交過就是交過，重做開的新 session 不會把它蓋回未完成");
+
+  check(progressByPassage(
+    [sess("s1", "KR0001", "ABANDONED", "2026-09-26T10:00:00Z")], new Set(["s1"])).size === 0,
+    "E4 放棄的不算");
+
+  // 同一篇多筆未完成 → 留最後開始的時間（sessions 依 started_at 遞減）
+  const many = progressByPassage([
+    sess("s2", "KR0001", "IN_PROGRESS", "2026-09-26T12:00:00Z"),
+    sess("s1", "KR0001", "IN_PROGRESS", "2026-09-25T10:00:00Z"),
+  ], new Set(["s1", "s2"]));
+  check(many.get("KR0001")?.startedAt === "2026-09-26T12:00:00Z",
+    "E5 同一篇多筆未完成時記住最後開始的時間");
+
+  // 串起來：看過但沒答的那一篇，應該還是「下一篇」而不是「繼續」
+  const map = progressByPassage(
+    [sess("s1", "KR0001", "IN_PROGRESS", "2026-09-26T10:00:00Z")], new Set());
+  const items: PassageProgress[] = ["KR0001", "KR0002"].map((id) => ({
+    passage_id: id,
+    sessionStatus: map.get(id)?.status ?? null,
+    startedAt: map.get(id)?.startedAt ?? null,
+  }));
+  const r = pickNext(items);
+  check(r.kind === "next" && r.passageId === "KR0001",
+    "🛑 E6 只點開過沒作答的那一篇，首頁是【開始練習】而且就從它開始");
 }
 
 console.log("");
