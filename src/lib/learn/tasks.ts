@@ -142,6 +142,23 @@ export const formatDate = (iso: string | null): string => {
 };
 
 /**
+ * TIMESTAMPTZ 當日期顯示。
+ *
+ * 🛑 【不要】把 timestamp 丟給 formatDate()。它只吃 YYYY-MM-DD：
+ *    "2026-09-19T08:00:00Z" 拆出來的日會是 "19T08:00:00Z"，
+ *    結果畫面上是「9 月 NaN 日（週undefined）」——而且不會報錯。
+ *
+ * 🛑 也不要只 slice(0, 10)。那是 UTC 的日期，台灣時間 +8，
+ *    晚上八點之後封存的會少算一天。
+ */
+export const formatTimestampDate = (ts: string | null): string => {
+  if (!ts) return "未排定";
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return "未排定";
+  return `${d.getMonth() + 1} 月 ${d.getDate()} 日（週${WEEKDAY[d.getDay()]}）`;
+};
+
+/**
  * 焦點任務 —— Dashboard 上唯一被放大的那一件。
  *
  * 🛑 挑選規則刻意與 sortHomework() 不同，不要「統一」它們。
@@ -235,6 +252,8 @@ export interface AdminTask {
   recurrence: Recurrence | null;
   target_per_period: number | null;
   status: "ACTIVE" | "ARCHIVED";
+  /** 只有 ARCHIVED 才有值。舊資料沒有時間可以考證，所以可能是 null */
+  archived_at: string | null;
   created_at: string;
   assignees: AdminAssignee[];
 }
