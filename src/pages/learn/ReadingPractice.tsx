@@ -50,7 +50,7 @@ export default function ReadingPractice() {
         <Button variant="ghost" size="sm" asChild className="shrink-0 gap-1 md:gap-2">
           <Link to="/learn/student/reading">
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden md:inline">文章列表</span>
+            <span className="hidden md:inline">閱讀練習</span>
           </Link>
         </Button>
       </div>
@@ -85,7 +85,7 @@ export default function ReadingPractice() {
           </Alert>
           <div className="flex gap-3">
             <Button onClick={() => void s.reload()}>重試</Button>
-            <Button variant="outline" asChild><Link to="/learn/student/reading">回文章列表</Link></Button>
+            <Button variant="outline" asChild><Link to="/learn/student/reading">回閱讀練習</Link></Button>
           </div>
         </div>
       </Layout>
@@ -106,7 +106,7 @@ export default function ReadingPractice() {
           </Card>
           <ReadingSummaryPanel summary={s.summary} />
           <div className="mt-8">
-            <Button asChild><Link to="/learn/student/reading">換一篇</Link></Button>
+            <Button asChild><Link to="/learn/student/reading">下一篇</Link></Button>
           </div>
         </div>
       </Layout>

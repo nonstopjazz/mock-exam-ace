@@ -12,7 +12,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  AlertCircle, ArrowLeft, BookOpen, Loader2, Search, Upload,
+  AlertCircle, ArrowLeft, BookOpen, Library, Loader2, Search, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -110,6 +110,12 @@ export default function ReadingPublish() {
             </div>
           </div>
           <div className="flex gap-1 shrink-0">
+            <Button variant="ghost" size="sm" asChild className="gap-1">
+              <Link to="/admin/reading/articles">
+                <Library className="h-4 w-4" />
+                <span className="hidden md:inline">全部文章</span>
+              </Link>
+            </Button>
             <Button variant="ghost" size="sm" asChild className="gap-1">
               <Link to="/admin/reading/import">
                 <Upload className="h-4 w-4" />

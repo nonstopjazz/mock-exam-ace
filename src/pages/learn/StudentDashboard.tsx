@@ -10,6 +10,7 @@ import { RecentEssays } from "@/components/learn/student/RecentEssays";
 import { CommonMistakes } from "@/components/learn/student/CommonMistakes";
 import { GrammarSnapshot } from "@/components/learn/student/GrammarSnapshot";
 import { SpeakingEntry } from "@/components/learn/student/SpeakingEntry";
+import { ReadingEntry } from "@/components/learn/student/ReadingEntry";
 
 /**
  * Student Dashboard —— v2，全部真實資料。
@@ -87,6 +88,11 @@ const StudentDashboard = () => {
           {/* 4.5 口說練習 —— 沒被開放的人整區不會出現 */}
           <div className="mt-10">
             <SpeakingEntry />
+          </div>
+
+          {/* 4.6 閱讀練習 —— 同上，沒被開放就整區不出現 */}
+          <div className="mt-10">
+            <ReadingEntry />
           </div>
 
           {/* 5. 字卡收藏 */}
