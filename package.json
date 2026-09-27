@@ -28,7 +28,11 @@
     "verify:reading-parser": "tsx scripts/verify-reading-parser.ts",
     "reading:emit-sql": "tsx scripts/reading-emit-import-sql.ts",
     "verify:reading-answer-state": "tsx scripts/verify-reading-answer-state.ts",
-    "verify:reading-stats": "tsx scripts/verify-reading-stats-shaping.ts"
+    "verify:reading-stats": "tsx scripts/verify-reading-stats-shaping.ts",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:install": "playwright install chromium",
+    "verify:reading-next": "tsx scripts/verify-reading-next-passage.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.17.1",
@@ -100,6 +104,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.49.1",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",

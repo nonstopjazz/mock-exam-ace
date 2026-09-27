@@ -43,3 +43,5 @@ docs/learn/writing-audit/
 generated/
 *.reading-source.xlsx
 supabase/migrations/*_reading_import_data*.sql
+test-results/
+playwright-report/
