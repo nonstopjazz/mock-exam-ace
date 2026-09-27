@@ -62,3 +62,54 @@ export const progressOf = (items: PassageProgress[]) => ({
   done: items.filter((p) => p.sessionStatus === "SUBMITTED").length,
   total: items.length,
 });
+
+// ── 每一篇的練習狀態 ────────────────────────────────────────────────
+
+export interface SessionRow {
+  id: string;
+  passage_id: string;
+  status: "IN_PROGRESS" | "SUBMITTED" | "ABANDONED";
+  started_at: string;
+}
+
+export interface PassageProgressValue {
+  status: "IN_PROGRESS" | "SUBMITTED";
+  startedAt: string | null;
+}
+
+/**
+ * 把 session 收斂成「每一篇的狀態」。
+ *
+ * 🛑 一題都沒答的 IN_PROGRESS【不算做到一半】。
+ *    reading_start_session 在打開文章的當下就建 session，所以「點進去看一眼
+ *    再退出來」也會留下一筆 IN_PROGRESS。把它當成進度，首頁就會對著一個
+ *    從來沒作答過的人說「繼續上次練習」——而他知道自己沒有。
+ *
+ * 🛑 已經交過就是交過。重做時會開一筆新的 IN_PROGRESS，不能讓它蓋掉
+ *    「這篇練過了」。
+ *
+ * @param sessions          依 started_at 遞減排序
+ * @param answeredSessionIds 至少有一筆作答的 session
+ */
+export function progressByPassage(
+  sessions: SessionRow[],
+  answeredSessionIds: Set<string>,
+): Map<string, PassageProgressValue> {
+  const out = new Map<string, PassageProgressValue>();
+
+  for (const row of sessions) {
+    if (row.status === "ABANDONED") continue;
+    if (row.status === "IN_PROGRESS" && !answeredSessionIds.has(row.id)) continue;
+
+    const current = out.get(row.passage_id);
+    if (current?.status === "SUBMITTED") continue;
+
+    out.set(row.passage_id, {
+      status: row.status,
+      // 遞減排序，所以先寫進去的那筆就是最後開始的
+      startedAt: current?.startedAt ?? row.started_at,
+    });
+  }
+
+  return out;
+}

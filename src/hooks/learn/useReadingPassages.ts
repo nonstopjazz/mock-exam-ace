@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { ReadingPassageListItem } from "@/lib/reading/studentTypes";
+import { progressByPassage, type SessionRow } from "@/lib/reading/nextPassage";
 
 /**
  * 學生看得到的文章清單。
@@ -60,29 +61,19 @@ export function useReadingPassages({ includeUnpublished = false }: ReadingPassag
     // 自己的練習紀錄。RLS 只回自己的，不必也不該帶 student_id 參數。
     const { data: sessions } = await supabase
       .from("reading_sessions")
-      .select("passage_id, status, started_at")
+      .select("id, passage_id, status, started_at")
       .order("started_at", { ascending: false });
 
-    type Progress = {
-      status: "IN_PROGRESS" | "SUBMITTED";
-      startedAt: string | null;
-    };
-    const byPassage = new Map<string, Progress>();
-    // sessions 依 started_at 遞減，所以第一筆碰到的就是最後開始的那一筆
-    for (const row of (sessions ?? []) as {
-      passage_id: string;
-      status: "IN_PROGRESS" | "SUBMITTED" | "ABANDONED";
-      started_at: string;
-    }[]) {
-      if (row.status === "ABANDONED") continue;
-      // 已經交過就是交過，別被後來又開的 IN_PROGRESS 蓋掉
-      const current = byPassage.get(row.passage_id);
-      if (current?.status === "SUBMITTED") continue;
-      byPassage.set(row.passage_id, {
-        status: row.status,
-        startedAt: current?.startedAt ?? row.started_at,
-      });
-    }
+    // 🛑 還要知道「這個 session 有沒有真的答過題」。打開文章的當下就會建
+    //    session，所以光看 status 會把「點進去看一眼」當成做到一半。
+    const { data: attempts } = await supabase
+      .from("reading_attempts")
+      .select("session_id");
+
+    const answered = new Set(
+      ((attempts ?? []) as { session_id: string }[]).map((a) => a.session_id),
+    );
+    const byPassage = progressByPassage((sessions ?? []) as SessionRow[], answered);
 
     setItems(
       ((passages ?? []) as (ReadingPassageListItem & { status: string })[]).map((p) => {
