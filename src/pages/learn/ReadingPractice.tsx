@@ -94,6 +94,10 @@ export default function ReadingPractice() {
 
   if (!s.payload) return null;
 
+  const anchor = s.payload.questions.find(
+    (q) => q.target_text && q.target_occurrence,
+  );
+
   // 結算畫面
   if (s.summary) {
     return (
@@ -136,7 +140,13 @@ export default function ReadingPractice() {
 
         {/* 桌機左文章右題目；窄螢幕文章在上、可收合 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          <PassagePane passage={s.payload.passage} />
+          {/* 🛑 anchor 來自【題目】，不是文章——是某一題在考那一處。
+              目前只有 VC 題有，所以整篇文章至多標一個地方。 */}
+          <PassagePane
+            passage={s.payload.passage}
+            target={anchor?.target_text ?? null}
+            occurrence={anchor?.target_occurrence ?? null}
+          />
 
           <div className="space-y-6 min-w-0">
             <div className="flex items-center justify-between gap-2">

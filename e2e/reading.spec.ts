@@ -314,6 +314,29 @@ test("直接輸入某一篇的網址進得去，而且不影響其他篇", async
   expect(state.attempts).toHaveLength(1);
 });
 
+// ── 字彙題標的是哪一次出現 ───────────────────────────────────────────
+
+test("字彙題只標【被考的那一次】，不是每一次", async ({ page }) => {
+  await seed(page);
+  await page.goto(practiceUrl(P1));
+  await expect(questionCard(page, P1, 1)).toBeVisible();
+
+  // anchorword 在文章裡出現三次，題目考的是第二次
+  await expect(page.getByText("anchorword")).toHaveCount(3);
+
+  const marks = page.locator("mark", { hasText: "anchorword" });
+  // 🛑 只有一個被標起來。看到同一個字就全部標粗，學生還是不知道問的是哪一個。
+  await expect(marks).toHaveCount(1);
+
+  // 🛑 而且是第二段那一個——「總是標第一個」會在這裡失敗
+  const paragraphs = page.locator("p", { hasText: "anchorword" });
+  await expect(paragraphs.nth(0).locator("mark")).toHaveCount(0);
+  await expect(paragraphs.nth(1).locator("mark")).toHaveCount(1);
+  await expect(paragraphs.nth(2).locator("mark")).toHaveCount(0);
+
+  await expect(page.getByText(/字彙題問的是/)).toBeVisible();
+});
+
 // ── 附帶：閘門 ───────────────────────────────────────────────────────
 
 test("沒被開放閱讀練習的學生看不到內容", async ({ page }) => {

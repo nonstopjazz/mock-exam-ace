@@ -83,6 +83,9 @@ export interface FakeQuestion {
   options: string[];
   /** 🛑 題庫的原始標籤。一律 'B'——就是真實題庫 47.2% 的那個偏斜 */
   correct: string;
+  /** VC 題才有：要標出來的字，以及是第幾次出現 */
+  target_text?: string;
+  target_occurrence?: number;
 }
 
 export const PASSAGES = [
@@ -100,6 +103,8 @@ export const QUESTIONS: FakeQuestion[] = PASSAGES.flatMap((p) =>
     // 文字互不相同，測試才分得出「哪個位置放了哪個選項」
     options: LABELS.map((l) => `${p.passage_id}-q${i + 1}-opt-${l}`),
     correct: "B",
+    // VC 是第六題。文章裡 anchor 這個字【出現三次】，題目考的是第二次。
+    ...(c === "VC" ? { target_text: "anchorword", target_occurrence: 2 } : {}),
   })),
 );
 
@@ -190,7 +195,11 @@ function getPassage(db: FakeDb, passageId: string, sessionId: string | null): Rp
     data: {
       passage: {
         ...passage,
-        passage_text: `${passage.title} 的第一段。\n\n第二段。`,
+        // 🛑 anchorword 刻意出現三次，而且第一段就有一次——
+        //    「總是標第一個」那種寫法會在這裡立刻現形。
+        passage_text: `First paragraph with anchorword here.\n\n`
+          + `Second paragraph with anchorword again.\n\n`
+          + `Third paragraph with anchorword once more.`,
         cefr_level: "B1",
         content_family: "Science",
         subdomain: null,
@@ -208,6 +217,8 @@ function getPassage(db: FakeDb, passageId: string, sessionId: string | null): Rp
           construct: q.construct,
           question: q.question,
           options,
+          target_text: q.target_text ?? null,
+          target_occurrence: q.target_occurrence ?? null,
         };
       }),
       paragraphs: [],

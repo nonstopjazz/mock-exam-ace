@@ -26,6 +26,14 @@ export interface ReadingQuestion {
   construct: Construct;
   question: string;
   options: Record<OptionLabel, string>;
+  /**
+   * VC 題要標出來的那一處。兩個【要嘛都有值，要嘛都是 null】——
+   * 資料庫的 CHECK 也是這樣擋的。
+   *
+   * 🛑 這不是答案。它只說「題目問的是文章裡的這一處」，不透露正解。
+   */
+  target_text?: string | null;
+  target_occurrence?: number | null;
 }
 
 export interface ReadingParagraph { paragraph_no: number; description: string }
