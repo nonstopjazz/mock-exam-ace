@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronRight, Clock, Loader2, MessageSquare, Sparkles, TriangleAlert } from "lucide-react";
 import { OVERALL_LABEL } from "@/components/learn/writing/report/reportLabels";
 import { formatEssayDate } from "@/components/learn/writing/writingFormat";
-import type { EssayCard as EssayCardData } from "@/types/writing";
+import type { EssayCard as EssayCardData, EssayScore } from "@/types/writing";
 
 /**
  * 一篇作文 = 一張卡。
@@ -101,6 +101,46 @@ function ResultSlot({ card, state }: { card: EssayCardData; state: CardState }) 
   );
 }
 
+/**
+ * 老師用紅筆寫上去的分數。
+ *
+ * 🛑 沒有分數時【整個不出現】。給一個 0 分或「尚未評分」的框，
+ *    會讓還在批改中的作文看起來像被打了低分。
+ *
+ * 🛑 字型用既有的 font-display（Fredoka，圓體）。這個站只有一套字型系統，
+ *    為了一個小效果引進一支手寫字型，是在為了裝飾新增一個永久的相依。
+ *
+ * 🛑 沒評滿五項時要把分母講出來。17 / 20 有可能只評了四項，
+ *    不講的話學生會以為那是完整的評分。
+ */
+function ScoreMark({ score }: { score: EssayScore | null }) {
+  if (!score) return null;
+
+  const partial = score.measured < score.total;
+
+  return (
+    <span className="flex flex-col items-end leading-none">
+      <span
+        aria-label={`總分 ${score.score} 分，滿分 20 分${
+          partial ? `，五個面向中評了 ${score.measured} 項` : ""
+        }`}
+        /* 微微歪一點、往外挪一點——像順手寫上去的，不是排版排出來的。
+           位移刻意很小：Card 是 overflow-hidden，挪太多會被裁掉。 */
+        className="font-display text-2xl font-bold text-destructive tabular-nums
+                   -rotate-[4deg] translate-x-0.5 -translate-y-0.5 select-none"
+      >
+        {score.score}
+        <span className="text-base font-semibold"> / 20</span>
+      </span>
+      {partial ? (
+        <span className="mt-1.5 text-[11px] font-normal text-muted-foreground">
+          評了 {score.measured} / {score.total} 項
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 export function EssayCard({ card }: { card: EssayCardData }) {
   const state = cardState(card);
   const action = state === "COMPLETED" ? "查看批改報告" : "查看這篇作文";
@@ -150,19 +190,25 @@ export function EssayCard({ card }: { card: EssayCardData }) {
           </div>
 
           <div className="flex items-center justify-between gap-2 text-sm">
-            <span className="flex items-center gap-1 text-primary font-medium">
+            <span className="flex items-center gap-1 text-primary font-medium whitespace-nowrap">
               {state === "COMPLETED" ? (
                 <Sparkles className="h-4 w-4" />
               ) : null}
               {action}
               <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </span>
-            {card.has_teacher_feedback ? (
-              <span className="flex items-center gap-1 text-muted-foreground shrink-0">
-                <MessageSquare className="h-4 w-4" />
-                老師評語
-              </span>
-            ) : null}
+            <span className="flex items-center gap-3 shrink-0">
+              {card.has_teacher_feedback ? (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <MessageSquare className="h-4 w-4" />
+                  {/* 🛑 有分數時只留圖示。三樣東西擠在同一列，
+                      「查看批改報告」會被折成兩行——主要動作不該為了
+                      一個附註而斷行。圖示保留 aria-label，資訊沒有消失。 */}
+                  <span className={card.score ? "sr-only" : ""}>老師評語</span>
+                </span>
+              ) : null}
+              <ScoreMark score={card.score} />
+            </span>
           </div>
         </div>
       </Card>
