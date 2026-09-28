@@ -39,6 +39,7 @@ FILES=(
   supabase/migrations/create_learn_courses.sql
   supabase/migrations/create_learn_course_rpcs.sql
   supabase/migrations/create_learn_course_playback.sql
+  supabase/migrations/create_learn_course_admin.sql
 )
 
 for f in "${FILES[@]}"; do
@@ -49,5 +50,8 @@ for f in "${FILES[@]}"; do
 done
 
 echo
-run_as "psql -q -v ON_ERROR_STOP=1 -d $DB -f '$PWD/supabase/tests/learn_course_access_test.sql'" 2>&1 \
-  | sed -E 's/^psql:[^ ]+ NOTICE:  //'
+for t in learn_course_access_test learn_course_admin_test; do
+  echo "──────── $t ────────"
+  run_as "psql -q -v ON_ERROR_STOP=1 -d $DB -f '$PWD/supabase/tests/$t.sql'" 2>&1 \
+    | sed -E 's/^psql:[^ ]+ NOTICE:  //'
+done

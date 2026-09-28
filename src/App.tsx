@@ -304,7 +304,6 @@ const App = () => (
           {!IS_PRODUCTION && (
             <>
               <Route path="/admin/upload" element={<><Navbar /><Admin /></>} />
-              <Route path="/admin/course-management" element={<><Navbar /><CourseManagement /></>} />
               <Route path="/admin/exam-management" element={<><Navbar /><ExamManagement /></>} />
               <Route path="/admin/vocabulary-management" element={<><Navbar /><VocabularyManagement /></>} />
               <Route path="/admin/vocabulary-packs" element={<><Navbar /><VocabularyPackList /></>} />
@@ -325,8 +324,18 @@ const App = () => (
           <Route path="/courses" element={<StudentFeatureGate feature={FEATURE_COURSE} title="影片課程" description="課程還沒有對你開放，請聯絡老師。"><Navbar /><VideoCourses /></StudentFeatureGate>} />
           <Route path="/course/:courseId" element={<StudentFeatureGate feature={FEATURE_COURSE} title="影片課程" description="課程還沒有對你開放，請聯絡老師。"><Navbar /><CourseDetail /></StudentFeatureGate>} />
           <Route path="/drip-course/:courseId" element={<StudentFeatureGate feature={FEATURE_COURSE} title="影片課程" description="課程還沒有對你開放，請聯絡老師。"><Navbar /><DripCourse /></StudentFeatureGate>} />
-          <Route path="/course-management" element={<Navigate to="/" replace />} />
-          <Route path="/course-management/:courseId/edit" element={<Navigate to="/" replace />} />
+          {/* 管理端：課程。🛑 不再放在 !IS_PRODUCTION 區塊裡——
+              放課本來就要在正式環境做，而 RequireAdmin 才是對的保護。 */}
+          <Route path="/admin/courses" element={
+            <RequireAdmin><Navbar /><CourseManagement /></RequireAdmin>
+          } />
+          <Route path="/admin/courses/:courseId/edit" element={
+            <RequireAdmin><Navbar /><CourseEdit /></RequireAdmin>
+          } />
+          {/* 舊路徑。原本是 Navigate to="/"——按「編輯」會被踢回首頁。 */}
+          <Route path="/admin/course-management" element={<Navigate to="/admin/courses" replace />} />
+          <Route path="/course-management" element={<Navigate to="/admin/courses" replace />} />
+          <Route path="/course-management/:courseId/edit" element={<Navigate to="/admin/courses" replace />} />
 
           {/* Phase 0: Practice pages (require login for progress sync) */}
           <Route path="/practice" element={<ProtectedRoute><Navbar /><Phase0Index /></ProtectedRoute>} />

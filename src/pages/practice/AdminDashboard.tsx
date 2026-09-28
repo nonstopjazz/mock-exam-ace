@@ -37,9 +37,9 @@ const AdminDashboard = () => {
     },
     {
       title: "影片課程管理",
-      description: "管理標準課程與滴漏式課程內容",
+      description: "建立課程、編排影片、決定開放給誰",
       icon: Video,
-      path: "/admin/course-management",
+      path: "/admin/courses",
       color: "bg-blue-500",
     },
     {
