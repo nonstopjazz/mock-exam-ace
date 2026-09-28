@@ -93,21 +93,43 @@ export function useLessonPlayback() {
   return { playback, loading, error, open, close };
 }
 
+export interface ProgressResult {
+  ok: boolean;
+  /** 伺服器判定的完成狀態。達到觀看門檻時會自己變 true */
+  completed: boolean;
+  watchedSeconds: number;
+  thresholdSeconds: number;
+}
+
 /**
  * 回報進度。
  *
- * 🛑 這支不管回傳值也不擋 UI：進度回報失敗不該讓學生看不了影片。
+ * 🛑 這支不擋 UI：進度回報失敗不該讓學生看不了影片。
  *    但 error 仍然要被讀掉，否則是一個沒人處理的 rejected promise。
+ *
+ * 🛑 完成【由伺服器決定】。前端送上去的是「看了幾秒」，
+ *    夠不夠是那邊算的——門檻改了不用改前端，而且前端說了不算。
  */
 export async function reportLessonProgress(
   lessonId: string,
   positionSeconds: number | null,
   completed: boolean,
-): Promise<boolean> {
-  const { error } = await supabase.rpc("learn_lesson_progress_set", {
+  watchedSeconds: number | null = null,
+): Promise<ProgressResult> {
+  const { data, error } = await supabase.rpc("learn_lesson_progress_set", {
     p_lesson_id: lessonId,
     p_position_seconds: positionSeconds,
     p_completed: completed,
+    p_watched_seconds: watchedSeconds,
   });
-  return !error;
+  if (error) {
+    return { ok: false, completed: false, watchedSeconds: 0, thresholdSeconds: 0 };
+  }
+  const row = (data ?? {}) as Record<string, unknown>;
+  return {
+    ok: true,
+    completed: row.completed === true,
+    watchedSeconds: Number(row.watched_seconds ?? 0),
+    thresholdSeconds: Number(row.threshold_seconds ?? 0),
+  };
 }

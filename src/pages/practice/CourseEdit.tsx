@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Loader2, Save, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -213,6 +213,24 @@ export default function CourseEdit() {
                 </div>
 
                 <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                  <div className="pr-4">
+                    <p className="font-semibold text-foreground">必須看完才算完成</p>
+                    <p className="text-sm text-muted-foreground">
+                      打開之後學生看不到「標記為完成」，只有實際看到 90% 才算。
+                      循序課要「真的看完才解鎖」就開這個。
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      🛑 進度是學生的瀏覽器回報的。它擋得住懶得看的人，
+                      擋不住決心要繞過的人——不要當成考試監控。
+                    </p>
+                  </div>
+                  <Switch
+                    checked={form.require_watch}
+                    onCheckedChange={(v) => patch({ require_watch: v })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg border border-border p-4">
                   <div>
                     <p className="font-semibold text-foreground">對學生發布</p>
                     <p className="text-sm text-muted-foreground">
@@ -281,8 +299,11 @@ function AccessPanel({ courseId, courseAccess }: { courseId?: string; courseAcce
             而後台會顯示「已開放」——那是最難查的那種問題。 */}
         <Alert>
           <AlertDescription className="text-sm">
-            🛑 選課只是第二道閘。學生還要在 <code>/admin/feature-access</code> 被開放
-            「影片課程」這個功能才看得到，兩道都要過。
+            🛑 選課只是第二道閘。學生還要被開放「影片課程」這個功能才看得到，
+            兩道都要過。
+            <Button variant="link" className="h-auto p-0 pl-1 text-sm" asChild>
+              <Link to="/admin/feature-access">設定開放對象</Link>
+            </Button>
           </AlertDescription>
         </Alert>
 

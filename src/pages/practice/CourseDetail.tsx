@@ -11,9 +11,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { toast } from "sonner";
 import { LessonPlayer } from "@/components/learn/course/LessonPlayer";
-import { reportLessonProgress, useCourseDetail, useLessonPlayback } from "@/hooks/learn/useCourses";
+import { useCourseDetail, useLessonPlayback } from "@/hooks/learn/useCourses";
 import {
   countLessons, formatDuration, formatDurationLong, LEVEL_LABEL,
   nextLesson, progressPercent, sectionLabel,
@@ -34,7 +33,6 @@ export default function CourseDetail() {
   const { detail, loading, error, reload } = useCourseDetail(courseId);
   const playback = useLessonPlayback();
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const [completing, setCompleting] = useState(false);
 
   // 🛑 useMemo，不是 `detail?.sections ?? []`。後者每次 render 都是一個新陣列，
   //    底下每一個以它為依賴的 useMemo 就全部失效了。
@@ -65,17 +63,6 @@ export default function CourseDetail() {
     if (target) void openLesson(target);
   }, [detail, currentId, openLesson]);
 
-  const markComplete = async () => {
-    if (!currentId) return;
-    setCompleting(true);
-    const ok = await reportLessonProgress(currentId, null, true);
-    setCompleting(false);
-    if (!ok) { toast.error("標記失敗，請再試一次"); return; }
-    toast.success("已標記為完成");
-    // 🛑 重新載入大綱，不是在前端把 completed 改成 true。
-    //    循序課的解鎖是後端算的，本地改一個布林不會讓下一段真的解開。
-    await reload();
-  };
 
   if (loading) {
     return (
@@ -165,8 +152,8 @@ export default function CourseDetail() {
                   loading={playback.loading}
                   error={playback.error}
                   completed={currentLesson?.completed ?? false}
-                  completing={completing}
-                  onComplete={markComplete}
+
+                  onCompleted={() => { void reload(); }}
                   onRefresh={() => { if (currentId) void playback.open(currentId); }}
                 />
               </CardContent>

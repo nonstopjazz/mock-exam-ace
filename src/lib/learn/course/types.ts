@@ -41,6 +41,10 @@ export interface CourseLesson {
   is_preview: boolean;
   completed: boolean;
   last_position_seconds: number;
+  /** 實際播放過的秒數累計（不含拖曳） */
+  watched_seconds: number;
+  /** 看到幾秒算完成。後端算的（duration × 90%） */
+  threshold_seconds: number;
 }
 
 export interface CourseSection {
@@ -54,7 +58,8 @@ export interface CourseSection {
 }
 
 export interface CourseDetail {
-  course: Omit<CourseSummary, "lesson_count" | "completed_count" | "duration_seconds">;
+  course: Omit<CourseSummary, "lesson_count" | "completed_count" | "duration_seconds">
+    & { require_watch: boolean };
   sections: CourseSection[];
 }
 
@@ -69,4 +74,8 @@ export interface LessonPlayback {
   embed_url: string;
   /** Bunny 的簽章有效期；YouTube 是 null */
   expires_at: string | null;
+  watched_seconds: number;
+  threshold_seconds: number;
+  /** true = 只有看到門檻才算完成，「標記為完成」按鈕不出現 */
+  require_watch: boolean;
 }

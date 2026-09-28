@@ -408,6 +408,7 @@ async function rpc(name: string, args: Json = {}): Promise<RpcResult> {
           id: "c-1", slug: "smoke", title: "煙霧測試課", description: "",
           instructor: "", cover_path: null, level: "BEGINNER", category: "",
           type: "STANDARD", access: "ENROLLED", status: "DRAFT", sort_order: 0,
+          require_watch: false,
         },
         sections: [],
       }, error: null };
