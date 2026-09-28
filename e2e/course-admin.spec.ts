@@ -85,6 +85,13 @@ test("課程編輯頁載得起來，三個分頁都切得動", async ({ page }) 
   await page.getByRole("tab", { name: "課程資訊" }).click();
   await expect(page.getByLabel("課名")).toBeVisible();
 
+  // 封面是真的上傳元件，不是要人自己打檔名的文字框
+  await expect(page.getByText("把圖片拖進來，或按下面的按鈕")).toBeVisible();
+  await expect(page.getByText(/1280 × 720（16:9）・最大 2 MB/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "選擇圖片" })).toBeVisible();
+  // 🛑 原本那格的 placeholder 不該再出現
+  await expect(page.getByPlaceholder("course-covers 裡的檔名")).toHaveCount(0);
+
   await page.getByRole("tab", { name: "開放給誰" }).click();
   await expect(page.getByText(/選課只是第二道閘/)).toBeVisible();
 
