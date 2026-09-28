@@ -45,6 +45,8 @@ export interface FakeAttempt {
 export interface FakeDb {
   signedIn: boolean;
   featureEnabled: boolean;
+  /** RequireAdmin 用。預設 false——管理頁要明確說才進得去。 */
+  isAdmin?: boolean;
   sessions: FakeSession[];
   attempts: FakeAttempt[];
 }
@@ -391,6 +393,32 @@ async function rpc(name: string, args: Json = {}): Promise<RpcResult> {
       return finishSession(db, args.p_session_id as string);
     case "reading_my_stats":
       return myStats(db);
+
+    // ── 管理端 ──────────────────────────────────────────────────
+    // 🛑 這幾支【只回得出能渲染的最小形狀】，不模擬任何規則。
+    //    刪除的守門、position 重排、權限三層都由 supabase/tests 的
+    //    43 條 SQL 斷言驗證。在這裡照抄一份規則，只會變成
+    //    「證明假後端跟自己一致」——那正是這個檔案開頭警告的事。
+    //    這裡要擋的是另一件事：頁面在瀏覽器裡到底打不打得開。
+    case "learn_course_list":
+      return { data: [], error: null };
+    case "learn_admin_course_get":
+      return { data: {
+        course: {
+          id: "c-1", slug: "smoke", title: "煙霧測試課", description: "",
+          instructor: "", cover_path: null, level: "BEGINNER", category: "",
+          type: "STANDARD", access: "ENROLLED", status: "DRAFT", sort_order: 0,
+        },
+        sections: [],
+      }, error: null };
+    case "learn_admin_course_access":
+      return { data: { course_id: "c-1", access: "ENROLLED",
+                       classes: [], students: [], reach: 0 }, error: null };
+    case "learn_admin_course_config":
+      return { data: { bunny_library_id: null, bunny_token_ttl_seconds: 14400,
+                       bunny_token_required: true, vault_key_present: false,
+                       bunny_lesson_count: 0 }, error: null };
+
     default:
       return { data: null, error: null };
   }
@@ -404,6 +432,11 @@ interface Builder extends PromiseLike<{ data: unknown[]; error: null }> {
   order: (...a: unknown[]) => Builder;
   limit: (...a: unknown[]) => Builder;
   in: (...a: unknown[]) => Builder;
+  /** 🛑 真的 client 有這兩支。沒有的話呼叫端會丟 TypeError，
+   *  而 useAdmin 那種有 try/catch 的地方會把它吞成「不是管理員」——
+   *  畫面顯示權限不足，console 一片乾淨。 */
+  single: () => Promise<{ data: unknown; error: { code: string } | null }>;
+  maybeSingle: () => Promise<{ data: unknown; error: null }>;
 }
 
 function from(table: string): Builder {
@@ -425,6 +458,8 @@ function from(table: string): Builder {
       return keep([...db.sessions].sort((a, b) => (a.started_at < b.started_at ? 1 : -1)));
     }
     if (table === "reading_attempts") return keep(db.attempts);
+    // 管理頁的煙霧測試要進得去。RequireAdmin 讀這張表。
+    if (table === "app_admins") return db.isAdmin ? [{ user_id: "e2e-student" }] : [];
     return [];
   };
 
@@ -434,6 +469,15 @@ function from(table: string): Builder {
     order: () => builder,
     limit: () => builder,
     in: () => builder,
+    // PGRST116 = 沒有資料列。PostgREST 對 .single() 就是回這個，
+    // 而 useAdmin 特地把它當成「不是錯誤」——形狀要一致才測得準。
+    single: async () => {
+      const r = rows();
+      return r.length > 0
+        ? { data: r[0], error: null }
+        : { data: null, error: { code: "PGRST116" } };
+    },
+    maybeSingle: async () => ({ data: rows()[0] ?? null, error: null }),
     then: (resolve: (v: { data: unknown[]; error: null }) => unknown) =>
       Promise.resolve().then(() => resolve({ data: rows(), error: null })),
   } as Builder;

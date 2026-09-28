@@ -24,7 +24,13 @@ function coverUrl(path: string | null): string | null {
   if (!path) return null;
   // 已經是完整網址就直接用（方便先用外部圖片試版）
   if (/^https?:\/\//i.test(path)) return path;
-  return supabase.storage.from(COVER_BUCKET).getPublicUrl(path).data.publicUrl ?? null;
+  // 🛑 整條鏈都要防。bucket 沒建、storage 被替身換掉、回傳形狀改了——
+  //    任何一環斷掉都只該是「沒有封面」，不該讓整張卡片炸掉。
+  try {
+    return supabase.storage.from(COVER_BUCKET)?.getPublicUrl?.(path)?.data?.publicUrl ?? null;
+  } catch {
+    return null;
+  }
 }
 
 interface CourseCardProps {
