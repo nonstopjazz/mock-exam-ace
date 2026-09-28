@@ -15,10 +15,13 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { CourseOutlineEditor } from "@/components/learn/course/CourseOutlineEditor";
+import { CoverUploader } from "@/components/learn/course/CoverUploader";
 import {
   saveCourse, saveOutline, useAdminCourse, useCourseAccess,
   type AdminCourse, type AdminSection,
 } from "@/hooks/learn/useCourseAdmin";
+import { isBucketObject } from "@/lib/learn/course/coverFile";
+import { supabase } from "@/lib/supabase";
 import type { CourseType } from "@/lib/learn/course/types";
 
 /**
@@ -45,9 +48,21 @@ export default function CourseEdit() {
   const submitMeta = async () => {
     if (!form) return;
     setSavingMeta(true);
+    const previousCover = course?.cover_path ?? null;
     const result = await saveCourse(form);
     setSavingMeta(false);
     if (!result.ok) { toast.error(result.message); return; }
+
+    // 🛑 舊封面要等課程【真的存好】才刪。反過來的話存檔失敗時
+    //    舊封面已經沒了，而新的沒進資料庫——畫面會變成沒有封面，
+    //    而且那張圖救不回來。
+    if (previousCover
+        && previousCover !== result.course.cover_path
+        && isBucketObject(previousCover)) {
+      // 刪不掉不影響這次操作，最多留一個沒人用的檔案
+      await supabase.storage.from("course-covers").remove([previousCover]);
+    }
+
     toast.success("已儲存");
     await reload();
   };
@@ -183,7 +198,7 @@ export default function CourseEdit() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>型態</Label>
                     <Select value={form.type} onValueChange={(v) => patch({ type: v })}>
@@ -204,12 +219,15 @@ export default function CourseEdit() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cover">封面（storage path）</Label>
-                    <Input id="cover" value={form.cover_path ?? ""}
-                      onChange={(e) => patch({ cover_path: e.target.value || null })}
-                      placeholder="course-covers 裡的檔名" />
-                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>封面</Label>
+                  <CoverUploader
+                    value={form.cover_path}
+                    slug={form.slug}
+                    onChange={(path) => patch({ cover_path: path })}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between rounded-lg border border-border p-4">

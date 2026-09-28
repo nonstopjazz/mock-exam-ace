@@ -513,11 +513,30 @@ const auth = {
 const noop = () => ({ data: null, error: null });
 
 /**
+ * 夠用的 storage 替身。
+ *
+ * 🛑 真的 client 的 storage.from() 回的是一個【有方法的物件】，不是
+ *    { data, error }。回錯形狀的話呼叫端會丟 TypeError——而像 useAdmin
+ *    那種有 try/catch 的地方會把它吞成「沒有權限」，console 一片乾淨。
+ */
+const storage = {
+  from: (bucket: string) => ({
+    getPublicUrl: (path: string) => ({
+      data: { publicUrl: `https://fake.storage.test/${bucket}/${path}` },
+    }),
+    upload: async (path: string) => ({ data: { path }, error: null }),
+    remove: async () => ({ data: [], error: null }),
+    createSignedUrl: async () => ({ data: null, error: null }),
+    createSignedUrls: async () => ({ data: [], error: null }),
+  }),
+};
+
+/**
  * 沒實作到的東西一律回一個安靜的空值，不要讓應用程式在無關的地方炸掉——
  * 這些測試要看的是閱讀流程，不是單字本有沒有資料。
  */
 export const supabase = new Proxy(
-  { rpc, from, auth, channel: noop, removeChannel: noop, storage: { from: noop } },
+  { rpc, from, auth, channel: noop, removeChannel: noop, storage },
   {
     get(target: Record<string, unknown>, prop: string) {
       if (prop in target) return target[prop];
