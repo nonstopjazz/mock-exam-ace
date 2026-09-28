@@ -92,6 +92,7 @@ import VocabularyPackDetail from "./pages/practice/VocabularyPackDetail";
 import WeakWords from "./pages/practice/WeakWords";
 import CourseManagement from "./pages/practice/CourseManagement";
 import CourseEdit from "./pages/practice/CourseEdit";
+import { FEATURE_COURSE } from "./config/gatedFeatures";
 import AdminDashboard from "./pages/practice/AdminDashboard";
 import AchievementManagement from "./pages/practice/AchievementManagement";
 import ExamManagement from "./pages/practice/ExamManagement";
@@ -314,10 +315,16 @@ const App = () => (
             </>
           )}
 
-          {/* Video Courses (Phase 2) */}
-          <Route path="/courses" element={<PhaseGate requiredPhase={2} title="影片課程" description="課程功能即將推出，敬請期待！"><Navbar /><VideoCourses /></PhaseGate>} />
-          <Route path="/course/:courseId" element={<PhaseGate requiredPhase={2} title="影片課程" description="課程功能即將推出，敬請期待！"><Navbar /><CourseDetail /></PhaseGate>} />
-          <Route path="/drip-course/:courseId" element={<PhaseGate requiredPhase={2} title="影片課程" description="課程功能即將推出，敬請期待！"><Navbar /><DripCourse /></PhaseGate>} />
+          {/* 影片課程 —— 逐人／逐班開放，不綁 phase。
+              🛑 原本這三條是 PhaseGate requiredPhase={2}。那擋不住也開不了：
+                 current_phase 調到 2 會【同時】解鎖學測模考、儀表板、
+                 AI 作文批改、任務地圖、成就系統、寶石商店與個人檔案，
+                 而那些都還沒完成。課程要能上線，就不能跟它們綁在一起。
+              🛑 這道閘只管畫面。真正的把關在 learn_course_list() 與
+                 learn_course_playback() 裡，它們各自會再驗一次。 */}
+          <Route path="/courses" element={<StudentFeatureGate feature={FEATURE_COURSE} title="影片課程" description="課程還沒有對你開放，請聯絡老師。"><Navbar /><VideoCourses /></StudentFeatureGate>} />
+          <Route path="/course/:courseId" element={<StudentFeatureGate feature={FEATURE_COURSE} title="影片課程" description="課程還沒有對你開放，請聯絡老師。"><Navbar /><CourseDetail /></StudentFeatureGate>} />
+          <Route path="/drip-course/:courseId" element={<StudentFeatureGate feature={FEATURE_COURSE} title="影片課程" description="課程還沒有對你開放，請聯絡老師。"><Navbar /><DripCourse /></StudentFeatureGate>} />
           <Route path="/course-management" element={<Navigate to="/" replace />} />
           <Route path="/course-management/:courseId/edit" element={<Navigate to="/" replace />} />
 

@@ -9,6 +9,7 @@
 export const GATED_FEATURES = [
   { feature: "speaking", label: "口說練習" },
   { feature: "reading",  label: "閱讀練習" },
+  { feature: "course",   label: "影片課程" },
 ] as const;
 
 export type GatedFeature = (typeof GATED_FEATURES)[number]["feature"];
@@ -25,3 +26,4 @@ export const FEATURE_LABEL: Record<string, string> = Object.fromEntries(
  */
 export const FEATURE_SPEAKING: GatedFeature = "speaking";
 export const FEATURE_READING: GatedFeature = "reading";
+export const FEATURE_COURSE: GatedFeature = "course";
