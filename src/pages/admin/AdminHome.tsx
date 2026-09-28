@@ -17,6 +17,8 @@ import {
   Mic,
   Sparkles,
   BookOpen,
+  Video,
+  ShieldCheck,
 } from 'lucide-react';
 import { PRODUCT_CONFIG } from '@/config/product';
 import { useWritingPendingCount } from '@/hooks/learn/useWritingPendingCount';
@@ -139,6 +141,19 @@ export default function AdminHome() {
       icon: <BookOpen className="h-6 w-6" />,
       href: '/admin/reading/import',
       badge: '新功能',
+    },
+    {
+      title: '影片課程',
+      description: '建立課程、編排影片、決定開放給誰',
+      icon: <Video className="h-6 w-6" />,
+      href: '/admin/courses',
+      badge: '新功能',
+    },
+    {
+      title: '功能開放',
+      description: '決定哪些班級、哪些學生看得到口說、閱讀與影片課程',
+      icon: <ShieldCheck className="h-6 w-6" />,
+      href: '/admin/feature-access',
     },
     {
       title: '模擬考管理',

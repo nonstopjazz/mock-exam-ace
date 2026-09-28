@@ -43,6 +43,7 @@ export interface AdminCourse {
   access: string;
   status: string;
   sort_order: number;
+  require_watch: boolean;
 }
 
 export interface CourseAccessRow {
