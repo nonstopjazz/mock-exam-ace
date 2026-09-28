@@ -66,6 +66,8 @@ export function LessonPlayer({
     completedRef.current = false;
   }, [playback?.lesson_id]);
 
+  // 簽章到期前先換一份新的，讓【下一次】載入用得到有效的網址。
+  // 因為 iframe 的 key 綁的是 lesson_id，這不會打斷正在播的影片。
   useEffect(() => {
     if (refreshRef.current) clearTimeout(refreshRef.current);
     if (!playback?.expires_at) return;
@@ -125,9 +127,14 @@ export function LessonPlayer({
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         )}
+        {/* 🛑 key 綁 lesson_id，【不是】embed_url。
+            Bunny 的網址帶簽章、會換，綁 embed_url 的話重新簽就會讓
+            React 重新掛載這個 iframe——影片從頭開始播。學生把分頁開著
+            看一支長片，看到一半畫面自己跳回 0:00。
+            重新簽只需要影響【下一次載入】，不該打斷正在播的。 */}
         <iframe
           ref={iframeRef}
-          key={playback.embed_url}
+          key={playback.lesson_id}
           src={playback.embed_url}
           title={playback.title}
           className="absolute inset-0 h-full w-full border-0"
