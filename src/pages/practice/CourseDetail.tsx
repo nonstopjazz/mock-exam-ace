@@ -14,7 +14,7 @@ import {
 import { LessonPlayer } from "@/components/learn/course/LessonPlayer";
 import { useCourseDetail, useLessonPlayback } from "@/hooks/learn/useCourses";
 import {
-  countLessons, formatDuration, formatDurationLong, LEVEL_LABEL,
+  countLessons, formatDurationLong, formatDurationOrDash, LEVEL_LABEL,
   nextLesson, progressPercent, sectionLabel,
 } from "@/lib/learn/course/format";
 import type { CourseLesson } from "@/lib/learn/course/types";
@@ -219,7 +219,7 @@ export default function CourseDetail() {
                                     <Badge variant="outline" className="shrink-0 text-xs">試看</Badge>
                                   )}
                                   <span className="shrink-0 text-xs text-muted-foreground">
-                                    {formatDuration(lesson.duration_seconds)}
+                                    {formatDurationOrDash(lesson.duration_seconds)}
                                   </span>
                                 </button>
                               );

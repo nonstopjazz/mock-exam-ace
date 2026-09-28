@@ -1,0 +1,4 @@
+-- 回滾：把 writing_admin_queue() 還原成沒有次要排序的版本。
+-- 🛑 還原之後 submitted_at 相同的作文順序會再度不固定，
+--    而檢閱動線的「下一篇」可能漏掉其中一篇。
+-- 重新執行 supabase/migrations/add_writing_queue_error_codes.sql 即可還原。

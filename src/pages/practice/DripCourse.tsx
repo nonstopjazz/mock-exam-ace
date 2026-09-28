@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LessonPlayer } from "@/components/learn/course/LessonPlayer";
 import { useCourseDetail, useLessonPlayback } from "@/hooks/learn/useCourses";
 import {
-  countLessons, formatDuration, nextLesson, progressPercent, sectionLabel,
+  countLessons, formatDurationOrDash, nextLesson, progressPercent, sectionLabel,
 } from "@/lib/learn/course/format";
 import type { CourseLesson, CourseSection } from "@/lib/learn/course/types";
 
@@ -227,7 +227,7 @@ export default function DripCourse() {
                         <span className="min-w-0 flex-1 truncate text-foreground">{lesson.title}</span>
                         <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          {formatDuration(lesson.duration_seconds)}
+                          {formatDurationOrDash(lesson.duration_seconds)}
                         </span>
                       </button>
                     ))}

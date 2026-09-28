@@ -207,3 +207,22 @@ export function useCourseConfig() {
 
   return { config, error, save, reload: load };
 }
+
+
+/**
+ * 把播放器讀到的影片長度寫進資料庫。
+ *
+ * 🛑 僅限管理員——後端第一行就擋。duration_seconds 決定觀看完成門檻，
+ *    學生寫得動就能把每支影片的門檻設成 1 秒。
+ *
+ * 🛑 只在目前是 0 的時候會寫入。回傳 updated 告訴呼叫端有沒有真的動到，
+ *    這樣畫面才知道要不要重新載入大綱。
+ */
+export async function setLessonDuration(lessonId: string, seconds: number): Promise<boolean> {
+  const { data, error } = await supabase.rpc("learn_admin_lesson_duration_set", {
+    p_lesson_id: lessonId,
+    p_seconds: Math.round(seconds),
+  });
+  if (error) return false;
+  return (data as { updated?: boolean } | null)?.updated === true;
+}

@@ -415,6 +415,8 @@ async function rpc(name: string, args: Json = {}): Promise<RpcResult> {
     case "learn_admin_course_access":
       return { data: { course_id: "c-1", access: "ENROLLED",
                        classes: [], students: [], reach: 0 }, error: null };
+    case "learn_admin_lesson_duration_set":
+      return { data: { updated: false, duration_seconds: 0 }, error: null };
     case "learn_admin_course_config":
       return { data: { bunny_library_id: null, bunny_token_ttl_seconds: 14400,
                        bunny_token_required: true, vault_key_present: false,

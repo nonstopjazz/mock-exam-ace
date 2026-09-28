@@ -25,7 +25,11 @@ import type { LessonPlayback } from "@/lib/learn/course/types";
  *    伺服器那邊會把單次增量夾在真實經過的時間內，擋掉最省事的作弊。
  */
 
-interface YouTubePlayer { getCurrentTime: () => number; destroy: () => void }
+interface YouTubePlayer {
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  destroy: () => void;
+}
 interface YouTubeApi {
   Player: new (el: HTMLElement | string, opts: { events?: Record<string, unknown> }) => YouTubePlayer;
 }
@@ -77,6 +81,14 @@ export interface VideoWatchResult {
   tracking: boolean;
   /** 🛑 接不上。多半是擋廣告的外掛擋掉了 YouTube 的 API */
   unavailable: boolean;
+  /**
+   * 播放器回報的影片總長度，還沒讀到是 0。
+   *
+   * 資料庫的 duration_seconds 是管理員手動填的，沒填就是 0——那會讓
+   * 畫面顯示 0:00，而且觀看門檻（長度 × 90%）也是 0，那支影片永遠
+   * 不會被判定完成。管理員預覽時順手把這個值補回去。
+   */
+  duration: number;
 }
 
 export function useVideoWatch(
@@ -87,6 +99,7 @@ export function useVideoWatch(
   const [watched, setWatched] = useState(0);
   const [tracking, setTracking] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
+  const [duration, setDuration] = useState(0);
 
   const stateRef = useRef<WatchState>(initialWatchState());
   const sentRef = useRef(0);
@@ -110,6 +123,12 @@ export function useVideoWatch(
     setWatched(reportable(stateRef.current));
   }, []);
 
+  /** 播放器回報的長度。0 或不合理的值忽略——播放器 ready 之前會回 0 */
+  const onDuration = useCallback((seconds: number) => {
+    if (!Number.isFinite(seconds) || seconds <= 0) return;
+    setDuration((d) => (d > 0 ? d : Math.round(seconds)));
+  }, []);
+
   // 換影片就重來，並且把上一支的進度送出去
   useEffect(() => {
     flush();
@@ -120,6 +139,7 @@ export function useVideoWatch(
     setWatched(base);
     setTracking(false);
     setUnavailable(false);
+    setDuration(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonId]);
 
@@ -142,6 +162,8 @@ export function useVideoWatch(
           try {
             const t = player?.getCurrentTime?.();
             if (typeof t === "number") onTime(t);
+            const d = player?.getDuration?.();
+            if (typeof d === "number") onDuration(d);
           } catch {
             // 播放器還沒 ready 時會丟。下一輪再試，不用處理
           }
@@ -156,7 +178,7 @@ export function useVideoWatch(
       if (timer) clearInterval(timer);
       try { player?.destroy?.(); } catch { /* 已經被 React 卸載掉了 */ }
     };
-  }, [provider, lessonId, iframeRef, onTime]);
+  }, [provider, lessonId, iframeRef, onTime, onDuration]);
 
   // ── Bunny（player.js 協定的一小段）──────────────────
   useEffect(() => {
@@ -173,7 +195,10 @@ export function useVideoWatch(
     const onMessage = (event: MessageEvent) => {
       // 只收這個 iframe 送來的
       if (event.source !== el.contentWindow) return;
-      let payload: { context?: string; event?: string; value?: { seconds?: number } };
+      let payload: {
+        context?: string; event?: string;
+        value?: { seconds?: number; duration?: number };
+      };
       try {
         payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
       } catch { return; }
@@ -185,6 +210,8 @@ export function useVideoWatch(
       }
       if (payload.event === "timeupdate" && typeof payload.value?.seconds === "number") {
         onTime(payload.value.seconds);
+        // player.js 的 timeupdate 本來就帶 duration，不必另外問
+        if (typeof payload.value.duration === "number") onDuration(payload.value.duration);
       }
     };
 
@@ -200,7 +227,7 @@ export function useVideoWatch(
       window.removeEventListener("message", onMessage);
       clearTimeout(giveUp);
     };
-  }, [provider, lessonId, iframeRef, onTime]);
+  }, [provider, lessonId, iframeRef, onTime, onDuration]);
 
   // ── 定期回報 ────────────────────────────────────────
   useEffect(() => {
@@ -229,5 +256,5 @@ export function useVideoWatch(
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
-  return { watched, tracking, unavailable };
+  return { watched, tracking, unavailable, duration };
 }
