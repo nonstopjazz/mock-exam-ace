@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { useAnswerLatch } from "@/hooks/practice/useAnswerLatch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -172,8 +173,15 @@ const QuickQuiz = () => {
     }
   }, [timeLeft, showResult, phase]);
 
+  const answerLatch = useAnswerLatch();
+
   const handleTimeout = () => {
     if (!currentQuestion) return;
+    // 🛑 倒數結束跟學生點答案是兩條路，兩條都會記一筆。
+    //    沒有這道閂鎖的話，計時器歸零的同一瞬間點下答案，
+    //    會同時記下「答錯（timeout）」與學生真正的答案——
+    //    答對的題目在資料裡也有一筆答錯，而去重擋不住（對錯不同）。
+    if (!answerLatch.tryAcquire()) return;
     setShowResult(true);
     setCombo(0);
     setAnswers(prev => [...prev, false]);
@@ -193,6 +201,11 @@ const QuickQuiz = () => {
   };
 
   const handleAnswerSelect = (index: number) => {
+    // 🛑 閂鎖要在最前面，而且必須是 ref 不是 state。
+    //    showResult 是 state——setShowResult(true) 之後、re-render 之前它
+    //    還是 false，所以同一個 tick 裡的第二次點擊會整個穿過去。
+    //    快速點兩個【不同】選項時，兩個答案都會被記下來，一對一錯。
+    if (!answerLatch.tryAcquire()) return;
     if (showResult || !currentQuestion) return;
     setSelectedAnswer(index);
     setShowResult(true);
@@ -231,6 +244,8 @@ const QuickQuiz = () => {
   };
 
   const handleNext = () => {
+    // 換下一題，放開閂鎖
+    answerLatch.release();
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
       setSelectedAnswer(null);
@@ -557,6 +572,7 @@ const QuickQuiz = () => {
                 return (
                   <Button
                     key={index}
+                    data-testid="quiz-option"
                     onClick={() => handleAnswerSelect(index)}
                     disabled={showResult}
                     variant={showCorrectAnswer ? "default" : showWrongAnswer ? "destructive" : "outline"}

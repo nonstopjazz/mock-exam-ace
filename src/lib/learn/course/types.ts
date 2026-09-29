@@ -59,7 +59,13 @@ export interface CourseSection {
 
 export interface CourseDetail {
   course: Omit<CourseSummary, "lesson_count" | "completed_count" | "duration_seconds">
-    & { require_watch: boolean };
+    & {
+      require_watch: boolean;
+      /** 看的人是不是管理員。畫面據此說明「你看到的是特權視角」 */
+      viewer_is_admin: boolean;
+      /** 管理員現在是不是切到「以學生身分預覽」 */
+      previewing_as_student: boolean;
+    };
   sections: CourseSection[];
 }
 

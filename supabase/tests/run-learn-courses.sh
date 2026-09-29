@@ -42,6 +42,7 @@ FILES=(
   supabase/migrations/create_learn_course_admin.sql
   supabase/migrations/add_learn_lesson_watch_tracking.sql
   supabase/migrations/add_learn_lesson_duration_autofill.sql
+  supabase/migrations/add_learn_course_student_preview.sql
 )
 
 for f in "${FILES[@]}"; do
@@ -52,7 +53,7 @@ for f in "${FILES[@]}"; do
 done
 
 echo
-for t in learn_course_access_test learn_course_admin_test learn_watch_tracking_test learn_lesson_duration_test; do
+for t in learn_course_access_test learn_course_admin_test learn_watch_tracking_test learn_lesson_duration_test learn_course_preview_test; do
   echo "──────── $t ────────"
   run_as "psql -q -v ON_ERROR_STOP=1 -d $DB -f '$PWD/supabase/tests/$t.sql'" 2>&1 \
     | sed -E 's/^psql:[^ ]+ NOTICE:  //'

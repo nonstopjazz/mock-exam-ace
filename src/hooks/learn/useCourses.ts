@@ -36,7 +36,11 @@ export function useCourses() {
   return { courses, loading, error, reload: load };
 }
 
-export function useCourseDetail(courseId: string | undefined) {
+/**
+ * @param asStudent 管理員切到「以學生身分預覽」時傳 true。
+ *   🛑 這個參數只會【減少】權限。學生傳什麼都一樣，後端不會因此多給。
+ */
+export function useCourseDetail(courseId: string | undefined, asStudent = false) {
   const [detail, setDetail] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +50,7 @@ export function useCourseDetail(courseId: string | undefined) {
     setLoading(true);
     setError(null);
     const { data, error: rpcError } = await supabase
-      .rpc("learn_course_detail", { p_course_id: courseId });
+      .rpc("learn_course_detail", { p_course_id: courseId, p_as_student: asStudent });
     if (rpcError) {
       setError(rpcError.message);
       setDetail(null);
@@ -54,7 +58,7 @@ export function useCourseDetail(courseId: string | undefined) {
       setDetail(data as CourseDetail);
     }
     setLoading(false);
-  }, [courseId]);
+  }, [courseId, asStudent]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -72,11 +76,11 @@ export function useLessonPlayback() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const open = useCallback(async (lessonId: string) => {
+  const open = useCallback(async (lessonId: string, asStudent = false) => {
     setLoading(true);
     setError(null);
     const { data, error: rpcError } = await supabase
-      .rpc("learn_course_playback", { p_lesson_id: lessonId });
+      .rpc("learn_course_playback", { p_lesson_id: lessonId, p_as_student: asStudent });
     if (rpcError) {
       // 後端刻意把「沒權限」與「不存在」講成同一句話，這裡照實顯示
       setError(rpcError.message);

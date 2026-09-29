@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LessonPlayer } from "@/components/learn/course/LessonPlayer";
+import { AdminViewNotice } from "@/components/learn/course/AdminViewNotice";
 import { useCourseDetail, useLessonPlayback } from "@/hooks/learn/useCourses";
 import {
   countLessons, formatDurationOrDash, nextLesson, progressPercent, sectionLabel,
@@ -25,7 +26,8 @@ import type { CourseLesson, CourseSection } from "@/lib/learn/course/types";
 export default function DripCourse() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { detail, loading, error, reload } = useCourseDetail(courseId);
+  const [asStudent, setAsStudent] = useState(false);
+  const { detail, loading, error, reload } = useCourseDetail(courseId, asStudent);
   const playback = useLessonPlayback();
   const [unitIndex, setUnitIndex] = useState(0);
   const [currentId, setCurrentId] = useState<string | null>(null);
@@ -44,8 +46,8 @@ export default function DripCourse() {
 
   const openLesson = useCallback(async (lessonId: string) => {
     setCurrentId(lessonId);
-    await playback.open(lessonId);
-  }, [playback]);
+    await playback.open(lessonId, asStudent);
+  }, [playback, asStudent]);
 
   // 開頁時停在「該上的那一個單元」，不是永遠第一個
   useEffect(() => {
@@ -99,6 +101,14 @@ export default function DripCourse() {
         <Button variant="ghost" size="sm" onClick={() => navigate("/courses")}>
           <ArrowLeft className="mr-2 h-4 w-4" />回課程列表
         </Button>
+
+        {course.viewer_is_admin && (
+          <AdminViewNotice
+            isDrip={course.type === "DRIP"}
+            previewing={course.previewing_as_student}
+            onChange={setAsStudent}
+          />
+        )}
 
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
@@ -177,7 +187,7 @@ export default function DripCourse() {
                         completed={currentLesson?.completed ?? false}
 
                         onCompleted={() => { void reload(); }}
-                        onRefresh={() => { if (currentId) void playback.open(currentId); }}
+                        onRefresh={() => { if (currentId) void playback.open(currentId, asStudent); }}
                       />
                     </CardContent>
                   </Card>

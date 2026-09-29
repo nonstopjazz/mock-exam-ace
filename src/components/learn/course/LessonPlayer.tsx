@@ -200,28 +200,50 @@ export function LessonPlayer({
         )}
       </div>
 
-      {/* 觀看進度。門檻是 0（沒填影片長度）時不顯示——那條進度條沒有意義 */}
+      {/*
+        🛑 這【不是】播放位置，是「實際播過的秒數」的累計。
+           兩者刻意不同：播放位置可以拖，拖到最後就是 100%。
+
+           但一條進度條擺在影片正下方，任何人都會讀成「應該跟著影片跑」——
+           它被回報過一次。所以不做成一條裸的進度條：給它外框、給它單位、
+           並且明講拖曳不算。
+
+        門檻是 0（影片長度沒填）時整塊不顯示——那條進度條沒有意義。
+      */}
       {!isDone && threshold > 0 && (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">觀看進度</span>
-            <span className="text-muted-foreground">
-              {left > 0 ? `再看 ${formatDuration(left)} 就算完成` : "即將完成"}
+        <div className="rounded-lg border border-border bg-muted/30 p-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <span className="text-sm font-medium text-foreground">完成進度</span>
+            <span className="text-sm tabular-nums text-muted-foreground">
+              已看 {formatDuration(watched)} / 需 {formatDuration(threshold)}
             </span>
           </div>
-          <Progress value={pct} className="h-2" />
+          <Progress value={pct} className="mt-2 h-1.5" />
+          <p className="mt-2 text-xs text-muted-foreground">
+            {left > 0 ? `再看 ${formatDuration(left)} 就算完成。` : "即將完成。"}
+            {" "}這是實際播放過的時間，跟影片的播放位置不同 —— 快轉或把進度條拖過去都不會累加。
+          </p>
         </div>
       )}
 
+      {/* 🛑 不要斷定原因。訊息裡寫「多半是擋廣告的外掛」之後，
+          真正的原因是影片載不起來時，人會照著錯的方向去查。 */}
       {unavailable && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            自動記錄觀看進度沒有運作
-            {playback.provider === "YOUTUBE" ? "（多半是擋廣告的外掛擋掉了 YouTube 的播放器 API）" : ""}。
-            {playback.require_watch
-              ? "這門課要求看完才算完成，所以請先把擋廣告的外掛對這個網站關掉，再重新整理。"
-              : "影片還是能看，但要自己按「標記為完成」。"}
+          <AlertDescription className="space-y-1">
+            <p>自動記錄觀看進度沒有連上播放器。</p>
+            <p className="text-sm">
+              {playback.provider === "YOUTUBE"
+                ? "常見原因：擋廣告的外掛擋掉了 YouTube 的播放器 API。"
+                : "常見原因：影片本身沒有載起來（簽章不對時 Bunny 會回 403），或播放器程式被擋掉。"}
+              {" "}上面的影片如果播得動，就是後者；播不動，要先處理影片。
+            </p>
+            <p className="text-sm">
+              {playback.require_watch
+                ? "這門課要求看完才算完成，所以在這個狀況下沒辦法標記完成——請先解決上面那件事。"
+                : "影片還是能看，完成可以自己按「標記為完成」。"}
+            </p>
           </AlertDescription>
         </Alert>
       )}

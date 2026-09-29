@@ -47,6 +47,8 @@ export interface FakeDb {
   featureEnabled: boolean;
   /** RequireAdmin 用。預設 false——管理頁要明確說才進得去。 */
   isAdmin?: boolean;
+  /** 每一次 record_lexical_attempt 的紀錄。連點測試靠它斷言寫了幾筆 */
+  attemptLog?: { legacy_id: string; exercise_type: string; correct: boolean | null; at: number }[];
   sessions: FakeSession[];
   attempts: FakeAttempt[];
 }
@@ -412,9 +414,32 @@ async function rpc(name: string, args: Json = {}): Promise<RpcResult> {
         },
         sections: [],
       }, error: null };
+    case "learn_course_detail":
+      return { data: {
+        course: {
+          id: "c-1", slug: "smoke", title: "煙霧測試課", description: "",
+          instructor: "", cover_path: null, level: "BEGINNER", category: "",
+          type: "STANDARD", access: "FREE", status: "PUBLISHED",
+          require_watch: false, viewer_is_admin: false, previewing_as_student: false,
+        },
+        sections: [],
+      }, error: null };
     case "learn_admin_course_access":
       return { data: { course_id: "c-1", access: "ENROLLED",
                        classes: [], students: [], reach: 0 }, error: null };
+    // 🛑 把每一次作答寫入記下來。連點的測試要驗的正是「寫了幾筆」，
+    //    光看畫面看不出來——畫面上兩次寫入跟一次寫入長得一樣。
+    case "record_lexical_attempt": {
+      const db2 = readDb();
+      db2.attemptLog = [...(db2.attemptLog ?? []), {
+        legacy_id: String(args.p_legacy_id ?? ""),
+        exercise_type: String(args.p_exercise_type ?? ""),
+        correct: args.p_correct as boolean | null,
+        at: Date.now(),
+      }];
+      writeDb(db2);
+      return { data: null, error: null };
+    }
     case "learn_admin_lesson_duration_set":
       return { data: { updated: false, duration_seconds: 0 }, error: null };
     case "learn_admin_course_config":
