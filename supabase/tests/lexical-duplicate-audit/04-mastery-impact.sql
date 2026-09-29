@@ -2,11 +2,20 @@
 --
 -- 熟練度被多算到什麼程度 —— 依 學生 × 單字 列出【涵蓋所有題型】。
 --
--- 🛑 刪 lexical_attempts 的列不會把熟練度退回去。
---    熟練度在 student_lexical_mastery，是另一張表，
---    record_lexical_attempt() 當初就已經把 review_count / correct_count /
---    mastery_level 推過去了。所以這支的數字才是「真正影響到學生看到什麼」的部分，
---    而重算熟練度是比刪列更大的一個決定。
+-- 🛑 刪 lexical_attempts 的列不會把熟練度退回去。熟練度在別的表，
+--    而且【有兩張】，連點當時兩張都被推了兩次：
+--
+--      student_lexical_mastery  ← Lexical Model 的新表，由 record_lexical_attempt() 維護
+--      user_word_progress       ← 舊表，由 updateWordProgress() 維護
+--
+-- 🛑 學生實際看到的複習佇列讀的是【舊表】。
+--    getDueWords() 走 vocabularyStore.wordProgress，也就是 user_word_progress，
+--    不是 student_lexical_mastery。所以「下次複習被推多遠」要看
+--    「舊表下次複習」那一欄，新表的數字只是平行紀錄。
+--
+-- 間隔對照（lexical_compat_review_interval）：
+--    0→立刻  1→10 分鐘  2→1 天  3→3 天  4→7 天  5→14 天  6→30 天
+--    所以熟練度多算 3 級 = 本來 1 天後該複習，被推到 14 天後。
 WITH scoped AS (
   SELECT a.id, a.student_id, a.lexical_item_id, a.exercise_type, a.session_id,
          a.affected_mastery, a.occurred_at,
@@ -50,13 +59,20 @@ SELECT coalesce(li.lemma, p.lexical_item_id::text) AS "單字",
        p.student_id                                AS "學生",
        p.extra_mastery                             AS "熟練度多算次數",
        p.contradictory_bursts                      AS "判定矛盾組數",
-       m.mastery_level                             AS "目前熟練度",
-       m.review_count                              AS "目前複習次數",
-       m.correct_count                             AS "目前答對次數"
+       -- 舊表：學生實際感受到的
+       w.mastery_level                             AS "舊表熟練度",
+       greatest(w.review_count - p.extra_mastery, 0) AS "扣掉多算後應為",
+       w.review_count                              AS "舊表複習次數",
+       to_timestamp(w.next_review_time / 1000.0)   AS "舊表下次複習",
+       -- 新表：平行紀錄，不驅動畫面
+       m.mastery_level                             AS "新表熟練度",
+       m.review_count                              AS "新表複習次數"
 FROM per_pair p
 LEFT JOIN public.lexical_items li ON li.id = p.lexical_item_id
 LEFT JOIN public.student_lexical_mastery m
        ON m.student_id = p.student_id AND m.lexical_item_id = p.lexical_item_id
+LEFT JOIN public.user_word_progress w
+       ON w.user_id = p.student_id AND w.word_id = li.legacy_level_word_id
 WHERE p.extra_mastery > 0
 ORDER BY p.extra_mastery DESC, p.contradictory_bursts DESC
 LIMIT 200;

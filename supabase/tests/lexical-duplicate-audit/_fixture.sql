@@ -5,10 +5,22 @@
 DROP TABLE IF EXISTS public.lexical_attempts;
 DROP TABLE IF EXISTS public.student_lexical_mastery;
 DROP TABLE IF EXISTS public.lexical_items;
+DROP TABLE IF EXISTS public.user_word_progress;
 
 CREATE TABLE public.lexical_items (
   id UUID PRIMARY KEY,
-  lemma TEXT NOT NULL
+  lemma TEXT NOT NULL,
+  legacy_level_word_id TEXT UNIQUE
+);
+
+-- 舊表：學生實際看到的複習佇列讀的是這張（getDueWords → wordProgress）。
+CREATE TABLE public.user_word_progress (
+  user_id UUID NOT NULL,
+  word_id TEXT NOT NULL,
+  mastery_level INTEGER NOT NULL DEFAULT 0,
+  next_review_time BIGINT NOT NULL DEFAULT 0,
+  review_count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, word_id)
 );
 
 CREATE TABLE public.student_lexical_mastery (
@@ -44,8 +56,17 @@ CREATE TABLE public.lexical_attempts (
 \set SB '''cccc0002-2222-2222-2222-222222222222'''
 \set SC '''cccc0003-3333-3333-3333-333333333333'''
 
-INSERT INTO public.lexical_items (id, lemma) VALUES
-  (:W1::uuid, 'abandon'), (:W2::uuid, 'benefit'), (:W3::uuid, 'crucial');
+INSERT INTO public.lexical_items (id, lemma, legacy_level_word_id) VALUES
+  (:W1::uuid, 'abandon', 'lw-1'),
+  (:W2::uuid, 'benefit', 'lw-2'),
+  (:W3::uuid, 'crucial', 'lw-3');
+
+-- S1/W3 是 SRS 連點那組（C9）。舊表被多推了一次：
+-- 真實複習 1 次（熟練度應為 1 → 10 分鐘），實際記成 2 次（熟練度 2 → 1 天）。
+INSERT INTO public.user_word_progress
+  (user_id, word_id, mastery_level, next_review_time, review_count) VALUES
+  (:S1::uuid, 'lw-3', 2, 1790000000000, 2),
+  (:S2::uuid, 'lw-2', 2, 1790000000000, 2);
 
 INSERT INTO public.student_lexical_mastery
   (student_id, lexical_item_id, mastery_level, review_count, correct_count) VALUES
