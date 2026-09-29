@@ -414,6 +414,16 @@ async function rpc(name: string, args: Json = {}): Promise<RpcResult> {
         },
         sections: [],
       }, error: null };
+    case "learn_course_detail":
+      return { data: {
+        course: {
+          id: "c-1", slug: "smoke", title: "煙霧測試課", description: "",
+          instructor: "", cover_path: null, level: "BEGINNER", category: "",
+          type: "STANDARD", access: "FREE", status: "PUBLISHED",
+          require_watch: false, viewer_is_admin: false, previewing_as_student: false,
+        },
+        sections: [],
+      }, error: null };
     case "learn_admin_course_access":
       return { data: { course_id: "c-1", access: "ENROLLED",
                        classes: [], students: [], reach: 0 }, error: null };
