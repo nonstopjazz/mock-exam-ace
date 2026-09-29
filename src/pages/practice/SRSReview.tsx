@@ -25,6 +25,7 @@ import { CollectionPackSelector, VocabularySource } from "@/components/vocabular
 import { useMultiPackItems } from "@/hooks/useUserPacks";
 import { packItemToVocabularyWord } from "@/lib/lexical/mapper";
 import { recordPracticeAttempt, newSessionId } from "@/lib/lexical/attempts";
+import { useAnswerLatch } from "@/hooks/practice/useAnswerLatch";
 import { useUserStats } from "@/hooks/useUserStats";
 
 // 共用 mapper 回傳的 pack 字詞一定帶 pack_id；level 字詞沒有。
@@ -77,6 +78,9 @@ const SRSReview = () => {
   // revealedAt 是按下「顯示答案」的時間 —— 兩者的差就是 reveal 前的思考時間。
   const [sessionId] = useState(() => newSessionId());
   const [shownAt, setShownAt] = useState(() => Date.now());
+
+  /** 一張卡只能自評一次。ref 是同步的，state 擋不住同一個 tick 的第二下。 */
+  const answerLatch = useAnswerLatch();
   const [revealMs, setRevealMs] = useState<number | null>(null);
 
   const currentCard = cards[currentIndex];
@@ -97,6 +101,7 @@ const SRSReview = () => {
     setShowAnswer(false);
     setShownAt(Date.now());
     setRevealMs(null);
+    answerLatch.release();   // 新一輪：把上一輪最後一張留下的鎖放開
     setPhase('review');
   };
 
@@ -159,11 +164,25 @@ const SRSReview = () => {
     setShowAnswer(false);
     setShownAt(Date.now());
     setRevealMs(null);
+    answerLatch.release();   // 新一輪：把上一輪最後一張留下的鎖放開
     setPhase('review');
   };
 
   const handleResponse = (response: "forgot" | "hard" | "easy") => {
     if (!currentCard) return;
+    // 🛑 閂鎖要在最前面，而且必須是 ref 不是 state。
+    //    這一頁原本【完全沒有防線】——沒有閂鎖，也沒有 showAnswer 那種
+    //    state 檢查，連點兩下就是實實在在的兩筆。
+    //
+    //    三顆按鈕（Forgot / Hard / Easy）並排，誤點兩顆【不同】的很自然，
+    //    那會在同一題留下兩種互相矛盾的自評，而且 self_rating 不是 NULL
+    //    就會動熟練度——同一次複習被算兩次。
+    //
+    //    寫入口那道 500ms 去重擋不掉這個：去重鍵只含 correct，
+    //    而 SRS 的 correct 永遠是 NULL，forgot 與 easy 的鍵一模一樣，
+    //    看起來像「同一筆送了兩次」而被吃掉一筆——擋下來的那一筆是
+    //    哪一個完全看運氣。真正的防線只有閂鎖。
+    if (!answerLatch.tryAcquire()) return;
 
     const responseMap = {
       forgot: { label: "Forgot", nextReview: "10 minutes", isCorrect: false },
@@ -201,6 +220,7 @@ const SRSReview = () => {
       setShowAnswer(false);
       setShownAt(Date.now());
       setRevealMs(null);
+      answerLatch.release();   // 下一張卡可以作答了
     } else {
       // Record review stats (for logged-in users, syncs to database)
       recordReview(totalCards);

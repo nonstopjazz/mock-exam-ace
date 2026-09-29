@@ -1,27 +1,25 @@
 -- 🟢 【唯讀】staging 與 production 都可以安全執行。
 --
--- 連點造成的重複作答：總覽。
+-- 連點造成的重複作答：總覽。【涵蓋所有題型】。
 --
--- 判定一組「連點」的條件（四個條件同時成立才算）：
---   同一位學生、同一個字、同一種題型、同一場 session，
---   而且相鄰兩筆的間隔 <= 2 秒。
+-- 判定一組「連點」：同學生 + 同單字 + 同題型 + 同 session + 相鄰兩筆 <= 2 秒。
 --
--- 🛑 刻意【不】用 correct 分組。
---    「快速點兩個不同選項」留下的就是一對一錯，那是最需要被抓出來的一類；
---    用 correct 分組會把它整個漏掉（那也正是前端去重擋不住它的原因）。
+-- 🛑 不用 correct 分組。「快速點兩個不同選項」留下的就是一對一錯，
+--    那是最該抓的一類；用 correct 分組會整個漏掉。
 --
--- 🛑 只看四個有閂鎖的作答模式。
---    match / flashcard 走 recordEvidenceOnly，短時間內重複是真的在發生、
---    而且不影響熟練度，那些不是重複紀錄 —— 它們在 05 當對照組。
+-- 🛑 判定用 judgment = coalesce(correct, self_rating)，不是只看 correct。
+--    SRS 的 correct 永遠是 NULL，它真正的證據在 self_rating。
+--    只看 correct 的話，SRS 的「forgot + easy 連點」會被當成無衝突放行。
 --
--- 2 秒是刻意放寬的（連點實際相隔幾十毫秒）。學生不可能在 2 秒內
--- 對同一場、同一個字、同一種題型真的作答兩次。
+-- 🛑 分類用每一列自己記的 affected_mastery，不用題型清單。
+--    match 配對成功、flashcard 的 Mark as Known 都會動熟練度；
+--    用「哪些題型是證據」這種假設去分類會分錯。
 WITH scoped AS (
   SELECT a.id, a.student_id, a.lexical_item_id, a.exercise_type, a.session_id,
-         a.correct, a.affected_mastery, a.occurred_at,
-         (a.metadata ->> 'event') = 'timeout' AS is_timeout
+         a.affected_mastery, a.occurred_at,
+         coalesce(a.correct::text, a.self_rating) AS judgment,
+         (a.metadata ->> 'event') = 'timeout'     AS is_timeout
   FROM public.lexical_attempts a
-  WHERE a.exercise_type IN ('quick_quiz','fill_blank','synonym_antonym','spelling')
 ),
 marked AS (
   SELECT s.*,
@@ -41,10 +39,10 @@ bursts AS (
 ),
 grouped AS (
   SELECT student_id, lexical_item_id, exercise_type, burst_no,
-         count(*)                                        AS rows_in_burst,
-         count(*) FILTER (WHERE affected_mastery)        AS mastery_rows,
-         bool_or(correct IS TRUE) AND bool_or(correct IS FALSE) AS contradictory,
-         bool_or(is_timeout)                             AS has_timeout
+         count(*)                                 AS rows_in_burst,
+         count(*) FILTER (WHERE affected_mastery) AS mastery_rows,
+         count(DISTINCT judgment) > 1             AS contradictory,
+         bool_or(is_timeout)                      AS has_timeout
   FROM bursts
   GROUP BY student_id, lexical_item_id, exercise_type, session_id, burst_no
   HAVING count(*) > 1
@@ -52,11 +50,13 @@ grouped AS (
 SELECT '受影響的作答組數（每組 = 一次該只記一筆的作答）' AS "項目",
        count(*)::text AS "數字"
 FROM grouped
-UNION ALL SELECT '　其中「一對一錯」（🛑 最嚴重：同一題同時有對與錯）',
+UNION ALL SELECT '　其中會動熟練度的（🛑 真的影響到學生看到什麼）',
+       count(*) FILTER (WHERE mastery_rows > 1)::text FROM grouped
+UNION ALL SELECT '　其中判定互相矛盾（一對一錯／forgot+easy 這類）',
        count(*) FILTER (WHERE contradictory)::text FROM grouped
 UNION ALL SELECT '　　其中含倒數計時歸零（timeout + 真實作答）',
        count(*) FILTER (WHERE contradictory AND has_timeout)::text FROM grouped
-UNION ALL SELECT '　其中「純重複」（同一顆連點，對錯一致）',
+UNION ALL SELECT '　其中純重複（同一顆連點，判定一致）',
        count(*) FILTER (WHERE NOT contradictory)::text FROM grouped
 UNION ALL SELECT '多出來的資料列（總列數 − 應有的組數）',
        coalesce(sum(rows_in_burst) - count(*), 0)::text FROM grouped

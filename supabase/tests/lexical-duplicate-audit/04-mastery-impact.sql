@@ -1,17 +1,18 @@
 -- 🟢 【唯讀】staging 與 production 都可以安全執行。
 --
--- 熟練度被多算到什麼程度 —— 依「學生 × 單字」列出。
+-- 熟練度被多算到什麼程度 —— 依 學生 × 單字 列出【涵蓋所有題型】。
 --
--- 為什麼要看這個：重複的那一列如果 affected_mastery = true，
--- 它就已經推過一次 student_lexical_mastery 的 review_count / mastery_level。
--- 刪掉 lexical_attempts 的列【不會】把熟練度退回去 —— 那是另一張表。
--- 所以這支的數字才是「真正影響到學生看到什麼」的部分。
+-- 🛑 刪 lexical_attempts 的列不會把熟練度退回去。
+--    熟練度在 student_lexical_mastery，是另一張表，
+--    record_lexical_attempt() 當初就已經把 review_count / correct_count /
+--    mastery_level 推過去了。所以這支的數字才是「真正影響到學生看到什麼」的部分，
+--    而重算熟練度是比刪列更大的一個決定。
 WITH scoped AS (
   SELECT a.id, a.student_id, a.lexical_item_id, a.exercise_type, a.session_id,
-         a.correct, a.affected_mastery, a.occurred_at,
-         (a.metadata ->> 'event') = 'timeout' AS is_timeout
+         a.affected_mastery, a.occurred_at,
+         coalesce(a.correct::text, a.self_rating) AS judgment,
+         (a.metadata ->> 'event') = 'timeout'     AS is_timeout
   FROM public.lexical_attempts a
-  WHERE a.exercise_type IN ('quick_quiz','fill_blank','synonym_antonym','spelling')
 ),
 marked AS (
   SELECT s.*,
@@ -32,22 +33,23 @@ bursts AS (
 grouped AS (
   SELECT student_id, lexical_item_id, exercise_type, session_id, burst_no,
          count(*) FILTER (WHERE affected_mastery) AS mastery_rows,
-         bool_or(correct IS TRUE) AND bool_or(correct IS FALSE) AS contradictory
+         count(DISTINCT judgment) > 1             AS contradictory
   FROM bursts
   GROUP BY student_id, lexical_item_id, exercise_type, session_id, burst_no
   HAVING count(*) > 1
 ),
 per_pair AS (
   SELECT student_id, lexical_item_id,
-         sum(greatest(mastery_rows - 1, 0)) AS extra_mastery,
-         count(*) FILTER (WHERE contradictory) AS contradictory_bursts
-  FROM grouped
-  GROUP BY student_id, lexical_item_id
+         sum(greatest(mastery_rows - 1, 0))    AS extra_mastery,
+         count(*) FILTER (WHERE contradictory) AS contradictory_bursts,
+         string_agg(DISTINCT exercise_type, ', ') AS types
+  FROM grouped GROUP BY student_id, lexical_item_id
 )
 SELECT coalesce(li.lemma, p.lexical_item_id::text) AS "單字",
+       p.types                                     AS "題型",
        p.student_id                                AS "學生",
        p.extra_mastery                             AS "熟練度多算次數",
-       p.contradictory_bursts                      AS "一對一錯組數",
+       p.contradictory_bursts                      AS "判定矛盾組數",
        m.mastery_level                             AS "目前熟練度",
        m.review_count                              AS "目前複習次數",
        m.correct_count                             AS "目前答對次數"

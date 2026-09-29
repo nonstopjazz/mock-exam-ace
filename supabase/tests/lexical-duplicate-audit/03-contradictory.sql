@@ -1,20 +1,19 @@
 -- 🟢 【唯讀】staging 與 production 都可以安全執行。
 --
--- 「一對一錯」的明細 —— 同一題在資料裡同時有一筆對、一筆錯。
+-- 判定互相矛盾的明細 —— 同一次作答在資料裡留下兩種不同的判定。
+--   客觀題型：一筆對、一筆錯（點了兩個不同選項）
+--   SRS：forgot 和 easy 都記了（correct 永遠是 NULL，看的是 self_rating）
 --
--- 🛑 這支最重要的一欄是「可否自動判定」，它決定這批資料清不清得掉：
---
---   timeout 可判定  → 其中一筆是計時歸零自動記的（metadata.event = 'timeout'），
---                     另一筆才是學生真的按下去的。刪 timeout 那筆即可。
---   ⚠️ 無法判定    → 兩筆都是學生點的，只是點了兩個不同選項。
---                     【沒有任何欄位能還原學生本來要選哪一個】。
---                     這類不要猜，見 README「清不掉的那一類」。
+-- 🛑 最重要的是「可否自動判定」欄，它決定這批清不清得掉：
+--   timeout 可判定 → 一筆是倒數歸零自動記的，另一筆才是學生按的，刪前者即可。
+--   ⚠️ 無法判定   → 兩筆都是學生點的。【沒有任何欄位能還原他本來要選哪一個】，
+--                   時間差只說明哪一下先到，不代表哪個是本意。不要猜。
 WITH scoped AS (
   SELECT a.id, a.student_id, a.lexical_item_id, a.exercise_type, a.session_id,
-         a.correct, a.affected_mastery, a.occurred_at,
-         (a.metadata ->> 'event') = 'timeout' AS is_timeout
+         a.affected_mastery, a.occurred_at,
+         coalesce(a.correct::text, a.self_rating) AS judgment,
+         (a.metadata ->> 'event') = 'timeout'     AS is_timeout
   FROM public.lexical_attempts a
-  WHERE a.exercise_type IN ('quick_quiz','fill_blank','synonym_antonym','spelling')
 ),
 marked AS (
   SELECT s.*,
@@ -37,22 +36,23 @@ grouped AS (
          count(*)         AS rows_in_burst,
          min(occurred_at) AS first_at,
          max(occurred_at) AS last_at,
-         bool_or(is_timeout) AS has_timeout,
-         array_agg(correct ORDER BY occurred_at) AS correct_seq,
-         array_agg(id      ORDER BY occurred_at) AS row_ids
+         bool_or(is_timeout)                        AS has_timeout,
+         bool_or(affected_mastery)                  AS touched_mastery,
+         array_agg(judgment ORDER BY occurred_at)   AS judgment_seq,
+         array_agg(id       ORDER BY occurred_at)   AS row_ids
   FROM bursts
   GROUP BY student_id, lexical_item_id, exercise_type, session_id, burst_no
-  HAVING count(*) > 1
-     AND bool_or(correct IS TRUE) AND bool_or(correct IS FALSE)
+  HAVING count(*) > 1 AND count(DISTINCT judgment) > 1
 )
 SELECT g.first_at                                   AS "發生時間",
        coalesce(li.lemma, g.lexical_item_id::text)  AS "單字",
        g.exercise_type                              AS "題型",
        g.rows_in_burst                              AS "筆數",
        extract(milliseconds FROM (g.last_at - g.first_at))::int AS "相隔毫秒",
-       g.correct_seq                                AS "對錯順序",
+       g.judgment_seq                               AS "判定順序",
        CASE WHEN g.has_timeout THEN 'timeout 可判定'
             ELSE '⚠️ 無法判定' END                   AS "可否自動判定",
+       g.touched_mastery                            AS "有動到熟練度",
        g.student_id                                 AS "學生",
        g.row_ids                                    AS "資料列 id"
 FROM grouped g
