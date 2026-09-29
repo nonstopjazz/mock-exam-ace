@@ -17,6 +17,15 @@ export function formatDuration(seconds: number): string {
   return `${h > 0 ? `${h}:` : ""}${mm}:${String(sec).padStart(2, "0")}`;
 }
 
+/**
+ * 長度還沒填時顯示「—」，不是 0:00。
+ *
+ * 🛑 0:00 是一個看起來像真的的假數字。學生會以為那是一支空影片，
+ *    管理員則不會發現有東西沒填。
+ */
+export const formatDurationOrDash = (seconds: number): string =>
+  Number.isFinite(seconds) && seconds > 0 ? formatDuration(seconds) : "—";
+
 /** 16200 → "4 小時 30 分"。用在課程卡片那種給人讀的地方。 */
 export function formatDurationLong(seconds: number): string {
   const s = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;

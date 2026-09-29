@@ -8,6 +8,8 @@ import { formatDuration } from "@/lib/learn/course/format";
 import { remainingSeconds, watchPercent } from "@/lib/learn/course/watchProgress";
 import { useVideoWatch } from "@/hooks/learn/useVideoWatch";
 import { reportLessonProgress } from "@/hooks/learn/useCourses";
+import { setLessonDuration } from "@/hooks/learn/useCourseAdmin";
+import { useAdmin } from "@/hooks/useAdmin";
 import type { LessonPlayback } from "@/lib/learn/course/types";
 
 /**
@@ -44,6 +46,7 @@ export function LessonPlayer({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const refreshRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const completedRef = useRef(false);
+  const durationSentRef = useRef<string | null>(null);
 
   const isDone = completed || serverCompleted;
 
@@ -58,12 +61,34 @@ export function LessonPlayer({
     });
   }, [onCompleted]);
 
-  const { watched, tracking, unavailable } = useVideoWatch(playback, iframeRef, report);
+  const { watched, tracking, unavailable, duration } = useVideoWatch(playback, iframeRef, report);
+  const { isAdmin } = useAdmin();
+
+  /**
+   * 影片長度沒填時，從播放器讀回來補上。
+   *
+   * 🛑 只有管理員做這件事。長度決定完成門檻，開放給學生寫等於讓他們
+   *    可以把門檻設成 1 秒。後端也擋，這裡只是不要白打一次會被拒絕的請求。
+   *
+   * 這也是為什麼發布前「用學生的畫面把每一支點過一遍」值得做——
+   * 順手就把長度補齊了。
+   */
+  useEffect(() => {
+    if (!playback || !isAdmin) return;
+    if (playback.duration_seconds > 0 || duration <= 0) return;
+    if (durationSentRef.current === playback.lesson_id) return;
+    durationSentRef.current = playback.lesson_id;
+    void setLessonDuration(playback.lesson_id, duration).then((updated) => {
+      // 真的寫進去了才重載——門檻跟著變，畫面要拿到新的
+      if (updated) onCompleted();
+    });
+  }, [playback, isAdmin, duration, onCompleted]);
 
   useEffect(() => {
     setFrameLoaded(false);
     setServerCompleted(false);
     completedRef.current = false;
+    durationSentRef.current = null;
   }, [playback?.lesson_id]);
 
   // 簽章到期前先換一份新的，讓【下一次】載入用得到有效的網址。
@@ -148,7 +173,15 @@ export function LessonPlayer({
         <div className="min-w-0">
           <h3 className="truncate font-semibold text-foreground">{playback.title}</h3>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span>{formatDuration(playback.duration_seconds)}</span>
+            {/* 🛑 長度是 0 時不要顯示 0:00——那是一個看起來像真的的假數字。
+                管理員看到「長度未填」才知道有事要處理。 */}
+            <span>
+              {playback.duration_seconds > 0
+                ? formatDuration(playback.duration_seconds)
+                : duration > 0
+                  ? formatDuration(duration)
+                  : "長度未填"}
+            </span>
             {isDone && (
               <Badge variant="outline" className="border-success/20 bg-success/10 text-success">
                 <CheckCircle2 className="mr-1 h-3 w-3" />已完成

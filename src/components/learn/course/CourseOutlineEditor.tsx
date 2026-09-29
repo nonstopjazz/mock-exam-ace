@@ -178,10 +178,16 @@ export function CourseOutlineEditor({ courseType, sections, onChange }: Props) {
                           試看（沒選課也能播）
                         </Label>
                       </div>
-                      {lesson.duration_seconds > 0 && (
+                      {lesson.duration_seconds > 0 ? (
                         <span className="text-sm text-muted-foreground">
                           = {formatDuration(lesson.duration_seconds)}
                         </span>
+                      ) : (
+                        // 🛑 長度是 0 的話，觀看門檻（長度 × 90%）也是 0——
+                        //    那支影片永遠不會被判定完成。要看得出來。
+                        <Badge variant="outline" className="gap-1 bg-warning/10 text-warning">
+                          <AlertTriangle className="h-3 w-3" />長度未填
+                        </Badge>
                       )}
                       {watched > 0 && (
                         <Badge variant="outline" className="gap-1">
@@ -205,6 +211,13 @@ export function CourseOutlineEditor({ courseType, sections, onChange }: Props) {
                 onClick={() => patch(si, { lessons: [...section.lessons, emptyLesson()] })}>
                 <Plus className="mr-2 h-4 w-4" />加一支影片
               </Button>
+
+              {section.lessons.some((l) => l.duration_seconds === 0) && (
+                <p className="text-xs text-muted-foreground">
+                  秒數留空也沒關係——用「用學生的畫面看」把那幾支點開，
+                  播放器會把真正的長度讀回來自動填上。
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
