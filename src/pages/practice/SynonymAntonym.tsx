@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { useAnswerLatch } from "@/hooks/practice/useAnswerLatch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -119,7 +120,14 @@ const SynonymAntonym = () => {
     setPhase('playing');
   };
 
+  const answerLatch = useAnswerLatch();
+
   const handleSelect = (index: number) => {
+    // 🛑 閂鎖要在最前面，而且必須是 ref 不是 state。
+    //    showResult 是 state——setShowResult(true) 之後、re-render 之前它
+    //    還是 false，所以同一個 tick 裡的第二次點擊會整個穿過去。
+    //    快速點兩個【不同】選項時，兩個答案都會被記下來，一對一錯。
+    if (!answerLatch.tryAcquire()) return;
     if (showResult) return;
     setSelectedAnswer(index);
     setShowResult(true);
@@ -141,6 +149,8 @@ const SynonymAntonym = () => {
   };
 
   const handleNext = () => {
+    // 換下一題，放開閂鎖
+    answerLatch.release();
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setSelectedAnswer(null);

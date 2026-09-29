@@ -8,6 +8,7 @@ import {
   type SkillDimension,
 } from "./types";
 import { legacyIdentity } from "./mapper";
+import { attemptKey, createDeduper } from "@/lib/practice/answerLatch";
 
 /**
  * Lexical Model Phase 6 —— 七個 practice 頁面唯一的作答寫入口。
@@ -158,7 +159,22 @@ function applyCompatMastery(input: PracticeAttemptInput): void {
  * 所以就算新的 RPC 整個壞掉、或 migration 還沒跑，七個頁面的行為
  * 與改版前完全相同。
  */
+/**
+ * 🛑 第二道防線：短時間內一模一樣的作答只算一次。
+ *
+ *   主要防線是各練習頁的 useAnswerLatch（ref，同步）。這裡再擋一次的
+ *   理由是：寫入口只有這一個，之後新增的練習頁忘了加閂鎖時，不會默默
+ *   寫出重複資料、也不會把熟練度算兩次。
+ *
+ *   窗口刻意很短。學生在同一次練習裡真的可能重複遇到同一個字
+ *   （不同題型、重做），那些是真的 attempt，不可以被吃掉。
+ *   人不可能在半秒內作答兩次還得到相同的對錯。
+ */
+const deduper = createDeduper(500);
+
 export function recordPracticeAttempt(input: PracticeAttemptInput): void {
+  if (deduper.isDuplicate(attemptKey(input), Date.now())) return;
+
   if (input.applyMastery !== false) {
     applyCompatMastery(input);
   }
@@ -170,6 +186,10 @@ export function recordPracticeAttempt(input: PracticeAttemptInput): void {
  *
  * 用於配對誤點與翻卡曝光 —— 這兩件事在改版前【完全不寫入任何東西】，
  * 現在會留下 attempt，但一樣不碰熟練度。
+ *
+ * ⚠️ 刻意【不】經過去重。配對遊戲裡短時間內連續點錯同一組是真的在發生，
+ *    那是證據不是重複；而且它不影響熟練度，多留一筆的代價遠小於漏掉一筆。
+ *    去重是為了保護「會改到分數」的那條路。
  */
 export function recordEvidenceOnly(
   input: Omit<PracticeAttemptInput, "applyMastery">,

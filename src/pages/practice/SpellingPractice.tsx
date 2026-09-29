@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { useAnswerLatch } from "@/hooks/practice/useAnswerLatch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -85,8 +86,20 @@ const SpellingPractice = () => {
     setPhase('playing');
   };
 
+  const answerLatch = useAnswerLatch();
+
   const handleLetterClick = (letter: { letter: string; id: number }) => {
     if (showResult) return;
+
+    // 🛑 這一下會不會湊滿整個字。判斷用的 selectedLetters 是 state，
+    //    所以同一個 tick 裡的兩次點擊看到的是同一個長度——兩下都會
+    //    認為自己湊滿了，兩下都會記錄一次作答。
+    //
+    //    閂鎖用 ref，所以第二下在這裡就停住，【還沒動到畫面】——
+    //    顯示出來的答案跟記錄下去的才會是同一個。
+    const completesWord = selectedLetters.length + 1 === currentWord.word.length;
+    if (completesWord && !answerLatch.tryAcquire()) return;
+
     const newSelected = [...selectedLetters, letter];
     setSelectedLetters(newSelected);
     setShuffledLetters(prev => prev.filter(l => l.id !== letter.id));
@@ -123,6 +136,8 @@ const SpellingPractice = () => {
   };
 
   const handleNext = () => {
+    // 換下一題，放開閂鎖
+    answerLatch.release();
     if (currentIndex < words.length - 1) {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
@@ -140,6 +155,8 @@ const SpellingPractice = () => {
 
   const handleClear = () => {
     if (showResult) return;
+    // 清掉重排 = 這一題還沒作答，閂鎖要放開
+    answerLatch.release();
     setWrongTries(prev => prev + 1);
     setShuffledLetters(shuffleWord(currentWord.word));
     setSelectedLetters([]);
