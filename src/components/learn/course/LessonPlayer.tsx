@@ -213,15 +213,24 @@ export function LessonPlayer({
         </div>
       )}
 
+      {/* 🛑 不要斷定原因。訊息裡寫「多半是擋廣告的外掛」之後，
+          真正的原因是影片載不起來時，人會照著錯的方向去查。 */}
       {unavailable && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            自動記錄觀看進度沒有運作
-            {playback.provider === "YOUTUBE" ? "（多半是擋廣告的外掛擋掉了 YouTube 的播放器 API）" : ""}。
-            {playback.require_watch
-              ? "這門課要求看完才算完成，所以請先把擋廣告的外掛對這個網站關掉，再重新整理。"
-              : "影片還是能看，但要自己按「標記為完成」。"}
+          <AlertDescription className="space-y-1">
+            <p>自動記錄觀看進度沒有連上播放器。</p>
+            <p className="text-sm">
+              {playback.provider === "YOUTUBE"
+                ? "常見原因：擋廣告的外掛擋掉了 YouTube 的播放器 API。"
+                : "常見原因：影片本身沒有載起來（簽章不對時 Bunny 會回 403），或播放器程式被擋掉。"}
+              {" "}上面的影片如果播得動，就是後者；播不動，要先處理影片。
+            </p>
+            <p className="text-sm">
+              {playback.require_watch
+                ? "這門課要求看完才算完成，所以在這個狀況下沒辦法標記完成——請先解決上面那件事。"
+                : "影片還是能看，完成可以自己按「標記為完成」。"}
+            </p>
           </AlertDescription>
         </Alert>
       )}

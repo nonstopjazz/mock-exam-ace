@@ -33,11 +33,59 @@ interface YouTubePlayer {
 interface YouTubeApi {
   Player: new (el: HTMLElement | string, opts: { events?: Record<string, unknown> }) => YouTubePlayer;
 }
+
+/** Bunny 的 player.js。只用得到 on / off */
+interface PlayerJsPlayer {
+  on: (event: string, cb: (data?: { seconds?: number; duration?: number }) => void) => void;
+  off?: (event: string) => void;
+}
+interface PlayerJsApi {
+  Player: new (el: HTMLElement | string) => PlayerJsPlayer;
+}
+
 declare global {
   interface Window {
     YT?: YouTubeApi;
     onYouTubeIframeAPIReady?: () => void;
+    playerjs?: PlayerJsApi;
   }
+}
+
+/** 一次就好的腳本載入。失敗回 false，不要讓整頁等一個不會來的東西。 */
+function loadScriptOnce(src: string, timeoutMs = 12000): Promise<boolean> {
+  return new Promise((resolve) => {
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+    if (existing?.dataset.loaded === "1") { resolve(true); return; }
+
+    const el = existing ?? document.createElement("script");
+    el.src = src;
+    el.async = true;
+    const done = (ok: boolean) => { if (ok) el.dataset.loaded = "1"; resolve(ok); };
+    el.addEventListener("load", () => done(true));
+    el.addEventListener("error", () => done(false));
+    if (!existing) document.head.appendChild(el);
+    setTimeout(() => resolve(el.dataset.loaded === "1"), timeoutMs);
+  });
+}
+
+/**
+ * Bunny 官方的 player.js。
+ *
+ * 🛑 這裡原本是自己手刻 postMessage 協定。那個判斷是錯的：
+ *    player.js 的 addEventListener 訊息要帶 listener 名稱，而 ready
+ *    可能在我們掛上 listener 之前就發過了——官方 library 會處理這兩件事，
+ *    手刻的版本兩個都漏掉，結果是「接不上」而畫面跳紅字警告。
+ *
+ *    三十行的規格看起來簡單，但看起來簡單不等於我實作對了。
+ */
+const BUNNY_PLAYERJS = "https://assets.mediadelivery.net/playerjs/playerjs-latest.min.js";
+let bunnyApiPromise: Promise<PlayerJsApi | null> | null = null;
+
+function loadBunnyApi(): Promise<PlayerJsApi | null> {
+  if (bunnyApiPromise) return bunnyApiPromise;
+  bunnyApiPromise = loadScriptOnce(BUNNY_PLAYERJS)
+    .then((ok) => (ok ? window.playerjs ?? null : null));
+  return bunnyApiPromise;
 }
 
 /** 整個分頁只載一次，而且只有真的用到 YouTube 才載 */
@@ -104,6 +152,8 @@ export function useVideoWatch(
   const stateRef = useRef<WatchState>(initialWatchState());
   const sentRef = useRef(0);
   const lessonRef = useRef<string | null>(null);
+  /** tracking 的同步副本。setState 的 updater 不可以呼叫另一個 setState */
+  const trackingRef = useRef(false);
 
   const lessonId = playback?.lesson_id ?? null;
   const provider = playback?.provider ?? null;
@@ -138,6 +188,7 @@ export function useVideoWatch(
     sentRef.current = base;
     setWatched(base);
     setTracking(false);
+    trackingRef.current = false;
     setUnavailable(false);
     setDuration(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -157,6 +208,7 @@ export function useVideoWatch(
 
       try {
         player = new api.Player(el, {});
+        trackingRef.current = true;
         setTracking(true);
         timer = setInterval(() => {
           try {
@@ -180,52 +232,44 @@ export function useVideoWatch(
     };
   }, [provider, lessonId, iframeRef, onTime, onDuration]);
 
-  // ── Bunny（player.js 協定的一小段）──────────────────
+  // ── Bunny（官方 player.js）──────────────────────────
   useEffect(() => {
     if (provider !== "BUNNY" || !lessonId) return;
+    let cancelled = false;
+    let giveUp: ReturnType<typeof setTimeout> | null = null;
 
-    const el = iframeRef.current;
-    if (!el) return;
+    void loadBunnyApi().then((api) => {
+      if (cancelled) return;
+      const el = iframeRef.current;
+      if (!api || !el) { setUnavailable(true); return; }
 
-    const send = (method: string, value?: string) => {
-      el.contentWindow?.postMessage(
-        JSON.stringify({ context: "player.js", version: "0.0.1", method, value }), "*");
-    };
-
-    const onMessage = (event: MessageEvent) => {
-      // 只收這個 iframe 送來的
-      if (event.source !== el.contentWindow) return;
-      let payload: {
-        context?: string; event?: string;
-        value?: { seconds?: number; duration?: number };
-      };
       try {
-        payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-      } catch { return; }
-      if (payload?.context !== "player.js") return;
+        const player = new api.Player(el);
+        // library 會處理「ready 已經發過了」的情況，所以這裡不需要自己補問
+        player.on("ready", () => {
+          if (cancelled) return;
+          trackingRef.current = true;
+          setTracking(true);
+          player.on("timeupdate", (data) => {
+            if (typeof data?.seconds === "number") onTime(data.seconds);
+            // player.js 的 timeupdate 本來就帶 duration，不必另外問
+            if (typeof data?.duration === "number") onDuration(data.duration);
+          });
+        });
 
-      if (payload.event === "ready") {
-        setTracking(true);
-        send("addEventListener", "timeupdate");
+        // 🛑 用 ref 判斷，不要在 setState 的 updater 裡呼叫另一個 setState。
+        //    updater 必須是純的——React 可以呼叫它一次以上。
+        giveUp = setTimeout(() => {
+          if (!cancelled && !trackingRef.current) setUnavailable(true);
+        }, 10000);
+      } catch {
+        setUnavailable(true);
       }
-      if (payload.event === "timeupdate" && typeof payload.value?.seconds === "number") {
-        onTime(payload.value.seconds);
-        // player.js 的 timeupdate 本來就帶 duration，不必另外問
-        if (typeof payload.value.duration === "number") onDuration(payload.value.duration);
-      }
-    };
-
-    window.addEventListener("message", onMessage);
-    // 有些情況 ready 已經在我們掛上 listener 之前發生了，主動問一次
-    send("addEventListener", "ready");
-    send("addEventListener", "timeupdate");
-
-    // 8 秒都沒有任何回應就當作接不上
-    const giveUp = setTimeout(() => setTracking((t) => { if (!t) setUnavailable(true); return t; }), 8000);
+    });
 
     return () => {
-      window.removeEventListener("message", onMessage);
-      clearTimeout(giveUp);
+      cancelled = true;
+      if (giveUp) clearTimeout(giveUp);
     };
   }, [provider, lessonId, iframeRef, onTime, onDuration]);
 
