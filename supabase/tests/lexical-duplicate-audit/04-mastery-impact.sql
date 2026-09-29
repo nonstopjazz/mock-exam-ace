@@ -61,7 +61,11 @@ SELECT coalesce(li.lemma, p.lexical_item_id::text) AS "單字",
        p.contradictory_bursts                      AS "判定矛盾組數",
        -- 舊表：學生實際感受到的
        w.mastery_level                             AS "舊表熟練度",
-       greatest(w.review_count - p.extra_mastery, 0) AS "扣掉多算後應為",
+       -- 🛑 這是扣掉多算之後的【複習次數】，不是熟練度。
+       --    只有在該字每一次都評 easy 時，熟練度才剛好等於這個數字
+       --    （easy = +1）。有 hard / forgot 混在裡面時，正確的熟練度
+       --    要用 lexical_compat_next_mastery() 重放才算得出來。
+       greatest(w.review_count - p.extra_mastery, 0) AS "扣掉多算後的複習次數",
        w.review_count                              AS "舊表複習次數",
        to_timestamp(w.next_review_time / 1000.0)   AS "舊表下次複習",
        -- 新表：平行紀錄，不驅動畫面

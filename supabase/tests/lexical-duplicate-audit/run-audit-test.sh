@@ -65,7 +65,7 @@ check "六組 學生×單字 受影響"      "$(echo "$P04" | grep -c '|')" "6"
 #    crucial 在 04 裡有兩列（S1 的 srs、S2 的 match），要指名學生才不會抓錯。
 S1ROW="$(echo "$P04" | grep '^crucial|' | grep '11111111-1111-1111-1111-111111111111')"
 check "🛑 S1/crucial 接得到舊表熟練度"      "$(echo "$S1ROW" | cut -d'|' -f6)" "2"
-check "🛑 扣掉多算後應為 1（10 分鐘，不是 1 天）" "$(echo "$S1ROW" | cut -d'|' -f7)" "1"
+check "🛑 扣掉多算後的複習次數為 1" "$(echo "$S1ROW" | cut -d'|' -f7)" "1"
 check "舊表下次複習有值（不是空的）"         "$(echo "$S1ROW" | cut -d'|' -f9 | grep -c '20')" "1"
 
 echo "──────── 05 依題型組成 ────────"
