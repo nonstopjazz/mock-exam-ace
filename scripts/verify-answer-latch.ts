@@ -144,5 +144,43 @@ console.log("════════ F. 記憶體不會無限長 ════�
 }
 
 console.log("");
+console.log("════════ G. 🛑 SRS：去重救不了它，只有閂鎖可以 ════════");
+{
+  // SRS 的 correct 永遠是 NULL，自評放在 self_rating——而 self_rating
+  // 【不在去重鍵裡】。forgot 與 easy 因此產生一模一樣的鍵。
+  const forgot = attemptKey({ wordId: "w1", exerciseType: "srs", sessionId: "s", correct: null });
+  const easy   = attemptKey({ wordId: "w1", exerciseType: "srs", sessionId: "s", correct: null });
+  check(forgot === easy,
+    "🛑 G1 forgot 與 easy 的去重鍵完全相同——去重分不出這是兩個不同的自評");
+
+  // 後果：誤點兩顆不同的按鈕時，去重會吃掉其中一筆，
+  //       但留下的是先送到的那一筆，不是學生真正想選的那一筆。
+  const d = createDeduper(500);
+  check(!d.isDuplicate(forgot, 0), "G2 第一下（forgot）送出去了");
+  check(d.isDuplicate(easy, 50),
+    "🛑 G3 第二下（easy）被去重吃掉——看起來沒事，其實記下的是誤點的那一顆");
+
+  // 所以真正的防線是閂鎖：第二下根本不會走到寫入口。
+  const latch = createLatch();
+  const sent: string[] = [];
+  const respond = (rating: string) => {
+    if (!latch.tryAcquire()) return;
+    sent.push(rating);
+  };
+  respond("forgot");
+  respond("easy");
+  check(sent.length === 1, "🛑 G4 有閂鎖時只送一筆");
+  check(sent[0] === "forgot", "G5 送的是第一下");
+
+  // 沒有閂鎖的話（SRS 修正前就是這樣）兩筆都會送出去。
+  const noLatch: string[] = [];
+  const respondUnguarded = (rating: string) => { noLatch.push(rating); };
+  respondUnguarded("forgot");
+  respondUnguarded("easy");
+  check(noLatch.length === 2,
+    "🛑 G6 沒有閂鎖時兩筆都送出去——這就是修正前 SRS 的樣子");
+}
+
+console.log("");
 if (failures > 0) { console.error(`${failures} 項未通過`); process.exit(1); }
 console.log("全部通過");

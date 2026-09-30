@@ -1,0 +1,68 @@
+-- 🟢 【唯讀】staging 與 production 都可以安全執行。
+--
+-- 連點造成的重複作答：總覽。【涵蓋所有題型】。
+--
+-- 判定一組「連點」：同學生 + 同單字 + 同題型 + 同 session + 相鄰兩筆 <= 2 秒。
+--
+-- 🛑 不用 correct 分組。「快速點兩個不同選項」留下的就是一對一錯，
+--    那是最該抓的一類；用 correct 分組會整個漏掉。
+--
+-- 🛑 判定用 judgment = coalesce(correct, self_rating)，不是只看 correct。
+--    SRS 的 correct 永遠是 NULL，它真正的證據在 self_rating。
+--    只看 correct 的話，SRS 的「forgot + easy 連點」會被當成無衝突放行。
+--
+-- 🛑 分類用每一列自己記的 affected_mastery，不用題型清單。
+--    match 配對成功、flashcard 的 Mark as Known 都會動熟練度；
+--    用「哪些題型是證據」這種假設去分類會分錯。
+WITH scoped AS (
+  SELECT a.id, a.student_id, a.lexical_item_id, a.exercise_type, a.session_id,
+         a.affected_mastery, a.occurred_at,
+         coalesce(a.correct::text, a.self_rating) AS judgment,
+         (a.metadata ->> 'event') = 'timeout'     AS is_timeout
+  FROM public.lexical_attempts a
+),
+marked AS (
+  SELECT s.*,
+         CASE WHEN s.occurred_at - lag(s.occurred_at) OVER w <= interval '2 seconds'
+              THEN 0 ELSE 1 END AS is_new_burst
+  FROM scoped s
+  WINDOW w AS (PARTITION BY s.student_id, s.lexical_item_id, s.exercise_type, s.session_id
+               ORDER BY s.occurred_at)
+),
+bursts AS (
+  SELECT m.*,
+         sum(m.is_new_burst) OVER (PARTITION BY m.student_id, m.lexical_item_id,
+                                                m.exercise_type, m.session_id
+                                   ORDER BY m.occurred_at
+                                   ROWS UNBOUNDED PRECEDING) AS burst_no
+  FROM marked m
+),
+grouped AS (
+  SELECT student_id, lexical_item_id, exercise_type, burst_no,
+         count(*)                                 AS rows_in_burst,
+         count(*) FILTER (WHERE affected_mastery) AS mastery_rows,
+         count(DISTINCT judgment) > 1             AS contradictory,
+         bool_or(is_timeout)                      AS has_timeout
+  FROM bursts
+  GROUP BY student_id, lexical_item_id, exercise_type, session_id, burst_no
+  HAVING count(*) > 1
+)
+SELECT '受影響的作答組數（每組 = 一次該只記一筆的作答）' AS "項目",
+       count(*)::text AS "數字"
+FROM grouped
+UNION ALL SELECT '　其中會動熟練度的（🛑 真的影響到學生看到什麼）',
+       count(*) FILTER (WHERE mastery_rows > 1)::text FROM grouped
+UNION ALL SELECT '　其中判定互相矛盾（一對一錯／forgot+easy 這類）',
+       count(*) FILTER (WHERE contradictory)::text FROM grouped
+UNION ALL SELECT '　　其中含倒數計時歸零（timeout + 真實作答）',
+       count(*) FILTER (WHERE contradictory AND has_timeout)::text FROM grouped
+UNION ALL SELECT '　其中純重複（同一顆連點，判定一致）',
+       count(*) FILTER (WHERE NOT contradictory)::text FROM grouped
+UNION ALL SELECT '多出來的資料列（總列數 − 應有的組數）',
+       coalesce(sum(rows_in_burst) - count(*), 0)::text FROM grouped
+UNION ALL SELECT '熟練度被多算的次數（affected_mastery 的多餘列）',
+       coalesce(sum(greatest(mastery_rows - 1, 0)), 0)::text FROM grouped
+UNION ALL SELECT '受影響的學生數',
+       (SELECT count(DISTINCT student_id)::text FROM grouped)
+UNION ALL SELECT '受影響的單字數',
+       (SELECT count(DISTINCT lexical_item_id)::text FROM grouped);
