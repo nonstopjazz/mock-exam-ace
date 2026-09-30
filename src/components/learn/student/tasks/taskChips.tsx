@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { homeworkState, isOverdue, type StudentHomework } from "@/lib/learn/tasks";
+import { historyState, type StudentTaskHistoryItem } from "@/lib/learn/taskHistory";
 import type { TaskStateKey } from "../studentTokens";
 
 /**
@@ -30,6 +31,23 @@ export const TaskStateChip = ({ hw }: { hw: StudentHomework }) => {
   return (
     <Badge variant="outline" className={`text-xs font-normal shrink-0 ${TONE[state.key]}`}>
       {SHORT[state.key] ?? state.label}
+    </Badge>
+  );
+};
+
+/**
+ * 已結束任務的最終狀態徽章。
+ *
+ * 🛑 沿用同一份 TONE，不另立第二套顏色——同一個狀態在待辦與歷史裡
+ *    必須是同一個顏色，否則學生要學兩套。
+ * 🛑 但【不】套用 SHORT：那裡的「待老師確認」對已結束的項目是錯的，
+ *    老師不會再看了。historyState() 自己的措辭才是誠實的。
+ */
+export const HistoryStateChip = ({ item }: { item: StudentTaskHistoryItem }) => {
+  const state = historyState(item);
+  return (
+    <Badge variant="outline" className={`text-xs font-normal shrink-0 ${TONE[state.key]}`}>
+      {state.label}
     </Badge>
   );
 };
