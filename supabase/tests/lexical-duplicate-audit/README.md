@@ -20,6 +20,7 @@ PR #154 之前，四個作答模式用 `if (showResult) return` 當防線，而 
 | `03-contradictory.sql` | 判定矛盾的明細，含「可否自動判定」 |
 | `04-mastery-impact.sql` | 依 學生×單字 列出熟練度被多算的程度 |
 | `06-repair-preview.sql` | 🟢 唯讀。修正的 before / after 預覽。**07 之前一定要先跑這支** |
+| `07-repair-apply.sql` | 🔴 **會寫入。** 只碰 3 個 學生×單字，UUID 寫死 |
 
 ## 🛑 第一版錯了兩件事（留著當教訓）
 
@@ -144,7 +145,24 @@ bash supabase/tests/lexical-duplicate-audit/run-repair-test.sh
 `lexical_compat_review_interval` 從真正的 migration 抽出來載入，不另寫一份 ——
 間隔表哪天改了，這裡要跟著動。
 
-三道防線各有一個 fixture 案例，且突變測試確認拿掉任一道都會紅：
+`07` 也有自己的一支：
+
+```bash
+bash supabase/tests/lexical-duplicate-audit/run-apply-test.sh
+```
+
+從零建臨時資料庫，跑 **`07` 的原檔（一字不改）**，斷言 **20 條**。
+fixture 刻意用 production 的 UUID，所以不需要任何代換 ——
+測到的就是要跑在 production 上的那份。
+
+證明三件事：修正後的數值與複習時間正確、**幂等**（再跑一次一個位元都不變）、
+**範圍**（名單外鋪了一列誘餌，被動到就是 WHERE 寫錯）。
+另外模擬「06 之後學生又複習了」，確認樂觀鎖會讓那一列完全不動。
+
+突變測試：把樂觀鎖換成現場相減 → 第二次跑 `airline` 變 4/4、
+`interact` 變 −1/−1（6 條紅）。
+
+預覽的三道防線各有一個 fixture 案例，且突變測試確認拿掉任一道都會紅：
 
 | 拿掉 | 結果 |
 |---|---|
