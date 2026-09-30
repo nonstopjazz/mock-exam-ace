@@ -51,10 +51,28 @@ snapshot() {
      FROM public.user_word_progress"
 }
 apply() { run_as "psql -q -v ON_ERROR_STOP=1 -d $DB -f '$DIR/07-repair-apply.sql'" > "$TMP/out.txt" 2>&1 || {
-            echo "❌ 07 執行失敗"; cat "$TMP/out.txt"; exit 1; }; }
+            echo "❌ 07 執行失敗（不該失敗）"; cat "$TMP/out.txt"; exit 1; }; }
+
+# 07 的原子性斷言會 RAISE，psql 因此回非零 —— 那是【預期】行為，不是壞掉。
+apply_expect_rollback() {
+  if run_as "psql -q -v ON_ERROR_STOP=1 -d $DB -f '$DIR/07-repair-apply.sql'" > "$TMP/out.txt" 2>&1; then
+    echo "❌ 預期要回滾，但 07 正常結束了"; cat "$TMP/out.txt"; exit 1
+  fi
+}
 
 DECOY_BEFORE="$(q "SELECT mastery_level || '/' || review_count || '@' || next_review_time
                    FROM public.user_word_progress WHERE word_id = 'lw-decoy'")"
+
+echo "──────── 08 診斷（唯讀）────────"
+# 修正前跑一次：三列都該說「條件全過」。
+chmod 644 "$DIR/08-why-blocked.sql" 2>/dev/null || true
+if ! run_as "psql -t -A -F'|' -v ON_ERROR_STOP=1 -d $DB -f '$DIR/08-why-blocked.sql'" \
+     > "$TMP/d.txt" 2>&1; then
+  echo "❌ 08 執行失敗"; cat "$TMP/d.txt"; exit 1
+fi
+check "08 列出 3 列"                "$(grep -c '|' "$TMP/d.txt")" "3"
+check "修正前：兩張表共 6 欄都說條件全過" \
+      "$(grep -o '條件全過' "$TMP/d.txt" | wc -l | tr -d ' ')" "6"
 
 echo "──────── 第一次跑 07 ────────"
 apply
@@ -79,6 +97,11 @@ check "airline 6/6 → 5/5"             "$(old lw-airline)"  "5/5"
 check "airline next = last +14 天"     "$(oldnext lw-airline)"  "2026-10-07 05:45:25.962"
 check "armchair 2/2 → 1/1"            "$(old lw-armchair)" "1/1"
 check "armchair next = last +10 分"    "$(oldnext lw-armchair)" "2026-09-28 08:03:46.493"
+# 🛑 第一版漏了這個 —— 舊表的 SRS easy 會加 correct_count，連點那幾次也加了。
+oldc() { q "SELECT correct_count FROM public.user_word_progress WHERE word_id = '$1'"; }
+check "🛑 interact 答對 5 → 2（一起扣）" "$(oldc lw-interact)" "2"
+check "🛑 airline 答對 6 → 5"           "$(oldc lw-airline)"  "5"
+check "🛑 armchair 答對 2 → 1"          "$(oldc lw-armchair)" "1"
 
 echo "  ── 新表（平行紀錄）──"
 check "interact 5/5 → 2/2"            "$(newm interact)" "2/2"
@@ -105,15 +128,23 @@ check "interact 沒有被再扣一輪"      "$(old lw-interact)" "2/2"
 check "🛑 airline 沒有從 5/5 掉到 4/4" "$(old lw-airline)" "5/5"
 
 echo
+echo "──────── 08 診斷（修正後）────────"
+run_as "psql -t -A -F'|' -v ON_ERROR_STOP=1 -d $DB -f '$DIR/08-why-blocked.sql'" > "$TMP/d2.txt" 2>&1
+check "修正後：兩張表共 6 欄都說已是修正後的值" \
+      "$(grep -o '已經是修正後的值' "$TMP/d2.txt" | wc -l | tr -d ' ')" "6"
+
+echo
 echo "──────── 🛑 樂觀鎖擋下的情形 ────────"
 # 模擬「06 之後那位學生又複習了一次」：把 interact 推回 3/3。
 # expect_* 是 5/5，對不上 → 那一列必須完全不動。
 run_as "psql -q -d $DB -c \"UPDATE public.user_word_progress
-        SET mastery_level = 3, review_count = 3 WHERE word_id = 'lw-interact'\"" >/dev/null
-apply
+        SET mastery_level = 3, review_count = 3, correct_count = 3
+        WHERE word_id = 'lw-interact'\"" >/dev/null
+AIRLINE_BEFORE="$(old lw-airline)"
+apply_expect_rollback
+check "🛑 斷言觸發並回滾"           "$(grep -c '整批回滾' "$TMP/out.txt")" "1"
 check "🛑 對不上的那列沒被動到"     "$(old lw-interact)" "3/3"
-check "🛑 驗收把它標成沒改到"       "$(grep -c '沒改到' "$TMP/out.txt")" "1"
-check "其他兩列不受影響"            "$(old lw-airline)" "5/5"
+check "🛑 其他兩列也沒被動（整批退回，不留一半）" "$(old lw-airline)" "$AIRLINE_BEFORE"
 
 echo
 echo "🛑 第二次之所以什麼都不會變，是因為 07 把「修改前的數值」寫進 WHERE 當"
