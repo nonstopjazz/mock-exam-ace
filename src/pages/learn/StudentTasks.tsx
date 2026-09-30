@@ -13,6 +13,7 @@ import {
 import { TaskCard } from "@/components/learn/student/tasks/TaskCard";
 import { RecurringCard } from "@/components/learn/student/tasks/RecurringCard";
 import { TYPE } from "@/components/learn/student/shared";
+import { TaskHistoryPanel } from "@/components/learn/student/tasks/TaskHistoryPanel";
 
 type View = "todo" | "awaiting" | "done";
 
@@ -172,6 +173,13 @@ const StudentTasks = () => {
               ) : null}
             </>
           )}
+
+          {/* 已結束的作業 —— 刻意放在待辦【之外】的判斷式裡。
+              learn_student_tasks() 掛掉的時候，歷史仍然該看得到：
+              那是兩支不同的 RPC，沒有理由讓其中一支的失敗連累另一支。 */}
+          <section className="mt-10">
+            <TaskHistoryPanel />
+          </section>
         </div>
       </div>
     </Layout>
