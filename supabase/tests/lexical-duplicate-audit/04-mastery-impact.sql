@@ -13,6 +13,20 @@
 --    不是 student_lexical_mastery。所以「下次複習被推多遠」要看
 --    「舊表下次複習」那一欄，新表的數字只是平行紀錄。
 --
+-- 🛑 兩張表的數字【可以差很多】，那不一定是 bug。
+--    user_word_progress 從 2026-02-10 就在收資料，
+--    lexical_attempts 是 2026-09-22 才有的 —— 舊表帶著七個月的歷史，
+--    這份稽核看不到。所以：
+--
+--      「多算幾次」可信      ← 那是從 lexical_attempts 數出來的，是實際發生的重複
+--      「正確的熟練度是多少」不能單從 attempts 推 ← 缺了上線前的歷史
+--
+--    真的要算正確值，先看 mastery_level 是否等於 review_count：
+--    相等就代表每一步都是 +1（easy），因為從 0 起算 n 步最多只能到 n。
+--    這種情況下正確熟練度 = review_count − 多算次數，是唯一解。
+--    不相等（混了 hard / forgot）就得用 lexical_compat_next_mastery() 重放，
+--    而重放需要上線前的紀錄 —— 那些不在 lexical_attempts 裡。
+--
 -- 間隔對照（lexical_compat_review_interval）：
 --    0→立刻  1→10 分鐘  2→1 天  3→3 天  4→7 天  5→14 天  6→30 天
 --    所以熟練度多算 3 級 = 本來 1 天後該複習，被推到 14 天後。
