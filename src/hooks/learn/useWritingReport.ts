@@ -8,6 +8,7 @@ import type {
   NextStep,
   OverallEvaluation,
 } from "@/lib/writing/analysisContract";
+import type { EssayScore } from "@/types/writing";
 
 /**
  * 學生端的作文分析報告。
@@ -29,6 +30,16 @@ export interface WritingReport {
   taxonomy_version: string;
   requested_at: string | null;
   completed_at: string | null;
+
+  /**
+   * 20 分制總分。
+   *
+   * 🛑 只有管理員的 writing_admin_analysis() 會帶這一欄；
+   *    學生端的報告沒有（學生的分數在作文卡上，來自 essay_cards）。
+   *    所以是 optional —— 兩支 RPC 的回傳形狀本來就不同，
+   *    硬要求必填只會逼學生端塞一個假的 null 進來。
+   */
+  score?: EssayScore | null;
 
   /** 四軸通過驗證就有值，即使綜合層還沒好 */
   competency_analysis: CompetencyAnalysis | null;
