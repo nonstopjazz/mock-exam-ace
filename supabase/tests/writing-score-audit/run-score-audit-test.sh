@@ -84,7 +84,9 @@ check "只改公式：全 ADEQUATE 15 → 10"   "$(row02 '全部 ADEQUATE' | cut
 # 🛑 這兩條是整支稽核最重要的結論：「只改公式」保留 STRONG = 4，
 #    所以幾乎全 STRONG 的作文幾乎不會降。想把 18 壓到 14，改公式做不到。
 check "🛑 只改公式：全 STRONG 仍是 20"  "$(row02 '全部 STRONG' | cut -d'|' -f5)"     "20"
-check "🛑 只改公式：那篇 19 分只降 1 分" "$(row02 '像那篇 18 分的' | cut -d'|' -f7)"  "1"
+# ⚠️ 02 的欄位順序：4 目前 / 5 只改公式 / 6 AI嚴一級 / 7 等距 /
+#    8 改公式降幅 / 9 嚴一級降幅 / 10 等距降幅
+check "🛑 只改公式：那篇 19 分只降 1 分" "$(row02 '像那篇 18 分的' | cut -d'|' -f8)"  "1"
 
 # 🛑 而「AI 評嚴一級」才真的動 —— 這對應改 prompt。
 check "🛑 AI嚴一級：全 STRONG 20 → 15"  "$(row02 '全部 STRONG' | cut -d'|' -f6)"     "15"
@@ -104,6 +106,22 @@ check "STRONG 總數"             "$(v03 'STRONG' | head -1)" "$(q "
   CROSS JOIN LATERAL jsonb_array_elements(a.competency_analysis -> 'categories') c
   LEFT JOIN LATERAL jsonb_array_elements(c -> 'skills') sk ON true
   WHERE a.status = 'COMPLETED' AND sk ->> 'state' = 'STRONG'")"
+
+echo "──────── 🛑 E2. 等距（1/2/3，無類別內 round）────────"
+# 滿分與下限：等距之後全 STRONG 仍是 20，全 DEVELOPING 從 10 掉到 7。
+check "全 STRONG 仍是 20"              "$(row02 '全部 STRONG' | cut -d'|' -f7)"     "20"
+check "全 ADEQUATE 15 → 13"            "$(row02 '全部 ADEQUATE' | cut -d'|' -f7)"   "13"
+check "全 DEVELOPING 10 → 7"           "$(row02 '全部 DEVELOPING' | cut -d'|' -f7)" "7"
+# 🛑 這是等距的重點：頂端不動、底部降幅溫和，不像 1/2/4 那樣底部一律掉 5。
+check "🛑 全 STRONG 的等距降幅 = 0"     "$(row02 '全部 STRONG' | cut -d'|' -f10)"    "0"
+check "🛑 全 DEVELOPING 的等距降幅 = 3（不是 5）" \
+      "$(row02 '全部 DEVELOPING' | cut -d'|' -f10)" "3"
+# 對照 1/2/4：同一篇底部降幅是 5
+check "對照：全 DEVELOPING 在 1/2/4 下降 5" \
+      "$(row02 '全部 DEVELOPING' | cut -d'|' -f8)" "5"
+# 🛑 等距沒有類別內 round，所以剛好 .5 的那篇不再被墊高
+check "🛑 剛好.5 那篇：等距不受 round 墊高" \
+      "$(row02 '每個類別剛好.5' | cut -d'|' -f7)" "17"
 
 echo "──────── 🛑 F. 04 類別內 round 的放大效應 ────────"
 P04="$(runfile 04-rounding-inflation.sql)"
