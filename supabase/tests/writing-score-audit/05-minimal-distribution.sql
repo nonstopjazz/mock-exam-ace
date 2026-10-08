@@ -21,6 +21,7 @@ WITH per_analysis AS (
   SELECT a.id,
          (public.writing_score_20(a.competency_analysis) ->> 'score')::int AS score,
          count(*) FILTER (WHERE sk ->> 'state' = 'MINIMAL')    AS n_minimal,
+         count(*) FILTER (WHERE sk ->> 'state' = 'DEVELOPING') AS n_developing,
          count(*) FILTER (WHERE sk ->> 'state' = 'STRONG')     AS n_strong,
          count(*) FILTER (WHERE sk ->> 'state' <> 'UNMEASURED') AS n_measured
     FROM public.writing_analyses a
@@ -48,7 +49,15 @@ m(ord, label, n) AS (
     coalesce(round(100.0 * sum(n_minimal) / nullif(sum(n_measured), 0))::int, 0) FROM per_analysis
   UNION ALL SELECT 9, '🛑 ② 半數以上 skill 被評 MINIMAL 的篇數',
     count(*) FILTER (WHERE n_measured > 0 AND n_minimal::numeric / n_measured > 0.5) FROM per_analysis
-  UNION ALL SELECT 10, '對照：STRONG 為 0 的篇數（改動前 50 篇裡有 43 篇）',
+  -- 🛑 下面兩列才看得出 MINIMAL 是從哪裡來的。基準見檔尾。
+  UNION ALL SELECT 10, '🛑 ② DEVELOPING 佔「有量到」的百分比（基準 58%）',
+    coalesce(round(100.0 * sum(n_developing) / nullif(sum(n_measured), 0))::int, 0) FROM per_analysis
+  UNION ALL SELECT 11, '🛑 ② DEVELOPING + MINIMAL 合計百分比（基準 58%，應該差不多）',
+    coalesce(round(100.0 * (sum(n_developing) + sum(n_minimal))
+                   / nullif(sum(n_measured), 0))::int, 0) FROM per_analysis
+  UNION ALL SELECT 12, '對照：STRONG 佔「有量到」的百分比（基準 5%）',
+    coalesce(round(100.0 * sum(n_strong) / nullif(sum(n_measured), 0))::int, 0) FROM per_analysis
+  UNION ALL SELECT 13, '對照：STRONG 為 0 的篇數（基準 72 篇裡約 65 篇）',
     count(*) FILTER (WHERE n_strong = 0) FROM per_analysis
 )
 SELECT label AS "項目",
@@ -60,6 +69,13 @@ SELECT label AS "項目",
          WHEN ord = 8 AND n > 20 THEN '⚠️ 偏高，逐篇看幾個 MINIMAL 的理由站不站得住'
          WHEN ord = 8            THEN '✅ 在合理範圍'
          WHEN ord = 9 AND n > 0  THEN '⚠️ 這幾篇要人工看過 —— 半數以上評最低分是很強的宣稱'
+         -- 🛑 第 11 列是最關鍵的判讀：MINIMAL 應該是從 DEVELOPING 裡【重新分層】
+         --    出來的，不是額外長出來的。合計遠高於基準 58% 就代表 AI 連
+         --    ADEQUATE 都往下壓了 —— 那是崩盤，不是變精準。
+         WHEN ord = 11 AND n > 75 THEN '🛑 合計遠高於基準 —— 連 ADEQUATE 都被往下壓，回滾 prompt'
+         WHEN ord = 11 AND n > 68 THEN '⚠️ 合計偏高，抽幾篇看是不是把 ADEQUATE 評成 DEVELOPING 了'
+         WHEN ord = 11 AND n < 45 THEN '⚠️ 合計反而變低 —— 這不該發生，先確認樣本是不是混了舊分析'
+         WHEN ord = 11            THEN '✅ 合計與基準相當 —— 是重新分層，不是整批下壓'
          ELSE ''
        END   AS "判讀"
   FROM m
@@ -75,3 +91,22 @@ SELECT label AS "項目",
 --
 --   第 3 列是 0 的時候，先確認是不是根本還沒有作文用新 prompt 重跑過
 --   （第 2 列也會是 0）。兩列都是 0 → 還沒有資料，不是門檻太嚴。
+--
+-- ══════════════════════════════════════════════════════════════
+-- 🛑 基準線（2026-10-08，MINIMAL 上線之前，由 04-state-vocabulary.sql 實測）
+-- ══════════════════════════════════════════════════════════════
+--
+--   DEVELOPING   943 次  58.4%  ← MINIMAL 要吃的就是這一塊
+--   ADEQUATE     589 次  36.4%
+--   STRONG        84 次   5.2%  （全擠在 7 篇裡，其餘約 65 篇是零 STRONG）
+--   有量到合計  1616 次
+--   UNMEASURED    40 次（排除在分母外）
+--
+--   第 10 / 11 列的用法：
+--     DEVELOPING 下降、合計維持 58% 左右  → ✅ 重新分層，正是這次要的
+--     合計衝到 70% 以上                   → 🛑 ADEQUATE 也被往下壓了，回滾 prompt
+--
+--   🛑 單看第 8 列（MINIMAL 佔比）看不出差別：
+--      「DEVELOPING 20% + MINIMAL 38%」與「DEVELOPING 50% + MINIMAL 38%」
+--      的第 8 列一模一樣，但前者是重新分層、後者是崩盤。
+--      所以第 11 列不能省。
