@@ -72,7 +72,12 @@ export type EssayAnalysisStatus =
  *    所以 17 / 20 有可能只評了五項中的四項——不講分母就是在說謊。
  */
 export interface EssayScore {
-  /** 0–20。實際下限是 7：四個狀態裡沒有任何一個代表「完全不行」 */
+  /**
+   * 0–20。下限真的是 0（五個面向全評 MINIMAL）。
+   *
+   * 🛑 0 分與「沒有分數」不同。全部面向都 UNMEASURED 時整個 score 是
+   *    undefined，不是 0 —— 畫面上要分得出「評了，最低分」和「沒東西可評」。
+   */
   score: number;
   /** 有量到、真的參與計分的類別數 */
   measured: number;
