@@ -264,6 +264,12 @@ const WritingGradingDetail = () => {
                   {/* 學生實際看到的分數。老師在這裡看不到的話，就無法判斷
                       AI 的標準鬆不鬆 —— 而那是只有老師能判斷的事。
                       🛑 與學生的作文卡共用 ScoreMark，數字不可能兩邊不一樣。 */}
+                  {/* 🛑 分數讀不到時【不要靜默】。
+                      第一版寫成 score ? (卡片) : null —— 結果 RPC 沒帶分數時
+                      卡片就靜靜地不出現，老師只看到「批改完了但沒有分數」，
+                      分不出是沒部署、沒跑 migration，還是真的沒分數。
+                      那種失敗最花時間，因為畫面上沒有任何可以追的線索。 */
+                  }
                   {analysis.report.score ? (
                     <Card className="p-6 mb-6">
                       <div className="flex items-start justify-between gap-4">
@@ -289,7 +295,16 @@ const WritingGradingDetail = () => {
                         </div>
                       </div>
                     </Card>
-                  ) : null}
+                  ) : (
+                    <Alert className="mb-6">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        這篇的分數讀不到。報告本身正常，只是分數沒有跟著回來 ——
+                        通常是 <code className="text-xs">add_writing_admin_analysis_score.sql</code>{" "}
+                        還沒在這個環境執行。
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   <WritingReportView report={analysis.report} />
                 </>
               )}
