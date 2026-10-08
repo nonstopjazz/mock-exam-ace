@@ -72,7 +72,7 @@ export type EssayAnalysisStatus =
  *    所以 17 / 20 有可能只評了五項中的四項——不講分母就是在說謊。
  */
 export interface EssayScore {
-  /** 0–20。實際下限是 10：四個狀態裡沒有任何一個代表「完全不行」 */
+  /** 0–20。實際下限是 7：四個狀態裡沒有任何一個代表「完全不行」 */
   score: number;
   /** 有量到、真的參與計分的類別數 */
   measured: number;
