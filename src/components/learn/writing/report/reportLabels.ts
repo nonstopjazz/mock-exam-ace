@@ -7,11 +7,18 @@ import type { CompetencyState, HighScoreQuality, OverallLevel } from "@/lib/writ
  * 不做任何合併或重新分級——分級是分析層的事。
  */
 
-/** 學生看得懂的說法。刻意不用「分數」「等第」這類評分術語。 */
+/**
+ * 學生看得懂的說法。刻意不用「分數」「等第」這類評分術語。
+ *
+ * 🛑 「明顯不足」與「本次未評量」是兩件事，用字刻意拉開：
+ *    前者是判斷（算 0 分），後者是沒有可判斷的材料（不計分）。
+ *    讀成同一件事，學生會以為「沒測到」就是「不行」。
+ */
 export const COMPETENCY_LABEL: Record<CompetencyState, string> = {
   STRONG: "表現突出",
   ADEQUATE: "達到要求",
   DEVELOPING: "還在發展",
+  MINIMAL: "明顯不足",
   UNMEASURED: "本次未評量",
 };
 

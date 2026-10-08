@@ -45,6 +45,7 @@ import {
   HIGH_SCORE_CATEGORIES,
 } from "../api/_lib/taxonomy";
 import {
+  COMPETENCY_STATES,
   collectCitableRefs,
   validateCompetencyAnalysis,
   validateErrorAnalysis,
@@ -525,6 +526,36 @@ console.log("\nprompt 的節點覆蓋");
   check("Pass 1 prompt 沒有混入 error code", !prompt.includes("WRITE_ERR_"));
   check("Pass 1 prompt 有退化輸入規則", prompt.includes("題目與提示文字不是學生寫的"));
   check("引用規則禁止用 ... 或 / 接起兩段", prompt.includes("把不相鄰的兩段接成一個引用"));
+
+  // 🛑 MINIMAL 是量表的 0 分。prompt 少了下面任何一條界線，
+  //    模型就會把它當成「比 DEVELOPING 再差一點」而大量使用 ——
+  //    production 50 篇裡 43 篇是零 STRONG，AI 本來就偏嚴，
+  //    再給一個更低的格子而不設門檻，分數會整批崩掉。
+  check(
+    "🛑 Pass 1 prompt 列出全部五個 state",
+    COMPETENCY_STATES.every((st) => prompt.includes(st)),
+    COMPETENCY_STATES.filter((st) => !prompt.includes(st)).join(","),
+  );
+  check(
+    "🛑 prompt 給出 MINIMAL 的判準（至少一處用對了 → DEVELOPING）",
+    prompt.includes("至少一處"),
+  );
+  check(
+    "🛑 prompt 明說「錯得比對的多」還是 DEVELOPING，不是 MINIMAL",
+    prompt.includes("錯得比對的多"),
+  );
+  check(
+    "🛑 prompt 分清 MINIMAL（計分）與 UNMEASURED（不計分）方向相反",
+    prompt.includes("這兩個方向相反"),
+  );
+  check(
+    "🛑 不確定時要選 UNMEASURED —— 這是防止憑空扣分的煞車（TR-11）",
+    prompt.includes("不確定是哪一個，就選 UNMEASURED"),
+  );
+  check(
+    "🛑 退化輸入的那兩個節點要給 MINIMAL，不是 UNMEASURED（不然交白卷沒有分數）",
+    prompt.includes("這兩個節點本身要給 MINIMAL"),
+  );
 }
 
 {

@@ -5,6 +5,10 @@ import { Badge } from "@/components/ui/badge";
 /**
  * 色調。UNMEASURED 一律用 muted——它不是「差」，是「這篇沒有機會展現」，
  * 用警示色會把「未評量」讀成「不及格」（TR-11）。
+ *
+ * 能力階梯由強到弱是 primary → secondary → accent → destructive，
+ * MINIMAL 與 MISUSED 共用 destructive：兩者都是「這裡是錯的／沒有」，
+ * 不另開第五個顏色。
  */
 const TONE: Record<string, string> = {
   STRONG: "bg-primary/10 text-foreground border-primary/20",
@@ -14,6 +18,7 @@ const TONE: Record<string, string> = {
   DEVELOPING: "bg-accent/10 text-foreground border-accent/20",
   PARTIALLY_EFFECTIVE: "bg-accent/10 text-foreground border-accent/20",
   NEEDS_REWORK: "bg-accent/10 text-foreground border-accent/20",
+  MINIMAL: "bg-destructive/10 text-foreground border-destructive/20",
   MISUSED: "bg-destructive/10 text-foreground border-destructive/20",
   UNMEASURED: "bg-muted text-muted-foreground border-border",
 };

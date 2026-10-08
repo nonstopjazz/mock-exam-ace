@@ -36,11 +36,29 @@ import {
 /**
  * Axis 1。三軸的「沒出現」意義不同，所以狀態語彙刻意不共用。
  * UNMEASURED 依 TR-11：沒有被 task elicited ≠ weak。
+ *
+ * 由強到弱排列。writing_score_20() 的賦值是
+ * STRONG 3 / ADEQUATE 2 / DEVELOPING 1 / MINIMAL 0，UNMEASURED 排除在分母外。
+ *
+ * 🛑 MINIMAL 與 UNMEASURED 的方向相反，不可以混用：
+ *
+ *      MINIMAL     題目要求了、本篇也有可判斷的材料，而判定是學生沒做到。
+ *                  → 計分，而且是 0 分。
+ *      UNMEASURED  題目沒有要求，或本篇沒有可判斷的材料。
+ *                  → 不計分，不會拉低分數。
+ *
+ *    把「沒機會展現」誤判成 MINIMAL，等於憑空扣分（TR-11）。
+ *    模型不確定是哪一個時，prompt 要求它選 UNMEASURED。
+ *
+ * 🛑 新增狀態時，writing_score_20() 必須【先】部署。
+ *    那支函式對不在這份清單裡的 state 會讓整篇沒有分數；
+ *    在它認得新值之前先放行，分數會偏高而且看起來正常。
  */
 export const COMPETENCY_STATES = [
   "STRONG",
   "ADEQUATE",
   "DEVELOPING",
+  "MINIMAL",
   "UNMEASURED",
 ] as const;
 export type CompetencyState = (typeof COMPETENCY_STATES)[number];

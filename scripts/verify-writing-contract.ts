@@ -136,6 +136,54 @@ console.log("\nPass 1 — Writing Competency（全 23 個 skill）");
   check("UNMEASURED + 理由 + 無證據 = 合法的模型判斷", r.ok);
 }
 
+/* ──── MINIMAL：量表的 0 分 ──── */
+
+{
+  const payload = fullCompetency();
+  payload.categories[0].skills[0].state = "MINIMAL";
+  payload.categories[0].skills[0].reason = "通篇沒有任何一處提出支持論點的理由或例子";
+  const r = validateCompetencyAnalysis(payload, ESSAY);
+  check("🛑 MINIMAL 是合法的 state（契約放行它，分數才算得出 0）", r.ok);
+}
+
+{
+  // 🛑 MINIMAL 不是 UNMEASURED —— 它【可以】附證據。
+  //    若誤用 UNMEASURED 那條「不得附證據」的規則擋它，
+  //    模型就無法指出「這裡通篇都錯」的那一句。
+  const payload = fullCompetency();
+  payload.categories[0].skills[0].state = "MINIMAL";
+  payload.categories[0].skills[0].reason = "這一句是全文唯一的嘗試，而且用錯了";
+  const r = validateCompetencyAnalysis(payload, ESSAY);
+  check(
+    "🛑 MINIMAL 附證據是合法的（UNMEASURED 才不得附證據）",
+    r.ok,
+    r.ok ? "" : JSON.stringify(r.issues?.slice(0, 2)),
+  );
+}
+
+{
+  const payload = fullCompetency();
+  payload.categories[0].skills[0].state = "MINIMAL";
+  payload.categories[0].skills[0].reason = "";
+  expectIssue(
+    "MINIMAL 沒寫理由 → MISSING_REASON（0 分是判斷，要說得出根據）",
+    validateCompetencyAnalysis(payload, ESSAY),
+    "MISSING_REASON",
+  );
+}
+
+{
+  // 🛑 這一條守的是部署順序。writing_score_20() 對五個值以外的 state
+  //    會讓整篇沒有分數；契約必須在寫入之前就擋掉，不能讓它進資料庫。
+  const payload = fullCompetency();
+  payload.categories[0].skills[0].state = "VERY_MINIMAL" as never;
+  expectIssue(
+    "🛑 五個值以外的 state → INVALID_STATE（不可以寫進資料庫）",
+    validateCompetencyAnalysis(payload, ESSAY),
+    "INVALID_STATE",
+  );
+}
+
 {
   const payload = fullCompetency();
   payload.categories[2].skills[0].code = "WRITE_NOT_A_REAL_SKILL";

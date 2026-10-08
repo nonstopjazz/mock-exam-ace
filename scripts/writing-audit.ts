@@ -539,7 +539,7 @@ function fullReport(
     `| 對 50 秒硬性期限的餘裕 | ${ms(50_000 - data.stage1Ms - data.synthesisMs)} |`,
     `| 需要缺漏重試的 pass | ${reports.filter((r) => r.neededRepair).length} / ${reports.length} |`,
     `| 引用查核 | ${data.evidence.total} 段，其中 ${data.evidence.fabricated.length} 段在原文中找不到 |`,
-    `| 能力判定 | STRONG ${counts("STRONG")}・ADEQUATE ${counts("ADEQUATE")}・DEVELOPING ${counts("DEVELOPING")}・UNMEASURED ${counts("UNMEASURED")} |`,
+    `| 能力判定 | STRONG ${counts("STRONG")}・ADEQUATE ${counts("ADEQUATE")}・DEVELOPING ${counts("DEVELOPING")}・MINIMAL ${counts("MINIMAL")}・UNMEASURED ${counts("UNMEASURED")} |`,
     `| 錯誤 | ${data.errors.findings.length} 處，涵蓋 ${new Set(data.errors.findings.map((f) => f.code)).size} 類 |`,
     `| 高分特徵 | EFFECTIVE ${effective}・PARTIAL ${partial}・MISUSED ${misused}・UNMEASURED ${allFeatures.length - effective - partial - misused} |`,
     `| token（估） | input ${input}・output ${output}・約 US$${costUsd(input, output).toFixed(4)} |`,
