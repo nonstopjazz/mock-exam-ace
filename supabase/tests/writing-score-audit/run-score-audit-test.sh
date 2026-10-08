@@ -50,7 +50,7 @@ runfile() {
 echo "──────── A. 01 評級分布 ────────"
 P01="$(runfile 01-state-distribution.sql)"
 row01() { echo "$P01" | grep "^$1|"; }
-check "列出 6 篇（QUEUED 的不算）" "$(echo "$P01" | grep -c '|')" "6"
+check "列出 7 篇（QUEUED 的不算）" "$(echo "$P01" | grep -c '|')" "7"
 check "全 STRONG → 15 個 skill 都 STRONG" \
       "$(row01 '全部 STRONG' | cut -d'|' -f6)" "5"
 check "🛑 全 STRONG 的 STRONG 佔比 100%" \
@@ -95,7 +95,7 @@ check "AI嚴一級：全 ADEQUATE 15 → 10"   "$(row02 '全部 ADEQUATE' | cut 
 echo "──────── E. 03 總結 ────────"
 P03="$(runfile 03-impact-summary.sql)"
 v03() { echo "$P03" | grep -F "$1" | head -1 | cut -d'|' -f2; }
-check "有分數的篇數 = 6"        "$(v03 '有分數的篇數')" "6"
+check "有分數的篇數 = 7"        "$(v03 '有分數的篇數')" "7"
 check "🛑 AI 評嚴一級的平均降幅有算出來" \
       "$(v03 'AI 評嚴一級的平均降幅' | grep -c '[0-9]')" "1"
 check "QUEUED 沒被算進去"       "$(q "SELECT count(*) FROM public.writing_analyses WHERE status <> 'COMPLETED'")" "1"
@@ -104,6 +104,23 @@ check "STRONG 總數"             "$(v03 'STRONG' | head -1)" "$(q "
   CROSS JOIN LATERAL jsonb_array_elements(a.competency_analysis -> 'categories') c
   LEFT JOIN LATERAL jsonb_array_elements(c -> 'skills') sk ON true
   WHERE a.status = 'COMPLETED' AND sk ->> 'state' = 'STRONG'")"
+
+echo "──────── 🛑 F. 04 類別內 round 的放大效應 ────────"
+P04="$(runfile 04-rounding-inflation.sql)"
+row04() { echo "$P04" | grep "^$1|"; }
+
+# 每個類別都是 2 STRONG + 2 ADEQUATE → 平均剛好 3.5 → round 成 4 → 算成全 STRONG。
+check "🛑 剛好.5 的作文目前是 20 分"       "$(row04 '每個類別剛好.5' | cut -d'|' -f2)" "20"
+check "🛑 不做類別內 round 是 18 分"       "$(row04 '每個類別剛好.5' | cut -d'|' -f3)" "18"
+check "🛑 被墊高 2 分"                     "$(row04 '每個類別剛好.5' | cut -d'|' -f4)" "2"
+check "🛑 五個類別全部剛好落在 .5"          "$(row04 '每個類別剛好.5' | cut -d'|' -f5)" "5"
+check "🛑 五個類別全被往上"                 "$(row04 '每個類別剛好.5' | cut -d'|' -f6)" "5"
+check "沒有類別被往下"                      "$(row04 '每個類別剛好.5' | cut -d'|' -f7)" "0"
+
+# 對照：評級一致的作文不受影響（平均是整數，round 不動它）
+check "全 STRONG 沒有被墊高"               "$(row04 '全部 STRONG' | cut -d'|' -f4)"   "0"
+check "全 ADEQUATE 沒有被墊高"             "$(row04 '全部 ADEQUATE' | cut -d'|' -f4)" "0"
+check "全 DEVELOPING 沒有被墊高"           "$(row04 '全部 DEVELOPING' | cut -d'|' -f4)" "0"
 
 echo
 echo "通過 $PASS 條，失敗 $FAIL 條"
