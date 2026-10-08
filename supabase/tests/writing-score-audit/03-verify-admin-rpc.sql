@@ -51,9 +51,30 @@ UNION ALL SELECT '6. 三個端點（應為 20 / 13 / 7）',
        (SELECT (public.writing_score_20(jsonb_build_object('categories',
           (SELECT jsonb_agg(jsonb_build_object('code','W'||i,'skills',
              jsonb_build_array(jsonb_build_object('code','x','state','DEVELOPING'))))
-             FROM generate_series(1,5) i))) ->> 'score')::int = 7);
+             FROM generate_series(1,5) i))) ->> 'score')::int = 7)
+
+UNION ALL SELECT '7. 🛑 MINIMAL = 0 已部署（add_writing_state_minimal 生效了）',
+       (SELECT (prosrc LIKE '%''MINIMAL''%THEN 0%')::text FROM f WHERE proname = 'writing_score_20'),
+       (SELECT prosrc LIKE '%''MINIMAL''%THEN 0%' FROM f WHERE proname = 'writing_score_20')
+
+UNION ALL SELECT '8. 🛑 不認得的 state 會 fail loud（不是靜默排除）',
+       (SELECT (prosrc LIKE '%NOT IN%')::text FROM f WHERE proname = 'writing_score_20'),
+       (SELECT prosrc LIKE '%NOT IN%' FROM f WHERE proname = 'writing_score_20')
+
+UNION ALL SELECT '9. 🛑 全 MINIMAL 換算出 0 分（量表下限真的是 0）',
+       coalesce((public.writing_score_20(jsonb_build_object('categories',
+          (SELECT jsonb_agg(jsonb_build_object('code','W'||i,'skills',
+             jsonb_build_array(jsonb_build_object('code','x','state','MINIMAL'))))
+             FROM generate_series(1,5) i))) ->> 'score'), '(沒有分數)'),
+       (public.writing_score_20(jsonb_build_object('categories',
+          (SELECT jsonb_agg(jsonb_build_object('code','W'||i,'skills',
+             jsonb_build_array(jsonb_build_object('code','x','state','MINIMAL'))))
+             FROM generate_series(1,5) i))) ->> 'score')::int = 0;
 
 -- 判讀：
 --   第 2 項 false → add_writing_admin_analysis_score.sql 要重跑
+--   第 7 / 9 項 false → add_writing_state_minimal.sql 還沒跑
+--   🛑 第 8 項 false 而第 7 項 true 幾乎不可能同時發生；真的出現就是有人
+--      手動改過函式，而且把 fail-loud 拿掉了 —— 那會讓分數在部署錯序時偏高
 --   全部 true 但畫面還是沒有分數卡 → 是前端沒部署或瀏覽器拿到舊 bundle
 --     （強制重新載入；批改頁現在會明說「分數讀不到」而不是靜默）

@@ -5,8 +5,12 @@
 -- 🛑 這支是【決定要改哪裡】的那一支，先看它。
 --
 -- 分數不是 AI 直接給的，是 writing_score_20() 從評級換算的：
---     STRONG 4 / ADEQUATE 3 / DEVELOPING 2 / UNMEASURED 排除在分母外
---     分數 = 20 × 總分 /(4 × 有量到的類別數)
+--     STRONG 3 / ADEQUATE 2 / DEVELOPING 1 / MINIMAL 0
+--     UNMEASURED 排除在分母外（MINIMAL 不是 —— 它算進分母，而且是 0 分）
+--     分數 = 20 × 總分 /(3 × 有量到的類別數)
+--
+-- 🛑 這段檔頭原本寫的是 4/3/2、分母 4 —— 那是等距改版【之前】的賦值，
+--    早就不對了。查詢對、說明錯，比沒有說明更容易誤導。
 --
 -- 所以「分數太高」有兩種可能，修法完全不同：
 --
@@ -28,9 +32,11 @@ SELECT
   count(*) FILTER (WHERE sk ->> 'state' = 'STRONG')     AS "STRONG",
   count(*) FILTER (WHERE sk ->> 'state' = 'ADEQUATE')   AS "ADEQUATE",
   count(*) FILTER (WHERE sk ->> 'state' = 'DEVELOPING') AS "DEVELOPING",
+  count(*) FILTER (WHERE sk ->> 'state' = 'MINIMAL')    AS "MINIMAL",
   count(*) FILTER (WHERE sk ->> 'state' = 'UNMEASURED') AS "UNMEASURED",
 
   -- 🛑 這一欄是關鍵。高 → 是 AI 評太鬆，不是公式問題。
+  --    分母是「有量到的 skill」，MINIMAL 算在裡面（它是判定，不是未評量）。
   round(100.0 * count(*) FILTER (WHERE sk ->> 'state' = 'STRONG')
         / nullif(count(*) FILTER (WHERE sk ->> 'state' <> 'UNMEASURED'), 0), 0)
                                                   AS "STRONG 佔比 %"

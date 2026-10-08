@@ -21,7 +21,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 DIR="$PWD"; ROOT="$DIR/../../.."
-MIG="$ROOT/supabase/migrations/change_writing_score_20_even_spacing.sql"
+# 🛑 這裡要指向【最新】的那支 migration，不是最早的。
+#    指錯的話測的是舊函式，而測試會全部通過 —— 那種綠燈最貴。
+MIG="$ROOT/supabase/migrations/add_writing_state_minimal.sql"
 DB="${DB:-wscore_$$}"
 PSQL_USER="${PSQL_USER:-postgres}"
 export PGHOST="${PGHOST:-/tmp}" PGPORT="${PGPORT:-55432}"
@@ -41,11 +43,16 @@ trap cleanup EXIT
 run_as "createdb $DB"
 
 awk '/CREATE OR REPLACE FUNCTION writing_score_20\(/,/^\$\$;/' "$MIG" > "$TMP/fn.sql"
-grep -q "WHEN 'DEVELOPING' THEN 1" "$TMP/fn.sql" || { echo "❌ 等距版函式沒抽到"; exit 1; }
+# 🛑 -E 且容忍對齊用的空白：migration 裡的 CASE 是對齊過的
+#    （WHEN 'MINIMAL'    THEN 0）。寫死單一空格會在函式其實正確時誤報。
+grep -qE "WHEN 'DEVELOPING' +THEN 1" "$TMP/fn.sql" || { echo "❌ 等距版函式沒抽到"; exit 1; }
+grep -qE "WHEN 'MINIMAL' +THEN 0"    "$TMP/fn.sql" || { echo "❌ 抽到的函式沒有 MINIMAL = 0"; exit 1; }
 # 🛑 這一條是回歸保護：類別內的 round 不可以回來。
 if grep -q "round(avg_points)" "$TMP/fn.sql"; then
   echo "❌ 抽到的函式還有類別內 round —— 那個偏差是單向的，不可以回來"; exit 1
 fi
+# 🛑 不認得的 state 必須 fail loud。少了這段，prompt 先上線的話分數會偏高。
+grep -q "NOT IN" "$TMP/fn.sql" || { echo "❌ 抽到的函式沒有「不認得的 state」檢查"; exit 1; }
 chmod 644 "$TMP/fn.sql"
 # anon 要存在，writing_score_20_test 的 E 段會檢查它叫不動這支函式
 run_as "psql -q -d $DB -c 'CREATE ROLE anon'" >/dev/null 2>&1 || true
@@ -67,25 +74,45 @@ runfile() { chmod 644 "$DIR/$1"
 echo "──────── A. 01 評級分布 ────────"
 P01="$(runfile 01-state-distribution.sql)"
 row01() { echo "$P01" | grep "^$1|"; }
-check "列出 7 篇（QUEUED 的不算）"        "$(echo "$P01" | grep -c '|')" "7"
-check "🛑 全 STRONG 的 STRONG 佔比 100%"   "$(row01 '全部 STRONG' | cut -d'|' -f10)" "100"
-check "🛑 全 DEVELOPING 的 STRONG 佔比 0%" "$(row01 '全部 DEVELOPING' | cut -d'|' -f10)" "0"
-check "含 UNMEASURED 那篇數得出 UNMEASURED" "$(row01 '含 UNMEASURED' | cut -d'|' -f9)" "2"
+# 🛑 01 多了 MINIMAL 欄之後，佔比欄從 f10 變成 f11、UNMEASURED 從 f9 變成 f10。
+#    欄位位置是用 cut 取的，加欄位一定要一起改這裡。
+check "列出 10 篇（QUEUED 的不算）"       "$(echo "$P01" | grep -c '|')" "10"
+check "🛑 全 STRONG 的 STRONG 佔比 100%"   "$(row01 '全部 STRONG' | cut -d'|' -f11)" "100"
+check "🛑 全 DEVELOPING 的 STRONG 佔比 0%" "$(row01 '全部 DEVELOPING' | cut -d'|' -f11)" "0"
+check "含 UNMEASURED 那篇數得出 UNMEASURED" "$(row01 '含 UNMEASURED' | cut -d'|' -f10)" "2"
+check "🛑 全 MINIMAL 那篇數得出 5 個 MINIMAL" "$(row01 '全部 MINIMAL' | cut -d'|' -f9)" "5"
+# 🛑 MINIMAL 算在「有量到」裡，所以全 MINIMAL 的 STRONG 佔比是 0 而不是空的。
+#    若誤把 MINIMAL 當成 UNMEASURED，分母會變 0，這一欄會是空白。
+check "🛑 全 MINIMAL 的 STRONG 佔比是 0（不是空白）" \
+      "$(row01 '全部 MINIMAL' | cut -d'|' -f11)" "0"
 
 echo "──────── 🛑 B. 02 的重算必須等於真函式 ────────"
 P02="$(runfile 02-verify-formula.sql)"
 row02() { echo "$P02" | grep "^$1|"; }
 for t in "全部 STRONG" "全部 ADEQUATE" "全部 DEVELOPING" "含 UNMEASURED" \
-         "類別內混合" "像那篇 18 分的" "每個類別剛好.5"; do
+         "類別內混合" "像那篇 18 分的" "每個類別剛好.5" \
+         "全部 MINIMAL" "爛但不是全爛" "MINIMAL 與未評量並存"; do
   check "🛑 $t：驗收欄" "$(row02 "$t" | cut -d'|' -f7)" "✅ 相符"
 done
-check "七篇全部相符（沒有一篇不符）" "$(echo "$P02" | grep -c '✅ 相符')" "7"
+check "十篇全部相符（沒有一篇不符）" "$(echo "$P02" | grep -c '✅ 相符')" "10"
 
 echo "──────── C. 等距之後的端點 ────────"
 check "全 STRONG 仍是 20"    "$(row02 '全部 STRONG' | cut -d'|' -f2)"   "20"
 check "全 ADEQUATE 15 → 13"  "$(row02 '全部 ADEQUATE' | cut -d'|' -f2)" "13"
-check "🛑 全 DEVELOPING 10 → 7（下限變寬）" \
+check "🛑 全 DEVELOPING 仍是 7（新增 MINIMAL 不該動到既有評級）" \
       "$(row02 '全部 DEVELOPING' | cut -d'|' -f2)" "7"
+
+echo "──────── 🛑 C2. 0–6 這一段到得了 ────────"
+# 這是這次改動的全部目的。在 MINIMAL 之前，這三個數字算不出來。
+check "🛑 全 MINIMAL = 0（新下限）"        "$(row02 '全部 MINIMAL' | cut -d'|' -f2)" "0"
+check "🛑 爛但不是全爛 = 3（落在區間中間）" "$(row02 '爛但不是全爛' | cut -d'|' -f2)" "3"
+# 🛑 這一條是對照組：MINIMAL 算進分母、UNMEASURED 不算。
+#    若誤把 MINIMAL 也排除，9/9 會算出 20 —— 差 5 分，而且看起來正常。
+check "🛑 MINIMAL 與未評量並存 = 15（誤排除會變 20）" \
+      "$(row02 'MINIMAL 與未評量並存' | cut -d'|' -f2)" "15"
+# 含 MINIMAL 的作文，舊公式欄必須留空而不是編一個數字
+check "🛑 全 MINIMAL 的「舊公式」欄是空的（舊賦值沒有這個狀態）" \
+      "$(row02 '全部 MINIMAL' | cut -d'|' -f4)" ""
 
 echo "──────── 🛑 D. 類別內不再 round ────────"
 # 每個類別都是「一半 STRONG、一半 ADEQUATE」。
