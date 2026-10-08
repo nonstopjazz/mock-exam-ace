@@ -15,6 +15,7 @@ import { useReviewQueueNav } from "@/hooks/learn/useReviewQueueNav";
 import { supabase } from "@/lib/supabase";
 import { WritingLoading } from "@/components/learn/writing/writingShared";
 import { WritingReportView } from "@/components/learn/writing/report/WritingReportView";
+import { ScoreMark } from "@/components/learn/writing/ScoreMark";
 import { TeacherFeedbackEditor } from "@/components/learn/writing/report/TeacherFeedbackEditor";
 import {
   GRADING_EXPECTED_SECONDS,
@@ -259,7 +260,38 @@ const WritingGradingDetail = () => {
                   </div>
                 </Card>
               ) : (
-                <WritingReportView report={analysis.report} />
+                <>
+                  {/* 學生實際看到的分數。老師在這裡看不到的話，就無法判斷
+                      AI 的標準鬆不鬆 —— 而那是只有老師能判斷的事。
+                      🛑 與學生的作文卡共用 ScoreMark，數字不可能兩邊不一樣。 */}
+                  {analysis.report.score ? (
+                    <Card className="p-6 mb-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <h2 className="font-semibold text-foreground">學生看到的分數</h2>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            滿分 20。由 AI 在五個面向的評級換算而來
+                            {analysis.report.score.measured < analysis.report.score.total
+                              ? `，這篇評了 ${analysis.report.score.measured} / ${analysis.report.score.total} 項`
+                              : ""}
+                            。
+                          </p>
+                          {/* 🛑 下限要講出來。量表最低是 7 分（四個評級裡沒有
+                              任何一個代表「完全不行」），不講的話低分看起來
+                              比實際更低。 */}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            這個量表的實際下限是 7 分 —— 即使每一項都評為最低的
+                            DEVELOPING，換算後仍是 7 分。
+                          </p>
+                        </div>
+                        <div className="shrink-0 pt-1">
+                          <ScoreMark score={analysis.report.score} />
+                        </div>
+                      </div>
+                    </Card>
+                  ) : null}
+                  <WritingReportView report={analysis.report} />
+                </>
               )}
             </>
           )}

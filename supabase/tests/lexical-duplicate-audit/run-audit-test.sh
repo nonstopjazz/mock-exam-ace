@@ -41,12 +41,15 @@ check "表存在那項為 true" "$(echo "$P00" | grep '^1\.' | cut -d'|' -f3)" "
 echo "──────── 01 總覽（核心）────────"
 P01="$(q 01-overview.sql)"
 val() { echo "$P01" | grep -F "$1" | head -1 | cut -d'|' -f2; }
-check "受影響組數 C1 C2 C3 C8 C9 C10 C11" "$(val '受影響的作答組數')"   "7"
+check "受影響組數 C1 C2 C3 C8 C9 C10 C11 C12" "$(val '受影響的作答組數')" "8"
 check "會動熟練度的（C8 不算，它只留證據）"  "$(val '會動熟練度的')"     "6"
 check "判定矛盾 C1 C2 + 🛑SRS 的 C9"       "$(val '判定互相矛盾')"     "3"
+# 🛑 C12 是配對的先錯後對（production 真的有）。判定不同但不是連點，
+#    必須被歸到「正常」而不是矛盾 —— 否則每天都在對正常玩法發警報。
+check "🛑 先錯後對只有 C12，且不算矛盾"    "$(val '先錯後對')"         "1"
 check "其中含 timeout（只有 C2）"          "$(val '含倒數計時歸零')"   "1"
 check "純重複 C3 C8 C10 C11"              "$(val '純重複')"          "4"
-check "多出來的列"                        "$(val '多出來的資料列')"   "9"
+check "叢發列數（含正常證據列）"            "$(val '叢發列數')"         "10"
 check "熟練度多算（C8 不貢獻）"             "$(val '熟練度被多算的次數')" "7"
 check "受影響學生數"                      "$(val '受影響的學生數')"   "2"
 check "受影響單字數"                      "$(val '受影響的單字數')"   "3"
@@ -54,6 +57,8 @@ check "受影響單字數"                      "$(val '受影響的單字數')"
 echo "──────── 03 判定矛盾明細 ────────"
 P03="$(q 03-contradictory.sql)"
 check "列出 3 組（含 SRS 那組）"    "$(echo "$P03" | grep -c '|')"              "3"
+# 🛑 03 是給人逐筆看的清單。配對的先錯後對混進來，真正的問題就被雜訊蓋住。
+check "🛑 C12 先錯後對沒有混進 03"  "$(echo "$P03" | grep -c '|match|')"        "0"
 check "timeout 可判定 1 組"        "$(echo "$P03" | grep -c 'timeout 可判定')" "1"
 check "🛑 無法判定 2 組"           "$(echo "$P03" | grep -c '無法判定')"       "2"
 check "🛑 SRS 那組有被抓到"         "$(echo "$P03" | grep -c '|srs|')"          "1"
@@ -72,17 +77,17 @@ echo "──────── 05 依題型組成 ────────"
 P05="$(q 05-by-exercise-type.sql)"
 tval() { echo "$P05" | grep "^$1|" | cut -d'|' -f5; }
 check "🛑 srs 的多餘列（舊版完全漏掉）"  "$(tval srs)"        "2"
-check "match 的多餘列（C8 證據 + C11 熟練度）" "$(tval match)" "3"
+check "match 的叢發列（C8 + C11 + C12）" "$(tval match)" "4"
 check "quick_quiz 的多餘列"             "$(tval quick_quiz)" "2"
 check "spelling 沒有重複"               "$(tval spelling)"   "0"
-check "合計列數 = fixture 全部"          "$(echo "$P05" | grep '合計' | cut -d'|' -f2)" "23"
-check "合計多餘列 與 01 一致"            "$(echo "$P05" | grep '合計' | cut -d'|' -f5)" "9"
+check "合計列數 = fixture 全部"          "$(echo "$P05" | grep '合計' | cut -d'|' -f2)" "25"
+check "合計叢發列 與 01 一致"            "$(echo "$P05" | grep '合計' | cut -d'|' -f5)" "10"
 
 echo
 echo "🛑 以下是【不該被抓到】的對照，靠上面的總數反證："
 echo "   C4 相隔 15 分鐘的真重複 / C5 不同題型 / C6 不同學生"
 echo "   C7 不同 session"
-echo "   任何一項被誤抓，01 的組數就不會是 7。"
+echo "   任何一項被誤抓，01 的組數就不會是 8。"
 echo
 echo "通過 $PASS 條，失敗 $FAIL 條"
 [ "$FAIL" -eq 0 ]

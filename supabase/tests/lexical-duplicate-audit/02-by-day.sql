@@ -8,6 +8,10 @@
 --
 --   🛑 但「上線後是 0」只有在【上線後真的有資料】時才算數。
 --      比對「當日總作答」那欄：那一欄是 0 的日子，上面的 0 什麼都沒證明。
+--
+--   🛑 要看的是【熟練度多算】那一欄，不是「叢發列數」。
+--      叢發列數包含配對遊戲「先錯後對」的正常證據列 ——
+--      那些本來就該存在，不是污染。污染率因此改用熟練度多算來算。
 WITH scoped AS (
   SELECT a.id, a.student_id, a.lexical_item_id, a.exercise_type, a.session_id,
          a.affected_mastery, a.occurred_at,
@@ -36,7 +40,9 @@ grouped AS (
          min(occurred_at)                         AS first_at,
          count(*)                                 AS rows_in_burst,
          count(*) FILTER (WHERE affected_mastery) AS mastery_rows,
-         count(DISTINCT judgment) > 1             AS contradictory
+         -- 只在會算分的列之間看矛盾。配對的「先錯後對」判定確實不同，
+         -- 但那是正常玩法（見 01 的註解），不該每天發警報。
+         count(DISTINCT judgment) FILTER (WHERE affected_mastery) > 1 AS contradictory
   FROM bursts
   GROUP BY student_id, lexical_item_id, exercise_type, session_id, burst_no
   HAVING count(*) > 1
@@ -45,7 +51,7 @@ daily AS (
   SELECT date_trunc('day', first_at)::date AS "日期",
          count(*)                              AS "受影響組數",
          count(*) FILTER (WHERE contradictory) AS "其中判定矛盾",
-         sum(rows_in_burst) - count(*)         AS "多出來的列",
+         sum(rows_in_burst) - count(*)         AS "叢發列數",
          sum(greatest(mastery_rows - 1, 0))    AS "熟練度多算"
   FROM grouped GROUP BY 1
 ),
@@ -57,9 +63,9 @@ SELECT t."日期",
        t."當日總作答",
        coalesce(d."受影響組數", 0)   AS "受影響組數",
        coalesce(d."其中判定矛盾", 0) AS "其中判定矛盾",
-       coalesce(d."多出來的列", 0)   AS "多出來的列",
+       coalesce(d."叢發列數", 0)     AS "叢發列數",
        coalesce(d."熟練度多算", 0)   AS "熟練度多算",
-       round(100.0 * coalesce(d."多出來的列", 0) / nullif(t."當日總作答", 0), 2) AS "污染率 %"
+       round(100.0 * coalesce(d."熟練度多算", 0) / nullif(t."當日總作答", 0), 2) AS "污染率 %"
 FROM totals t
 LEFT JOIN daily d USING ("日期")
 ORDER BY t."日期" DESC

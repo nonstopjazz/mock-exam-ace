@@ -149,4 +149,13 @@ INSERT INTO public.lexical_attempts
   (:S2::uuid, :W3::uuid, 'match', true, NULL, :SB::uuid,
    '2026-09-20 10:08:00.000+00', NULL, true),
   (:S2::uuid, :W3::uuid, 'match', true, NULL, :SB::uuid,
-   '2026-09-20 10:08:00.070+00', NULL, true);
+   '2026-09-20 10:08:00.070+00', NULL, true),
+
+-- C12 🛑 配對的「先點錯、一秒內再點對」—— production 2026-10-07 的真實形狀。
+--     false 是證據（recordEvidenceOnly，不算分），true 是成功（算分）。
+--     判定確實不同，但【不是】連點：相隔快一秒，人點兩下的速度。
+--     第一版把它算成「判定矛盾」，等於每天對正常玩法發警報。
+  (:S1::uuid, :W1::uuid, 'match', false, NULL, :SA::uuid,
+   '2026-09-20 10:09:00.000+00', NULL, false),
+  (:S1::uuid, :W1::uuid, 'match', true,  NULL, :SA::uuid,
+   '2026-09-20 10:09:01.000+00', NULL, true);

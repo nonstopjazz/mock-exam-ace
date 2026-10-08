@@ -1,6 +1,10 @@
 -- =====================================================
 -- 作文 20 分制總分 writing_score_20()
 --
+-- 🛑 2026-10-08 改成等距賦值（STRONG 3 / ADEQUATE 2 / DEVELOPING 1）
+--    並去掉類別內的 round()。端點因此變成 20 / 13 / 7。
+--    詳見 supabase/migrations/change_writing_score_20_even_spacing.sql
+--
 -- 🛑 這份測試最重要的一條：UNMEASURED【不可以拉低分數】。
 --    它代表「這次的題目沒有要求你展現這個能力」，不是「你做不到」。
 --    算成 0 分不會報錯，只會讓每個人的分數莫名其妙偏低——
@@ -45,17 +49,18 @@ SELECT t_assert(
   'A1 五個類別全 STRONG = 20');
 
 SELECT t_assert(
-  (writing_score_20(t_comp('ADEQUATE','ADEQUATE','ADEQUATE','ADEQUATE','ADEQUATE')) ->> 'score')::int = 15,
-  'A2 全 ADEQUATE = 15（3/4 × 20）');
+  (writing_score_20(t_comp('ADEQUATE','ADEQUATE','ADEQUATE','ADEQUATE','ADEQUATE')) ->> 'score')::int = 13,
+  'A2 全 ADEQUATE = 13（2/3 × 20 = 13.3）');
 
 SELECT t_assert(
-  (writing_score_20(t_comp('DEVELOPING','DEVELOPING','DEVELOPING','DEVELOPING','DEVELOPING')) ->> 'score')::int = 10,
-  '🛑 A3 全 DEVELOPING = 10 —— 這是量表的【下限】，不是 0。'
-  '四個狀態裡沒有任何一個代表「完全不行」');
+  (writing_score_20(t_comp('DEVELOPING','DEVELOPING','DEVELOPING','DEVELOPING','DEVELOPING')) ->> 'score')::int = 7,
+  '🛑 A3 全 DEVELOPING = 7 —— 這是量表的【下限】，不是 0。'
+  '四個狀態裡沒有任何一個代表「完全不行」。'
+  '等距之前這裡是 10，整個下半部量表用不到');
 
 SELECT t_assert(
-  (writing_score_20(t_comp('STRONG','STRONG','ADEQUATE','ADEQUATE','DEVELOPING')) ->> 'score')::int = 16,
-  'A4 混合：4+4+3+3+2 = 16，滿分 20 → 16');
+  (writing_score_20(t_comp('STRONG','STRONG','ADEQUATE','ADEQUATE','DEVELOPING')) ->> 'score')::int = 15,
+  'A4 混合：3+3+2+2+1 = 11，20 × 11/15 = 14.7 → 15');
 
 \echo '════════ B. UNMEASURED ════════'
 
@@ -86,18 +91,38 @@ SELECT t_assert(
          jsonb_build_object('code','a','state','STRONG'),
          jsonb_build_object('code','b','state','UNMEASURED'),
          jsonb_build_object('code','c','state','DEVELOPING')))))
-   ) -> 'categories' -> 0 ->> 'points')::int = 3,
-  '🛑 C1 類別內的 UNMEASURED 也只是被略過，不會把那一類拉低');
+   ) -> 'categories' -> 0 ->> 'points')::numeric = 2.0,
+  '🛑 C1 類別內的 UNMEASURED 也只是被略過，不會把那一類拉低'
+  '（STRONG 3 與 DEVELOPING 1 的平均 = 2，UNMEASURED 不算進分母）');
 
--- 平均 3.5 → round 4（Postgres 的 round 對 .5 是遠離零）
+-- 🛑 一半 STRONG、一半 ADEQUATE → 平均 2.5，而且【不會被 round 成 3】。
+--    這是 2026-10-08 那次修正的重點：numeric 的 round() 遠離零，
+--    原本 avg(4,3) = 3.5 會被推成 4，把這個類別算成【完全 STRONG】。
+--    .5 永遠往上、不會往下，所以那是單向墊高。
 SELECT t_assert(
   (writing_score_20(jsonb_build_object(
      'categories', jsonb_build_array(
        jsonb_build_object('code','W1','summary','s','skills', jsonb_build_array(
          jsonb_build_object('code','a','state','STRONG'),
          jsonb_build_object('code','b','state','ADEQUATE')))))
-   ) -> 'categories' -> 0 ->> 'points')::int = 4,
-  'C2 類別分數取 skill 平均後四捨五入');
+   ) -> 'categories' -> 0 ->> 'points')::numeric = 2.5,
+  '🛑 C2 類別分數就是 skill 的平均，【不 round】——'
+  '2.5 留著 2.5，不會被推成 3');
+
+-- 整篇每個類別都是「一半 STRONG、一半 ADEQUATE」→ 平均都是 2.5。
+-- 舊公式會把每一類推成 4（= 滿分），整篇變成 20 分。
+-- 現在應該是 20 × 12.5/15 = 16.7 → 17。
+SELECT t_assert(
+  (writing_score_20(jsonb_build_object(
+     'categories', (SELECT jsonb_agg(jsonb_build_object(
+       'code','W' || i,
+       'skills', jsonb_build_array(
+         jsonb_build_object('code','a','state','STRONG'),
+         jsonb_build_object('code','b','state','ADEQUATE'))))
+       FROM generate_series(1,5) AS i))
+   ) ->> 'score')::int = 17,
+  '🛑 C3 整篇都剛好 .5 時是 17 分，不是 20 ——'
+  '舊公式會把每一類單向墊高成滿分');
 
 \echo '════════ D. 壞資料 ════════'
 
