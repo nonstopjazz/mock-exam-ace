@@ -64,6 +64,10 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authentic
 \ir ../migrations/create_writing_error_findings.sql
 \ir ../migrations/create_writing_error_findings_sync.sql
 \ir ../migrations/create_writing_error_query_rpcs.sql
+-- 🛑 這一支必須在上面那支【之後】載入：它會 DROP 舊簽章再重建，
+--    加上姓名搜尋（A）與「班級含已離開」（B）。
+--    順序顛倒的話 DROP 會打到空氣，然後舊簽章又被建回來。
+\ir ../migrations/add_writing_error_tracking_search_and_history.sql
 \ir ../migrations/create_writing_my_errors_1_overview.sql
 \ir ../migrations/create_writing_my_errors_2_findings.sql
 
@@ -285,6 +289,143 @@ SELECT t_assert(
 UPDATE learn_class_members SET left_at = now() WHERE class_id = :clsA AND student_id = :cara;
 
 \echo ''
+\echo '════════ 5b. 🛑 p_include_left：班級含已離開（2026-10-09）════════'
+-- 🛑 為什麼需要這個開關：
+--    班級語意是 S1「目前在籍」，所以學生一旦被標記離開，在【任何】班級篩選下
+--    都找不到他 —— 只會出現在「所有班級」裡，而那正是會截斷的那份清單。
+--    截斷時畫面建議「縮小班級或時間範圍」，但對已離開的學生縮小班級做不到。
+--    兩件事互相鎖死，而且今天標記任何一位學生離開就會發生，不用等到明年。
+--
+-- Cara 此刻是【已退出】狀態（上面最後一行 UPDATE 設回 left_at）。
+
+-- 對照組先跑：預設必須與改版前一致，不然下面的差異證明不了是開關造成的。
+SELECT t_assert(
+  (writing_admin_error_students(:clsA,NULL,NULL,NULL,ARRAY['WRITE_ERR_ARTICLE'],
+                                p_include_left => false) ->> 'total')::int = 2,
+  '🛑 T19b 對照組：include_left = false 時仍然是 2 位（預設不改變現有行為）');
+SELECT t_assert(
+  (writing_admin_error_students(:clsA,NULL,NULL,NULL,ARRAY['WRITE_ERR_ARTICLE'],
+                                p_include_left => true) ->> 'total')::int = 3,
+  '🛑 T19c include_left = true 時 Cara 回到清單（2 → 3）');
+SELECT t_assert(
+  EXISTS (SELECT 1 FROM jsonb_array_elements(
+            writing_admin_error_students(:clsA,NULL,NULL,NULL,ARRAY['WRITE_ERR_ARTICLE'],
+                                         p_include_left => true) -> 'rows') r
+           WHERE r ->> 'student_name' = 'cara'),
+  'T19d 而且清單裡真的有 cara（不只是數字變了）');
+
+-- 🛑 開關在【共用 scope】上，所以四支的數字要一起動。
+--    只加在其中一支，老師會看到「A5 說 3 位、A6 說 2 位」這種對不起來的畫面。
+SELECT t_assert(
+  (writing_admin_student_errors(:clsA,NULL,NULL,NULL,ARRAY['WRITE_ERR_ARTICLE'],
+                                p_include_left => true) ->> 'student_total')::int = 3
+  AND (writing_admin_student_errors(:clsA,NULL,NULL,NULL,ARRAY['WRITE_ERR_ARTICLE'],
+                                    p_include_left => false) ->> 'student_total')::int = 2,
+  '🛑 T19e A6 跟著一起動（3 / 2），與 A5 的數字對得起來');
+SELECT t_assert(
+  (SELECT (r ->> 'student_count')::int
+     FROM jsonb_array_elements(
+            writing_admin_error_overview(:clsA,NULL,NULL,NULL,NULL,
+                                         p_include_left => true) -> 'rows') r
+    WHERE r ->> 'error_code' = 'WRITE_ERR_ARTICLE') = 3,
+  'T19f A4 的 student_count 也跟著動');
+
+-- 🛑 這一條守住「清單上有、點開卻沒有」那種最難查的不一致。
+--    A7 若不吃 include_left，老師在「含已離開」狀態下點開 Cara 的錯誤會是空的。
+SELECT t_assert(
+  (writing_admin_error_findings(:cara,'WRITE_ERR_ARTICLE',:clsA,NULL,NULL,NULL,
+                                p_include_left => false) ->> 'total')::int = 0,
+  'T19g 對照組：A7 在 include_left = false 時撈不到已離開學生（這就是那個不一致）');
+SELECT t_assert(
+  (writing_admin_error_findings(:cara,'WRITE_ERR_ARTICLE',:clsA,NULL,NULL,NULL,
+                                p_include_left => true) ->> 'total')::int > 0,
+  '🛑 T19h A7 吃 include_left，所以點開看得到 —— 清單與明細一致');
+
+-- 沒有班級篩選時這個開關不該有任何作用（它只影響 membership 那一段）
+SELECT t_assert(
+  (writing_admin_error_students(NULL,NULL,NULL,NULL,NULL,p_include_left => true) ->> 'total')::int
+  = (writing_admin_error_students(NULL,NULL,NULL,NULL,NULL,p_include_left => false) ->> 'total')::int,
+  'T19i class_id 是 NULL 時，include_left 不改變任何結果');
+
+\echo ''
+\echo '════════ 5c. 🛑 p_name_query：姓名搜尋（2026-10-09）════════'
+-- 🛑 為什麼一定要做在伺服器端：
+--    依學生查看的上限是 100 位，而截斷保留的是【錯誤最多】的前 100 位。
+--    在前端對已載入的陣列搜尋，是在一份已經被截斷的資料上過濾 ——
+--    搜不到的學生會看起來像「沒有錯誤紀錄」，實際上是沒被撈回來。
+--    那比沒有搜尋更危險，因為它看起來能用。
+-- 名字來自 email 的前半：amy / bob / cara / dan
+
+SELECT t_assert(
+  (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                p_name_query => 'amy') ->> 'student_total')::int = 1,
+  'T19j 姓名搜尋 amy → 1 位');
+SELECT t_assert(
+  (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                p_name_query => 'AMY') ->> 'student_total')::int = 1,
+  'T19k 不分大小寫（AMY 一樣找到）');
+SELECT t_assert(
+  (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                p_name_query => 'a') ->> 'student_total')::int = 3,
+  'T19l 子字串比對：a → amy / cara / dan 三位（bob 沒有 a）');
+SELECT t_assert(
+  (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                p_name_query => '  amy  ') ->> 'student_total')::int = 1,
+  'T19m 前後空白會被 btrim 掉');
+SELECT t_assert(
+  (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                p_name_query => '   ') ->> 'student_total')::int = 4,
+  '🛑 T19n 只有空白＝沒有搜尋條件（4 位全回），不是「找不到人」');
+SELECT t_assert(
+  (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                p_name_query => 'zzz') ->> 'student_total')::int = 0
+  AND jsonb_array_length(
+        writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                     p_name_query => 'zzz') -> 'rows') = 0,
+  'T19o 查無此人時 total = 0 而且 rows 是空陣列');
+
+-- 🛑 萬用字元跳脫。這兩條是「結果看起來正常但其實是錯的」那一類，
+--    沒有斷言的話永遠不會有人發現。
+SELECT t_assert(
+  (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                p_name_query => '%') ->> 'student_total')::int = 0,
+  '🛑 T19p 輸入 % 不會比對到全部（沒跳脫的話會回 4 位）');
+SELECT t_assert(
+  (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                p_name_query => 'a_y') ->> 'student_total')::int = 0,
+  '🛑 T19q 輸入 a_y 不會當成萬用字元（沒跳脫的話會比對到 amy）');
+SELECT t_assert(
+  (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                p_name_query => 'am_') ->> 'student_total')::int = 0,
+  'T19r 同上，_ 在結尾也一樣（沒跳脫會比對到 amy）');
+
+-- 🛑 student_total 必須跟著姓名條件縮小。
+--    若 total 保持全域而 limit 套在搜尋結果上，畫面那句
+--    「只顯示前 N 位，共 M 位」就會說謊。
+SELECT t_assert(
+  (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                p_name_query => 'amy') ->> 'student_total')::int
+  < (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL) ->> 'student_total')::int,
+  '🛑 T19s student_total 跟著姓名條件縮小（1 < 4），截斷訊息才不會說謊');
+
+-- 🛑 S-b 在搜尋狀態下仍然成立：因 ARTICLE 入列的 Amy，
+--    她【全部】的 code 都要列出來，不是只有 ARTICLE。
+SELECT t_assert(
+  EXISTS (SELECT 1 FROM jsonb_array_elements(
+            writing_admin_student_errors(NULL,NULL,NULL,NULL,ARRAY['WRITE_ERR_ARTICLE'],
+                                         p_name_query => 'amy') -> 'rows') r
+           WHERE r ->> 'error_code' = 'WRITE_ERR_SV_AGREEMENT'),
+  '🛑 T19t 姓名搜尋不破壞 S-b：Amy 的 SV_AGREEMENT 仍然一起回傳');
+
+-- 伺服器要回報它【實際套用】的條件，畫面才能顯示真相而不是輸入框裡的字
+SELECT t_assert(
+  (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                p_name_query => '  amy  ') ->> 'name_query') = 'amy'
+  AND (writing_admin_student_errors(NULL,NULL,NULL,NULL,NULL,
+                                    p_name_query => '   ') -> 'name_query') = 'null'::jsonb,
+  'T19u 回傳實際套用的 name_query（btrim 過；只有空白時是 null）');
+
+\echo ''
 \echo '════════ 6. topic / time filter ════════'
 SELECT t_assert(
   (writing_admin_error_students(NULL,NULL,NULL,'A Letter',NULL) ->> 'total')::int = 2,
@@ -389,11 +530,22 @@ SELECT t_assert(
      FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
     WHERE n.nspname='public' AND p.proname LIKE 'writing_admin_%error%'),
   'T40 anon 對四支都沒有 EXECUTE');
+-- 🛑 用【名字】查而不是把簽章寫死成字串。
+--    這一條原本寫死 'writing_error_scoped_findings(uuid,...,text[])'，
+--    2026-10-09 加 p_include_left 之後簽章改了，斷言就變成
+--    「function does not exist」而整支測試中斷 ——
+--    而它想守的事（這支函式誰都不給 EXECUTE）其實完全沒變。
+--    斷言要綁在意圖上，不是綁在簽章字串上。
 SELECT t_assert(
-  NOT has_function_privilege('authenticated',
-    'writing_error_scoped_findings(uuid,timestamptz,timestamptz,text,text[])','EXECUTE')
-  AND NOT has_function_privilege('service_role',
-    'writing_error_scoped_findings(uuid,timestamptz,timestamptz,text,text[])','EXECUTE'),
+  (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public' AND p.proname='writing_error_scoped_findings') = 1,
+  'T41a 共用 scope 函式只有一個版本（沒有留下舊 overload）');
+SELECT t_assert(
+  (SELECT bool_and(NOT has_function_privilege('authenticated', p.oid, 'EXECUTE')
+                   AND NOT has_function_privilege('service_role', p.oid, 'EXECUTE')
+                   AND NOT has_function_privilege('anon', p.oid, 'EXECUTE'))
+     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public' AND p.proname='writing_error_scoped_findings'),
   'T41 共用 scope 函式誰都不給（只有擁有者叫得動）');
 SELECT t_assert(
   (SELECT bool_and(p.prosecdef AND p.proconfig::text = '{"search_path=\"\""}')

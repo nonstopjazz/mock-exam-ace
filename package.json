@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "preview": "vite preview",
     "generate-exam-template": "tsx scripts/generate-exam-template.ts",
     "generate:writing-taxonomy": "python3 scripts/generate-writing-taxonomy.py",

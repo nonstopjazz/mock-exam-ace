@@ -27,13 +27,29 @@ interface TrackingData {
 
 const EMPTY: TrackingData = { overview: null, students: null, studentErrors: null };
 
-export function useErrorTracking(scope: ErrorScope, enabled: boolean) {
+/**
+ * @param nameQuery 只作用在 A6（依學生查看）。
+ *
+ * 🛑 姓名條件【不】進 scope：A4 是「哪些錯」、A5 是「誰犯過這個錯」，
+ *    用姓名去篩那兩支沒有意義，而且會讓三支的數字對不起來。
+ *
+ * 🛑 而且它一定要送到伺服器。在前端對 rows 過濾，是在一份
+ *    【已經被截斷到 100 位】的資料上搜尋 —— 搜不到的學生會看起來像
+ *    「沒有錯誤紀錄」，實際上是沒被撈回來。那比沒有搜尋更危險。
+ */
+export function useErrorTracking(
+  scope: ErrorScope,
+  enabled: boolean,
+  nameQuery: string | null = null,
+) {
   const [data, setData] = useState<TrackingData>(EMPTY);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // scope 是物件，直接進依賴陣列每次 render 都會變。序列化成字串當 key。
   const scopeKey = JSON.stringify(scope);
+  // 空字串與 null 要視為同一件事，否則清空搜尋框會白跑一次。
+  const nameKey = nameQuery?.trim() ? nameQuery.trim() : "";
 
   const load = useCallback(async () => {
     if (!enabled) return;
@@ -44,7 +60,11 @@ export function useErrorTracking(scope: ErrorScope, enabled: boolean) {
     const [overviewRes, studentsRes, studentErrorsRes] = await Promise.all([
       supabase.rpc("writing_admin_error_overview", { ...args, p_limit: 20 }),
       supabase.rpc("writing_admin_error_students", { ...args, p_limit: 200 }),
-      supabase.rpc("writing_admin_student_errors", { ...args, p_student_limit: 100 }),
+      supabase.rpc("writing_admin_student_errors", {
+        ...args,
+        p_student_limit: 100,
+        p_name_query: nameKey === "" ? null : nameKey,
+      }),
     ]);
 
     // 三支任何一支失敗都要講出來。靜默少顯示一區，老師會以為「沒有資料」。
@@ -65,7 +85,7 @@ export function useErrorTracking(scope: ErrorScope, enabled: boolean) {
       });
     }
     setLoading(false);
-  }, [scopeKey, enabled]);
+  }, [scopeKey, nameKey, enabled]);
 
   useEffect(() => {
     void load();
@@ -95,6 +115,10 @@ export function useErrorFindings() {
         p_to: args.p_to,
         p_topic: args.p_topic,
         p_limit: 50,
+        // 🛑 必須與清單那一支一致。漏了的話，老師在「含已離開」狀態下
+        //    點開一位已離開學生的錯誤會是空的 ——
+        //    清單上有、點開卻沒有，那是最難查的一種不一致。
+        p_include_left: args.p_include_left,
       });
 
       if (error) {

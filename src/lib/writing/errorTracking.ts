@@ -12,7 +12,7 @@
 
 /** 四支 RPC 共用的篩選範圍。四支吃同一組參數，數字才對得起來。 */
 export interface ErrorScope {
-  /** 班級 id。null = 所有班級。語意是 S1「目前在籍」 */
+  /** 班級 id。null = 所有班級 */
   classId: string | null;
   /** 起（含）。null = 不限 */
   from: string | null;
@@ -21,6 +21,20 @@ export interface ErrorScope {
   topic: string | null;
   /** 多個 code 的語意是 OR。空陣列 = 不限 */
   codes: string[];
+  /**
+   * 班級篩選要不要含已離開的學生。
+   *
+   *   false → S1「目前在籍」（`left_at IS NULL`），與這個功能原本的語意相同
+   *   true  → 曾在籍即算
+   *
+   * 🛑 這一項在【scope】裡而不是只給某一支，因為它會改變四支 RPC 的結果。
+   *    只傳給其中一支，畫面上會出現「A5 說 3 位、A6 說 2 位」這種對不起來的數字。
+   *
+   * 🛑 為什麼需要它：學生一旦被標記離開，在【任何】班級篩選下都找不到他，
+   *    只會留在「所有班級」裡 —— 而那正是會截斷的那份清單。
+   *    截斷時畫面叫你「縮小班級範圍」，但對已離開的學生做不到。
+   */
+  includeLeft: boolean;
 }
 
 export const EMPTY_SCOPE: ErrorScope = {
@@ -29,6 +43,7 @@ export const EMPTY_SCOPE: ErrorScope = {
   to: null,
   topic: null,
   codes: [],
+  includeLeft: false,
 };
 
 /** RPC 共用的回傳外殼：被截斷的清單不會看起來像完整的 */
@@ -84,6 +99,13 @@ export interface StudentErrorsResult {
   student_total?: number;
   student_limit?: number;
   truncated?: boolean;
+  /**
+   * 伺服器【實際套用】的姓名條件（已 btrim；只有空白時是 null）。
+   *
+   * 🛑 畫面要顯示這個值，不是輸入框裡的字。兩者在 debounce 期間會不同，
+   *    而「清單是用哪個條件撈出來的」才是老師需要知道的事。
+   */
+  name_query?: string | null;
 }
 
 /** A7 Drill-down */
@@ -112,6 +134,8 @@ export function scopeArgs(scope: ErrorScope): Record<string, unknown> {
     p_to: scope.to,
     p_topic: scope.topic,
     p_error_codes: scope.codes.length > 0 ? scope.codes : null,
+    // 🛑 四支都要帶。漏掉任何一支，那一支的數字就會跟其他三支對不起來。
+    p_include_left: scope.includeLeft,
   };
 }
 
