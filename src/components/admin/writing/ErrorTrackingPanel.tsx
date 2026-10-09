@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,9 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Input } from "@/components/ui/input";
 import {
-  AlertCircle, ChevronDown, ExternalLink, Loader2, Users,
+  AlertCircle, ChevronDown, ExternalLink, Loader2, Search, Users, X,
 } from "lucide-react";
 import { ERROR_TAG_BY_CODE } from "@/lib/writing/taxonomy";
 import { diffCorrection } from "@/lib/writing/correctionDiff";
@@ -59,8 +60,32 @@ function shortDate(iso: string | null): string {
 export function ErrorTrackingPanel({ scope, hasFilters }: Props) {
   const [view, setView] = useState<ViewMode>("by-error");
   const [commonOpen, setCommonOpen] = useState(true);
-  const tracking = useErrorTracking(scope, true);
+
+  /**
+   * 學生姓名搜尋。
+   *
+   * 🛑 nameInput 是輸入框裡的字，nameQuery 是【真的送出去】的條件。
+   *    兩個分開才有 debounce 的空間：每一次按鍵都打三支 RPC 太浪費。
+   *
+   * 🛑 搜尋一定在伺服器端。在這裡對 tracking.studentErrors.rows 過濾，
+   *    是在一份【已經被截斷到 100 位】的陣列上搜尋 —— 搜不到的學生會看起來
+   *    像「沒有錯誤紀錄」，實際上是沒被撈回來。那比沒有搜尋更危險，
+   *    因為它看起來能用。
+   */
+  const [nameInput, setNameInput] = useState("");
+  const [nameQuery, setNameQuery] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setNameQuery(nameInput), 300);
+    return () => clearTimeout(t);
+  }, [nameInput]);
+
+  const tracking = useErrorTracking(scope, true, nameQuery);
   const findings = useErrorFindings();
+
+  /** 伺服器回報它實際套用的姓名條件。畫面講的是這個，不是 nameInput。 */
+  const appliedName = tracking.studentErrors?.name_query ?? null;
+  /** 還在 debounce、或伺服器還沒回：此時畫面上的清單還是舊條件的結果 */
+  const namePending = nameInput.trim() !== (appliedName ?? "");
 
   const overviewRows = tracking.overview?.rows ?? [];
   const studentRows = tracking.students?.rows ?? [];
@@ -181,12 +206,37 @@ export function ErrorTrackingPanel({ scope, hasFilters }: Props) {
           <ToggleGroupItem value="by-student">依學生查看</ToggleGroupItem>
         </ToggleGroup>
 
-        {view === "by-student" && scope.codes.length > 0 ? (
-          <p className="text-xs text-muted-foreground">
-            列出的是被篩出來的學生在這個範圍內的<strong className="text-foreground">全部</strong>錯誤
-          </p>
+        {/* 🛑 只在「依學生查看」出現。在「依錯誤查看」它什麼都不做 ——
+            放一個按了沒反應的搜尋框，比沒有搜尋框更糟。 */}
+        {view === "by-student" ? (
+          <div className="relative w-full sm:w-64 sm:ml-auto">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="搜尋學生姓名"
+              aria-label="搜尋學生姓名"
+              className="pl-9 pr-9"
+            />
+            {nameInput ? (
+              <button
+                type="button"
+                onClick={() => setNameInput("")}
+                aria-label="清除搜尋"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
+
+      {view === "by-student" && scope.codes.length > 0 ? (
+        <p className="text-xs text-muted-foreground">
+          列出的是被篩出來的學生在這個範圍內的<strong className="text-foreground">全部</strong>錯誤
+        </p>
+      ) : null}
 
       {/* ── 依錯誤查看（A5）──────────────────────────────────── */}
       {view === "by-error" ? (
@@ -261,10 +311,38 @@ export function ErrorTrackingPanel({ scope, hasFilters }: Props) {
               </span>
             ) : null}
           </div>
+
+          {/* 🛑 講的是【伺服器實際套用】的條件，不是輸入框裡的字。
+              debounce 期間兩者會不一樣，而「這份清單是用哪個條件撈出來的」
+              才是老師需要知道的事 —— 不然他會以為已經搜到了。 */}
+          {appliedName || namePending ? (
+            <p className="text-xs text-muted-foreground mb-4">
+              {namePending ? (
+                "搜尋中…"
+              ) : (
+                <>
+                  符合「<span className="text-foreground">{appliedName}</span>」的學生
+                </>
+              )}
+            </p>
+          ) : null}
+
           {byStudent.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <p>這個範圍內沒有學生的錯誤紀錄</p>
-              <p className="text-sm mt-2">放寬上方的班級、題目或時間看看</p>
+              {appliedName ? (
+                <>
+                  <p>沒有姓名包含「{appliedName}」的學生</p>
+                  <p className="text-sm mt-2">
+                    搜尋的是這個範圍內有錯誤紀錄的學生。
+                    換個字看看，或清除搜尋看完整清單。
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>這個範圍內沒有學生的錯誤紀錄</p>
+                  <p className="text-sm mt-2">放寬上方的班級、題目或時間看看</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="space-y-6">
@@ -392,10 +470,18 @@ export function ErrorTrackingPanel({ scope, hasFilters }: Props) {
             </div>
           )}
 
+          {/* 🛑 student_total 會跟著姓名條件縮小（RPC 那邊就做了），
+              所以這句話在搜尋狀態下仍然是真的。
+              而且現在建議得出「用姓名搜尋」—— 對已離開班級的學生，
+              原本那句「縮小班級範圍」是做不到的。 */}
           {tracking.studentErrors?.truncated ? (
             <p className="text-xs text-warning mt-4">
               只顯示前 {tracking.studentErrors.student_limit} 位學生，共{" "}
-              {tracking.studentErrors.student_total} 位。縮小班級或時間範圍看完整清單。
+              {tracking.studentErrors.student_total} 位
+              {appliedName ? `（符合「${appliedName}」的）` : ""}。
+              {appliedName
+                ? "再縮小姓名條件，或縮小班級、題目、時間範圍。"
+                : "用上面的姓名搜尋，或縮小班級、題目、時間範圍。"}
             </p>
           ) : null}
         </Card>

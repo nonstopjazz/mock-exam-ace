@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -180,6 +181,15 @@ const WritingGrading = () => {
     });
   }, [queue.rows, classFilter, topicFilter, stateFilter, reviewFilter, timeFilter, errorCodes]);
 
+  /**
+   * 班級篩選要不要含已離開的學生。
+   *
+   * 只在選了班級時才有作用（沒有班級條件就沒有 membership 可以過濾），
+   * 所以切回「所有班級」時刻意【不】重設 —— 它是 no-op，重設只會讓老師
+   * 切回某個班級時發現勾選莫名消失。
+   */
+  const [includeLeft, setIncludeLeft] = useState(false);
+
   /** 兩個分頁共用的篩選範圍。四支 RPC 吃同一組，數字才對得起來 */
   const scope: ErrorScope = useMemo(() => ({
     classId: classOptions.find((c) => c.name === classFilter)?.id ?? null,
@@ -187,7 +197,8 @@ const WritingGrading = () => {
     to: null,
     topic: topicFilter === "ALL" ? null : topicFilter,
     codes: errorCodes,
-  }), [classFilter, classOptions, timeFilter, topicFilter, errorCodes]);
+    includeLeft,
+  }), [classFilter, classOptions, timeFilter, topicFilter, errorCodes, includeLeft]);
 
   const hasNarrowingFilters =
     classFilter !== "ALL" || topicFilter !== "ALL" || timeFilter !== "ALL";
@@ -417,13 +428,44 @@ const WritingGrading = () => {
               <ErrorCodeFilter value={errorCodes} onChange={setErrorCodes} counts={codeCounts} />
             </div>
 
-            {/* 只在真的選了班級時才說 —— 沒選班級的時候這句話沒有意義。
-                這是 S1 語意的後果，老師不知道的話會以為資料掉了。 */}
+            {/* 只在真的選了班級時才出現 —— 沒選班級就沒有 membership 可以過濾，
+                這個選項是 no-op，放著只會讓人以為它有作用。
+
+                🛑 這裡原本只有一段說明文字，而且那段文字寫著
+                   「用學生姓名或『所有班級』找得到」——
+                   當時【沒有姓名搜尋】，所以那句話是假的；而「所有班級」
+                   正是會被截斷到 100 位的那份清單。
+                   說明一個做不到的補救方式，比不說更糟，所以改成可以直接勾。 */}
             {classFilter !== "ALL" ? (
-              <p className="text-xs text-muted-foreground mt-4">
-                班級只算<span className="text-foreground">目前在籍</span>的學生。學生退出班級之後，
-                他過去在這個班寫的作文不會出現在這裡 —— 那些作文還在，用學生姓名或「所有班級」找得到。
-              </p>
+              <div className="mt-4">
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="include-left"
+                    checked={includeLeft}
+                    onCheckedChange={(v) => setIncludeLeft(v === true)}
+                    className="mt-0.5"
+                  />
+                  <Label
+                    htmlFor="include-left"
+                    className="text-sm font-normal text-foreground leading-snug cursor-pointer"
+                  >
+                    含已離開這個班的學生
+                  </Label>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {includeLeft ? (
+                    <>
+                      已包含曾在這個班、後來離開的學生。
+                      換過班的學生會在新舊兩個班都出現 —— 那兩邊的作文都是他寫的。
+                    </>
+                  ) : (
+                    <>
+                      班級只算<span className="text-foreground">目前在籍</span>的學生。
+                      退出班級的學生，他過去在這個班寫的作文不會出現在這裡 —— 勾起來就看得到。
+                    </>
+                  )}
+                </p>
+              </div>
             ) : null}
           </Card>
 
