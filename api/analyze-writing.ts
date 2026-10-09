@@ -70,6 +70,7 @@ import {
   synthesisMessages,
   HIGH_SCORE_PASS_A,
   HIGH_SCORE_PASS_B,
+  WRITING_PROMPT_VERSION,
   type EssayInput,
 } from "./_lib/writingPrompts.js";
 import {
@@ -316,7 +317,7 @@ export async function runStage1(ctx: RunContext) {
 
   const { data: current } = await admin
     .from("writing_analyses")
-    .select("status, started_at, synthesis_status, stage1_progress, stage1_telemetry")
+    .select("status, started_at, prompt_version, synthesis_status, stage1_progress, stage1_telemetry")
     .eq("id", analysisId)
     .maybeSingle();
 
@@ -397,6 +398,18 @@ export async function runStage1(ctx: RunContext) {
       ...(current?.started_at ? {} : { started_at: now }),
       model: DEFAULT_MODEL,
       taxonomy_version: WRITING_TAXONOMY_VERSION,
+      // 🛑 與 started_at 同一個規則：只在第一次寫入，續跑不覆寫。
+      //
+      //    語意是「這次分析【開始時】的 prompt 版本」。Stage 1 可以跨請求
+      //    續跑，而已通過驗證的 pass 永遠不會重跑 —— 所以部署若落在分析
+      //    中間，已完成的那幾支用的是舊 prompt。記開始時那一版，對資料的
+      //    主體更準確；覆寫成最後一次請求的版本會讓它描述錯大部分的 pass。
+      //
+      //    為什麼需要這個欄位：2026-10-08 有一篇作文在部署前後 102 秒內
+      //    重跑完成，而當時沒有任何欄位分得出它用的是新還是舊 prompt
+      //    （model 一樣、taxonomy_version 沒變），於是那筆資料有兩種
+      //    完全相反的解讀。
+      ...(current?.prompt_version ? {} : { prompt_version: WRITING_PROMPT_VERSION }),
       stage1_progress: progress,
     })
     .eq("id", analysisId);

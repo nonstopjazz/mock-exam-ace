@@ -11,11 +11,13 @@
  * 「學生沒有表現出來」和「AI 忘了分析」混為一談。
  */
 
+import { createHash } from "node:crypto";
 import {
   COMPETENCY_CATEGORIES,
   ERROR_TAGS,
   HIGH_SCORE_CATEGORIES,
   HIGH_SCORE_SUBSKILLS,
+  WRITING_TAXONOMY_VERSION,
   type HighScoreCategory,
 } from "./taxonomy.js";
 import type {
@@ -602,3 +604,59 @@ strengths 與 needs_work 不設數量上限，但只放真正值得放在第一�
     { role: "user", content: `【已驗證的分析結果】\n${digest}` },
   ];
 }
+
+
+/* ──────────────── prompt 版本指紋 ──────────────── */
+
+/**
+ * 取指紋用的固定輸入。
+ *
+ * 作文內容進的是 user message，不是 system prompt，所以 system prompt
+ * 與作文無關 —— 用空作文去產生它，指紋才是穩定的。
+ */
+const FINGERPRINT_ESSAY: EssayInput = { title: "", topic: null, content: "" };
+
+/**
+ * 這一版 prompt 的內容指紋，寫進 writing_analyses.prompt_version。
+ *
+ * ══════════════════════════════════════════════════════════════
+ * 🛑 為什麼是【算出來】的，不是手寫一個版本號
+ * ══════════════════════════════════════════════════════════════
+ *
+ * 2026-10-08 加 MINIMAL 的那次，有一篇作文在部署前後 102 秒內重跑，
+ * 而資料庫裡【沒有任何欄位】能分辨它跑的是新還是舊 prompt
+ * （model 一樣、taxonomy_version 沒變）。於是那筆資料有兩種完全相反的
+ * 解讀，而我們剛好在它上面建了一個結論。這個欄位就是為了那件事。
+ *
+ * 既然目的是「分得出新舊」，那版本號就不能有機會說謊：
+ * 手寫的常數總有一天會有人改了 prompt 卻忘記更新 ——
+ * 那時欄位會說「同一版」而實際上不是，
+ * 而我們會像上次那樣相信它。**會說謊的版本欄位比沒有更糟。**
+ *
+ * 所以直接對【實際送出去的 system prompt】取雜湊：改了任何一個字
+ * （規則、節點清單、state 量表、JSON 形狀）指紋都會變，忘不掉。
+ *
+ * 🛑 五支 pass 全部納入，不是只取 Pass 1。
+ *    分數雖然只由 Pass 1 的 state 推導，但「這份分析是哪一版的產物」
+ *    問的是整份分析，而綜合層的用字也會影響老師看到的報告。
+ *
+ * ⚠️ 指紋【不可逆】，看不出改了什麼 —— 它只回答「是不是同一版」。
+ *    要知道差在哪，去比對 git 歷史。前綴帶 taxonomy 版本是為了肉眼好認。
+ *
+ * ⚠️ 這個模組只在伺服器端載入（api/ 與 scripts/），
+ *    所以用 node:crypto 沒問題。src/ 不可以 import 它 ——
+ *    那會把 node:crypto 帶進瀏覽器 bundle。
+ */
+export const WRITING_PROMPT_VERSION: string = (() => {
+  const systems = [
+    competencyMessages(FINGERPRINT_ESSAY)[0].content,
+    errorMessages(FINGERPRINT_ESSAY)[0].content,
+    highScoreMessages(FINGERPRINT_ESSAY, highScoreCategoriesFor(HIGH_SCORE_PASS_A))[0].content,
+    highScoreMessages(FINGERPRINT_ESSAY, highScoreCategoriesFor(HIGH_SCORE_PASS_B))[0].content,
+    synthesisMessages("", [])[0].content,
+  // \u0000 當分隔符：prompt 內容不可能含它，所以兩段內容不會因為
+  // 「一段的結尾接上另一段的開頭」而湊出同一個指紋。
+  ].join("\u0000");
+  const digest = createHash("sha256").update(systems, "utf8").digest("hex").slice(0, 12);
+  return `${WRITING_TAXONOMY_VERSION}-${digest}`;
+})();
