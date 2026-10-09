@@ -14,6 +14,7 @@
 --    列出來只會讓這張表看起來「大部分都沒有變化」。
 WITH per_analysis AS (
   SELECT a.id, a.essay_id, a.analysis_version, a.completed_at, a.model,
+         a.prompt_version,
          s.title, s.student_id,
          (public.writing_score_20(a.competency_analysis) ->> 'score')::int    AS score,
          (public.writing_score_20(a.competency_analysis) ->> 'measured')::int AS measured,
@@ -32,7 +33,7 @@ WITH per_analysis AS (
            ELSE '[]'::jsonb END) sk ON true
    WHERE a.status = 'COMPLETED' AND a.competency_analysis IS NOT NULL
    GROUP BY a.id, a.essay_id, a.analysis_version, a.completed_at, a.model,
-            s.title, s.student_id, a.competency_analysis
+            a.prompt_version, s.title, s.student_id, a.competency_analysis
 ),
 multi AS (
   SELECT essay_id FROM per_analysis GROUP BY essay_id HAVING count(*) > 1
@@ -50,17 +51,50 @@ SELECT p.title                      AS "作文",
        p.n_strong                   AS "STRONG",
        p.n_unmeasured               AS "未評量",
        p.measured                   AS "計分面向數",
+       -- 🛑 這一欄是 2026-10-09 加 prompt_version 之後才答得出來的。
+       --    在那之前「分數沒變」有兩種解讀：新 prompt 判斷如此，
+       --    還是根本跑的是舊 prompt。那兩種完全相反，而資料裡分不出來。
+       CASE
+         -- 🛑 第一列沒有「上一版」可以比。少了這一條，基準列會拿自己去跟
+         --    不存在的前一列比，印出「有一版沒有版本標記」這種無意義的話
+         --    （2026-10-09 冒煙測試抓到的）。
+         WHEN lag(p.analysis_version) OVER (PARTITION BY p.essay_id ORDER BY p.analysis_version)
+                IS NULL
+           THEN '（基準，沒有上一版可比）'
+         WHEN lag(p.prompt_version) OVER (PARTITION BY p.essay_id ORDER BY p.analysis_version)
+                IS NULL AND p.prompt_version IS NULL
+           THEN '兩版都早於版本追蹤'
+         WHEN lag(p.prompt_version) OVER (PARTITION BY p.essay_id ORDER BY p.analysis_version)
+                IS NULL OR p.prompt_version IS NULL
+           THEN '🛑 有一版沒有版本標記 —— 分不出 prompt 是否相同'
+         WHEN p.prompt_version
+              = lag(p.prompt_version) OVER (PARTITION BY p.essay_id ORDER BY p.analysis_version)
+           THEN '同一版 prompt'
+         ELSE '✅ prompt 不同版'
+       END                          AS "prompt 比對",
+       coalesce(p.prompt_version, '（無標記）') AS "prompt 版本",
        CASE
          WHEN lag(p.score) OVER (PARTITION BY p.essay_id ORDER BY p.analysis_version) IS NULL
            THEN '（基準）'
          WHEN p.n_minimal > 0 AND p.score
               < lag(p.score) OVER (PARTITION BY p.essay_id ORDER BY p.analysis_version)
            THEN '✅ 用到 MINIMAL 而且分數下來了'
+         -- 🛑 「分數不動」只有在【確定是不同版 prompt】時才代表
+         --    「新 prompt 看了這篇，判斷它沒有那麼糟」。
+         --    同一版或分不出來的時候，它什麼都不代表。
          WHEN p.n_minimal = 0 AND p.score
               = lag(p.score) OVER (PARTITION BY p.essay_id ORDER BY p.analysis_version)
-           THEN '沒用到 MINIMAL，分數不動（這篇不爛，正常）'
+              AND p.prompt_version IS DISTINCT FROM
+                  lag(p.prompt_version) OVER (PARTITION BY p.essay_id ORDER BY p.analysis_version)
+              AND p.prompt_version IS NOT NULL
+              AND lag(p.prompt_version) OVER (PARTITION BY p.essay_id ORDER BY p.analysis_version)
+                  IS NOT NULL
+           THEN '🛑 新 prompt 沒有用 MINIMAL，分數不動 —— 門檻可能太緊'
+         WHEN p.n_minimal = 0 AND p.score
+              = lag(p.score) OVER (PARTITION BY p.essay_id ORDER BY p.analysis_version)
+           THEN '沒用到 MINIMAL，分數不動（看左邊的 prompt 比對再判斷）'
          WHEN p.n_minimal = 0
-           THEN '沒用到 MINIMAL，但分數變了 —— 是 AI 評級本身的浮動，不是這次改動'
+           THEN '沒用到 MINIMAL，但分數變了 —— 可能是 AI 評級本身的浮動'
          ELSE ''
        END                          AS "判讀",
        p.model                      AS "模型",
@@ -73,3 +107,14 @@ SELECT p.title                      AS "作文",
 --    DeepSeek 對同一篇作文的兩次分析本來就不會完全一致。
 --    所以單一篇的差額【證明不了】這次改動的效果 ——
 --    要看的是 05 那支的整體分布，以及這一篇的 MINIMAL 欄是不是真的大於 0。
+--
+-- 🛑 先看「prompt 比對」那一欄，再看「判讀」。
+--
+--    2026-10-08 就是在這裡卡住的：「自習室、課後輔導與時間安排」第 2 版
+--    完成於 07:44:02，而確定是新 prompt 的那一篇完成於 07:45:44 ——
+--    相差 102 秒，而當時【沒有任何欄位】分得出前者用的是哪一版。
+--    於是「分數沒變」有兩種完全相反的解讀，兩種都說得通。
+--
+--    add_writing_analyses_prompt_version.sql 之後，新的分析都會帶指紋，
+--    這一欄就直接回答了。舊的分析仍然是「（無標記）」—— 刻意不回填，
+--    因為回填就要猜，而猜出來的版本號正是這個欄位要消滅的東西。

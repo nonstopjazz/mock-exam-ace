@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 /**
  * 分析執行路徑的自我檢查（不需要網路，也不需要 DeepSeek API key）
  *
@@ -36,6 +37,7 @@ import {
   synthesisMessages,
   HIGH_SCORE_PASS_A,
   HIGH_SCORE_PASS_B,
+  WRITING_PROMPT_VERSION,
   type EssayInput,
 } from "../api/_lib/writingPrompts";
 import {
@@ -43,6 +45,7 @@ import {
   ALL_ERROR_CODES,
   COMPETENCY_CATEGORIES,
   HIGH_SCORE_CATEGORIES,
+  WRITING_TAXONOMY_VERSION,
 } from "../api/_lib/taxonomy";
 import {
   COMPETENCY_STATES,
@@ -555,6 +558,72 @@ console.log("\nprompt 的節點覆蓋");
   check(
     "🛑 退化輸入的那兩個節點要給 MINIMAL，不是 UNMEASURED（不然交白卷沒有分數）",
     prompt.includes("這兩個節點本身要給 MINIMAL"),
+  );
+}
+
+/* ──────────────── prompt 版本指紋 ──────────────── */
+
+console.log("\nprompt 版本指紋（writing_analyses.prompt_version）");
+
+{
+  /**
+   * 🛑 這一節守的是一件很容易悄悄壞掉的事。
+   *
+   *    WRITING_PROMPT_VERSION 是對【五支 pass 的 system prompt】取雜湊。
+   *    如果有人之後從那份清單裡拿掉一支（例如覺得綜合層不影響評分），
+   *    指紋就不再隨那一支的改動而變 —— 而我們會繼續相信它。
+   *
+   *    2026-10-08 那次踩的坑就是「相信一個其實分不出新舊的欄位」，
+   *    所以這裡逐支證明每一支都真的有貢獻。
+   */
+  const fpEssay: EssayInput = { title: "", topic: null, content: "" };
+  const systems = [
+    competencyMessages(fpEssay)[0].content,
+    errorMessages(fpEssay)[0].content,
+    highScoreMessages(fpEssay, highScoreCategoriesFor(HIGH_SCORE_PASS_A))[0].content,
+    highScoreMessages(fpEssay, highScoreCategoriesFor(HIGH_SCORE_PASS_B))[0].content,
+    synthesisMessages("", [])[0].content,
+  ];
+  const PASS_NAMES = ["競爭力(Pass 1)", "錯誤(Pass 2)", "高分 H1–H3", "高分 H4–H5", "綜合層"];
+  const fp = (parts: readonly string[]) =>
+    `${WRITING_TAXONOMY_VERSION}-${createHash("sha256")
+      .update(parts.join("\u0000"), "utf8")
+      .digest("hex")
+      .slice(0, 12)}`;
+
+  check(
+    "指紋格式是 <taxonomy 版本>-<12 碼十六進位>",
+    /^writing-v\d+-[0-9a-f]{12}$/.test(WRITING_PROMPT_VERSION),
+    WRITING_PROMPT_VERSION,
+  );
+  check(
+    "🛑 指紋確實是五支 pass 的 system prompt 算出來的",
+    WRITING_PROMPT_VERSION === fp(systems),
+    `實際 ${WRITING_PROMPT_VERSION} / 重算 ${fp(systems)}`,
+  );
+
+  // 逐支抽掉一支，指紋必須改變 —— 證明那一支真的在指紋裡
+  PASS_NAMES.forEach((name, i) => {
+    check(
+      `🛑 ${name} 有納入指紋（抽掉它指紋就不同）`,
+      WRITING_PROMPT_VERSION !== fp(systems.filter((_, j) => j !== i)),
+    );
+  });
+
+  // 這一條說明【為什麼】要用分隔符：不用的話，「A 的結尾接上 B 的開頭」
+  // 有機會跟別的組合湊出同一串。
+  //
+  // ⚠️ 它比較的是兩個【本地算出來】的 digest，所以它證明的是雜湊的性質，
+  //    【不是】模組真的用了分隔符 —— 2026-10-09 的變異測試證實：把模組的
+  //    分隔符拿掉時，這一條仍然 PASS，抓到的是上面那條「指紋確實是五支
+  //    pass 算出來的」。標籤因此刻意不寫成「模組有用分隔符」。
+  check(
+    "分隔符有意義（相接與分隔算出來的指紋不同）",
+    fp(systems) !==
+      `${WRITING_TAXONOMY_VERSION}-${createHash("sha256")
+        .update(systems.join(""), "utf8")
+        .digest("hex")
+        .slice(0, 12)}`,
   );
 }
 
