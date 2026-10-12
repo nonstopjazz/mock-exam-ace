@@ -30,6 +30,7 @@ import UsersAdmin from "./pages/admin/UsersAdmin";
 import AdminHome from "./pages/admin/AdminHome";
 import WritingGrading from "./pages/admin/WritingGrading";
 import WritingGradingDetail from "./pages/admin/WritingGradingDetail";
+import CourseAccessAdmin from "./pages/admin/CourseAccessAdmin";
 import ClassesAdmin from "./pages/admin/ClassesAdmin";
 import ClassDetail from "./pages/admin/ClassDetail";
 import SpeakingPrompts from "./pages/admin/SpeakingPrompts";
@@ -227,6 +228,11 @@ const App = () => (
           <Route path="/admin/writing/:essayId" element={
             <RequireAdmin>
               <WritingGradingDetail />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/course-access" element={
+            <RequireAdmin>
+              <CourseAccessAdmin />
             </RequireAdmin>
           } />
           {/* 班級與任務指派：老師端的主入口 */}

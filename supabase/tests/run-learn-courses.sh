@@ -43,6 +43,9 @@ FILES=(
   supabase/migrations/add_learn_lesson_watch_tracking.sql
   supabase/migrations/add_learn_lesson_duration_autofill.sql
   supabase/migrations/add_learn_course_student_preview.sql
+  # 🛑 要在 create_learn_course_admin.sql 【之後】——
+  #    矩陣那兩支依賴 learn_course_access / learn_feature_access 都已存在。
+  supabase/migrations/create_learn_course_access_matrix.sql
 )
 
 for f in "${FILES[@]}"; do
@@ -53,7 +56,7 @@ for f in "${FILES[@]}"; do
 done
 
 echo
-for t in learn_course_access_test learn_course_admin_test learn_watch_tracking_test learn_lesson_duration_test learn_course_preview_test; do
+for t in learn_course_access_test learn_course_admin_test learn_watch_tracking_test learn_lesson_duration_test learn_course_preview_test learn_course_access_matrix_test; do
   echo "──────── $t ────────"
   run_as "psql -q -v ON_ERROR_STOP=1 -d $DB -f '$PWD/supabase/tests/$t.sql'" 2>&1 \
     | sed -E 's/^psql:[^ ]+ NOTICE:  //'
