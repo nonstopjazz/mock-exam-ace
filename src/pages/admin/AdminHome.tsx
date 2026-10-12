@@ -150,6 +150,12 @@ export default function AdminHome() {
       badge: '新功能',
     },
     {
+      title: '課程開放',
+      description: '一頁看完哪個學生開放了哪些課，勾選就開放',
+      icon: <Video className="h-6 w-6" />,
+      href: '/admin/course-access',
+    },
+    {
       title: '功能開放',
       description: '決定哪些班級、哪些學生看得到口說、閱讀與影片課程',
       icon: <ShieldCheck className="h-6 w-6" />,

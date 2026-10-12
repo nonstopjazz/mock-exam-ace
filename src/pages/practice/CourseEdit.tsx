@@ -345,11 +345,27 @@ function AccessPanel({ courseId, courseAccess }: { courseId?: string; courseAcce
         </div>
 
         <div className="space-y-2">
-          <p className="font-semibold text-foreground">個別開放</p>
+          <div className="flex flex-wrap items-baseline gap-x-2">
+            <p className="font-semibold text-foreground">個別開放</p>
+            {/* 🛑 這裡原本寫著「現在還要從資料庫加——這一版先只做得到收回」。
+                後端其實一直支援新增（learn_admin_course_access_set 帶
+                p_student_id 就是），缺的只是一個搜尋框 ——
+                而那個搜尋框現在在 /admin/course-access。
+                指向一個做不到的補救方式，比不說更糟。 */}
+            <Link
+              to="/admin/course-access"
+              className="text-sm underline underline-offset-4 text-muted-foreground hover:text-foreground"
+            >
+              到「課程開放」加人
+            </Link>
+          </div>
           {state.students.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              目前沒有個別開放的學生。插班或試用的人可以從這裡加，
-              不過現在還要從資料庫加——這一版先只做得到收回。
+              目前沒有個別開放的學生。插班或試用的人在
+              <Link to="/admin/course-access" className="px-1 underline underline-offset-4 hover:text-foreground">
+                課程開放
+              </Link>
+              那一頁勾選就好，那裡也會一併處理「影片課程」功能。
             </p>
           ) : state.students.map((s) => (
             <div key={s.student_id}
