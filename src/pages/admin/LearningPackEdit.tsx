@@ -20,7 +20,8 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { LearningPackUnitDialog } from "@/components/admin/LearningPackUnitDialog";
 import { useLearningPack, useLearningPackSources } from "@/hooks/learn/useLearningPacks";
 import {
-  isGenericPractice, STATUS_LABEL, TASK_KIND_LABEL, VOCAB_MODE_LABEL,
+  isGenericPractice, STATUS_LABEL, STUDENT_SIDE_NOT_LIVE,
+  TASK_KIND_LABEL, VOCAB_MODE_LABEL,
   type LearningPack, type PackUnit,
 } from "@/lib/learn/learningPacks";
 
@@ -264,11 +265,12 @@ export default function LearningPackEdit() {
 
   const onPublish = async () => {
     const next = await setStatus("PUBLISHED");
-    if (next) toast.success("已發布，學生現在看得到了");
+    // 🛑 不可以說「學生看得到了」—— 第二期之前那是假話
+    if (next) toast.success("已標記為發布（學生端第二期才會上線）");
   };
   const onUnpublish = async () => {
     const next = await setStatus("DRAFT");
-    if (next) toast.success("已退回草稿，學生看不到了");
+    if (next) toast.success("已退回草稿");
   };
 
   if (loading && !pack) {
@@ -342,6 +344,12 @@ export default function LearningPackEdit() {
             </AlertDescription>
           </Alert>
         ) : null}
+
+        {/* 🛑 發布之後學生看不到 —— 在按下發布的那一頁講，不是只寫在清單頁 */}
+        <Alert className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{STUDENT_SIDE_NOT_LIVE}</AlertDescription>
+        </Alert>
 
         {/* 🛑 為什麼還不能發布，列在最上面而不是等按下去才說 */}
         {blocked && pack.status !== "PUBLISHED" ? (

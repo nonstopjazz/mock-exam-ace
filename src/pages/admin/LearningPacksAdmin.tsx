@@ -15,7 +15,8 @@ import { supabase } from "@/lib/supabase";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { useLearningPackList } from "@/hooks/learn/useLearningPacks";
 import {
-  STATUS_LABEL, type LearningPack, type PackListRow, type PackStatus,
+  STATUS_LABEL, STUDENT_SIDE_NOT_LIVE,
+  type LearningPack, type PackListRow, type PackStatus,
 } from "@/lib/learn/learningPacks";
 
 /**
@@ -120,6 +121,11 @@ export default function LearningPacksAdmin() {
             </Button>
           }
         />
+
+        <Alert className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{STUDENT_SIDE_NOT_LIVE}</AlertDescription>
+        </Alert>
 
         {error ? (
           <Alert variant="destructive" className="mb-6">
