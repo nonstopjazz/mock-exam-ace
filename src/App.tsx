@@ -31,6 +31,8 @@ import AdminHome from "./pages/admin/AdminHome";
 import WritingGrading from "./pages/admin/WritingGrading";
 import WritingGradingDetail from "./pages/admin/WritingGradingDetail";
 import CourseAccessAdmin from "./pages/admin/CourseAccessAdmin";
+import LearningPacksAdmin from "./pages/admin/LearningPacksAdmin";
+import LearningPackEdit from "./pages/admin/LearningPackEdit";
 import ClassesAdmin from "./pages/admin/ClassesAdmin";
 import ClassDetail from "./pages/admin/ClassDetail";
 import SpeakingPrompts from "./pages/admin/SpeakingPrompts";
@@ -233,6 +235,17 @@ const App = () => (
           <Route path="/admin/course-access" element={
             <RequireAdmin>
               <CourseAccessAdmin />
+            </RequireAdmin>
+          } />
+          {/* 主題學習包：把閱讀與單字組成一條有順序的路徑 */}
+          <Route path="/admin/learning-packs" element={
+            <RequireAdmin>
+              <LearningPacksAdmin />
+            </RequireAdmin>
+          } />
+          <Route path="/admin/learning-packs/:packId" element={
+            <RequireAdmin>
+              <LearningPackEdit />
             </RequireAdmin>
           } />
           {/* 班級與任務指派：老師端的主入口 */}
