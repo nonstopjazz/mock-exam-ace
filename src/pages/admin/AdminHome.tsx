@@ -19,6 +19,7 @@ import {
   BookOpen,
   Video,
   ShieldCheck,
+  Layers,
 } from 'lucide-react';
 import { PRODUCT_CONFIG } from '@/config/product';
 import { useWritingPendingCount } from '@/hooks/learn/useWritingPendingCount';
@@ -140,6 +141,13 @@ export default function AdminHome() {
       description: '上傳 Six-Way Reading 題庫，檢查之後再匯入',
       icon: <BookOpen className="h-6 w-6" />,
       href: '/admin/reading/import',
+      badge: '新功能',
+    },
+    {
+      title: '主題學習包',
+      description: '把閱讀與單字排成一條有順序的學習路徑',
+      icon: <Layers className="h-6 w-6" />,
+      href: '/admin/learning-packs',
       badge: '新功能',
     },
     {
