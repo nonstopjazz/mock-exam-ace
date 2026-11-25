@@ -2,6 +2,7 @@
 -- Rollback: update_writing_admin_queue.sql
 --
 -- 🔴 先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- 把 writing_admin_queue() 還原成 add_writing_texts_word_count.sql 裡的版本
 -- （含 word_count，不含學生姓名／班級／檢閱狀態／佇列欄位）。

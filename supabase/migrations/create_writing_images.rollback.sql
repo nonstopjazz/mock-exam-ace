@@ -2,6 +2,7 @@
 -- Rollback: create_writing_images.sql
 --
 -- 🔴 staging 與 production 各自執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- ⚠️ 先確認 Storage 裡沒有還沒清掉的檔案，再刪這張表。
 --    這張表是 writing-raw / writing-archive 兩個 bucket 的唯一索引：

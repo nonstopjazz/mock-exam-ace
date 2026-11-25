@@ -2,6 +2,7 @@
 -- 關掉 11 張已經死掉的遺留表
 --
 -- 🔴 這一份【會改變行為】。先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在 secure_legacy_public_tables.sql 之後執行。
 --
 --

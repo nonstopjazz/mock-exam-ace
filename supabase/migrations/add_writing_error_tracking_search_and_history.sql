@@ -2,6 +2,7 @@
 -- 錯誤追蹤：學生姓名搜尋（A）+ 班級含已離開（B）
 --
 -- 🔴 先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在 create_writing_error_query_rpcs.sql 之後執行。
 --
 -- 回滾：supabase/migrations/add_writing_error_tracking_search_and_history.rollback.sql

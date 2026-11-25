@@ -2,6 +2,7 @@
 -- 回滾 create_reading_publish_guard_2_trigger.sql —— 上架閘門 trigger
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- 🛑 回滾順序與建立相反。這八支互相有 FK 與相依，
 --    由後往前跑：submit → fetch → trigger → guard → sessions

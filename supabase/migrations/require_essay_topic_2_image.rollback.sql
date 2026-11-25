@@ -2,6 +2,7 @@
 -- 回滾 require_essay_topic_2_image.sql —— 圖片作文的題目恢復為選填
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- ⚠️ 前端仍然會把題目當必填（按了會跳「請先填題目說明」）。要完整回到選填，
 --    src/components/learn/writing/PhotoEssayComposer.tsx 也要一起還原。

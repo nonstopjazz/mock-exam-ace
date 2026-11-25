@@ -2,6 +2,7 @@
 -- Six-Way Reading（4／7）：作答階段與逐題紀錄
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- ⚠️ 先執行 create_reading_questions.sql。
 --

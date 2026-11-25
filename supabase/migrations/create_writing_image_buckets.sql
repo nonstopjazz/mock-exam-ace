@@ -2,6 +2,7 @@
 -- Migration: 兩個私有 Storage bucket（寫作系統 Phase 2 · 拍照上傳）
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- ⚠️ 這份 migration 只能在【真正的 Supabase 專案】執行 —— 它動的是 storage schema，
 --    本機 PostgreSQL 沒有那個 schema。本機測試會略過這一份。

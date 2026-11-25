@@ -2,6 +2,7 @@
 -- 回滾 require_essay_topic_1_text.sql —— 文字作文的題目恢復為選填
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- 還原成 create_writing_texts.sql 裡的版本（拿掉題目檢查）。
 -- 沒有資料要還原——那一支本來就沒改任何資料。

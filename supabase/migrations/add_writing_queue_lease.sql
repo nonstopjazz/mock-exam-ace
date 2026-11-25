@@ -2,6 +2,7 @@
 -- Migration: writing_analyses 加上佇列租約欄位
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- 為什麼【不】新開一張 queue 表
 -- ----------------------------

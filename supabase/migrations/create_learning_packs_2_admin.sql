@@ -2,6 +2,7 @@
 -- 主題學習包 —— 第一期：管理端 RPC
 --
 -- 🔴 先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在 create_learning_packs_1_tables.sql 之後執行。
 --
 -- 回滾：supabase/migrations/create_learning_packs_2_admin.rollback.sql

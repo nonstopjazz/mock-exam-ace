@@ -2,6 +2,7 @@
 -- Rollback: create_writing_teacher_reviews.sql
 --
 -- 🔴 先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在 update_writing_admin_queue.rollback.sql 之後執行——
 --    那支查詢讀這張表。
 --

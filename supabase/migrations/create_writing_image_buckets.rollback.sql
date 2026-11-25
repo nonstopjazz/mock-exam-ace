@@ -2,6 +2,7 @@
 -- Rollback: create_writing_image_buckets.sql
 --
 -- 🔴 staging 與 production 各自執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- ⚠️ 這份【只移除政策，不刪 bucket】。
 --    bucket 裡若還有檔案，DELETE FROM storage.buckets 會失敗；

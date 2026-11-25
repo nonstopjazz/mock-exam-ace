@@ -2,6 +2,7 @@
 -- 口說批改：排入、認領、回報、收件匣
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在 create_speaking_analyses.sql 之後執行。
 --
 --

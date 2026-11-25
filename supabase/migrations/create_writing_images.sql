@@ -2,6 +2,7 @@
 -- Migration: 建立 writing_images 表（寫作系統 Phase 2 · 拍照上傳）
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在 create_writing_ocr_runs.sql 之後執行。
 --
 -- 一頁一列。同一頁的「手機原檔」與「正規化封存圖」是同一件事的兩個階段，

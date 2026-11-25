@@ -2,6 +2,7 @@
 -- Rollback: create_writing_pending_digest.sql
 --
 -- 🔴 先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- 把 writing_queue_summary() 還原成自己帶查詢的版本（create_writing_queue_rpcs.sql
 -- 裡的那一份），然後刪掉內部函式與排程用的兩支。

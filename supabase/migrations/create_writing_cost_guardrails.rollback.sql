@@ -2,6 +2,7 @@
 -- Rollback: create_writing_cost_guardrails.sql
 --
 -- 🔴 先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- 把 writing_enqueue_analysis_batch() 還原成沒有每日上限的版本
 -- （create_writing_queue_rpcs.sql 裡的那一份），並刪掉估算與上限的四支函式。

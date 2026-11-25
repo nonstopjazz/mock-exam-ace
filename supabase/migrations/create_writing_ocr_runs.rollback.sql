@@ -2,6 +2,7 @@
 -- Rollback: create_writing_ocr_runs.sql
 --
 -- 🔴 staging 與 production 各自執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- ⚠️ 這會刪掉所有辨識紀錄，包含【機器原本讀到的文字】(raw_text)。
 --    學生送出的正式文字在 writing_texts，不會受影響；但「機器讀到的」與

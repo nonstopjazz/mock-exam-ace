@@ -2,6 +2,7 @@
 -- 口說題庫：從既有的 IELTS 題庫匯入 1945 題
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在 fix_speaking_part2_cue_optional.sql 之後執行。
 --    （下面有檢查會擋下來，不會讓你匯到一半才發現。）
 --

@@ -2,6 +2,7 @@
 -- Rollback: create_learn_feature_access.sql
 --
 -- 🔴 先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在 create_speaking_rpcs.rollback.sql 之後執行 —— 口說的 RPC 會呼叫
 --    learn_feature_enabled()。
 --

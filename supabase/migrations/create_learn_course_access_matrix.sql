@@ -2,6 +2,7 @@
 -- 課程開放：一頁矩陣（學生 × 課程）
 --
 -- 🔴 先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 只新增兩支函式，不改任何既有函式、不改任何資料。
 --
 -- 回滾：supabase/migrations/create_learn_course_access_matrix.rollback.sql

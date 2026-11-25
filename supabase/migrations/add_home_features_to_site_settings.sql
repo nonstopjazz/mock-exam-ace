@@ -2,6 +2,7 @@
 -- Migration: site_settings.home_features
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --    （若目前只用正式站，就只在 production 執行一次；但兩邊的 schema 要一致。）
 --
 -- 用途：讓管理員在 /admin/settings 決定首頁下方的功能卡片要顯示哪幾張。

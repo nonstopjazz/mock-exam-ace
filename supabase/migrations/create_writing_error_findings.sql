@@ -2,6 +2,7 @@
 -- writing_error_findings —— 錯誤 findings 的物化事實表（Phase 1A / A1）
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在 create_writing_analyses.sql 與 create_writing_texts.sql 之後執行。
 --
 -- 計畫：docs/plans/writing-error-intelligence-phase1/04-PHASE-1A-REVISION.md

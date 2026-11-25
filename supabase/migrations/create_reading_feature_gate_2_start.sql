@@ -2,6 +2,7 @@
 -- 閱讀練習開放控制（2／2）：開始練習
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- ⚠️ 這是【改寫既有函式】（CREATE OR REPLACE），不是新建。
 --    執行前 reading_start_session 已經存在，這支只是在它前面多一道檢查。

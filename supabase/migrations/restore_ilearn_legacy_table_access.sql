@@ -2,6 +2,7 @@
 -- 把 iLearn 救回來，同時讓 Supabase 的 rls_disabled_in_public 警告消失
 --
 -- 🔴 這份【會改變行為】。先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 執行前請先跑檔案最下方的「現況查詢」，確認現在的狀態真的如下面所述。
 --
 --

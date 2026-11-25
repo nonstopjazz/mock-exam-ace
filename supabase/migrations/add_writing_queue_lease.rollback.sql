@@ -2,6 +2,7 @@
 -- Rollback: add_writing_queue_lease.sql
 --
 -- 🔴 先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在 create_writing_queue_rpcs.rollback.sql 之後執行——那些函式讀這些欄位。
 --
 -- 刪掉欄位會連同裡面的租約與批次紀錄一起消失。分析結果本身（三軸、綜合層、

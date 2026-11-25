@@ -2,6 +2,7 @@
 -- writing_admin_queue() 補上收件匣需要的欄位
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在 create_writing_teacher_reviews.sql 與 add_writing_queue_lease.sql 之後執行。
 --
 -- 這一支從「批改佇列」變成「收件匣」，老師要在同一個畫面上判斷：

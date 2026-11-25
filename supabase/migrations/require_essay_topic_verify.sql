@@ -2,6 +2,7 @@
 -- 驗證題目必填有沒有裝上（唯讀，不改任何東西）
 --
 -- 🔴 兩個環境各跑一次：gsat-staging 與 production。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- 在 require_essay_topic_1_text.sql 與 require_essay_topic_2_image.sql
 -- 都執行完之後跑這一支。

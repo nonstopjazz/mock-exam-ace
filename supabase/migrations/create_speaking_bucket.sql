@@ -2,6 +2,7 @@
 -- speaking-recordings —— 私有的錄音 bucket
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 只能在真正的 Supabase 專案執行（本機 PostgreSQL 沒有 storage schema）。
 --
 -- 路徑慣例（與拍照作文一致，也是 speaking_register_recording 驗的那個形狀）：

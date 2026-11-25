@@ -2,6 +2,7 @@
 -- 「以學生身分預覽」：讓管理員看得到學生會被鎖住的樣子
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 必須在合併前端【之前】執行——兩支 RPC 都換了 signature。
 --
 -- ⚠️ 先執行 create_learn_courses.sql 那一整組、add_learn_lesson_watch_tracking.sql

@@ -2,6 +2,7 @@
 -- Migration: 建立 writing_ocr_runs 表（寫作系統 Phase 2 · 拍照上傳）
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- 一次辨識 = 一列。永不就地修改既有的成功紀錄；重跑就插入新的一列。
 -- 「目前的辨識結果」= 該作文最新一筆 SUCCEEDED，於讀取時推導，不存旗標。

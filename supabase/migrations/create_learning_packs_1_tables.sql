@@ -2,6 +2,7 @@
 -- 主題學習包 —— 第一期：資料表
 --
 -- 🔴 先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 -- 🔴 只新增表，不改任何既有表、不動任何既有資料。
 --
 -- 回滾：supabase/migrations/create_learning_packs_1_tables.rollback.sql

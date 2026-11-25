@@ -2,6 +2,7 @@
 -- Six-Way Reading 匯入（2／4）：canonical 雜湊
 --
 -- 🔴 這份 SQL 要執行兩次：先在 gsat-staging 執行並確認，再在 production 執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- 把一份 canonical payload 正規化之後取 md5，用來判斷
 -- 「重新匯入的這一篇跟庫裡那一篇是不是同一份內容」。

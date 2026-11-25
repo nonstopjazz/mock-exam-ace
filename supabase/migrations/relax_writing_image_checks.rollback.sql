@@ -2,6 +2,7 @@
 -- Rollback: relax_writing_image_checks.sql
 --
 -- 🔴 staging 與 production 各自執行。
+--    （gsat-staging 在 Supabase 免費組織，可能已自動暫停：執行前先 Restore。見 docs/STAGING.md）
 --
 -- ⚠️ 收回 CHECK 之前，資料庫裡不能有任何 image / OCR / OCR_CORRECTED 的資料，
 --    否則 ALTER TABLE 會直接失敗（那是好事——它擋住了「回滾把學生作文弄不見」）。
